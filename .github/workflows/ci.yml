@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+
+  live:
+    name: Live GemStone
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p gemstone-rs live_
+        env:
+          GS_RUN_LIVE_RUST: "1"
+          GS_LIB_PATH: ${{ secrets.GS_LIB_PATH }}
+          GS_STONE: ${{ secrets.GS_STONE }}
+          GS_STONE_NAME: ${{ secrets.GS_STONE_NAME }}
+          GS_HOST: ${{ secrets.GS_HOST }}
+          GS_NETLDI: ${{ secrets.GS_NETLDI }}
+          GS_USERNAME: ${{ secrets.GS_USERNAME }}
+          GS_PASSWORD: ${{ secrets.GS_PASSWORD }}

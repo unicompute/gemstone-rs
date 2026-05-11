@@ -1,0 +1,21 @@
+[workspace]
+members = [
+  "crates/gemstone-gci",
+  "crates/gemstone-rs",
+  "crates/gemstone-rs-cli",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/unicompute/gemstone-rs"
+repository = "https://github.com/unicompute/gemstone-rs"
+readme = "README.md"
+keywords = ["gemstone", "smalltalk", "database", "gci"]
+categories = ["api-bindings", "database"]
+
+[workspace.dependencies]
+gemstone-rs = { version = "0.1.0", path = "crates/gemstone-rs" }
+gemstone-gci = { version = "0.1.0", path = "crates/gemstone-gci" }
+libloading = "0.8"

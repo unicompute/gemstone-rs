@@ -1,0 +1,14 @@
+[package]
+name = "gemstone-gci"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "Low-level dynamic GemStone/S GCI loader and raw ABI bindings."
+readme = "README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+libloading.workspace = true
