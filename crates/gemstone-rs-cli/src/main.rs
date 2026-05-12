@@ -1,8 +1,8 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, BridgeKeyType, Config, Error as GemStoneError, Oop, Session, Value,
-    DEFAULT_BRIDGE_ROOT,
+    gci_library_path, BridgeKeyType, BridgeValue, Config, Error as GemStoneError, Oop, Session,
+    Value, DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -150,6 +150,38 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
                 bridge_root.get_oop_with_key_type(&key, key_type)?
             };
             print_oop_inspection(&mut session, oop)?;
+            Ok(())
+        }
+        Command::BridgePut {
+            root,
+            key,
+            key_type,
+            value,
+        } => {
+            let mut session = login()?;
+            let value = value.to_bridge_value()?;
+            let (root_name, oop) = {
+                let mut bridge_root = session.bridge_root_named(root)?;
+                let oop = bridge_root.put_with_key_type(&key, key_type, value)?;
+                bridge_root.commit()?;
+                (bridge_root.name().to_string(), oop)
+            };
+            println!("stored {key}\troot={root_name}\toop={}", oop.raw());
+            Ok(())
+        }
+        Command::BridgeRemove {
+            root,
+            key,
+            key_type,
+        } => {
+            let mut session = login()?;
+            let (root_name, oop) = {
+                let mut bridge_root = session.bridge_root_named(root)?;
+                let oop = bridge_root.remove_with_key_type(&key, key_type)?;
+                bridge_root.commit()?;
+                (bridge_root.name().to_string(), oop)
+            };
+            println!("removed {key}\troot={root_name}\toop={}", oop.raw());
             Ok(())
         }
         Command::BridgeSampleConfig { mapped_name } => {
@@ -562,6 +594,17 @@ enum Command {
         key: String,
         key_type: BridgeKeyType,
     },
+    BridgePut {
+        root: String,
+        key: String,
+        key_type: BridgeKeyType,
+        value: BridgeCliValue,
+    },
+    BridgeRemove {
+        root: String,
+        key: String,
+        key_type: BridgeKeyType,
+    },
     BridgeSampleConfig {
         mapped_name: String,
     },
@@ -729,7 +772,7 @@ fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|sample-config",
+            "expected: bridge root|keys|get|inspect|put|remove|sample-config",
         ));
     };
     match command {
@@ -765,6 +808,38 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 key_type: options.key_type,
             })
         }
+        "put" => {
+            let key = args
+                .get(1)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing key for bridge put"))?;
+            let raw_value = args
+                .get(2)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing value for bridge put"))?;
+            let options = parse_bridge_options(&args[3..])?;
+            Ok(Command::BridgePut {
+                root: options.root,
+                key,
+                key_type: options.key_type,
+                value: BridgeCliValue {
+                    raw: raw_value,
+                    value_type: options.value_type,
+                },
+            })
+        }
+        "remove" => {
+            let key = args
+                .get(1)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing key for bridge remove"))?;
+            let options = parse_bridge_options(&args[2..])?;
+            Ok(Command::BridgeRemove {
+                root: options.root,
+                key,
+                key_type: options.key_type,
+            })
+        }
         "sample-config" => Ok(Command::BridgeSampleConfig {
             mapped_name: args
                 .get(1)
@@ -772,8 +847,20 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .unwrap_or_else(|| "BookingDraft".to_string()),
         }),
         _ => Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|sample-config",
+            "expected: bridge root|keys|get|inspect|put|remove|sample-config",
         )),
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BridgeCliValue {
+    raw: String,
+    value_type: BridgeValueType,
+}
+
+impl BridgeCliValue {
+    fn to_bridge_value(&self) -> Result<BridgeValue, CliError> {
+        self.value_type.parse_value(&self.raw)
     }
 }
 
@@ -781,11 +868,13 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
 struct BridgeOptions {
     root: String,
     key_type: BridgeKeyType,
+    value_type: BridgeValueType,
 }
 
 fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
     let mut root = DEFAULT_BRIDGE_ROOT.to_string();
     let mut key_type = BridgeKeyType::String;
+    let mut value_type = BridgeValueType::String;
     let mut index = 0;
     while index < args.len() {
         match args[index].as_str() {
@@ -805,13 +894,24 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
                         .ok_or_else(|| CliError::usage("missing value for --key-type"))?,
                 )?;
             }
+            "--type" | "--value-type" => {
+                index += 1;
+                value_type = parse_bridge_value_type(
+                    args.get(index)
+                        .ok_or_else(|| CliError::usage("missing value for --type"))?,
+                )?;
+            }
             other => {
                 return Err(CliError::usage(format!("unknown bridge option: {other}")));
             }
         }
         index += 1;
     }
-    Ok(BridgeOptions { root, key_type })
+    Ok(BridgeOptions {
+        root,
+        key_type,
+        value_type,
+    })
 }
 
 fn parse_bridge_key_type(value: &str) -> Result<BridgeKeyType, CliError> {
@@ -821,6 +921,45 @@ fn parse_bridge_key_type(value: &str) -> Result<BridgeKeyType, CliError> {
         _ => Err(CliError::usage(format!(
             "expected bridge key type String or Symbol, got {value}"
         ))),
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BridgeValueType {
+    String,
+    SmallInt,
+    Bool,
+}
+
+impl BridgeValueType {
+    fn parse_value(self, value: &str) -> Result<BridgeValue, CliError> {
+        match self {
+            Self::String => Ok(BridgeValue::from(value.to_string())),
+            Self::SmallInt => value
+                .parse::<i64>()
+                .map(BridgeValue::from)
+                .map_err(|_| CliError::usage(format!("expected SmallInt value, got {value}"))),
+            Self::Bool => parse_bool_value(value).map(BridgeValue::from),
+        }
+    }
+}
+
+fn parse_bridge_value_type(value: &str) -> Result<BridgeValueType, CliError> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "string" | "str" => Ok(BridgeValueType::String),
+        "smallint" | "small_int" | "int" | "integer" => Ok(BridgeValueType::SmallInt),
+        "bool" | "boolean" => Ok(BridgeValueType::Bool),
+        _ => Err(CliError::usage(format!(
+            "expected bridge value type String, SmallInt, or Bool, got {value}"
+        ))),
+    }
+}
+
+fn parse_bool_value(value: &str) -> Result<bool, CliError> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Ok(true),
+        "0" | "false" | "no" | "off" => Ok(false),
+        _ => Err(CliError::usage(format!("expected Bool value, got {value}"))),
     }
 }
 
@@ -877,6 +1016,8 @@ fn usage() -> &'static str {
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge inspect <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge put <key> <value> [--type String|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge remove <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge sample-config [mapped-name]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
@@ -1089,6 +1230,36 @@ mod tests {
                 root: "DemoRoot".to_string(),
                 key: "BookingDraft".to_string(),
                 key_type: BridgeKeyType::String,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "put",
+                "BookingDraft",
+                "42",
+                "--type",
+                "SmallInt",
+                "--root",
+                "DemoRoot"
+            ]))
+            .unwrap(),
+            Command::BridgePut {
+                root: "DemoRoot".to_string(),
+                key: "BookingDraft".to_string(),
+                key_type: BridgeKeyType::String,
+                value: BridgeCliValue {
+                    raw: "42".to_string(),
+                    value_type: BridgeValueType::SmallInt,
+                },
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["bridge", "remove", "BookingDraft", "--symbol"])).unwrap(),
+            Command::BridgeRemove {
+                root: DEFAULT_BRIDGE_ROOT.to_string(),
+                key: "BookingDraft".to_string(),
+                key_type: BridgeKeyType::Symbol,
             }
         );
         assert_eq!(

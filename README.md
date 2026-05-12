@@ -165,6 +165,9 @@ cargo run -p gemstone-rs-cli -- bridge root
 cargo run -p gemstone-rs-cli -- bridge keys
 cargo run -p gemstone-rs-cli -- bridge get BookingDraft --symbol
 cargo run -p gemstone-rs-cli -- bridge inspect BookingDraft --symbol
+cargo run -p gemstone-rs-cli -- bridge put WorkbenchDraft "hello from Rust" --type String
+cargo run -p gemstone-rs-cli -- bridge put WorkbenchCount 7 --type SmallInt
+cargo run -p gemstone-rs-cli -- bridge remove WorkbenchDraft
 cargo run -p gemstone-rs-cli -- bridge sample-config BookingDraft
 cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
@@ -178,7 +181,8 @@ The CLI intentionally uses only the standard library. `doctor` checks the
 GemStone environment, GCI library resolution, and optionally a live `3 + 4`
 probe; add `--json` when release scripts or VS Code need structured output.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
-`bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`.
+`bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
+`bridge put` and `bridge remove` make explicit committed BridgeRoot edits.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
 line-oriented config, preview generated Rust wrappers, diff/check stale output,
@@ -240,6 +244,8 @@ http://127.0.0.1:8787/api/codegen/sample
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/bridge/root
+http://127.0.0.1:8787/api/bridge/keys
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
 
@@ -260,6 +266,14 @@ cargo run -p gemstone-rs-explorer -- --allow-write
 
 ```text
 http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+```
+
+BridgeRoot write endpoints are also write-gated:
+
+```bash
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchCount&value=7&value_type=SmallInt'
+curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 ```
 
 ## VS Code
@@ -305,7 +319,7 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.3.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.4.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:

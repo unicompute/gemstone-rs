@@ -142,4 +142,6 @@ The examples intentionally stay close to the public Rust API:
 - `#[derive(BridgeMapped)]`
 
 The local web explorer and VS Code extension use the same CLI/API surfaces, so
-these examples are also useful when debugging higher-level tooling.
+these examples are also useful when debugging higher-level tooling. For a quick
+write-side tool smoke test, use `gemstone-rs bridge put WorkbenchDraft "hello"
+--type String`, then `gemstone-rs bridge remove WorkbenchDraft`.

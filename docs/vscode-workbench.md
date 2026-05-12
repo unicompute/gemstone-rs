@@ -53,6 +53,8 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Generate Mapping Config
 - Preview BridgeRoot
 - List BridgeRoot Keys
+- Put BridgeRoot String
+- Remove BridgeRoot Key
 - Run Generated Mapping Example
 - Preview Wrappers
 - Diff Generated Output
@@ -81,6 +83,8 @@ Commands:
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
+- `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
@@ -126,6 +130,20 @@ Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
 opening a browser; it runs `gemstone-rs bridge keys` and writes the key OOPs,
 class OOPs, `printString` values, and identity ids to the output panel.
 
+Use `GemStone RS: Put BridgeRoot String` when you want a quick live-write smoke
+test from VS Code. It asks for a key and string value, then runs:
+
+```bash
+gemstone-rs bridge put <key> <value> --type String
+```
+
+Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a
+confirmation prompt:
+
+```bash
+gemstone-rs bridge remove <key>
+```
+
 Use `GemStone RS: Run Generated Mapping Example` to run:
 
 ```bash
@@ -138,7 +156,7 @@ cargo run -p gemstone-rs --example generated_mapping_app
 cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
-npm run package -- --out gemstone-rs-workbench-0.2.3.vsix
+npm run package -- --out gemstone-rs-workbench-0.2.4.vsix
 ```
 
 From the repository root:

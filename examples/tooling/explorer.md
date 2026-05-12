@@ -77,6 +77,14 @@ cargo run -p gemstone-rs-explorer -- --port 8787 --allow-write
 curl -s 'http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen'
 ```
 
+The same write opt-in enables BridgeRoot edit endpoints:
+
+```bash
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=ExplorerDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=ExplorerCount&value=7&value_type=SmallInt'
+curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=ExplorerDraft'
+```
+
 ## Eval Is Opt-In
 
 Eval is disabled by default. To test it:

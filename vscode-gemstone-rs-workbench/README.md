@@ -43,6 +43,8 @@ For a source checkout:
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
+- `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
@@ -59,6 +61,8 @@ before writing, then opens the generated file after a successful write.
 config. `Preview BridgeRoot` opens the explorer BridgeRoot endpoint.
 `List BridgeRoot Keys` runs `gemstone-rs bridge keys` and shows the current
 root keys in the output panel.
+`Put BridgeRoot String` and `Remove BridgeRoot Key` run explicit committed
+BridgeRoot writes through the CLI after prompting for a key and value.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
@@ -72,7 +76,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 - Selecting a method opens its GemStone source through `gemstone-rs browse source`.
 - `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, and Docs.
 - `Codegen Config` also exposes Generate Mapping Config, Preview BridgeRoot,
-  List BridgeRoot Keys, and Run Generated Mapping Example.
+  List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot Key, and Run
+  Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, and Launch Explorer.
 
 The tree uses the same settings as the command palette actions. If
@@ -91,7 +96,7 @@ Or from this directory:
 
 ```bash
 npm ci
-npm run package -- --out gemstone-rs-workbench-0.2.3.vsix
+npm run package -- --out gemstone-rs-workbench-0.2.4.vsix
 ```
 
 ## Later

@@ -135,6 +135,16 @@ curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft&key_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
 
+Writes are disabled unless the explorer is started with `--allow-write`:
+
+```bash
+gemstone-rs-explorer --allow-write
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchCount&value=7&value_type=SmallInt'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchApproved&value=true&value_type=Bool'
+curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
+```
+
 Expected shapes:
 
 ```json
@@ -142,6 +152,7 @@ Expected shapes:
 {"success":true,"root":"GemStoneRsBridgeRoot","keys":[{"printString":"BookingDraft"}]}
 {"oop":5678,"classOop":9012,"printString":"aDictionary(...)"}
 {"success":true,"config":"mapped = BookingDraft ..."}
+{"success":true,"root":"GemStoneRsBridgeRoot","key":"WorkbenchDraft","keyType":"String","valueType":"String","oop":3456}
 ```
 
 ## Product Direction

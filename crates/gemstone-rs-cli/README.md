@@ -48,8 +48,15 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge inspect BookingDraft --symbol
+gemstone-rs bridge put WorkbenchDraft "hello from Rust" --type String
+gemstone-rs bridge put WorkbenchCount 7 --type SmallInt
+gemstone-rs bridge remove WorkbenchDraft
 gemstone-rs bridge sample-config BookingDraft
 ```
+
+`bridge put` commits simple `String`, `SmallInt`, or `Bool` values. Use
+`--symbol` or `--key-type Symbol` when the BridgeRoot key is a GemStone Symbol
+instead of a String.
 
 `codegen diff` previews generated changes before writing. `codegen check` is
 suitable for CI. In this repository it verifies:

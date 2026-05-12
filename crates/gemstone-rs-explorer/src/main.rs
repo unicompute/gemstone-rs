@@ -1,7 +1,7 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, BridgeKeySummary, BridgeKeyType, Config, Oop, Session, Value,
+    gci_library_path, BridgeKeySummary, BridgeKeyType, BridgeValue, Config, Oop, Session, Value,
     DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
@@ -264,6 +264,75 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 let oop = root.get_oop_with_key_type(&key, key_type)?;
                 drop(root);
                 inspect_oop(session, oop)
+            })
+        }
+        "/api/bridge/put" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"bridge writes disabled; restart with --allow-write"}"#.to_string(),
+                );
+            }
+            let Some(key) = route.non_empty_query("key") else {
+                return Response::json(400, r#"{"error":"missing key"}"#.to_string());
+            };
+            let Some(raw_value) = route.non_empty_query("value") else {
+                return Response::json(400, r#"{"error":"missing value"}"#.to_string());
+            };
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
+            let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            let value_type = bridge_value_type_query(route.query("value_type").as_deref());
+            let value = match value_type.parse_value(&raw_value) {
+                Ok(value) => value,
+                Err(message) => return Response::json(400, format!(r#"{{"error":"{message}"}}"#)),
+            };
+            live_json(|session| {
+                let (root_name, oop) = {
+                    let mut root = session.bridge_root_named(root_name)?;
+                    let oop = root.put_with_key_type(&key, key_type, value)?;
+                    root.commit()?;
+                    (root.name().to_string(), oop)
+                };
+                Ok(format!(
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","valueType":"{}","oop":{}}}"#,
+                    escape_json(&root_name),
+                    escape_json(&key),
+                    key_type.config_name(),
+                    value_type.name(),
+                    oop.raw()
+                ))
+            })
+        }
+        "/api/bridge/remove" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"bridge writes disabled; restart with --allow-write"}"#.to_string(),
+                );
+            }
+            let Some(key) = route.non_empty_query("key") else {
+                return Response::json(400, r#"{"error":"missing key"}"#.to_string());
+            };
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
+            let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            live_json(|session| {
+                let (root_name, oop) = {
+                    let mut root = session.bridge_root_named(root_name)?;
+                    let oop = root.remove_with_key_type(&key, key_type)?;
+                    root.commit()?;
+                    (root.name().to_string(), oop)
+                };
+                Ok(format!(
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","removedOop":{}}}"#,
+                    escape_json(&root_name),
+                    escape_json(&key),
+                    key_type.config_name(),
+                    oop.raw()
+                ))
             })
         }
         "/api/bridge/mapping-config" => {
@@ -584,6 +653,50 @@ fn bridge_key_type_query(value: Option<&str>) -> BridgeKeyType {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BridgeValueType {
+    String,
+    SmallInt,
+    Bool,
+}
+
+impl BridgeValueType {
+    fn name(self) -> &'static str {
+        match self {
+            Self::String => "String",
+            Self::SmallInt => "SmallInt",
+            Self::Bool => "Bool",
+        }
+    }
+
+    fn parse_value(self, value: &str) -> Result<BridgeValue, String> {
+        match self {
+            Self::String => Ok(BridgeValue::from(value.to_string())),
+            Self::SmallInt => value
+                .parse::<i64>()
+                .map(BridgeValue::from)
+                .map_err(|_| format!("expected SmallInt value, got {}", escape_json(value))),
+            Self::Bool => parse_bridge_bool(value).map(BridgeValue::from),
+        }
+    }
+}
+
+fn bridge_value_type_query(value: Option<&str>) -> BridgeValueType {
+    match value.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+        Some("smallint" | "small_int" | "int" | "integer") => BridgeValueType::SmallInt,
+        Some("bool" | "boolean") => BridgeValueType::Bool,
+        _ => BridgeValueType::String,
+    }
+}
+
+fn parse_bridge_bool(value: &str) -> Result<bool, String> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Ok(true),
+        "0" | "false" | "no" | "off" => Ok(false),
+        _ => Err(format!("expected Bool value, got {}", escape_json(value))),
+    }
+}
+
 fn sample_mapping_config(mapped: &str) -> String {
     codegen::sample_mapping_config(mapped)
 }
@@ -793,6 +906,8 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/bridge/root">/api/bridge/root</a></li>
 <li><a href="/api/bridge/keys">/api/bridge/keys</a></li>
 <li><a href="/api/bridge/get?key=BookingDraft">/api/bridge/get?key=BookingDraft</a></li>
+<li><a href="/api/bridge/put?key=Demo&amp;value=hello">/api/bridge/put?key=Demo&amp;value=hello</a> (--allow-write required)</li>
+<li><a href="/api/bridge/remove?key=Demo">/api/bridge/remove?key=Demo</a> (--allow-write required)</li>
 <li><a href="/api/bridge/mapping-config?mapped=BookingDraft">/api/bridge/mapping-config?mapped=BookingDraft</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
 </ul>
@@ -1019,6 +1134,59 @@ mod tests {
         assert_eq!(bridge_key_type_query(Some("symbol")), BridgeKeyType::Symbol);
         assert_eq!(bridge_key_type_query(Some("String")), BridgeKeyType::String);
         assert_eq!(bridge_key_type_query(None), BridgeKeyType::String);
+    }
+
+    #[test]
+    fn bridge_value_type_query_defaults_to_string() {
+        assert_eq!(bridge_value_type_query(None), BridgeValueType::String);
+        assert_eq!(
+            bridge_value_type_query(Some("SmallInt")),
+            BridgeValueType::SmallInt
+        );
+        assert_eq!(bridge_value_type_query(Some("bool")), BridgeValueType::Bool);
+    }
+
+    #[test]
+    fn bridge_bool_parser_accepts_common_values() {
+        assert!(parse_bridge_bool("true").unwrap());
+        assert!(!parse_bridge_bool("0").unwrap());
+        assert!(parse_bridge_bool("maybe").is_err());
+    }
+
+    #[test]
+    fn bridge_put_and_remove_are_disabled_by_default() {
+        let put = handle_request(
+            "GET /api/bridge/put?key=Demo&value=hello HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(put.status, 403);
+        assert!(put.body.contains("allow-write"));
+
+        let remove = handle_request(
+            "GET /api/bridge/remove?key=Demo HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(remove.status, 403);
+        assert!(remove.body.contains("allow-write"));
+    }
+
+    #[test]
+    fn bridge_put_validates_key_and_value_before_live_login() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+
+        let missing_key = handle_request("GET /api/bridge/put?value=hello HTTP/1.1", &config);
+        assert_eq!(missing_key.status, 400);
+        assert!(missing_key.body.contains("missing key"));
+
+        let invalid_smallint = handle_request(
+            "GET /api/bridge/put?key=Demo&value=nope&value_type=SmallInt HTTP/1.1",
+            &config,
+        );
+        assert_eq!(invalid_smallint.status, 400);
+        assert!(invalid_smallint.body.contains("SmallInt"));
     }
 
     #[test]

@@ -2,7 +2,7 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "publisher": "unicompute",
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -35,6 +35,8 @@
     "onCommand:gemstoneRs.generateMappingConfig",
     "onCommand:gemstoneRs.previewBridgeRoot",
     "onCommand:gemstoneRs.listBridgeRootKeys",
+    "onCommand:gemstoneRs.putBridgeRootString",
+    "onCommand:gemstoneRs.removeBridgeRootKey",
     "onCommand:gemstoneRs.runGeneratedMappingExample",
     "onCommand:gemstoneRs.codegenPreview",
     "onCommand:gemstoneRs.codegenDiff",
@@ -106,6 +108,14 @@
       {
         "command": "gemstoneRs.listBridgeRootKeys",
         "title": "GemStone RS: List BridgeRoot Keys"
+      },
+      {
+        "command": "gemstoneRs.putBridgeRootString",
+        "title": "GemStone RS: Put BridgeRoot String"
+      },
+      {
+        "command": "gemstoneRs.removeBridgeRootKey",
+        "title": "GemStone RS: Remove BridgeRoot Key"
       },
       {
         "command": "gemstoneRs.runGeneratedMappingExample",

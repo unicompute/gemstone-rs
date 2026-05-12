@@ -367,14 +367,22 @@ The local explorer and VS Code extension expose this workflow too:
 ```bash
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
+
+The explorer stays read-only unless started with `--allow-write`, so these
+BridgeRoot write endpoints are useful smoke tests without becoming accidental
+public write APIs.
 
 In VS Code, use:
 
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
+- `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 
 This is still explicit object mapping, not transparent persistence. That is the

@@ -390,15 +390,22 @@ The local explorer exposes BridgeRoot-oriented endpoints:
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object'
 ```
+
+The write endpoints require `gemstone-rs-explorer --allow-write`. Without that
+flag they return HTTP 403, matching the explorer's read-only default.
 
 The VS Code workbench adds the same object-mapping workflow:
 
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
+- `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 
 The sidebar also shows these actions under `Codegen Config`.

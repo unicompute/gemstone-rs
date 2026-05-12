@@ -183,11 +183,15 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge inspect BookingDraft --symbol
+gemstone-rs bridge put WorkbenchDraft "hello from Rust" --type String
+gemstone-rs bridge remove WorkbenchDraft
 ```
 
 Use this when object-mapping examples or generated mappings write payloads
 under `GemStoneRsBridgeRoot`. `bridge keys` is the quickest way to see what is
-currently stored before inspecting a specific payload.
+currently stored before inspecting a specific payload. `bridge put` and
+`bridge remove` are useful live-write smoke tests because they commit one
+explicit BridgeRoot change at a time.
 
 ## Recipe 16: Preview Codegen
 

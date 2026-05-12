@@ -26,6 +26,8 @@ http://127.0.0.1:8787/api/codegen/sample
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/bridge/root
+http://127.0.0.1:8787/api/bridge/keys
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
 
@@ -64,4 +66,7 @@ Codegen generation is write-gated. Start with `--allow-write` before using:
 
 ```text
 GET /api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+GET /api/bridge/put?key=ExplorerDraft&value=hello
+GET /api/bridge/put?key=ExplorerCount&value=7&value_type=SmallInt
+GET /api/bridge/remove?key=ExplorerDraft
 ```

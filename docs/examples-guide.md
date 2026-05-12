@@ -154,8 +154,9 @@ https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workb
 
 Use the GemStone RS sidebar to browse dictionaries, classes, protocols, and
 methods. The same sidebar exposes Codegen Discover, Preview, Diff, Check,
-Generate, Generate Mapping Config, Preview BridgeRoot, Run Generated Mapping
-Example, and Open Docs actions.
+Generate, Generate Mapping Config, Preview BridgeRoot, List BridgeRoot Keys,
+Put BridgeRoot String, Remove BridgeRoot Key, Run Generated Mapping Example,
+and Open Docs actions.
 
 ## Later Examples
 

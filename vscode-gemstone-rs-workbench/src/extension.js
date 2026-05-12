@@ -26,6 +26,8 @@ function activate(context) {
   register(context, "gemstoneRs.generateMappingConfig", generateMappingConfig);
   register(context, "gemstoneRs.previewBridgeRoot", previewBridgeRoot);
   register(context, "gemstoneRs.listBridgeRootKeys", listBridgeRootKeys);
+  register(context, "gemstoneRs.putBridgeRootString", putBridgeRootString);
+  register(context, "gemstoneRs.removeBridgeRootKey", removeBridgeRootKey);
   register(context, "gemstoneRs.runGeneratedMappingExample", runGeneratedMappingExample);
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
@@ -132,6 +134,8 @@ class GemStoneTreeProvider {
         actionNode("Generate Mapping Config", "gemstoneRs.generateMappingConfig"),
         actionNode("Preview BridgeRoot", "gemstoneRs.previewBridgeRoot"),
         actionNode("List BridgeRoot Keys", "gemstoneRs.listBridgeRootKeys"),
+        actionNode("Put BridgeRoot String", "gemstoneRs.putBridgeRootString"),
+        actionNode("Remove BridgeRoot Key", "gemstoneRs.removeBridgeRootKey"),
         actionNode("Run Generated Mapping Example", "gemstoneRs.runGeneratedMappingExample"),
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
@@ -308,6 +312,54 @@ async function previewBridgeRoot() {
 
 async function listBridgeRootKeys() {
   await runAndShow(["bridge", "keys"], { allowFailure: true });
+}
+
+async function putBridgeRootString() {
+  const key = await vscode.window.showInputBox({
+    title: "Put BridgeRoot String",
+    prompt: "BridgeRoot key to write",
+    value: "WorkbenchDraft",
+  });
+  if (!key) {
+    return;
+  }
+  const value = await vscode.window.showInputBox({
+    title: "Put BridgeRoot String",
+    prompt: `String value for ${key}`,
+    value: "hello from VS Code",
+  });
+  if (value === undefined) {
+    return;
+  }
+  const result = await runAndShow(["bridge", "put", key, value, "--type", "String"], {
+    allowFailure: true,
+  });
+  if (result.code === 0) {
+    explorerProvider?.refresh();
+  }
+}
+
+async function removeBridgeRootKey() {
+  const key = await vscode.window.showInputBox({
+    title: "Remove BridgeRoot Key",
+    prompt: "BridgeRoot key to remove",
+    value: "WorkbenchDraft",
+  });
+  if (!key) {
+    return;
+  }
+  const choice = await vscode.window.showWarningMessage(
+    `Remove ${key} from GemStoneRsBridgeRoot?`,
+    { modal: true },
+    "Remove"
+  );
+  if (choice !== "Remove") {
+    return;
+  }
+  const result = await runAndShow(["bridge", "remove", key], { allowFailure: true });
+  if (result.code === 0) {
+    explorerProvider?.refresh();
+  }
 }
 
 async function runGeneratedMappingExample() {
