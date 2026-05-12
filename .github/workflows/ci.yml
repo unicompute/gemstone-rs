@@ -37,7 +37,7 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run check
-      - run: npm run package -- --out gemstone-rs-workbench-0.2.0.vsix
+      - run: npm run package
 
   release-smoke:
     name: Release Smoke

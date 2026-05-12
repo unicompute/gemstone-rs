@@ -2,7 +2,7 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "unicompute",
   "icon": "media/icon.png",
   "galleryBanner": {

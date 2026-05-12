@@ -85,7 +85,7 @@ Or from this directory:
 
 ```bash
 npm ci
-npm run package -- --out gemstone-rs-workbench-0.2.0.vsix
+npm run package -- --out gemstone-rs-workbench-0.2.1.vsix
 ```
 
 ## Later
