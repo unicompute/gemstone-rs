@@ -70,7 +70,9 @@ DRY_RUN=1 scripts/publish_crates.sh
 
 Dry-run mode checks each crate's publish file list locally. The real publish
 path still uses `cargo publish` in dependency order so crates.io resolves each
-new dependency after it has been published.
+new dependency after it has been published. If a workflow is rerun after a
+partial publish, already-published crate versions are skipped and the remaining
+crates continue.
 
 ## Post-Release Verification
 

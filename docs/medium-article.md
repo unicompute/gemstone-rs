@@ -211,6 +211,51 @@ gemstone-rs browse methods Object "-- all --"
 gemstone-rs browse source Object printString
 ```
 
+## Codegen
+
+Codegen turns a small, reviewable config into checked-in Rust wrappers.
+
+```text
+output = examples/codegen/generated/gemstone_wrappers.rs
+class = Object
+method = Object>>printString | return=String | doc=Return the receiver printString.
+method = Object>>class
+```
+
+Commands:
+
+```bash
+gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
+```
+
+Generate a starter config from a live stone:
+
+```bash
+gemstone-rs codegen discover gemstone-rs.codegen Object
+```
+
+Generated wrappers keep selector spelling in one place:
+
+```rust
+pub fn print_string(&mut self) -> Result<String> {
+    let value = self.session.perform(self.oop, "printString", &[])?;
+    match value {
+        Value::String(value) => Ok(value),
+        Value::Oop(oop) => self.session.fetch_string(oop),
+        other => Err(Error::UnexpectedType {
+            expected: "String",
+            actual: format!("{other:?}"),
+        }),
+    }
+}
+```
+
+The output is normal Rust code. Check it in so reviews and editor indexing stay
+predictable.
+
 ---
 
 ## Object Mapping with BridgeRoot
@@ -331,53 +376,6 @@ This is still explicit object mapping, not transparent persistence. That is the
 right tradeoff for the first Rust layer: Rust callers can review every field,
 choose string or symbol keys, keep OOPs visible, and still avoid repetitive
 dictionary boilerplate.
-
----
-
-## Codegen
-
-Codegen turns a small, reviewable config into checked-in Rust wrappers.
-
-```text
-output = examples/codegen/generated/gemstone_wrappers.rs
-class = Object
-method = Object>>printString | return=String | doc=Return the receiver printString.
-method = Object>>class
-```
-
-Commands:
-
-```bash
-gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
-gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
-gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
-gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
-```
-
-Generate a starter config from a live stone:
-
-```bash
-gemstone-rs codegen discover gemstone-rs.codegen Object
-```
-
-Generated wrappers keep selector spelling in one place:
-
-```rust
-pub fn print_string(&mut self) -> Result<String> {
-    let value = self.session.perform(self.oop, "printString", &[])?;
-    match value {
-        Value::String(value) => Ok(value),
-        Value::Oop(oop) => self.session.fetch_string(oop),
-        other => Err(Error::UnexpectedType {
-            expected: "String",
-            actual: format!("{other:?}"),
-        }),
-    }
-}
-```
-
-The output is normal Rust code. Check it in so reviews and editor indexing stay
-predictable.
 
 ---
 
