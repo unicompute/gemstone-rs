@@ -881,41 +881,170 @@ impl Response {
 }
 
 fn landing_html(config: &ExplorerConfig) -> String {
-    format!(
+    let write_note = if config.read_only {
+        "Writes disabled. Restart with --allow-write for codegen generate or BridgeRoot edits."
+    } else {
+        "Writes enabled for this loopback-only explorer."
+    };
+    let eval_note = if config.allow_eval {
+        "Eval enabled."
+    } else {
+        "Eval disabled. Restart with --allow-eval for workspace eval."
+    };
+    let mut html = String::from(
         r#"<!doctype html>
 <html>
-<head><meta charset="utf-8"><title>gemstone-rs Explorer</title></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gemstone-rs Explorer</title>
+<style>
+:root { color-scheme: light dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { margin: 0; background: #f7f7f8; color: #24292f; }
+header { background: #9f1722; color: white; padding: 18px 24px; }
+main { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 16px; padding: 16px; }
+section { background: white; border: 1px solid #d0d7de; border-radius: 8px; padding: 14px; }
+h1, h2 { margin: 0 0 10px; }
+h1 { font-size: 24px; }
+h2 { font-size: 16px; }
+button, input, select { font: inherit; }
+button { border: 1px solid #9f1722; background: #9f1722; color: white; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+button.secondary { background: white; color: #9f1722; }
+input, select { box-sizing: border-box; width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 7px; margin: 4px 0 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.pill { border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 4px 8px; font-size: 12px; }
+.list { max-height: 420px; overflow: auto; }
+.item { display: block; width: 100%; text-align: left; border-color: #d0d7de; background: white; color: #24292f; margin-bottom: 4px; }
+pre { min-height: 260px; overflow: auto; white-space: pre-wrap; background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 12px; }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
+</style>
+</head>
 <body>
+<header>
 <h1>gemstone-rs Explorer</h1>
-<p>Local-only GemStone/S explorer.</p>
-<ul>
-<li><a href="/api/config">/api/config</a></li>
-<li><a href="/api/doctor">/api/doctor</a></li>
-<li><a href="/api/doctor?live=1">/api/doctor?live=1</a></li>
-<li><a href="/api/status">/api/status</a></li>
-<li><a href="/api/browse/dictionaries">/api/browse/dictionaries</a></li>
-<li><a href="/api/browse/classes?dictionary=UserGlobals">/api/browse/classes?dictionary=UserGlobals</a></li>
-<li><a href="/api/browse/protocols?class=Object">/api/browse/protocols?class=Object</a></li>
-<li><a href="/api/browse/methods?class=Object&amp;protocol=--%20all%20--">/api/browse/methods?class=Object&amp;protocol=-- all --</a></li>
-<li><a href="/api/browse/source?class=Object">/api/browse/source?class=Object</a></li>
-<li><a href="/api/codegen/sample">/api/codegen/sample</a></li>
-<li><a href="/api/codegen/discover-mapping?mapped=BookingDraft&amp;class=Object">/api/codegen/discover-mapping?mapped=BookingDraft&amp;class=Object</a></li>
-<li><a href="/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen">/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen</a></li>
-<li><a href="/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen">/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen</a></li>
-<li><a href="/api/codegen/check?config=examples/codegen/gemstone-rs.codegen">/api/codegen/check?config=examples/codegen/gemstone-rs.codegen</a></li>
-<li><a href="/api/bridge/root">/api/bridge/root</a></li>
-<li><a href="/api/bridge/keys">/api/bridge/keys</a></li>
-<li><a href="/api/bridge/get?key=BookingDraft">/api/bridge/get?key=BookingDraft</a></li>
-<li><a href="/api/bridge/put?key=Demo&amp;value=hello">/api/bridge/put?key=Demo&amp;value=hello</a> (--allow-write required)</li>
-<li><a href="/api/bridge/remove?key=Demo">/api/bridge/remove?key=Demo</a> (--allow-write required)</li>
-<li><a href="/api/bridge/mapping-config?mapped=BookingDraft">/api/bridge/mapping-config?mapped=BookingDraft</a></li>
-<li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
-</ul>
-<p>read_only={} allow_eval={}</p>
+<div class="status">
+"#,
+    );
+    html.push_str(&format!(
+        r#"<span class="pill">read_only={}</span><span class="pill">allow_eval={}</span><span class="pill">{}</span><span class="pill">{}</span>"#,
+        config.read_only, config.allow_eval, write_note, eval_note
+    ));
+    html.push_str(
+        r#"
+</div>
+</header>
+<main>
+<section>
+<h2>Browse</h2>
+<div class="actions">
+<button onclick="loadDictionaries()">Dictionaries</button>
+<button class="secondary" onclick="loadClasses()">Classes</button>
+<button class="secondary" onclick="loadProtocols()">Protocols</button>
+<button class="secondary" onclick="loadMethods()">Methods</button>
+<button class="secondary" onclick="loadSource()">Source</button>
+</div>
+<label>Dictionary<input id="dictionary" value="UserGlobals"></label>
+<label>Class<input id="className" value="Object"></label>
+<label>Protocol<input id="protocol" value="-- all --"></label>
+<label>Selector<input id="selector" value="printString"></label>
+<div id="items" class="list"></div>
+</section>
+<section>
+<h2>BridgeRoot and Codegen</h2>
+<div class="actions">
+<button onclick="callApi('/api/doctor?live=1')">Doctor Live</button>
+<button onclick="callApi('/api/status')">Status</button>
+<button onclick="callApi('/api/bridge/root')">BridgeRoot</button>
+<button onclick="loadBridgeKeys()">Keys</button>
+<button onclick="callApi('/api/codegen/check?config=examples/codegen/gemstone-rs.codegen')">Codegen Check</button>
+<button onclick="callApi('/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen')">Codegen Diff</button>
+</div>
+<div class="row">
+<label>Bridge key<input id="bridgeKey" value="WorkbenchDraft"></label>
+<label>Bridge value<input id="bridgeValue" value="hello"></label>
+</div>
+<div class="actions">
+<button class="secondary" onclick="getBridgeValue()">Get</button>
+<button class="secondary" onclick="putBridgeValue()">Put String</button>
+<button class="secondary" onclick="removeBridgeValue()">Remove</button>
+</div>
+<pre id="output">Ready.</pre>
+</section>
+</main>
+<script>
+const out = document.getElementById('output');
+const items = document.getElementById('items');
+function q(id) { return encodeURIComponent(document.getElementById(id).value); }
+async function callApi(path) {
+  out.textContent = 'GET ' + path + '\n';
+  const response = await fetch(path);
+  const text = await response.text();
+  try { out.textContent += JSON.stringify(JSON.parse(text), null, 2); }
+  catch { out.textContent += text; }
+}
+function button(label, onClick) {
+  const element = document.createElement('button');
+  element.className = 'item';
+  element.textContent = label;
+  element.onclick = onClick;
+  return element;
+}
+async function list(path, key, onPick) {
+  const response = await fetch(path);
+  const data = await response.json();
+  items.innerHTML = '';
+  out.textContent = JSON.stringify(data, null, 2);
+  for (const value of data[key] || []) items.appendChild(button(value, () => onPick(value)));
+}
+function loadDictionaries() {
+  list('/api/browse/dictionaries', 'dictionaries', value => {
+    document.getElementById('dictionary').value = value;
+    loadClasses();
+  });
+}
+function loadClasses() {
+  list('/api/browse/classes?dictionary=' + q('dictionary'), 'classes', value => {
+    document.getElementById('className').value = value;
+    loadProtocols();
+  });
+}
+function loadProtocols() {
+  list('/api/browse/protocols?class=' + q('className') + '&dictionary=' + q('dictionary'), 'protocols', value => {
+    document.getElementById('protocol').value = value;
+    loadMethods();
+  });
+}
+function loadMethods() {
+  list('/api/browse/methods?class=' + q('className') + '&dictionary=' + q('dictionary') + '&protocol=' + q('protocol'), 'methods', value => {
+    document.getElementById('selector').value = value;
+    loadSource();
+  });
+}
+function loadSource() {
+  callApi('/api/browse/source?class=' + q('className') + '&dictionary=' + q('dictionary') + '&selector=' + q('selector'));
+}
+async function loadBridgeKeys() {
+  const response = await fetch('/api/bridge/keys');
+  const data = await response.json();
+  items.innerHTML = '';
+  out.textContent = JSON.stringify(data, null, 2);
+  for (const key of data.keys || []) {
+    items.appendChild(button(key.printString, () => {
+      document.getElementById('bridgeKey').value = key.printString.replace(/^#/, '');
+      getBridgeValue();
+    }));
+  }
+}
+function getBridgeValue() { callApi('/api/bridge/get?key=' + q('bridgeKey')); }
+function putBridgeValue() { callApi('/api/bridge/put?key=' + q('bridgeKey') + '&value=' + q('bridgeValue')); }
+function removeBridgeValue() { callApi('/api/bridge/remove?key=' + q('bridgeKey')); }
+</script>
 </body>
 </html>"#,
-        config.read_only, config.allow_eval
-    )
+    );
+    html
 }
 
 fn config_json(config: &ExplorerConfig) -> String {

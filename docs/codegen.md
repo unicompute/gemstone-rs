@@ -51,6 +51,11 @@ method = UserGlobals:OkzBooking class>>findById: | args=id | return=Oop
 | `return` | `return=String` | Generates a typed return helper instead of `Value`. |
 | `doc` | `doc=Find by id.` | Writes a Rust doc comment above the generated method. |
 
+When `args` is omitted, codegen now infers useful argument names from selector
+keywords. For example `at:put:` becomes `at, put`, and
+`withCustomer:amount:` becomes `customer, amount`. Provide explicit `args=...`
+when the selector keywords are not good Rust argument names.
+
 Supported return types:
 
 | Config value | Rust return |

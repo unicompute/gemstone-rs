@@ -20,9 +20,17 @@ make vscode-package
 python3 docs/build_pdf_docs.py
 ```
 
+Or use the dry-run release wrapper:
+
+```bash
+DRY_RUN=1 scripts/release_all.sh 0.2.0
+```
+
 `make verify` checks that PDF generation completes and produces non-empty PDF
 files. The release workflow rebuilds and attaches fresh PDFs for the target
 runner because WeasyPrint output can differ byte-for-byte across platforms.
+The VSIX filename uses `vscode-gemstone-rs-workbench/package.json`; the crate
+release tag still uses the workflow `version` input.
 
 ## Publish
 
@@ -66,6 +74,12 @@ For a dry run:
 
 ```bash
 DRY_RUN=1 scripts/publish_crates.sh
+```
+
+Manual end-to-end publishing remains available through the release wrapper:
+
+```bash
+PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.0
 ```
 
 Dry-run mode checks each crate's publish file list locally. The real publish

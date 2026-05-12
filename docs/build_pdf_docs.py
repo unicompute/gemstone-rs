@@ -265,6 +265,8 @@ def main() -> int:
         BuildTarget("codegen", "gemstone-rs Codegen Guide", "Generating checked-in Rust wrappers for GemStone classes", (DOCS_DIR / "codegen.md",), cover),
         BuildTarget("explorer", "gemstone-rs Explorer Guide", "Local HTTP explorer endpoints and safety defaults", (DOCS_DIR / "explorer.md",), cover),
         BuildTarget("vscode-workbench", "gemstone-rs VS Code Workbench", "Sidebar browsing, codegen, and explorer launch workflows", (DOCS_DIR / "vscode-workbench.md",), cover),
+        BuildTarget("performance-safety", "gemstone-rs Performance and Safety", "Benchmark guidance, GCI loading notes, and threading rules", (DOCS_DIR / "performance-safety.md",), cover),
+        BuildTarget("shared-core-integration", "gemstone-rs Shared Core Integration", "How gemstone-py-native can wrap the Rust core", (DOCS_DIR / "shared-core-integration.md",), cover),
         BuildTarget("release-checklist", "gemstone-rs Release Checklist", "Crates, VSIX, GitHub release, and verification steps", (DOCS_DIR / "release-checklist.md",), cover),
         BuildTarget("medium-article", "Talking to GemStone/S from Rust", "A complete article-style guide to gemstone-rs", (DOCS_DIR / "medium-article.md",), cover),
         BuildTarget(
@@ -295,6 +297,8 @@ def main() -> int:
                 DOCS_DIR / "codegen.md",
                 DOCS_DIR / "explorer.md",
                 DOCS_DIR / "vscode-workbench.md",
+                DOCS_DIR / "performance-safety.md",
+                DOCS_DIR / "shared-core-integration.md",
                 DOCS_DIR / "release-checklist.md",
             ),
             cover,

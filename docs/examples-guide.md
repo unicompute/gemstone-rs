@@ -28,6 +28,7 @@ cargo run -p gemstone-rs --example quickstart
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | Eval, `global_put`, `global_get`, string fetch, cleanup. |
 | Eval only | `cargo run -p gemstone-rs --example eval` | Minimal `Session::eval` shape. |
 | Browser API | `cargo run -p gemstone-rs --example browser` | Dictionaries, protocols, methods, and source. |
+| Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | Login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | Commit-on-success and abort-on-error transaction wrapper. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
@@ -41,25 +42,30 @@ cargo run -p gemstone-rs --example quickstart
 | Codegen files | `examples/codegen/` | Config, generated wrappers, check/diff/generate workflow. |
 | Explorer tooling | `examples/tooling/explorer.md` | Local explorer startup and endpoint checks. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
+| CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | Terminal-only browse workflow. |
+| Axum service sketch | `examples/axum-service/README.md` | Recommended web-service shape without adding workspace dependencies. |
 
 ## Suggested Learning Order
 
 1. `hello_gemstone`
 2. `quickstart`
 3. `browser`
-4. `oop_values`
-5. `transactions`
-6. `bridge_root_mapping`
-7. `derive_mapping`
-8. `codegen_preview`
-9. `codegen_workflow`
-10. `generated_wrapper_app`
-11. `generated_mapping_app`
-12. `codegen_discover`
-13. `codegen_discover_mapping`
-14. `examples/codegen/`
-15. `examples/tooling/explorer.md`
-16. `examples/tooling/vscode-workbench.md`
+4. `live_smoke_cookbook`
+5. `oop_values`
+6. `transactions`
+7. `bridge_root_mapping`
+8. `derive_mapping`
+9. `codegen_preview`
+10. `codegen_workflow`
+11. `generated_wrapper_app`
+12. `generated_mapping_app`
+13. `codegen_discover`
+14. `codegen_discover_mapping`
+15. `examples/codegen/`
+16. `examples/tooling/cli-browser-walkthrough.md`
+17. `examples/tooling/explorer.md`
+18. `examples/tooling/vscode-workbench.md`
+19. `examples/axum-service/README.md`
 
 ## Expected Output
 
@@ -77,6 +83,13 @@ GemStoneRsQuickstart: hello from gemstone-rs quickstart
 
 $ cargo run -p gemstone-rs --example generated_wrapper_app
 generated wrapper printString: 7
+
+$ cargo run -p gemstone-rs --example live_smoke_cookbook
+login ok: session <number>
+eval ok: SmallInt(7)
+global round-trip ok
+perform ok: 7
+transaction commit/abort ok
 
 $ cargo run -p gemstone-rs --example bridge_root_mapping
 bridge root: GemStoneRsBridgeRoot
@@ -162,7 +175,6 @@ and Open Docs actions.
 
 These are useful, but should wait until the corresponding APIs are stable:
 
-- a tiny Axum or Actix web service using `gemstone-rs`
-- a read-only class browser CLI walkthrough with captured output
 - a local explorer workflow with screenshots
-- a live smoke cookbook for CI secrets
+- a full Axum or Actix workspace member wired into CI
+- a richer class browser walkthrough with captured output

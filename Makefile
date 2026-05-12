@@ -1,6 +1,7 @@
+VERSION ?= 0.2.0
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify rust-check codegen-check vscode-check vscode-package docs-pdf docs-pdf-check package-gci publish-verify clean-vscode
+.PHONY: verify rust-check codegen-check vscode-check vscode-package docs-pdf docs-pdf-check package-gci publish-verify release-all clean-vscode
 
 verify: rust-check codegen-check vscode-check docs-pdf-check
 
@@ -30,7 +31,10 @@ package-gci:
 	cargo package -p gemstone-gci --no-verify
 
 publish-verify:
-	scripts/publish_verify.sh 0.2.0
+	scripts/publish_verify.sh $(VERSION)
+
+release-all:
+	DRY_RUN=1 scripts/release_all.sh $(VERSION)
 
 clean-vscode:
 	rm -rf vscode-gemstone-rs-workbench/node_modules vscode-gemstone-rs-workbench/*.vsix

@@ -51,6 +51,7 @@ For a source checkout:
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Launch Explorer`
+- `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
 
@@ -65,6 +66,7 @@ root keys in the output panel.
 BridgeRoot writes through the CLI after prompting for a key and value.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
+`Open Explorer Webview` embeds the running loopback explorer inside VS Code.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
 same masked environment and GCI-library checks as the terminal.
 
@@ -78,7 +80,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 - `Codegen Config` also exposes Generate Mapping Config, Preview BridgeRoot,
   List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot Key, and Run
   Generated Mapping Example.
-- `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, and Launch Explorer.
+- `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, Launch Explorer, and
+  Open Explorer Webview.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with
@@ -96,11 +99,5 @@ Or from this directory:
 
 ```bash
 npm ci
-npm run package -- --out gemstone-rs-workbench-0.2.4.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.0.vsix
 ```
-
-## Later
-
-Embedding `gemstone-rs-explorer` as a VS Code webview should be a later feature
-release. The current extension starts the explorer externally and opens the
-local URL.

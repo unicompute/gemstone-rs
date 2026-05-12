@@ -62,13 +62,14 @@ jobs:
         working-directory: vscode-gemstone-rs-workbench
       - run: make verify
       - name: Package VSIX
-        run: make vscode-package VSIX_VERSION=${{ inputs.version }}
+        run: make vscode-package
       - name: Build PDF docs
         run: python docs/build_pdf_docs.py
       - name: Generate release checksums
         run: |
+          VSIX_VERSION="$(node -p "require('./vscode-gemstone-rs-workbench/package.json').version")"
           shasum -a 256 \
-            vscode-gemstone-rs-workbench/gemstone-rs-workbench-${{ inputs.version }}.vsix \
+            "vscode-gemstone-rs-workbench/gemstone-rs-workbench-${VSIX_VERSION}.vsix" \
             docs/pdf/*.pdf > SHA256SUMS
       - name: Publish crates.io
         if: ${{ inputs.publish-crates }}
@@ -81,7 +82,9 @@ jobs:
         working-directory: vscode-gemstone-rs-workbench
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx @vscode/vsce publish --packagePath gemstone-rs-workbench-${{ inputs.version }}.vsix --pat "$VSCE_PAT"
+        run: |
+          VSIX_VERSION="$(node -p "require('./package.json').version")"
+          npx @vscode/vsce publish --packagePath "gemstone-rs-workbench-${VSIX_VERSION}.vsix" --pat "$VSCE_PAT"
       - name: Build release notes
         run: |
           cat > release-notes.md <<'NOTES'
@@ -120,10 +123,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VSIX_VERSION="$(node -p "require('./vscode-gemstone-rs-workbench/package.json').version")"
           git tag "v${{ inputs.version }}" || true
           git push origin "v${{ inputs.version }}" || true
           gh release create "v${{ inputs.version }}" \
-            "vscode-gemstone-rs-workbench/gemstone-rs-workbench-${{ inputs.version }}.vsix" \
+            "vscode-gemstone-rs-workbench/gemstone-rs-workbench-${VSIX_VERSION}.vsix" \
             "SHA256SUMS" \
             docs/pdf/*.pdf \
             --title "gemstone-rs v${{ inputs.version }}" \

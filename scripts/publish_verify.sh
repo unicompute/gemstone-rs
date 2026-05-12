@@ -7,6 +7,7 @@ EXTENSION="${VSCODE_EXTENSION:-gemstone-rs-workbench}"
 REPO="${GITHUB_REPOSITORY:-unicompute/gemstone-rs}"
 VERIFY_GITHUB_RELEASE="${VERIFY_GITHUB_RELEASE:-1}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VSIX_VERSION="$(node -e "console.log(require('$ROOT/vscode-gemstone-rs-workbench/package.json').version)")"
 INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/gemstone-rs-install.XXXXXX")"
 
 cleanup() {
@@ -70,7 +71,7 @@ check_marketplace_version
 
 check_github_release_assets() {
   local tag="${GITHUB_RELEASE_TAG:-v${VERSION}}"
-  local vsix="gemstone-rs-workbench-${VERSION}.vsix"
+  local vsix="gemstone-rs-workbench-${VSIX_VERSION}.vsix"
   printf 'checking GitHub release %s assets... ' "$tag"
   local assets
   assets="$(gh release view "$tag" --repo "$REPO" --json assets --jq '.assets[].name')"

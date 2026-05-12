@@ -32,6 +32,8 @@ crate Rust application developers should use.
 | Codegen | [docs/codegen.md](docs/codegen.md) |
 | Explorer | [docs/explorer.md](docs/explorer.md) |
 | VS Code workbench | [docs/vscode-workbench.md](docs/vscode-workbench.md) |
+| Performance and safety | [docs/performance-safety.md](docs/performance-safety.md) |
+| Shared core integration | [docs/shared-core-integration.md](docs/shared-core-integration.md) |
 | Medium article | [docs/medium-article.md](docs/medium-article.md) |
 | Funny introduction | [docs/funny-introduction/README.md](docs/funny-introduction/README.md) |
 | PDFs | [docs/pdf/](docs/pdf/) |
@@ -135,6 +137,7 @@ export GS_PASSWORD=swordfish
 cargo run -p gemstone-rs --example hello_gemstone
 cargo run -p gemstone-rs --example quickstart
 cargo run -p gemstone-rs --example browser
+cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
@@ -144,6 +147,11 @@ cargo run -p gemstone-rs --example generated_wrapper_app
 cargo run -p gemstone-rs --example generated_mapping_app
 cargo run -p gemstone-rs --example codegen_discover
 ```
+
+Additional walkthroughs:
+
+- [CLI browser walkthrough](examples/tooling/cli-browser-walkthrough.md)
+- [Axum service sketch](examples/axum-service/README.md)
 
 See [examples/README.md](examples/README.md) and
 [docs/examples-guide.md](docs/examples-guide.md) for the full map.
@@ -290,10 +298,10 @@ Rust CLI and open output/preview editors:
 ```
 
 Commands include setup verification, eval, browse dictionaries/classes,
-codegen init/discover/preview/diff/check/generate, and launch explorer. The
-GemStone RS activity bar view browses dictionaries, classes, protocols, methods,
-and the configured codegen actions. `Codegen Generate` shows the generated diff
-before writing files.
+codegen init/discover/preview/diff/check/generate, launch explorer, and open an
+embedded explorer webview. The GemStone RS activity bar view browses
+dictionaries, classes, protocols, methods, and the configured codegen actions.
+`Codegen Generate` shows the generated diff before writing files.
 
 ## Threading
 
@@ -319,7 +327,7 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.4.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.0.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:

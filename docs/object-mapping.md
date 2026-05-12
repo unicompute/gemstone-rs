@@ -246,7 +246,11 @@ When read-back fails, mapping errors include field context:
 
 ```text
 field amount expected GemStone value type SmallInt, got Oop 1234
+field tags[2] expected GemStone value type String, got OOP 1234
 ```
+
+Array read-back now reports the failing element index, which is important when
+generated mappings read back nested payloads from a live stone.
 
 ## Key Policy
 

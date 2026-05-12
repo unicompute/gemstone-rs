@@ -348,7 +348,11 @@ impl<T: BridgeFieldRead> BridgeFieldRead for Vec<T> {
         for index in 1..=size {
             let index_oop = session.smallint_oop(index);
             let value_oop = session.perform_oop(oop, "at:", &[index_oop])?;
-            values.push(T::read_bridge_oop(session, value_oop, context)?);
+            values.push(T::read_bridge_oop(
+                session,
+                value_oop,
+                &context.index(index, T::expected_type()),
+            )?);
         }
         Ok(values)
     }
@@ -672,6 +676,14 @@ impl BridgeFieldContext {
             actual,
         }
     }
+
+    fn index(&self, index: i64, expected: &'static str) -> Self {
+        Self {
+            key: format!("{}[{index}]", self.key),
+            key_type: self.key_type,
+            expected,
+        }
+    }
 }
 
 fn unexpected_field(key: &str, expected: &'static str, actual: Value) -> Error {
@@ -706,4 +718,22 @@ fn dictionary_keys(session: &mut Session, dictionary: Oop) -> Result<Vec<BridgeK
         });
     }
     Ok(summaries)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nested_array_context_reports_element_index_and_expected_type() {
+        let context = BridgeFieldContext::new("tags", BridgeKeyType::String, "Array");
+        let err = context
+            .index(2, "String")
+            .unexpected("OOP 1234".to_string())
+            .to_string();
+
+        assert!(err.contains("tags[2]"));
+        assert!(err.contains("String"));
+        assert!(err.contains("OOP 1234"));
+    }
 }

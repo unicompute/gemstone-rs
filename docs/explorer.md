@@ -23,6 +23,14 @@ Open:
 http://127.0.0.1:8787/
 ```
 
+The home page is a small browser UI over the same JSON endpoints. It can:
+
+- browse dictionaries, classes, protocols, methods, and source
+- run doctor/status checks
+- inspect BridgeRoot and list keys
+- preview codegen check/diff output
+- put/remove simple BridgeRoot strings when `--allow-write` is enabled
+
 Screenshot:
 
 ![gemstone-rs explorer home](assets/explorer-home.png)
@@ -163,7 +171,6 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- richer frontend over the current HTTP endpoints
 - generated wrapper preview and file diff UI
 - explicit codegen selection config
-- optional VS Code webview embedding
+- deeper VS Code webview integration

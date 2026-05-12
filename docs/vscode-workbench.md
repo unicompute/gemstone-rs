@@ -68,6 +68,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Verify Setup
 - Eval Smalltalk
 - Launch Explorer
+- Open Explorer Webview
 
 ## Command Palette
 
@@ -91,6 +92,7 @@ Commands:
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Launch Explorer`
+- `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
 
@@ -150,13 +152,29 @@ Use `GemStone RS: Run Generated Mapping Example` to run:
 cargo run -p gemstone-rs --example generated_mapping_app
 ```
 
+## Embedded Explorer Webview
+
+Use `GemStone RS: Launch Explorer` first. It starts `gemstone-rs-explorer` in a
+terminal and opens the browser. Then use `GemStone RS: Open Explorer Webview`
+to embed the local explorer inside VS Code.
+
+The webview points at:
+
+```text
+http://127.0.0.1:8787/
+```
+
+It is still the same loopback-only explorer process. If the explorer is not
+running, the webview will show a connection error and the output panel will show
+the URL to start.
+
 ## Develop the Extension
 
 ```bash
 cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
-npm run package -- --out gemstone-rs-workbench-0.2.4.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.0.vsix
 ```
 
 From the repository root:

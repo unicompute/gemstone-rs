@@ -34,6 +34,7 @@ function activate(context) {
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
+  register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
 }
@@ -151,6 +152,7 @@ class GemStoneTreeProvider {
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
+        actionNode("Open Explorer Webview", "gemstoneRs.openExplorerWebview"),
       ];
     }
 
@@ -521,6 +523,50 @@ function launchExplorer() {
   vscode.env.openExternal(vscode.Uri.parse(`http://${cfg.explorerHost}:${cfg.explorerPort}/`));
 }
 
+function openExplorerWebview() {
+  const cfg = settings();
+  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/`;
+  const panel = vscode.window.createWebviewPanel(
+    "gemstoneRsExplorerWebview",
+    "gemstone-rs Explorer",
+    vscode.ViewColumn.Active,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    }
+  );
+  panel.webview.html = explorerWebviewHtml(url);
+  output.clear();
+  output.appendLine(`Opened gemstone-rs Explorer webview for ${url}`);
+  output.appendLine("Run GemStone RS: Launch Explorer first if the webview cannot connect.");
+  output.show(true);
+}
+
+function explorerWebviewHtml(url) {
+  const escaped = escapeHtml(url);
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gemstone-rs Explorer</title>
+<style>
+body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--vscode-foreground); background: var(--vscode-editor-background); }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--vscode-panel-border); }
+a { color: var(--vscode-textLink-foreground); }
+iframe { display: block; width: 100vw; height: calc(100vh - 42px); border: 0; background: white; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>gemstone-rs Explorer</strong>
+  <a href="${escaped}">Open in Browser</a>
+</div>
+<iframe src="${escaped}" title="gemstone-rs Explorer"></iframe>
+</body>
+</html>`;
+}
+
 async function openCodegenDocs() {
   const cfg = settings();
   const docsPath = resolvePath("examples/codegen/README.md", cfg.cwd);
@@ -626,6 +672,14 @@ function shellQuote(value) {
     return String(value);
   }
   return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 module.exports = {

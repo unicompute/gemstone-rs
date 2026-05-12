@@ -418,6 +418,11 @@ Useful endpoints:
 /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 ```
 
+The explorer home page is now a usable UI rather than just a list of links. It
+lets you browse dictionaries/classes/protocols/methods/source, inspect
+BridgeRoot, list keys, run codegen checks, and exercise write-gated
+BridgeRoot edits from a browser.
+
 The explorer binds to loopback by default, starts read-only, and requires
 explicit flags for eval and write operations.
 
@@ -433,8 +438,10 @@ The VS Code extension adds a GemStone RS sidebar:
 - methods
 - method source
 - BridgeRoot key listing
+- BridgeRoot put/remove smoke actions
 - codegen preview/diff/check/generate
 - explorer launch
+- embedded explorer webview
 
 For a source checkout:
 
@@ -449,6 +456,10 @@ For a source checkout:
 The extension stays thin. The Rust CLI remains the contract, which keeps the
 tooling testable outside VS Code.
 
+For web services, keep GemStone calls on a blocking worker and treat `Session`
+as thread-local. The repository includes an Axum service sketch that shows the
+recommended shape without adding Axum as a core dependency.
+
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
 diagnostics, and release automation can all agree.
@@ -462,6 +473,7 @@ From the repository root:
 ```bash
 cargo run -p gemstone-rs --example quickstart
 cargo run -p gemstone-rs --example browser
+cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example codegen_workflow
@@ -471,6 +483,7 @@ For CI and release confidence:
 
 ```bash
 make verify
+DRY_RUN=1 scripts/release_all.sh 0.2.0
 scripts/publish_verify.sh 0.2.0
 ```
 
@@ -483,3 +496,7 @@ developer tools to talk to GemStone/S directly. Use `gemstone-py` when your
 application is Python-native. The shared design direction is clear: keep the
 low-level bridge small, make the session model explicit, and build higher-level
 tooling on top of the same stable API.
+
+The long-term native direction is for `gemstone-py-native` to become a thin
+PyO3 wrapper over the Rust core. That would make Rust the shared GCI bridge and
+Python the ergonomic Python API on top.

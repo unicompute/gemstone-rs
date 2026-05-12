@@ -34,6 +34,7 @@ file.
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | You want the smallest live read/write round trip. |
 | Eval | `cargo run -p gemstone-rs --example eval` | You want only the `Session::eval("3 + 4")` shape. |
 | Browser | `cargo run -p gemstone-rs --example browser` | You want dictionaries, protocols, methods, and method source. |
+| Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | You want login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | You want commit-on-success and abort-on-error behavior. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
@@ -47,6 +48,8 @@ file.
 | Codegen config | `examples/codegen/` | You want checked-in generated wrappers and CLI check/generate commands. |
 | Explorer tooling | `examples/tooling/explorer.md` | You want to prove the local HTTP explorer endpoints. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | You want to prove sidebar browsing and codegen actions. |
+| CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | You want a terminal-only class browser workflow. |
+| Axum service sketch | `examples/axum-service/README.md` | You want the recommended shape for a Rust web service. |
 
 ## Installed CLI Equivalents
 
@@ -98,6 +101,13 @@ GemStoneRsQuickstart: hello from gemstone-rs quickstart
 $ cargo run -p gemstone-rs --example generated_wrapper_app
 generated wrapper printString: 7
 
+$ cargo run -p gemstone-rs --example live_smoke_cookbook
+login ok: session <number>
+eval ok: SmallInt(7)
+global round-trip ok
+perform ok: 7
+transaction commit/abort ok
+
 $ cargo run -p gemstone-rs --example bridge_root_mapping
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
@@ -122,10 +132,8 @@ diff after generate: clean
 
 Good later additions, once the corresponding surfaces are stable:
 
-- a tiny Axum or Actix web service using `gemstone-rs`
-- a read-only class browser CLI walkthrough with captured output
 - a local explorer workflow with screenshots
-- a live smoke cookbook for CI secrets
+- a full Axum or Actix project wired into CI
 
 ## Scope
 

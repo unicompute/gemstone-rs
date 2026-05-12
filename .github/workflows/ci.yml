@@ -68,7 +68,7 @@ jobs:
         run: python -m pip install weasyprint
       - run: npm ci
         working-directory: vscode-gemstone-rs-workbench
-      - run: make verify
+      - run: DRY_RUN=1 scripts/release_all.sh 0.2.0
 
   live:
     name: Live GemStone

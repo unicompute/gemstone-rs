@@ -14,7 +14,7 @@ code --install-extension unicompute.gemstone-rs-workbench
 From a local VSIX:
 
 ```bash
-code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.4.vsix --force
+code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.0.vsix --force
 ```
 
 ## Source Checkout Settings
@@ -77,6 +77,8 @@ From the `Explorer` tree:
 1. Run `Verify Setup`.
 2. Run `Eval Smalltalk` with `3 + 4`.
 3. Run `Launch Explorer`.
+4. Run `Open Explorer Webview`.
 
 `Launch Explorer` starts `gemstone-rs-explorer` in a VS Code terminal and opens
-the loopback URL.
+the loopback URL. `Open Explorer Webview` embeds the running local explorer in a
+VS Code editor tab.

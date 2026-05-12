@@ -496,15 +496,9 @@ impl MethodSpec {
         rust_fn_name(&self.selector)
     }
 
-    fn arg_count(&self) -> usize {
-        self.selector.matches(':').count()
-    }
-
     fn arg_names(&self) -> Vec<String> {
         if self.args.is_empty() {
-            (0..self.arg_count())
-                .map(|index| format!("arg{index}"))
-                .collect()
+            inferred_selector_args(&self.selector)
         } else {
             self.args.iter().map(|arg| rust_fn_name(arg)).collect()
         }
@@ -1022,6 +1016,35 @@ fn first_source_line(source: &str) -> Option<String> {
         .map(|line| line.chars().take(120).collect())
 }
 
+fn inferred_selector_args(selector: &str) -> Vec<String> {
+    if !selector.contains(':') {
+        return Vec::new();
+    }
+    let keywords: Vec<&str> = selector
+        .split(':')
+        .take_while(|part| !part.is_empty())
+        .collect();
+    if keywords.is_empty() {
+        return Vec::new();
+    }
+    keywords
+        .iter()
+        .enumerate()
+        .map(|(index, keyword)| {
+            let candidate = keyword
+                .strip_prefix("with")
+                .filter(|rest| !rest.is_empty())
+                .unwrap_or(keyword);
+            let name = rust_fn_name(candidate);
+            if name.is_empty() || name == "perform" {
+                format!("arg{index}")
+            } else {
+                name
+            }
+        })
+        .collect()
+}
+
 fn simple_diff(path: &Path, current: &str, generated: &str) -> String {
     let mut diff = String::new();
     diff.push_str(&format!("--- {}\n", path.display()));
@@ -1194,6 +1217,24 @@ mod tests {
         assert_eq!(rust_fn_name("at:put:"), "at_put");
         assert_eq!(rust_fn_name("class"), "class");
         assert_eq!(rust_fn_name("type"), "type_");
+    }
+
+    #[test]
+    fn infers_method_argument_names_from_selector_keywords() -> Result<()> {
+        let method = MethodSpec::parse("Order>>findById:ifAbsent:").unwrap();
+        assert_eq!(method.arg_names(), vec!["find_by_id", "if_absent"]);
+
+        let generated = generate(&Config::parse(
+            "class = Object\nmethod = Object>>at:put:\nmethod = Object>>withCustomer:amount:\n",
+            None,
+        )?);
+        assert!(generated
+            .source
+            .contains("pub fn at_put(&mut self, at: Oop, put: Oop)"));
+        assert!(generated
+            .source
+            .contains("pub fn with_customer_amount(&mut self, customer: Oop, amount: Oop)"));
+        Ok(())
     }
 
     #[test]
