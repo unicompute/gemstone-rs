@@ -77,6 +77,14 @@ you want to point directly at a specific `libgcirpc` file.
 `Session` is deliberately not `Send` or `Sync`. Keep one session on one thread
 until GemStone GCI threading behavior is proven safe for broader sharing.
 
+Generate initial Rust wrappers with the CLI:
+
+```bash
+cargo run -p gemstone-rs-cli -- codegen init
+cargo run -p gemstone-rs-cli -- codegen preview gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen generate gemstone-rs.codegen
+```
+
 Run the opt-in live smoke test with:
 
 ```bash

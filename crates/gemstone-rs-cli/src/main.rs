@@ -1,10 +1,13 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
+    codegen::{self, DEFAULT_CONFIG_PATH},
     Config, Error as GemStoneError, Oop, Session, Value,
 };
 use std::env;
 use std::error::Error as StdError;
 use std::fmt;
+use std::fs;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -92,12 +95,41 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("printString: {}", session.fetch_string(printed)?);
             Ok(())
         }
-        Command::CodegenCheck => {
-            println!("codegen check is planned; no generator is wired into gemstone-rs yet");
+        Command::CodegenInit { config } => {
+            if config.exists() {
+                return Err(CliError::CodegenCheck(format!(
+                    "{} already exists",
+                    config.display()
+                )));
+            }
+            fs::write(&config, codegen::sample_config())?;
+            println!("wrote {}", config.display());
             Ok(())
         }
-        Command::CodegenGenerate => {
-            println!("codegen generate is planned; no generator is wired into gemstone-rs yet");
+        Command::CodegenPreview { config } => {
+            let config = codegen::Config::from_file(config)?;
+            print!("{}", codegen::generate(&config).source);
+            Ok(())
+        }
+        Command::CodegenCheck { config } => {
+            let config_path = config;
+            let config = codegen::Config::from_file(&config_path)?;
+            let report = codegen::check(&config)?;
+            if report.up_to_date {
+                println!("codegen ok: {} is up to date", report.output.display());
+                Ok(())
+            } else {
+                Err(CliError::CodegenCheck(format!(
+                    "{} is stale or missing; run `gemstone-rs codegen generate {}`",
+                    report.output.display(),
+                    config_path.display()
+                )))
+            }
+        }
+        Command::CodegenGenerate { config } => {
+            let config = codegen::Config::from_file(config)?;
+            let generated = codegen::generate_to_file(&config)?;
+            println!("generated {}", generated.output.display());
             Ok(())
         }
     }
@@ -158,8 +190,18 @@ enum Command {
     InspectOop {
         oop: Oop,
     },
-    CodegenCheck,
-    CodegenGenerate,
+    CodegenInit {
+        config: PathBuf,
+    },
+    CodegenPreview {
+        config: PathBuf,
+    },
+    CodegenCheck {
+        config: PathBuf,
+    },
+    CodegenGenerate {
+        config: PathBuf,
+    },
 }
 
 fn parse_command(args: &[String]) -> Result<Command, CliError> {
@@ -185,9 +227,21 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             _ => Err(CliError::usage("expected: inspect oop <raw-oop>")),
         },
         "codegen" => match args.get(1).map(String::as_str) {
-            Some("check") => Ok(Command::CodegenCheck),
-            Some("generate") => Ok(Command::CodegenGenerate),
-            _ => Err(CliError::usage("expected: codegen check|generate")),
+            Some("init") => Ok(Command::CodegenInit {
+                config: optional_path(args.get(2)),
+            }),
+            Some("preview") => Ok(Command::CodegenPreview {
+                config: optional_path(args.get(2)),
+            }),
+            Some("check") => Ok(Command::CodegenCheck {
+                config: optional_path(args.get(2)),
+            }),
+            Some("generate") => Ok(Command::CodegenGenerate {
+                config: optional_path(args.get(2)),
+            }),
+            _ => Err(CliError::usage(
+                "expected: codegen init|preview|check|generate",
+            )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
     }
@@ -271,6 +325,12 @@ fn required_value(
         .ok_or_else(|| CliError::usage(message))
 }
 
+fn optional_path(value: Option<&String>) -> PathBuf {
+    value
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH))
+}
+
 fn usage() -> &'static str {
     "usage:
   gemstone-rs eval <smalltalk>
@@ -280,14 +340,19 @@ fn usage() -> &'static str {
   gemstone-rs browse methods <class> [protocol] [dictionary] [--meta]
   gemstone-rs browse source <class> [selector] [dictionary] [--meta]
   gemstone-rs inspect oop <raw-oop>
-  gemstone-rs codegen check
-  gemstone-rs codegen generate"
+  gemstone-rs codegen init [config]
+  gemstone-rs codegen preview [config]
+  gemstone-rs codegen check [config]
+  gemstone-rs codegen generate [config]"
 }
 
 #[derive(Debug)]
 enum CliError {
     Usage(String),
     GemStone(GemStoneError),
+    Codegen(codegen::Error),
+    CodegenCheck(String),
+    Io(std::io::Error),
 }
 
 impl CliError {
@@ -301,6 +366,9 @@ impl fmt::Display for CliError {
         match self {
             Self::Usage(message) => write!(f, "{message}"),
             Self::GemStone(err) => write!(f, "{err}"),
+            Self::Codegen(err) => write!(f, "{err}"),
+            Self::CodegenCheck(message) => write!(f, "{message}"),
+            Self::Io(err) => write!(f, "{err}"),
         }
     }
 }
@@ -310,6 +378,9 @@ impl StdError for CliError {
         match self {
             Self::Usage(_) => None,
             Self::GemStone(err) => Some(err),
+            Self::Codegen(err) => Some(err),
+            Self::CodegenCheck(_) => None,
+            Self::Io(err) => Some(err),
         }
     }
 }
@@ -317,6 +388,18 @@ impl StdError for CliError {
 impl From<GemStoneError> for CliError {
     fn from(value: GemStoneError) -> Self {
         Self::GemStone(value)
+    }
+}
+
+impl From<codegen::Error> for CliError {
+    fn from(value: codegen::Error) -> Self {
+        Self::Codegen(value)
+    }
+}
+
+impl From<std::io::Error> for CliError {
+    fn from(value: std::io::Error) -> Self {
+        Self::Io(value)
     }
 }
 
@@ -398,12 +481,28 @@ mod tests {
     #[test]
     fn parses_codegen_commands() {
         assert_eq!(
-            parse_command(&args(&["codegen", "check"])).unwrap(),
-            Command::CodegenCheck
+            parse_command(&args(&["codegen", "init"])).unwrap(),
+            Command::CodegenInit {
+                config: PathBuf::from(DEFAULT_CONFIG_PATH)
+            }
         );
         assert_eq!(
-            parse_command(&args(&["codegen", "generate"])).unwrap(),
-            Command::CodegenGenerate
+            parse_command(&args(&["codegen", "preview", "demo.codegen"])).unwrap(),
+            Command::CodegenPreview {
+                config: PathBuf::from("demo.codegen")
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "check"])).unwrap(),
+            Command::CodegenCheck {
+                config: PathBuf::from(DEFAULT_CONFIG_PATH)
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "generate", "demo.codegen"])).unwrap(),
+            Command::CodegenGenerate {
+                config: PathBuf::from("demo.codegen")
+            }
         );
     }
 }

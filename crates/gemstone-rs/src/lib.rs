@@ -6,6 +6,7 @@
 //! marshalling for nil, booleans, small integers, characters, and raw OOPs.
 
 pub mod browser;
+pub mod codegen;
 
 pub use gemstone_gci::Oop;
 use gemstone_gci::{

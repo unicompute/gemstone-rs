@@ -12,8 +12,10 @@ cargo run -p gemstone-rs-cli -- browse protocols Object
 cargo run -p gemstone-rs-cli -- browse methods Object "-- all --"
 cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
-cargo run -p gemstone-rs-cli -- codegen check
-cargo run -p gemstone-rs-cli -- codegen generate
+cargo run -p gemstone-rs-cli -- codegen init
+cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 ```
 
 The CLI uses the same GemStone environment variables as the library:

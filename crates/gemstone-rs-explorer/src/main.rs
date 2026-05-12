@@ -1,5 +1,6 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
+    codegen::{self, DEFAULT_CONFIG_PATH},
     Config, Oop, Session, Value,
 };
 use std::env;
@@ -7,6 +8,7 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -194,14 +196,25 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 value_json(session, value)
             })
         }
-        "/api/codegen/check" => Response::json(
-            501,
-            r#"{"status":"planned","message":"codegen check is not wired yet"}"#.to_string(),
+        "/api/codegen/sample" => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}"}}"#,
+                escape_json(codegen::sample_config())
+            ),
         ),
-        "/api/codegen/generate" => Response::json(
-            501,
-            r#"{"status":"planned","message":"codegen generate is not wired yet"}"#.to_string(),
-        ),
+        "/api/codegen/preview" => codegen_preview_response(&route),
+        "/api/codegen/check" => codegen_check_response(&route),
+        "/api/codegen/generate" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"codegen generate disabled; restart with --allow-write"}"#
+                        .to_string(),
+                );
+            }
+            codegen_generate_response(&route)
+        }
         _ => Response::json(404, r#"{"error":"not found"}"#.to_string()),
     }
 }
@@ -255,6 +268,72 @@ fn bool_query(value: Option<&str>) -> bool {
     matches!(
         value.map(str::trim).map(str::to_ascii_lowercase).as_deref(),
         Some("1" | "true" | "yes" | "on")
+    )
+}
+
+fn codegen_config_path(route: &Route) -> PathBuf {
+    route
+        .non_empty_query("config")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH))
+}
+
+fn codegen_preview_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    match codegen::Config::from_file(&path).map(|config| codegen::generate(&config)) {
+        Ok(generated) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","output":"{}","source":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&generated.output.display().to_string()),
+                escape_json(&generated.source)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_check_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    match codegen::Config::from_file(&path).and_then(|config| codegen::check(&config)) {
+        Ok(report) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","output":"{}","exists":{},"upToDate":{}}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&report.output.display().to_string()),
+                report.exists,
+                report.up_to_date
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_generate_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    match codegen::Config::from_file(&path).and_then(|config| codegen::generate_to_file(&config)) {
+        Ok(generated) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","output":"{}","bytes":{}}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&generated.output.display().to_string()),
+                generated.source.len()
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_error_response(err: codegen::Error) -> Response {
+    Response::json(
+        500,
+        format!(
+            r#"{{"success":false,"error":"{}"}}"#,
+            escape_json(&err.to_string())
+        ),
     )
 }
 
@@ -443,6 +522,9 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/browse/protocols?class=Object">/api/browse/protocols?class=Object</a></li>
 <li><a href="/api/browse/methods?class=Object&amp;protocol=--%20all%20--">/api/browse/methods?class=Object&amp;protocol=-- all --</a></li>
 <li><a href="/api/browse/source?class=Object">/api/browse/source?class=Object</a></li>
+<li><a href="/api/codegen/sample">/api/codegen/sample</a></li>
+<li><a href="/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen">/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen</a></li>
+<li><a href="/api/codegen/check?config=examples/codegen/gemstone-rs.codegen">/api/codegen/check?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
 </ul>
 <p>read_only={} allow_eval={}</p>
@@ -655,5 +737,25 @@ mod tests {
             "slash\\".to_string(),
         ]);
         assert_eq!(json, r#"["plain","quote\"newline\n","slash\\"]"#);
+    }
+
+    #[test]
+    fn codegen_sample_endpoint_returns_config_text() {
+        let response = handle_request(
+            "GET /api/codegen/sample HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains("gemstone-rs codegen config"));
+    }
+
+    #[test]
+    fn codegen_generate_is_disabled_by_default() {
+        let response = handle_request(
+            "GET /api/codegen/generate HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 403);
+        assert!(response.body.contains("allow-write"));
     }
 }

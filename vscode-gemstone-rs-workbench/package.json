@@ -1,0 +1,123 @@
+{
+  "name": "gemstone-rs-workbench",
+  "displayName": "gemstone-rs Workbench",
+  "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
+  "version": "0.1.0",
+  "publisher": "unicompute",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unicompute/gemstone-rs.git",
+    "directory": "vscode-gemstone-rs-workbench"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onCommand:gemstoneRs.verifySetup",
+    "onCommand:gemstoneRs.eval",
+    "onCommand:gemstoneRs.browseDictionaries",
+    "onCommand:gemstoneRs.browseClasses",
+    "onCommand:gemstoneRs.codegenInit",
+    "onCommand:gemstoneRs.codegenPreview",
+    "onCommand:gemstoneRs.codegenCheck",
+    "onCommand:gemstoneRs.codegenGenerate",
+    "onCommand:gemstoneRs.launchExplorer",
+    "onCommand:gemstoneRs.openCodegenDocs"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "gemstoneRs.verifySetup",
+        "title": "GemStone RS: Verify Setup"
+      },
+      {
+        "command": "gemstoneRs.eval",
+        "title": "GemStone RS: Eval Smalltalk"
+      },
+      {
+        "command": "gemstoneRs.browseDictionaries",
+        "title": "GemStone RS: Browse Dictionaries"
+      },
+      {
+        "command": "gemstoneRs.browseClasses",
+        "title": "GemStone RS: Browse Classes"
+      },
+      {
+        "command": "gemstoneRs.codegenInit",
+        "title": "GemStone RS: Codegen Init"
+      },
+      {
+        "command": "gemstoneRs.codegenPreview",
+        "title": "GemStone RS: Codegen Preview"
+      },
+      {
+        "command": "gemstoneRs.codegenCheck",
+        "title": "GemStone RS: Codegen Check"
+      },
+      {
+        "command": "gemstoneRs.codegenGenerate",
+        "title": "GemStone RS: Codegen Generate"
+      },
+      {
+        "command": "gemstoneRs.launchExplorer",
+        "title": "GemStone RS: Launch Explorer"
+      },
+      {
+        "command": "gemstoneRs.openCodegenDocs",
+        "title": "GemStone RS: Open Codegen Docs"
+      }
+    ],
+    "configuration": {
+      "title": "gemstone-rs Workbench",
+      "properties": {
+        "gemstoneRs.cliPath": {
+          "type": "string",
+          "default": "gemstone-rs",
+          "description": "Path to the gemstone-rs CLI binary. Ignored when gemstoneRs.useCargo is true."
+        },
+        "gemstoneRs.explorerPath": {
+          "type": "string",
+          "default": "gemstone-rs-explorer",
+          "description": "Path to the gemstone-rs explorer binary. Ignored when gemstoneRs.useCargo is true."
+        },
+        "gemstoneRs.checkoutPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional gemstone-rs checkout path used as working directory and for cargo-based commands."
+        },
+        "gemstoneRs.useCargo": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run commands through cargo run -p gemstone-rs-cli / gemstone-rs-explorer."
+        },
+        "gemstoneRs.codegenConfig": {
+          "type": "string",
+          "default": "gemstone-rs.codegen",
+          "description": "Default gemstone-rs codegen config path."
+        },
+        "gemstoneRs.explorerHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host for the local gemstone-rs explorer."
+        },
+        "gemstoneRs.explorerPort": {
+          "type": "number",
+          "default": 8787,
+          "description": "Port for the local gemstone-rs explorer."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "check": "node --check src/extension.js",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0"
+  }
+}

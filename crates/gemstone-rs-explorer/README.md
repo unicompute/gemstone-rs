@@ -22,6 +22,9 @@ http://127.0.0.1:8787/api/browse/classes?dictionary=UserGlobals
 http://127.0.0.1:8787/api/browse/protocols?class=Object
 http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
+http://127.0.0.1:8787/api/codegen/sample
+http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
 
@@ -37,7 +40,6 @@ http://127.0.0.1:8787/api/eval?source=3%20%2B%204
 
 Planned next steps:
 
-- preview Rust/Python codegen output
 - compare generated output against files
 - add a richer frontend once the API endpoints are stable
 
@@ -51,4 +53,13 @@ GET /api/browse/classes?dictionary=UserGlobals
 GET /api/browse/protocols?class=Object&meta=0
 GET /api/browse/methods?class=Object&protocol=--%20all%20--&meta=0
 GET /api/browse/source?class=Object&selector=printString&meta=0
+GET /api/codegen/sample
+GET /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/check?config=examples/codegen/gemstone-rs.codegen
+```
+
+Codegen generation is write-gated. Start with `--allow-write` before using:
+
+```text
+GET /api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
 ```
