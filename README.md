@@ -81,6 +81,24 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
+## Publishing
+
+The crates must be published in dependency order:
+
+```bash
+cargo publish -p gemstone-gci
+cargo publish -p gemstone-rs
+cargo publish -p gemstone-rs-cli
+```
+
+Before `gemstone-gci` is published, `cargo package --workspace` is expected to
+fail when it validates `gemstone-rs` against the crates.io index. Verify the
+leaf crate first with:
+
+```bash
+cargo package -p gemstone-gci --no-verify
+```
+
 Run the opt-in live smoke test with:
 
 ```bash
