@@ -18,6 +18,10 @@ Then open:
 http://127.0.0.1:8787/
 http://127.0.0.1:8787/api/status
 http://127.0.0.1:8787/api/browse/dictionaries
+http://127.0.0.1:8787/api/browse/classes?dictionary=UserGlobals
+http://127.0.0.1:8787/api/browse/protocols?class=Object
+http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
+http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
 
@@ -33,7 +37,18 @@ http://127.0.0.1:8787/api/eval?source=3%20%2B%204
 
 Planned next steps:
 
-- browse classes, methods, protocols, and source with structured JSON
 - preview Rust/Python codegen output
 - compare generated output against files
 - add a richer frontend once the API endpoints are stable
+
+Browse endpoints are read-only. They use the active user's symbol list and the
+same dictionary/class lookup convention as the Python GemStone database
+explorer:
+
+```text
+GET /api/browse/dictionaries
+GET /api/browse/classes?dictionary=UserGlobals
+GET /api/browse/protocols?class=Object&meta=0
+GET /api/browse/methods?class=Object&protocol=--%20all%20--&meta=0
+GET /api/browse/source?class=Object&selector=printString&meta=0
+```

@@ -40,6 +40,23 @@ fn main() -> gemstone_rs::Result<()> {
 }
 ```
 
+Class-browser operations are available through the reusable library API used by
+both the CLI and explorer:
+
+```rust
+use gemstone_rs::{browser::Browser, Config, Session};
+
+let config = Config::from_env()?;
+let mut session = Session::login(config)?;
+let mut browser = Browser::new(&mut session);
+
+let dictionaries = browser.dictionaries()?;
+let classes = browser.classes("UserGlobals")?;
+let protocols = browser.protocols("Object", false, "")?;
+let methods = browser.methods("Object", "-- all --", false, "")?;
+let source = browser.source("Object", "printString", false, "")?;
+```
+
 Runtime environment:
 
 ```bash
@@ -56,15 +73,21 @@ you want to point directly at a specific `libgcirpc` file.
 
 ```bash
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
-cargo run -p gemstone-rs-cli -- browse classes
+cargo run -p gemstone-rs-cli -- browse dictionaries
+cargo run -p gemstone-rs-cli -- browse classes UserGlobals
+cargo run -p gemstone-rs-cli -- browse protocols Object
+cargo run -p gemstone-rs-cli -- browse methods Object "-- all --"
+cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
 cargo run -p gemstone-rs-cli -- codegen check
 cargo run -p gemstone-rs-cli -- codegen generate
 ```
 
 The initial CLI intentionally uses only the standard library. The `eval` and
-`inspect oop` commands are wired to live GemStone calls. The codegen commands
-are placeholders for the next API/codegen layer.
+`inspect oop` commands are wired to live GemStone calls. The `browse` commands
+cover dictionaries, classes, protocols, methods, and source using the active
+user's symbol list. The codegen commands are placeholders for the next
+API/codegen layer.
 
 ## Explorer
 
@@ -80,6 +103,10 @@ Open:
 http://127.0.0.1:8787/
 http://127.0.0.1:8787/api/status
 http://127.0.0.1:8787/api/browse/dictionaries
+http://127.0.0.1:8787/api/browse/classes?dictionary=UserGlobals
+http://127.0.0.1:8787/api/browse/protocols?class=Object
+http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
+http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
 
@@ -135,5 +162,6 @@ GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_
 
 ## Explorer Roadmap
 
-Next explorer work should add structured endpoints for classes, methods,
-protocols, source, generated wrapper previews, and diffs against files.
+The first browse endpoints are now wired for dictionaries, classes, protocols,
+methods, and source. Next explorer work should add generated wrapper previews,
+diffs against files, and a richer frontend over the stable local API.

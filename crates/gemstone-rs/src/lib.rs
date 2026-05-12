@@ -5,6 +5,8 @@
 //! explicit OOP values, conservative transaction helpers, and basic value
 //! marshalling for nil, booleans, small integers, characters, and raw OOPs.
 
+pub mod browser;
+
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
     char_from_oop, is_char, is_smallint, GciErrSType, GciLibrary, RawOop, GCI_ENCRYPT_BUF_SIZE,

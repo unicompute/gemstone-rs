@@ -1,4 +1,7 @@
-use gemstone_rs::{Config, Oop, Session, Value};
+use gemstone_rs::{
+    browser::{Browser, ALL_PROTOCOLS},
+    Config, Oop, Session, Value,
+};
 use std::env;
 use std::error::Error as StdError;
 use std::fmt;
@@ -87,11 +90,89 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
             ))
         }),
         "/api/browse/dictionaries" => live_json(|session| {
-            let source =
-                "System myUserProfile symbolList dictionaries collect: [:dict | dict name]";
-            let value = session.eval(source)?;
-            value_json(session, value)
+            let dictionaries = Browser::new(session).dictionaries()?;
+            Ok(format!(
+                r#"{{"success":true,"dictionaries":{}}}"#,
+                json_string_array(dictionaries)
+            ))
         }),
+        "/api/browse/classes" => {
+            let Some(dictionary) = route.non_empty_query("dictionary") else {
+                return Response::json(400, r#"{"error":"missing dictionary"}"#.to_string());
+            };
+            live_json(|session| {
+                let classes = Browser::new(session).classes(&dictionary)?;
+                Ok(format!(
+                    r#"{{"success":true,"dictionary":"{}","classes":{}}}"#,
+                    escape_json(&dictionary),
+                    json_string_array(classes)
+                ))
+            })
+        }
+        "/api/browse/protocols" | "/api/browse/categories" => {
+            let Some(class_name) = route.non_empty_query("class") else {
+                return Response::json(400, r#"{"error":"missing class"}"#.to_string());
+            };
+            let dictionary = route.query("dictionary").unwrap_or_default();
+            let meta = bool_query(route.query("meta").as_deref());
+            live_json(|session| {
+                let mut protocols = vec![ALL_PROTOCOLS.to_string()];
+                protocols.extend(Browser::new(session).protocols(
+                    &class_name,
+                    meta,
+                    &dictionary,
+                )?);
+                Ok(format!(
+                    r#"{{"success":true,"class":"{}","dictionary":"{}","meta":{},"protocols":{}}}"#,
+                    escape_json(&class_name),
+                    escape_json(&dictionary),
+                    meta,
+                    json_string_array(protocols)
+                ))
+            })
+        }
+        "/api/browse/methods" => {
+            let Some(class_name) = route.non_empty_query("class") else {
+                return Response::json(400, r#"{"error":"missing class"}"#.to_string());
+            };
+            let dictionary = route.query("dictionary").unwrap_or_default();
+            let protocol = route
+                .non_empty_query("protocol")
+                .unwrap_or_else(|| ALL_PROTOCOLS.to_string());
+            let meta = bool_query(route.query("meta").as_deref());
+            live_json(|session| {
+                let methods =
+                    Browser::new(session).methods(&class_name, &protocol, meta, &dictionary)?;
+                Ok(format!(
+                    r#"{{"success":true,"class":"{}","dictionary":"{}","meta":{},"protocol":"{}","methods":{}}}"#,
+                    escape_json(&class_name),
+                    escape_json(&dictionary),
+                    meta,
+                    escape_json(&protocol),
+                    json_string_array(methods)
+                ))
+            })
+        }
+        "/api/browse/source" => {
+            let Some(class_name) = route.non_empty_query("class") else {
+                return Response::json(400, r#"{"error":"missing class"}"#.to_string());
+            };
+            let dictionary = route.query("dictionary").unwrap_or_default();
+            let selector = route.query("selector").unwrap_or_default();
+            let meta = bool_query(route.query("meta").as_deref());
+            live_json(|session| {
+                let source =
+                    Browser::new(session).source(&class_name, &selector, meta, &dictionary)?;
+                Ok(format!(
+                    r#"{{"success":true,"class":"{}","dictionary":"{}","meta":{},"selector":"{}","source":"{}"}}"#,
+                    escape_json(&class_name),
+                    escape_json(&dictionary),
+                    meta,
+                    escape_json(&selector),
+                    escape_json(&source)
+                ))
+            })
+        }
         "/api/inspect" => {
             let Some(raw) = route.query("oop").and_then(|value| parse_oop(&value).ok()) else {
                 return Response::json(400, r#"{"error":"missing or invalid oop"}"#.to_string());
@@ -168,6 +249,27 @@ fn inspect_oop(session: &mut Session, oop: Oop) -> gemstone_rs::Result<String> {
         class.raw(),
         escape_json(&print_string)
     ))
+}
+
+fn bool_query(value: Option<&str>) -> bool {
+    matches!(
+        value.map(str::trim).map(str::to_ascii_lowercase).as_deref(),
+        Some("1" | "true" | "yes" | "on")
+    )
+}
+
+fn json_string_array(values: impl IntoIterator<Item = String>) -> String {
+    let mut result = String::from("[");
+    for (index, value) in values.into_iter().enumerate() {
+        if index > 0 {
+            result.push(',');
+        }
+        result.push('"');
+        result.push_str(&escape_json(&value));
+        result.push('"');
+    }
+    result.push(']');
+    result
 }
 
 fn value_json(session: &mut Session, value: Value) -> gemstone_rs::Result<String> {
@@ -283,6 +385,10 @@ impl Route {
             .find(|(key, _)| key == name)
             .map(|(_, value)| value.clone())
     }
+
+    fn non_empty_query(&self, name: &str) -> Option<String> {
+        self.query(name).filter(|value| !value.trim().is_empty())
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -333,6 +439,10 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/config">/api/config</a></li>
 <li><a href="/api/status">/api/status</a></li>
 <li><a href="/api/browse/dictionaries">/api/browse/dictionaries</a></li>
+<li><a href="/api/browse/classes?dictionary=UserGlobals">/api/browse/classes?dictionary=UserGlobals</a></li>
+<li><a href="/api/browse/protocols?class=Object">/api/browse/protocols?class=Object</a></li>
+<li><a href="/api/browse/methods?class=Object&amp;protocol=--%20all%20--">/api/browse/methods?class=Object&amp;protocol=-- all --</a></li>
+<li><a href="/api/browse/source?class=Object">/api/browse/source?class=Object</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
 </ul>
 <p>read_only={} allow_eval={}</p>
@@ -506,5 +616,44 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""loopbackOnly":true"#));
         assert!(response.body.contains(r#""readOnly":true"#));
+    }
+
+    #[test]
+    fn browse_classes_requires_dictionary() {
+        let response = handle_request(
+            "GET /api/browse/classes HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("missing dictionary"));
+    }
+
+    #[test]
+    fn browse_methods_requires_class_without_live_gemstone() {
+        let response = handle_request(
+            "GET /api/browse/methods?dictionary=UserGlobals HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("missing class"));
+    }
+
+    #[test]
+    fn bool_query_accepts_common_true_values() {
+        assert!(bool_query(Some("1")));
+        assert!(bool_query(Some("true")));
+        assert!(bool_query(Some("YES")));
+        assert!(!bool_query(Some("0")));
+        assert!(!bool_query(None));
+    }
+
+    #[test]
+    fn json_string_array_escapes_values() {
+        let json = json_string_array(vec![
+            "plain".to_string(),
+            "quote\"newline\n".to_string(),
+            "slash\\".to_string(),
+        ]);
+        assert_eq!(json, r#"["plain","quote\"newline\n","slash\\"]"#);
     }
 }

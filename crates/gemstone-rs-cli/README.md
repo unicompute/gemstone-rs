@@ -6,7 +6,11 @@ The binary name is `gemstone-rs`:
 
 ```bash
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
-cargo run -p gemstone-rs-cli -- browse classes
+cargo run -p gemstone-rs-cli -- browse dictionaries
+cargo run -p gemstone-rs-cli -- browse classes UserGlobals
+cargo run -p gemstone-rs-cli -- browse protocols Object
+cargo run -p gemstone-rs-cli -- browse methods Object "-- all --"
+cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
 cargo run -p gemstone-rs-cli -- codegen check
 cargo run -p gemstone-rs-cli -- codegen generate

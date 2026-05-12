@@ -1,4 +1,7 @@
-use gemstone_rs::{Config, Error as GemStoneError, Oop, Session, Value};
+use gemstone_rs::{
+    browser::{Browser, ALL_PROTOCOLS},
+    Config, Error as GemStoneError, Oop, Session, Value,
+};
 use std::env;
 use std::error::Error as StdError;
 use std::fmt;
@@ -32,12 +35,52 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_value(&mut session, value)?;
             Ok(())
         }
-        Command::BrowseClasses => {
+        Command::BrowseDictionaries => {
             let mut session = login()?;
-            let source =
-                "System myUserProfile symbolList dictionaries collect: [:dict | dict name]";
-            let value = session.eval(source)?;
-            print_value(&mut session, value)?;
+            print_lines(Browser::new(&mut session).dictionaries()?);
+            Ok(())
+        }
+        Command::BrowseClasses { dictionary } => {
+            let mut session = login()?;
+            print_lines(Browser::new(&mut session).classes(&dictionary)?);
+            Ok(())
+        }
+        Command::BrowseProtocols {
+            class_name,
+            dictionary,
+            meta,
+        } => {
+            let mut session = login()?;
+            println!("{ALL_PROTOCOLS}");
+            print_lines(Browser::new(&mut session).protocols(&class_name, meta, &dictionary)?);
+            Ok(())
+        }
+        Command::BrowseMethods {
+            class_name,
+            protocol,
+            dictionary,
+            meta,
+        } => {
+            let mut session = login()?;
+            print_lines(Browser::new(&mut session).methods(
+                &class_name,
+                &protocol,
+                meta,
+                &dictionary,
+            )?);
+            Ok(())
+        }
+        Command::BrowseSource {
+            class_name,
+            selector,
+            dictionary,
+            meta,
+        } => {
+            let mut session = login()?;
+            println!(
+                "{}",
+                Browser::new(&mut session).source(&class_name, &selector, meta, &dictionary)?
+            );
             Ok(())
         }
         Command::InspectOop { oop } => {
@@ -79,12 +122,42 @@ fn print_value(session: &mut Session, value: Value) -> Result<(), CliError> {
     Ok(())
 }
 
+fn print_lines(values: impl IntoIterator<Item = String>) {
+    for value in values {
+        println!("{value}");
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Command {
     Help,
-    Eval { source: String },
-    BrowseClasses,
-    InspectOop { oop: Oop },
+    Eval {
+        source: String,
+    },
+    BrowseDictionaries,
+    BrowseClasses {
+        dictionary: String,
+    },
+    BrowseProtocols {
+        class_name: String,
+        dictionary: String,
+        meta: bool,
+    },
+    BrowseMethods {
+        class_name: String,
+        protocol: String,
+        dictionary: String,
+        meta: bool,
+    },
+    BrowseSource {
+        class_name: String,
+        selector: String,
+        dictionary: String,
+        meta: bool,
+    },
+    InspectOop {
+        oop: Oop,
+    },
     CodegenCheck,
     CodegenGenerate,
 }
@@ -104,10 +177,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                 source: source.clone(),
             })
         }
-        "browse" => match args.get(1).map(String::as_str) {
-            Some("classes") => Ok(Command::BrowseClasses),
-            _ => Err(CliError::usage("expected: browse classes")),
-        },
+        "browse" => parse_browse_command(&args[1..]),
         "inspect" => match (args.get(1).map(String::as_str), args.get(2)) {
             (Some("oop"), Some(raw)) => Ok(Command::InspectOop {
                 oop: Oop(parse_u64(raw)?),
@@ -135,10 +205,80 @@ fn parse_u64(value: &str) -> Result<u64, CliError> {
     .map_err(|_| CliError::usage(format!("invalid OOP: {value}")))
 }
 
+fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
+    let Some(command) = args.first().map(String::as_str) else {
+        return Err(CliError::usage(
+            "expected: browse dictionaries|classes|protocols|methods|source",
+        ));
+    };
+    let (values, meta) = split_meta_flag(&args[1..]);
+    match command {
+        "dictionaries" => Ok(Command::BrowseDictionaries),
+        "classes" => Ok(Command::BrowseClasses {
+            dictionary: values
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "UserGlobals".to_string()),
+        }),
+        "protocols" => Ok(Command::BrowseProtocols {
+            class_name: required_value(&values, 0, "missing class for browse protocols")?,
+            dictionary: values.get(1).cloned().unwrap_or_default(),
+            meta,
+        }),
+        "methods" => Ok(Command::BrowseMethods {
+            class_name: required_value(&values, 0, "missing class for browse methods")?,
+            protocol: values
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| ALL_PROTOCOLS.to_string()),
+            dictionary: values.get(2).cloned().unwrap_or_default(),
+            meta,
+        }),
+        "source" => Ok(Command::BrowseSource {
+            class_name: required_value(&values, 0, "missing class for browse source")?,
+            selector: values.get(1).cloned().unwrap_or_default(),
+            dictionary: values.get(2).cloned().unwrap_or_default(),
+            meta,
+        }),
+        _ => Err(CliError::usage(
+            "expected: browse dictionaries|classes|protocols|methods|source",
+        )),
+    }
+}
+
+fn split_meta_flag(args: &[String]) -> (Vec<String>, bool) {
+    let mut meta = false;
+    let mut values = Vec::new();
+    for value in args {
+        if value == "--meta" || value == "--class-side" {
+            meta = true;
+        } else {
+            values.push(value.clone());
+        }
+    }
+    (values, meta)
+}
+
+fn required_value(
+    values: &[String],
+    index: usize,
+    message: &'static str,
+) -> Result<String, CliError> {
+    values
+        .get(index)
+        .filter(|value| !value.trim().is_empty())
+        .cloned()
+        .ok_or_else(|| CliError::usage(message))
+}
+
 fn usage() -> &'static str {
     "usage:
   gemstone-rs eval <smalltalk>
-  gemstone-rs browse classes
+  gemstone-rs browse dictionaries
+  gemstone-rs browse classes [dictionary]
+  gemstone-rs browse protocols <class> [dictionary] [--meta]
+  gemstone-rs browse methods <class> [protocol] [dictionary] [--meta]
+  gemstone-rs browse source <class> [selector] [dictionary] [--meta]
   gemstone-rs inspect oop <raw-oop>
   gemstone-rs codegen check
   gemstone-rs codegen generate"
@@ -200,6 +340,45 @@ mod tests {
             parse_command(&args(&["eval", "3 + 4"])).unwrap(),
             Command::Eval {
                 source: "3 + 4".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn parses_browse_commands() {
+        assert_eq!(
+            parse_command(&args(&["browse", "dictionaries"])).unwrap(),
+            Command::BrowseDictionaries
+        );
+        assert_eq!(
+            parse_command(&args(&["browse", "classes"])).unwrap(),
+            Command::BrowseClasses {
+                dictionary: "UserGlobals".to_string()
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["browse", "protocols", "Object"])).unwrap(),
+            Command::BrowseProtocols {
+                class_name: "Object".to_string(),
+                dictionary: String::new(),
+                meta: false,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "browse",
+                "methods",
+                "Object",
+                "-- all --",
+                "UserGlobals",
+                "--meta"
+            ]))
+            .unwrap(),
+            Command::BrowseMethods {
+                class_name: "Object".to_string(),
+                protocol: "-- all --".to_string(),
+                dictionary: "UserGlobals".to_string(),
+                meta: true,
             }
         );
     }

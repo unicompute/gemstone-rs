@@ -46,6 +46,22 @@ session.transaction(|session| {
 })?;
 ```
 
+Browse classes and source through the reusable browser API:
+
+```rust
+use gemstone_rs::{browser::Browser, Config, Session};
+
+let config = Config::from_env()?;
+let mut session = Session::login(config)?;
+let mut browser = Browser::new(&mut session);
+
+let dictionaries = browser.dictionaries()?;
+let classes = browser.classes("UserGlobals")?;
+let protocols = browser.protocols("Object", false, "")?;
+let methods = browser.methods("Object", "-- all --", false, "")?;
+let source = browser.source("Object", "printString", false, "")?;
+```
+
 Runtime environment:
 
 ```bash
