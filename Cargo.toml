@@ -4,6 +4,7 @@ members = [
   "crates/gemstone-rs",
   "crates/gemstone-rs-cli",
   "crates/gemstone-rs-explorer",
+  "crates/gemstone-rs-macros",
 ]
 resolver = "2"
 
@@ -17,6 +18,7 @@ keywords = ["gemstone", "smalltalk", "database", "gci"]
 categories = ["api-bindings", "database"]
 
 [workspace.dependencies]
-gemstone-rs = { version = "0.1.0", path = "crates/gemstone-rs" }
-gemstone-gci = { version = "0.1.0", path = "crates/gemstone-gci" }
+gemstone-rs = { version = "0.2.0", path = "crates/gemstone-rs" }
+gemstone-gci = { version = "0.2.0", path = "crates/gemstone-gci" }
+gemstone-rs-macros = { version = "0.2.0", path = "crates/gemstone-rs-macros" }
 libloading = "0.8"

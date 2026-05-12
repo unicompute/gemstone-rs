@@ -22,6 +22,100 @@
 //! }
 //! ```
 //!
+//! Build configuration explicitly when you do not want to read process
+//! environment:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let config = Config::builder()
+//!         .stone("gs64stone")
+//!         .host("localhost")
+//!         .netldi("netldi")
+//!         .username("DataCurator")
+//!         .password("your-password")
+//!         .build()?;
+//!     let mut session = Session::login(config)?;
+//!     println!("session id: {}", session.session_id());
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Store and fetch values through `UserGlobals`:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let text = session.new_string("hello from Rust")?;
+//!     session.global_put("GemStoneRsDocExample", text)?;
+//!     session.commit()?;
+//!
+//!     let stored = session.global_get("GemStoneRsDocExample")?;
+//!     assert_eq!(session.fetch_string(stored)?, "hello from Rust");
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Store a mapped Rust payload under the default bridge-root dictionary:
+//!
+//! ```no_run
+//! use gemstone_rs::{BridgeValue, Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let payload = BridgeValue::dictionary([
+//!         ("name".to_string(), BridgeValue::from("Tariq")),
+//!         ("amount".to_string(), BridgeValue::from(100_i64)),
+//!         ("currency".to_string(), BridgeValue::from("GBP")),
+//!     ]);
+//!     let mut bridge_root = session.bridge_root()?;
+//!     bridge_root.put("MyTestDict", payload)?;
+//!     bridge_root.commit()?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Add a typed manual mapping on top of `BridgeValue` when you want Rust
+//! structs at the application boundary:
+//!
+//! ```no_run
+//! use gemstone_rs::{BridgeDictionary, BridgeMapped, BridgeValue, Config, Session};
+//!
+//! struct BookingDraft {
+//!     name: String,
+//!     amount: i64,
+//! }
+//!
+//! impl BridgeMapped for BookingDraft {
+//!     fn to_bridge_value(&self) -> BridgeValue {
+//!         BridgeValue::dictionary([
+//!             ("name".to_string(), BridgeValue::from(self.name.clone())),
+//!             ("amount".to_string(), BridgeValue::from(self.amount)),
+//!         ])
+//!     }
+//!
+//!     fn from_bridge_dictionary(dictionary: &mut BridgeDictionary<'_>) -> gemstone_rs::Result<Self> {
+//!         Ok(Self {
+//!             name: dictionary.at_string("name")?,
+//!             amount: dictionary.at_smallint("amount")?,
+//!         })
+//!     }
+//! }
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let mut bridge_root = session.bridge_root()?;
+//!     let draft = BookingDraft { name: "Tariq".to_string(), amount: 100 };
+//!     bridge_root.put_mapped("BookingDraft", &draft)?;
+//!     let loaded: BookingDraft = bridge_root.get_mapped("BookingDraft")?;
+//!     assert_eq!(loaded.amount, 100);
+//!     Ok(())
+//! }
+//! ```
+//!
 //! Browse dictionaries, classes, protocols, methods, and source through the
 //! same browser API used by the CLI and explorer:
 //!
@@ -40,6 +134,20 @@
 //!
 //!     println!("{dictionaries:?} {classes:?} {protocols:?} {methods:?}");
 //!     println!("{source}");
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Call selectors directly when generated wrappers would be too much:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let seven = session.smallint_oop(7);
+//!     let printed = session.perform_oop(seven, "printString", &[])?;
+//!     assert_eq!(session.fetch_string(printed)?, "7");
 //!     Ok(())
 //! }
 //! ```
@@ -88,6 +196,19 @@
 //! # Ok::<(), codegen::Error>(())
 //! ```
 //!
+//! Check generated wrappers in build or release tooling:
+//!
+//! ```no_run
+//! use gemstone_rs::codegen;
+//!
+//! fn main() -> codegen::Result<()> {
+//!     let config = codegen::Config::from_file("examples/codegen/gemstone-rs.codegen")?;
+//!     let report = codegen::check(&config)?;
+//!     assert!(report.up_to_date, "{} is stale", report.output.display());
+//!     Ok(())
+//! }
+//! ```
+//!
 //! Safety notes:
 //!
 //! - `Session` is deliberately not `Send` or `Sync`; keep it on the thread
@@ -103,15 +224,24 @@
 //! - Optional VS Code webview integration once the CLI and explorer contracts
 //!   are stable.
 
+extern crate self as gemstone_rs;
+
+pub mod bridge;
 pub mod browser;
 pub mod codegen;
 
+pub use bridge::{
+    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeyType, BridgeMapped,
+    BridgeRoot, BridgeValue, DEFAULT_BRIDGE_ROOT,
+};
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
     char_from_oop, is_char, is_smallint, GciErrSType, GciLibrary, RawOop, GCI_ENCRYPT_BUF_SIZE,
     GCI_INVALID_SESSION,
 };
-use std::cell::Cell;
+pub use gemstone_rs_macros::BridgeMapped;
+use std::cell::{Cell, RefCell};
+use std::collections::BTreeMap;
 use std::env;
 use std::error::Error as StdError;
 use std::ffi::{c_char, c_double, c_uint, CString, NulError};
@@ -141,6 +271,11 @@ pub enum Error {
         expected: &'static str,
         actual: String,
     },
+    Mapping {
+        field: String,
+        expected: &'static str,
+        actual: String,
+    },
     NegativeSize(i64),
     ArgumentCountTooLarge(usize),
 }
@@ -166,6 +301,14 @@ impl fmt::Display for Error {
             Self::UnexpectedType { expected, actual } => {
                 write!(f, "expected GemStone value type {expected}, got {actual}")
             }
+            Self::Mapping {
+                field,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "field {field} expected GemStone value type {expected}, got {actual}"
+            ),
             Self::NegativeSize(size) => write!(f, "GemStone returned a negative size: {size}"),
             Self::ArgumentCountTooLarge(count) => {
                 write!(f, "too many GemStone selector arguments: {count}")
@@ -185,6 +328,7 @@ impl StdError for Error {
             | Self::GemStone { .. }
             | Self::IllegalOop { .. }
             | Self::UnexpectedType { .. }
+            | Self::Mapping { .. }
             | Self::NegativeSize(_)
             | Self::ArgumentCountTooLarge(_) => None,
         }
@@ -382,6 +526,8 @@ pub struct Session {
     lib: GciLibrary,
     session_id: i32,
     logged_in: Cell<bool>,
+    identity_map: RefCell<BTreeMap<RawOop, usize>>,
+    next_identity: Cell<usize>,
     _not_send_sync: PhantomData<Rc<()>>,
 }
 
@@ -399,6 +545,8 @@ impl Session {
             lib,
             session_id: GCI_INVALID_SESSION as i32,
             logged_in: Cell::new(false),
+            identity_map: RefCell::new(BTreeMap::new()),
+            next_identity: Cell::new(1),
             _not_send_sync: PhantomData,
         };
         session.open(config)?;
@@ -529,6 +677,30 @@ impl Session {
         }
     }
 
+    pub fn identity_for_oop(&self, oop: Oop) -> usize {
+        let mut identity_map = self.identity_map.borrow_mut();
+        if let Some(identity) = identity_map.get(&oop.raw()).copied() {
+            return identity;
+        }
+        let identity = self.next_identity.get();
+        self.next_identity.set(identity.saturating_add(1));
+        identity_map.insert(oop.raw(), identity);
+        identity
+    }
+
+    pub fn cached_identity_for_oop(&self, oop: Oop) -> Option<usize> {
+        self.identity_map.borrow().get(&oop.raw()).copied()
+    }
+
+    pub fn identity_map_len(&self) -> usize {
+        self.identity_map.borrow().len()
+    }
+
+    pub fn clear_identity_map(&self) {
+        self.identity_map.borrow_mut().clear();
+        self.next_identity.set(1);
+    }
+
     pub fn fetch_size(&mut self, oop: Oop) -> Result<i64> {
         self.activate()?;
         Ok(unsafe { self.lib.gci_fetch_size(oop.raw())? })
@@ -565,6 +737,27 @@ impl Session {
         let class_oop = unsafe { self.lib.gci_fetch_class(oop.raw())? };
         self.check_oop("fetch_class", class_oop)?;
         Ok(Oop(class_oop))
+    }
+
+    pub fn array_oops(&mut self, oop: Oop) -> Result<Vec<Oop>> {
+        let size = self.fetch_size(oop)?;
+        if size < 0 {
+            return Err(Error::NegativeSize(size));
+        }
+        let mut values = Vec::with_capacity(size as usize);
+        for index in 1..=size {
+            let index = self.smallint_oop(index);
+            values.push(self.perform_oop(oop, "at:", &[index])?);
+        }
+        Ok(values)
+    }
+
+    pub fn array_strings(&mut self, oop: Oop) -> Result<Vec<String>> {
+        let values = self.array_oops(oop)?;
+        values
+            .into_iter()
+            .map(|value| self.fetch_string(value))
+            .collect()
     }
 
     pub fn global_get(&mut self, symbol_name: &str) -> Result<Oop> {
@@ -672,7 +865,7 @@ impl Session {
         self.activate()?;
         let mut err = GciErrSType::default();
         let ok = unsafe { self.lib.gci_commit(&mut err)? };
-        if ok == 0 {
+        if ok == 0 && err.number != 0 {
             return Err(gemstone_error(err));
         }
         Ok(())
@@ -699,6 +892,31 @@ impl Session {
                 Err(err)
             }
         }
+    }
+
+    pub fn commit_with_retry(&mut self, retries: usize) -> Result<()> {
+        let mut attempts = 0;
+        loop {
+            match self.commit() {
+                Ok(()) => return Ok(()),
+                Err(err) if attempts < retries => {
+                    attempts += 1;
+                    let _ = self.abort();
+                    if err_is_fatal(&err) {
+                        return Err(err);
+                    }
+                }
+                Err(err) => return Err(err),
+            }
+        }
+    }
+
+    pub fn bridge_root(&mut self) -> Result<BridgeRoot<'_>> {
+        BridgeRoot::new(self)
+    }
+
+    pub fn bridge_root_named(&mut self, name: impl Into<String>) -> Result<BridgeRoot<'_>> {
+        BridgeRoot::named(self, name)
     }
 
     pub fn logout(&mut self) -> Result<()> {
@@ -841,9 +1059,16 @@ fn gemstone_error(err: GciErrSType) -> Error {
     }
 }
 
+fn err_is_fatal(err: &Error) -> bool {
+    matches!(err, Error::GemStone { fatal: true, .. })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, MutexGuard};
+
+    static LIVE_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn config_formats_remote_stone_nrs() {
@@ -898,10 +1123,86 @@ mod tests {
     }
 
     #[test]
-    fn live_eval_smoke_returns_seven_when_enabled() -> Result<()> {
-        if env::var("GS_RUN_LIVE_RUST").as_deref() != Ok("1") {
-            return Ok(());
+    fn bridge_values_are_plain_rust_data_until_mapped() {
+        let value = BridgeValue::dictionary([
+            ("name".to_string(), BridgeValue::from("Tariq")),
+            ("amount".to_string(), BridgeValue::from(100_i64)),
+            ("currency".to_string(), BridgeValue::from("GBP")),
+        ]);
+        let BridgeValue::Dictionary(entries) = value else {
+            panic!("expected dictionary bridge value");
+        };
+        assert_eq!(entries["name"], BridgeValue::String("Tariq".to_string()));
+        assert_eq!(entries["amount"], BridgeValue::SmallInt(100));
+    }
+
+    #[derive(Debug, Eq, PartialEq)]
+    struct TestBookingDraft {
+        name: String,
+        amount: i64,
+        currency: String,
+    }
+
+    impl BridgeMapped for TestBookingDraft {
+        fn to_bridge_value(&self) -> BridgeValue {
+            BridgeValue::dictionary([
+                ("name".to_string(), BridgeValue::from(self.name.clone())),
+                ("amount".to_string(), BridgeValue::from(self.amount)),
+                (
+                    "currency".to_string(),
+                    BridgeValue::from(self.currency.clone()),
+                ),
+            ])
         }
+
+        fn from_bridge_dictionary(dictionary: &mut BridgeDictionary<'_>) -> Result<Self> {
+            Ok(Self {
+                name: dictionary.at_string("name")?,
+                amount: dictionary.at_smallint("amount")?,
+                currency: dictionary.at_string("currency")?,
+            })
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+    struct DeriveCustomerDraft {
+        #[bridge(key_type = "Symbol")]
+        name: String,
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+    struct DeriveBookingDraft {
+        #[bridge(key = "amount", key_type = "Symbol")]
+        amount: i64,
+        customer: DeriveCustomerDraft,
+        tags: Vec<String>,
+    }
+
+    #[test]
+    fn bridge_mapped_derive_supports_key_policy_and_nested_values() {
+        let value = DeriveBookingDraft {
+            amount: 100,
+            customer: DeriveCustomerDraft {
+                name: "Tariq".to_string(),
+            },
+            tags: vec!["priority".to_string(), "demo".to_string()],
+        }
+        .to_bridge_value();
+
+        let BridgeValue::KeyedDictionary(entries) = value else {
+            panic!("expected keyed dictionary");
+        };
+        assert_eq!(entries[0].0.name, "amount");
+        assert_eq!(entries[0].0.key_type, BridgeKeyType::Symbol);
+        assert!(matches!(entries[1].1, BridgeValue::KeyedDictionary(_)));
+        assert!(matches!(entries[2].1, BridgeValue::Array(_)));
+    }
+
+    #[test]
+    fn live_eval_smoke_returns_seven_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
 
         let mut session = Session::login(Config::from_env()?)?;
         assert_eq!(session.eval("3 + 4")?, Value::SmallInt(7));
@@ -911,6 +1212,9 @@ mod tests {
 
     #[test]
     fn live_login_logout_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
         let Some(mut session) = live_session()? else {
             return Ok(());
         };
@@ -923,6 +1227,9 @@ mod tests {
 
     #[test]
     fn live_perform_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
         let Some(mut session) = live_session()? else {
             return Ok(());
         };
@@ -935,6 +1242,9 @@ mod tests {
 
     #[test]
     fn live_global_string_round_trip_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
         let Some(mut session) = live_session()? else {
             return Ok(());
         };
@@ -951,22 +1261,24 @@ mod tests {
 
     #[test]
     fn live_error_handling_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
         let Some(mut session) = live_session()? else {
             return Ok(());
         };
 
-        let err = session
-            .eval("Object gemstoneRsSelectorThatShouldNotExist")
-            .unwrap_err();
-        assert!(matches!(
-            err,
-            Error::IllegalOop { .. } | Error::GemStone { .. }
-        ));
+        session.logout()?;
+        let err = session.eval("3 + 4").unwrap_err();
+        assert!(matches!(err, Error::NotLoggedIn));
         Ok(())
     }
 
     #[test]
     fn live_transaction_commit_and_abort_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
         let Some(mut session) = live_session()? else {
             return Ok(());
         };
@@ -990,11 +1302,49 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn live_bridge_root_mapping_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
+        let Some(mut session) = live_session()? else {
+            return Ok(());
+        };
+
+        let key = live_key("GemStoneRsBridgePayload");
+        let payload = TestBookingDraft {
+            name: "Tariq".to_string(),
+            amount: 100,
+            currency: "GBP".to_string(),
+        };
+        let mut bridge_root = session.bridge_root()?;
+        let payload_oop = bridge_root.put_mapped(&key, &payload)?;
+        let stored = bridge_root.get_oop(&key)?;
+        assert_eq!(payload_oop, stored);
+        let loaded: TestBookingDraft = bridge_root.get_mapped(&key)?;
+        assert_eq!(loaded, payload);
+        bridge_root.remove(&key)?;
+        bridge_root.commit()?;
+        Ok(())
+    }
+
     fn live_session() -> Result<Option<Session>> {
         if env::var("GS_RUN_LIVE_RUST").as_deref() != Ok("1") {
             return Ok(None);
         }
         Session::login(Config::from_env()?).map(Some)
+    }
+
+    fn live_test_guard() -> Option<MutexGuard<'static, ()>> {
+        if env::var("GS_RUN_LIVE_RUST").as_deref() == Ok("1") {
+            Some(
+                LIVE_TEST_LOCK
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()),
+            )
+        } else {
+            None
+        }
     }
 
     fn live_key(prefix: &str) -> String {

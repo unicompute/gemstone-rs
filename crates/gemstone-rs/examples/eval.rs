@@ -1,3 +1,9 @@
+// Requires a live GemStone/S stone.
+//
+// Expected output:
+//
+// SmallInt(7)
+
 use gemstone_rs::{Config, Session};
 
 fn main() -> gemstone_rs::Result<()> {

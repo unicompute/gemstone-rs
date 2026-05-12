@@ -19,6 +19,24 @@ The Cargo package is named `gemstone-rs`; Rust code imports it as
 `gemstone-gci` keeps unsafe C ABI calls isolated. `gemstone-rs` is the public
 crate Rust application developers should use.
 
+## Documentation
+
+| Guide | Link |
+| --- | --- |
+| Setup | [docs/setup-guide.md](docs/setup-guide.md) |
+| Examples | [docs/examples-guide.md](docs/examples-guide.md) |
+| User manual | [docs/user-manual.md](docs/user-manual.md) |
+| Cookbook | [docs/cookbook.md](docs/cookbook.md) |
+| gemstone-py vs gemstone-rs | [docs/gemstone-py-vs-gemstone-rs.md](docs/gemstone-py-vs-gemstone-rs.md) |
+| Object mapping | [docs/object-mapping.md](docs/object-mapping.md) |
+| Codegen | [docs/codegen.md](docs/codegen.md) |
+| Explorer | [docs/explorer.md](docs/explorer.md) |
+| VS Code workbench | [docs/vscode-workbench.md](docs/vscode-workbench.md) |
+| Medium article | [docs/medium-article.md](docs/medium-article.md) |
+| Funny introduction | [docs/funny-introduction/README.md](docs/funny-introduction/README.md) |
+| PDFs | [docs/pdf/](docs/pdf/) |
+| Release checklist | [docs/release-checklist.md](docs/release-checklist.md) |
+
 ## Install
 
 For Rust applications:
@@ -107,6 +125,25 @@ export GS_STONE=gs64stone
 export GS_USERNAME=DataCurator
 export GS_PASSWORD=swordfish
 ```
+
+## Examples
+
+```bash
+cargo run -p gemstone-rs --example hello_gemstone
+cargo run -p gemstone-rs --example quickstart
+cargo run -p gemstone-rs --example browser
+cargo run -p gemstone-rs --example transactions
+cargo run -p gemstone-rs --example oop_values
+cargo run -p gemstone-rs --example bridge_root_mapping
+cargo run -p gemstone-rs --example codegen_preview
+cargo run -p gemstone-rs --example codegen_workflow
+cargo run -p gemstone-rs --example generated_wrapper_app
+cargo run -p gemstone-rs --example generated_mapping_app
+cargo run -p gemstone-rs --example codegen_discover
+```
+
+See [examples/README.md](examples/README.md) and
+[docs/examples-guide.md](docs/examples-guide.md) for the full map.
 
 ## CLI
 
@@ -254,13 +291,13 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.1.0.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.0.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:
 
 ```bash
-scripts/publish_verify.sh 0.1.0
+scripts/publish_verify.sh 0.2.0
 ```
 
 The verification script checks crates.io package versions, installs
@@ -296,8 +333,11 @@ cargo package -p gemstone-gci --no-verify
 Run the opt-in live smoke test with:
 
 ```bash
-GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_
+GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_ -- --test-threads=1
 ```
+
+The `--test-threads=1` flag avoids concurrent GCI sessions inside one Rust test
+process.
 
 ## Explorer Roadmap
 

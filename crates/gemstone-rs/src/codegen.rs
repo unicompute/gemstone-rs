@@ -78,6 +78,7 @@ impl From<crate::Error> for Error {
 pub struct Config {
     pub output: PathBuf,
     pub classes: Vec<ClassSpec>,
+    pub mapped: Vec<MappedSpec>,
 }
 
 impl Config {
@@ -94,6 +95,7 @@ impl Config {
             .unwrap_or_else(|| Path::new("."));
         let mut output = PathBuf::from(DEFAULT_OUTPUT_PATH);
         let mut classes: BTreeMap<ClassRef, ClassSpec> = BTreeMap::new();
+        let mut mapped: BTreeMap<String, MappedSpec> = BTreeMap::new();
 
         for (index, raw_line) in source.lines().enumerate() {
             let line_no = index + 1;
@@ -127,6 +129,20 @@ impl Config {
                         .methods
                         .push(method);
                 }
+                "mapped" => {
+                    let spec = MappedSpec::parse(value)
+                        .map_err(|message| Error::config(path, line_no, message))?;
+                    mapped.entry(spec.name.clone()).or_insert(spec);
+                }
+                "field" => {
+                    let field = FieldSpec::parse(value)
+                        .map_err(|message| Error::config(path, line_no, message))?;
+                    mapped
+                        .entry(field.mapped_name.clone())
+                        .or_insert_with(|| MappedSpec::new(field.mapped_name.clone()))
+                        .fields
+                        .push(field);
+                }
                 other => {
                     return Err(Error::config(
                         path,
@@ -144,6 +160,7 @@ impl Config {
         Ok(Self {
             output,
             classes: classes.into_values().collect(),
+            mapped: mapped.into_values().collect(),
         })
     }
 }
@@ -217,6 +234,201 @@ impl ClassRef {
             name.push_str("Class");
         }
         name
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MappedSpec {
+    pub name: String,
+    pub fields: Vec<FieldSpec>,
+    pub doc: Option<String>,
+}
+
+impl MappedSpec {
+    fn new(name: String) -> Self {
+        Self {
+            name,
+            fields: Vec::new(),
+            doc: None,
+        }
+    }
+
+    pub fn parse(value: &str) -> std::result::Result<Self, String> {
+        let mut parts = value.split('|').map(str::trim);
+        let name = parts.next().unwrap_or_default().trim();
+        if name.is_empty() {
+            return Err("mapped struct name is empty".to_string());
+        }
+        let mut spec = Self::new(rust_type_name(name));
+        for option in parts {
+            let Some((key, value)) = option.split_once('=') else {
+                return Err(format!("mapped option must look like key=value: {option}"));
+            };
+            match key.trim() {
+                "doc" => spec.doc = Some(value.trim().to_string()),
+                other => return Err(format!("unknown mapped option: {other}")),
+            }
+        }
+        Ok(spec)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FieldSpec {
+    pub mapped_name: String,
+    pub rust_name: String,
+    pub key: String,
+    pub key_type: FieldKeyType,
+    pub field_type: FieldType,
+    pub doc: Option<String>,
+}
+
+impl FieldSpec {
+    pub fn parse(value: &str) -> std::result::Result<Self, String> {
+        let mut parts = value.split('|').map(str::trim);
+        let head = parts
+            .next()
+            .ok_or_else(|| "field must look like MappedStruct.field".to_string())?;
+        let (mapped_name, rust_name) = head
+            .split_once('.')
+            .ok_or_else(|| "field must look like MappedStruct.field".to_string())?;
+        let mapped_name = rust_type_name(mapped_name.trim());
+        let rust_name = rust_fn_name(rust_name.trim());
+        if mapped_name.is_empty() || rust_name.is_empty() {
+            return Err("field mapping has an empty struct or field name".to_string());
+        }
+        let mut key = rust_name.clone();
+        let mut key_type = FieldKeyType::String;
+        let mut field_type = FieldType::String;
+        let mut doc = None;
+        for option in parts {
+            let Some((option_key, value)) = option.split_once('=') else {
+                return Err(format!("field option must look like key=value: {option}"));
+            };
+            match option_key.trim() {
+                "key" => key = value.trim().to_string(),
+                "key_type" | "keyType" => key_type = FieldKeyType::parse(value.trim())?,
+                "type" => field_type = FieldType::parse(value.trim())?,
+                "doc" => doc = Some(value.trim().to_string()),
+                other => return Err(format!("unknown field option: {other}")),
+            }
+        }
+        Ok(Self {
+            mapped_name,
+            rust_name,
+            key,
+            key_type,
+            field_type,
+            doc,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FieldKeyType {
+    String,
+    Symbol,
+}
+
+impl FieldKeyType {
+    fn parse(value: &str) -> std::result::Result<Self, String> {
+        match value {
+            "" | "String" | "string" | "str" => Ok(Self::String),
+            "Symbol" | "symbol" => Ok(Self::Symbol),
+            other => Err(format!("unsupported key_type: {other}")),
+        }
+    }
+
+    fn config_name(&self) -> &'static str {
+        match self {
+            Self::String => "String",
+            Self::Symbol => "Symbol",
+        }
+    }
+
+    fn bridge_source(&self) -> &'static str {
+        match self {
+            Self::String => "BridgeKeyType::String",
+            Self::Symbol => "BridgeKeyType::Symbol",
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum FieldType {
+    String,
+    SmallInt,
+    Bool,
+    Oop,
+    Mapped(String),
+    Vec(Box<FieldType>),
+}
+
+impl FieldType {
+    fn parse(value: &str) -> std::result::Result<Self, String> {
+        if let Some(inner) = value
+            .strip_prefix("Vec<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Vec(Box::new(Self::parse(inner.trim())?)));
+        }
+        if let Some(inner) = value
+            .strip_prefix("Array<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Vec(Box::new(Self::parse(inner.trim())?)));
+        }
+        if let Some(inner) = value
+            .strip_prefix("Mapped<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Mapped(rust_type_name(inner.trim())));
+        }
+        if let Some(inner) = value
+            .strip_prefix("Mapped(")
+            .and_then(|text| text.strip_suffix(')'))
+        {
+            return Ok(Self::Mapped(rust_type_name(inner.trim())));
+        }
+        match value {
+            "" | "String" | "string" => Ok(Self::String),
+            "SmallInt" | "smallInt" | "smallint" | "i64" => Ok(Self::SmallInt),
+            "Bool" | "Boolean" | "bool" | "boolean" => Ok(Self::Bool),
+            "Oop" | "OOP" | "oop" => Ok(Self::Oop),
+            other => {
+                if other
+                    .chars()
+                    .next()
+                    .is_some_and(|ch| ch.is_ascii_uppercase())
+                {
+                    Ok(Self::Mapped(rust_type_name(other)))
+                } else {
+                    Err(format!("unsupported field type: {other}"))
+                }
+            }
+        }
+    }
+
+    fn rust_type(&self) -> String {
+        match self {
+            Self::String => "String".to_string(),
+            Self::SmallInt => "i64".to_string(),
+            Self::Bool => "bool".to_string(),
+            Self::Oop => "Oop".to_string(),
+            Self::Mapped(name) => name.clone(),
+            Self::Vec(inner) => format!("Vec<{}>", inner.rust_type()),
+        }
+    }
+
+    fn config_name(&self) -> String {
+        match self {
+            Self::String => "String".to_string(),
+            Self::SmallInt => "SmallInt".to_string(),
+            Self::Bool => "Bool".to_string(),
+            Self::Oop => "Oop".to_string(),
+            Self::Mapped(name) => format!("Mapped<{name}>"),
+            Self::Vec(inner) => format!("Vec<{}>", inner.config_name()),
+        }
     }
 }
 
@@ -482,6 +694,55 @@ pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) ->
     Ok(Config {
         output,
         classes: specs,
+        mapped: Vec::new(),
+    })
+}
+
+pub fn discover_mapping(
+    session: &mut Session,
+    output: PathBuf,
+    mapped_name: &str,
+    class_ref: &ClassRef,
+) -> Result<Config> {
+    let class_oop = session.execute(&browser::behavior_expr(
+        &class_ref.class_name,
+        class_ref.meta,
+        &class_ref.dictionary,
+    ))?;
+    let names_oop = session.perform_oop(class_oop, "allInstVarNames", &[])?;
+    let mut fields = Vec::new();
+    for name in session.array_strings(names_oop)? {
+        let rust_name = rust_fn_name(&name);
+        fields.push(FieldSpec {
+            mapped_name: rust_type_name(mapped_name),
+            rust_name,
+            key: name,
+            key_type: FieldKeyType::Symbol,
+            field_type: FieldType::String,
+            doc: Some("Discovered from GemStone instance variable name.".to_string()),
+        });
+    }
+    if fields.is_empty() {
+        fields.push(FieldSpec {
+            mapped_name: rust_type_name(mapped_name),
+            rust_name: "name".to_string(),
+            key: "name".to_string(),
+            key_type: FieldKeyType::String,
+            field_type: FieldType::String,
+            doc: Some("Placeholder field; edit after discovery.".to_string()),
+        });
+    }
+    Ok(Config {
+        output,
+        classes: Vec::new(),
+        mapped: vec![MappedSpec {
+            name: rust_type_name(mapped_name),
+            fields,
+            doc: Some(format!(
+                "Mapping proposal discovered from {}.",
+                class_ref.display_name()
+            )),
+        }],
     })
 }
 
@@ -512,6 +773,32 @@ pub fn config_source(config: &Config) -> String {
             source.push('\n');
         }
     }
+    for mapped in &config.mapped {
+        source.push_str(&format!("mapped = {}", mapped.name));
+        if let Some(doc) = mapped.doc.as_deref().filter(|doc| !doc.is_empty()) {
+            source.push_str(" | doc=");
+            source.push_str(&doc.replace('\n', " "));
+        }
+        source.push('\n');
+        for field in &mapped.fields {
+            source.push_str(&format!(
+                "field = {}.{} | type={} | key={}",
+                mapped.name,
+                field.rust_name,
+                field.field_type.config_name(),
+                field.key
+            ));
+            if field.key_type != FieldKeyType::String {
+                source.push_str(" | key_type=");
+                source.push_str(field.key_type.config_name());
+            }
+            if let Some(doc) = field.doc.as_deref().filter(|doc| !doc.is_empty()) {
+                source.push_str(" | doc=");
+                source.push_str(&doc.replace('\n', " "));
+            }
+            source.push('\n');
+        }
+    }
     source
 }
 
@@ -521,13 +808,20 @@ pub fn sample_config() -> &'static str {
      output = src/generated/gemstone_wrappers.rs\n\
      class = Object\n\
      method = Object>>printString | return=String | doc=Return the receiver printString.\n\
-     method = Object>>class\n"
+     method = Object>>class\n\
+     mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.\n\
+     field = BookingDraft.name | type=String | key=name\n\
+     field = BookingDraft.amount | type=SmallInt | key=amount\n\
+     field = BookingDraft.currency | type=String | key=currency\n\
+     field = BookingDraft.tags | type=Vec<String> | key=tags\n"
 }
 
 fn generate_source(config: &Config) -> String {
     let mut source = String::new();
     source.push_str("// @generated by gemstone-rs codegen. Do not edit by hand.\n");
-    source.push_str("use gemstone_rs::{Error, Oop, Result, Session, Value};\n\n");
+    source.push_str(
+        "use gemstone_rs::{\n    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeyType, BridgeMapped,\n    BridgeValue, Error, Oop, Result, Session, Value,\n};\n\n",
+    );
 
     for class in &config.classes {
         let struct_name = class.class_ref.struct_name();
@@ -537,8 +831,9 @@ fn generate_source(config: &Config) -> String {
         source.push_str("}\n\n");
         source.push_str(&format!("impl<'a> {struct_name}<'a> {{\n"));
         source.push_str("    pub fn resolve(session: &'a mut Session) -> Result<Self> {\n");
+        source.push_str("        let oop =\n");
         source.push_str(&format!(
-            "        let oop = session.execute({})?;\n",
+            "            session.execute({})?;\n",
             rust_string_literal(&browser::behavior_expr(
                 &class.class_ref.class_name,
                 class.class_ref.meta,
@@ -562,7 +857,81 @@ fn generate_source(config: &Config) -> String {
         source.push_str("}\n\n");
     }
 
+    for mapped in &config.mapped {
+        source.push_str(&mapped_source(mapped));
+        source.push('\n');
+    }
+
+    while source.ends_with("\n\n") {
+        source.pop();
+    }
     source
+}
+
+fn mapped_source(mapped: &MappedSpec) -> String {
+    let mut source = String::new();
+    if let Some(doc) = mapped.doc.as_deref().filter(|doc| !doc.is_empty()) {
+        source.push_str(&format!("/// {}\n", escape_doc(doc)));
+    }
+    source.push_str("#[derive(Clone, Debug, Eq, PartialEq)]\n");
+    source.push_str(&format!("pub struct {} {{\n", mapped.name));
+    for field in &mapped.fields {
+        if let Some(doc) = field.doc.as_deref().filter(|doc| !doc.is_empty()) {
+            source.push_str(&format!("    /// {}\n", escape_doc(doc)));
+        }
+        source.push_str(&format!(
+            "    pub {}: {},\n",
+            field.rust_name,
+            field.field_type.rust_type()
+        ));
+    }
+    source.push_str("}\n\n");
+    source.push_str(&format!("impl BridgeMapped for {} {{\n", mapped.name));
+    source.push_str("    fn to_bridge_value(&self) -> BridgeValue {\n");
+    source.push_str("        BridgeValue::keyed_dictionary([\n");
+    for field in &mapped.fields {
+        source.push_str(&mapped_field_write(field));
+    }
+    source.push_str("        ])\n");
+    source.push_str("    }\n\n");
+    source.push_str(
+        "    fn from_bridge_dictionary(dictionary: &mut BridgeDictionary<'_>) -> Result<Self> {\n",
+    );
+    source.push_str("        Ok(Self {\n");
+    for field in &mapped.fields {
+        source.push_str(&mapped_field_read(field));
+    }
+    source.push_str("        })\n");
+    source.push_str("    }\n");
+    source.push_str("}\n");
+    source
+}
+
+fn mapped_field_write(field: &FieldSpec) -> String {
+    format!(
+        "            (\n                BridgeKey::new({}, {}),\n                BridgeFieldWrite::to_bridge_field_value(&self.{}),\n            ),\n",
+        rust_string_literal(&field.key),
+        field.key_type.bridge_source(),
+        field.rust_name
+    )
+}
+
+fn mapped_field_read(field: &FieldSpec) -> String {
+    let inline = format!(
+        "            {}: BridgeFieldRead::read_bridge_field(dictionary, {}, {})?,\n",
+        field.rust_name,
+        rust_string_literal(&field.key),
+        field.key_type.bridge_source()
+    );
+    if inline.trim_end().len() <= 100 {
+        return inline;
+    }
+    format!(
+        "            {}: BridgeFieldRead::read_bridge_field(\n                dictionary,\n                {},\n                {},\n            )?,\n",
+        field.rust_name,
+        rust_string_literal(&field.key),
+        field.key_type.bridge_source()
+    )
 }
 
 fn method_source(method: &MethodSpec) -> String {
@@ -839,6 +1208,52 @@ mod tests {
     }
 
     #[test]
+    fn generates_bridge_mapped_struct_source() -> Result<()> {
+        let config = Config::parse(
+            "mapped = BookingDraft | doc=Payload stored under BridgeRoot.\nfield = BookingDraft.name | type=String | key=name\nfield = BookingDraft.amount | type=SmallInt | key=amount\nfield = BookingDraft.approved | type=Bool | key=approved\n",
+            None,
+        )?;
+        assert_eq!(config.mapped.len(), 1);
+        assert_eq!(config.mapped[0].fields.len(), 3);
+
+        let generated = generate(&config);
+        assert!(generated.source.contains("pub struct BookingDraft"));
+        assert!(generated
+            .source
+            .contains("impl BridgeMapped for BookingDraft"));
+        assert!(generated.source.contains("pub amount: i64"));
+        assert!(generated
+            .source
+            .contains("amount: BridgeFieldRead::read_bridge_field"));
+        assert!(generated
+            .source
+            .contains("BridgeFieldWrite::to_bridge_field_value(&self.approved)"));
+        Ok(())
+    }
+
+    #[test]
+    fn parses_symbol_keys_and_nested_field_types() -> Result<()> {
+        let config = Config::parse(
+            "mapped = BookingDraft\nfield = BookingDraft.customer | type=Mapped<Customer> | key=customer | key_type=Symbol\nfield = BookingDraft.tags | type=Vec<String> | key=tags\n",
+            None,
+        )?;
+        let fields = &config.mapped[0].fields;
+        assert_eq!(fields[0].key_type, FieldKeyType::Symbol);
+        assert_eq!(
+            fields[0].field_type,
+            FieldType::Mapped("Customer".to_string())
+        );
+        assert_eq!(
+            fields[1].field_type,
+            FieldType::Vec(Box::new(FieldType::String))
+        );
+        let generated = generate(&config);
+        assert!(generated.source.contains("BridgeKeyType::Symbol"));
+        assert!(generated.source.contains("pub tags: Vec<String>"));
+        Ok(())
+    }
+
+    #[test]
     fn creates_config_source_and_diff() -> Result<()> {
         let config = Config::parse("class = Object\nmethod = Object>>class\n", None)?;
         let source = config_source(&config);
@@ -846,6 +1261,7 @@ mod tests {
         let report = diff(&Config {
             output: std::env::temp_dir().join("gemstone-rs-missing-diff.rs"),
             classes: config.classes,
+            mapped: config.mapped,
         })?;
         assert!(!report.up_to_date);
         assert!(report.diff.contains("+++"));
@@ -862,6 +1278,7 @@ mod tests {
         let config = Config {
             output,
             classes: Vec::new(),
+            mapped: Vec::new(),
         };
         let report = check(&config)?;
         assert!(!report.exists);

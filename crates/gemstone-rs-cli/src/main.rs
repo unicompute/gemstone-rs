@@ -163,6 +163,32 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             );
             Ok(())
         }
+        Command::CodegenDiscoverMapping {
+            config,
+            mapped_name,
+            class_name,
+        } => {
+            let class_ref = codegen::ClassRef::parse(&class_name).map_err(CliError::usage)?;
+            let mut session = login()?;
+            let discovered = codegen::discover_mapping(
+                &mut session,
+                default_codegen_output(&config),
+                &mapped_name,
+                &class_ref,
+            )?;
+            codegen::write_config(&config, &discovered)?;
+            println!(
+                "wrote {} with mapping {} from {}",
+                config.display(),
+                discovered
+                    .mapped
+                    .first()
+                    .map(|mapped| mapped.name.as_str())
+                    .unwrap_or("<none>"),
+                class_ref.display_name()
+            );
+            Ok(())
+        }
     }
 }
 
@@ -240,6 +266,11 @@ enum Command {
         config: PathBuf,
         classes: Vec<String>,
     },
+    CodegenDiscoverMapping {
+        config: PathBuf,
+        mapped_name: String,
+        class_name: String,
+    },
 }
 
 fn parse_command(args: &[String]) -> Result<Command, CliError> {
@@ -284,8 +315,19 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                 config: optional_path(args.get(2)),
                 classes: args.iter().skip(3).cloned().collect(),
             }),
+            Some("discover-mapping") => Ok(Command::CodegenDiscoverMapping {
+                config: optional_path(args.get(2)),
+                mapped_name: args
+                    .get(3)
+                    .cloned()
+                    .ok_or_else(|| CliError::usage("missing mapped struct name"))?,
+                class_name: args
+                    .get(4)
+                    .cloned()
+                    .ok_or_else(|| CliError::usage("missing GemStone class"))?,
+            }),
             _ => Err(CliError::usage(
-                "expected: codegen init|preview|diff|check|generate|discover",
+                "expected: codegen init|preview|diff|check|generate|discover|discover-mapping",
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
@@ -398,7 +440,8 @@ fn usage() -> &'static str {
   gemstone-rs codegen diff [config]
   gemstone-rs codegen check [config]
   gemstone-rs codegen generate [config]
-  gemstone-rs codegen discover [config] [class ...]"
+  gemstone-rs codegen discover [config] [class ...]
+  gemstone-rs codegen discover-mapping [config] <mapped-name> <class>"
 }
 
 #[derive(Debug)]
@@ -570,6 +613,21 @@ mod tests {
             Command::CodegenDiscover {
                 config: PathBuf::from("demo.codegen"),
                 classes: vec!["Object".to_string()]
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "codegen",
+                "discover-mapping",
+                "mapping.codegen",
+                "BookingDraft",
+                "UserGlobals:Booking"
+            ]))
+            .unwrap(),
+            Command::CodegenDiscoverMapping {
+                config: PathBuf::from("mapping.codegen"),
+                mapped_name: "BookingDraft".to_string(),
+                class_name: "UserGlobals:Booking".to_string()
             }
         );
     }

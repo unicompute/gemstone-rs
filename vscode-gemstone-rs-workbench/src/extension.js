@@ -22,6 +22,9 @@ function activate(context) {
   register(context, "gemstoneRs.browseClasses", browseClasses);
   register(context, "gemstoneRs.codegenInit", codegenInit);
   register(context, "gemstoneRs.codegenDiscover", codegenDiscover);
+  register(context, "gemstoneRs.generateMappingConfig", generateMappingConfig);
+  register(context, "gemstoneRs.previewBridgeRoot", previewBridgeRoot);
+  register(context, "gemstoneRs.runGeneratedMappingExample", runGeneratedMappingExample);
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
@@ -124,6 +127,9 @@ class GemStoneTreeProvider {
       return [
         node(`Config: ${configPath}`, "message", vscode.TreeItemCollapsibleState.None),
         actionNode("Discover from Live Stone", "gemstoneRs.codegenDiscover"),
+        actionNode("Generate Mapping Config", "gemstoneRs.generateMappingConfig"),
+        actionNode("Preview BridgeRoot", "gemstoneRs.previewBridgeRoot"),
+        actionNode("Run Generated Mapping Example", "gemstoneRs.runGeneratedMappingExample"),
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
@@ -253,6 +259,52 @@ async function codegenDiscover() {
   const classes = classText.split(/\s+/).map((value) => value.trim()).filter(Boolean);
   await runAndShow(["codegen", "discover", configPath, ...classes], { allowFailure: true });
   explorerProvider?.refresh();
+}
+
+async function generateMappingConfig() {
+  const configPath = await askConfigPath();
+  if (!configPath) {
+    return;
+  }
+  const mappedName = await vscode.window.showInputBox({
+    title: "Generate Mapping Config",
+    prompt: "Rust struct name for the BridgeRoot mapping",
+    value: "BookingDraft",
+  });
+  if (!mappedName) {
+    return;
+  }
+  const className = await vscode.window.showInputBox({
+    title: "Generate Mapping Config",
+    prompt: "GemStone class to inspect for field names",
+    value: "Object",
+  });
+  if (!className) {
+    return;
+  }
+  await runAndShow(["codegen", "discover-mapping", configPath, mappedName, className], {
+    allowFailure: true,
+  });
+  explorerProvider?.refresh();
+}
+
+async function previewBridgeRoot() {
+  const cfg = settings();
+  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/api/bridge/root`;
+  vscode.env.openExternal(vscode.Uri.parse(url));
+  output.clear();
+  output.appendLine(`Opened ${url}`);
+  output.appendLine("Start the local explorer first if the browser reports that the page is unavailable.");
+  output.show(true);
+}
+
+async function runGeneratedMappingExample() {
+  const terminal = vscode.window.createTerminal({
+    name: "gemstone-rs Generated Mapping",
+    cwd: settings().cwd,
+  });
+  terminal.sendText("cargo run -p gemstone-rs --example generated_mapping_app");
+  terminal.show();
 }
 
 async function codegenPreview() {

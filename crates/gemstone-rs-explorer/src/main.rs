@@ -1,7 +1,7 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    Config, Oop, Session, Value,
+    BridgeKeyType, Config, Oop, Session, Value,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -203,6 +203,7 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 escape_json(codegen::sample_config())
             ),
         ),
+        "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route),
         "/api/codegen/preview" => codegen_preview_response(&route),
         "/api/codegen/diff" => codegen_diff_response(&route),
         "/api/codegen/check" => codegen_check_response(&route),
@@ -215,6 +216,43 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 );
             }
             codegen_generate_response(&route)
+        }
+        "/api/bridge/root" => live_json(|session| {
+            let (name, oop, identity_id) = {
+                let root = session.bridge_root()?;
+                (root.name().to_string(), root.oop(), root.identity_id())
+            };
+            Ok(format!(
+                r#"{{"success":true,"name":"{}","oop":{},"identityId":{},"identityMapSize":{}}}"#,
+                escape_json(&name),
+                oop.raw(),
+                identity_id,
+                session.identity_map_len()
+            ))
+        }),
+        "/api/bridge/get" => {
+            let Some(key) = route.non_empty_query("key") else {
+                return Response::json(400, r#"{"error":"missing key"}"#.to_string());
+            };
+            let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            live_json(|session| {
+                let mut root = session.bridge_root()?;
+                let oop = root.get_oop_with_key_type(&key, key_type)?;
+                drop(root);
+                inspect_oop(session, oop)
+            })
+        }
+        "/api/bridge/mapping-config" => {
+            let mapped = route
+                .non_empty_query("mapped")
+                .unwrap_or_else(|| "BookingDraft".to_string());
+            Response::json(
+                200,
+                format!(
+                    r#"{{"success":true,"config":"{}"}}"#,
+                    escape_json(&sample_mapping_config(&mapped))
+                ),
+            )
         }
         _ => Response::json(404, r#"{"error":"not found"}"#.to_string()),
     }
@@ -344,6 +382,46 @@ fn codegen_generate_response(route: &Route) -> Response {
         ),
         Err(err) => codegen_error_response(err),
     }
+}
+
+fn codegen_discover_mapping_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    let mapped_name = route
+        .non_empty_query("mapped")
+        .unwrap_or_else(|| "BookingDraft".to_string());
+    let class_name = route
+        .non_empty_query("class")
+        .unwrap_or_else(|| "Object".to_string());
+    let Ok(class_ref) = codegen::ClassRef::parse(&class_name) else {
+        return Response::json(400, r#"{"error":"invalid class"}"#.to_string());
+    };
+    live_json(|session| {
+        let config = codegen::discover_mapping(session, path.clone(), &mapped_name, &class_ref)
+            .map_err(|err| gemstone_rs::Error::Mapping {
+                field: "codegen discover-mapping".to_string(),
+                expected: "GemStone class field metadata",
+                actual: err.to_string(),
+            })?;
+        Ok(format!(
+            r#"{{"success":true,"class":"{}","mapped":"{}","config":"{}"}}"#,
+            escape_json(&class_ref.display_name()),
+            escape_json(&mapped_name),
+            escape_json(&codegen::config_source(&config))
+        ))
+    })
+}
+
+fn bridge_key_type_query(value: Option<&str>) -> BridgeKeyType {
+    match value.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+        Some("symbol") => BridgeKeyType::Symbol,
+        _ => BridgeKeyType::String,
+    }
+}
+
+fn sample_mapping_config(mapped: &str) -> String {
+    format!(
+        "mapped = {mapped} | doc=Typed payload stored under GemStoneRsBridgeRoot.\nfield = {mapped}.name | type=String | key=name | key_type=String\nfield = {mapped}.amount | type=SmallInt | key=amount | key_type=String\nfield = {mapped}.tags | type=Vec<String> | key=tags | key_type=String\n"
+    )
 }
 
 fn codegen_error_response(err: codegen::Error) -> Response {
@@ -542,9 +620,13 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/browse/methods?class=Object&amp;protocol=--%20all%20--">/api/browse/methods?class=Object&amp;protocol=-- all --</a></li>
 <li><a href="/api/browse/source?class=Object">/api/browse/source?class=Object</a></li>
 <li><a href="/api/codegen/sample">/api/codegen/sample</a></li>
+<li><a href="/api/codegen/discover-mapping?mapped=BookingDraft&amp;class=Object">/api/codegen/discover-mapping?mapped=BookingDraft&amp;class=Object</a></li>
 <li><a href="/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen">/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen">/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/codegen/check?config=examples/codegen/gemstone-rs.codegen">/api/codegen/check?config=examples/codegen/gemstone-rs.codegen</a></li>
+<li><a href="/api/bridge/root">/api/bridge/root</a></li>
+<li><a href="/api/bridge/get?key=BookingDraft">/api/bridge/get?key=BookingDraft</a></li>
+<li><a href="/api/bridge/mapping-config?mapped=BookingDraft">/api/bridge/mapping-config?mapped=BookingDraft</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
 </ul>
 <p>read_only={} allow_eval={}</p>

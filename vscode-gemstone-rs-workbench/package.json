@@ -2,8 +2,13 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "unicompute",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#c51620",
+    "theme": "dark"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -26,6 +31,9 @@
     "onCommand:gemstoneRs.browseClasses",
     "onCommand:gemstoneRs.codegenInit",
     "onCommand:gemstoneRs.codegenDiscover",
+    "onCommand:gemstoneRs.generateMappingConfig",
+    "onCommand:gemstoneRs.previewBridgeRoot",
+    "onCommand:gemstoneRs.runGeneratedMappingExample",
     "onCommand:gemstoneRs.codegenPreview",
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
@@ -80,6 +88,18 @@
       {
         "command": "gemstoneRs.codegenDiscover",
         "title": "GemStone RS: Codegen Discover"
+      },
+      {
+        "command": "gemstoneRs.generateMappingConfig",
+        "title": "GemStone RS: Generate Mapping Config"
+      },
+      {
+        "command": "gemstoneRs.previewBridgeRoot",
+        "title": "GemStone RS: Preview BridgeRoot"
+      },
+      {
+        "command": "gemstoneRs.runGeneratedMappingExample",
+        "title": "GemStone RS: Run Generated Mapping Example"
       },
       {
         "command": "gemstoneRs.codegenPreview",

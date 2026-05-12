@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${1:-0.1.0}"
+VERSION="${1:-0.2.0}"
 PUBLISHER="${VSCODE_PUBLISHER:-unicompute}"
 EXTENSION="${VSCODE_EXTENSION:-gemstone-rs-workbench}"
+REPO="${GITHUB_REPOSITORY:-unicompute/gemstone-rs}"
+VERIFY_GITHUB_RELEASE="${VERIFY_GITHUB_RELEASE:-1}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/gemstone-rs-install.XXXXXX")"
 
@@ -48,8 +50,11 @@ require cargo
 require curl
 require node
 require npx
+if [[ "$VERIFY_GITHUB_RELEASE" != "0" && "$VERIFY_GITHUB_RELEASE" != "false" ]]; then
+  require gh
+fi
 
-for crate in gemstone-gci gemstone-rs gemstone-rs-cli gemstone-rs-explorer; do
+for crate in gemstone-gci gemstone-rs-macros gemstone-rs gemstone-rs-cli gemstone-rs-explorer; do
   check_crate_version "$crate"
 done
 
@@ -62,4 +67,30 @@ CARGO_INSTALL_ROOT="$INSTALL_ROOT" cargo install gemstone-rs-explorer --version 
 echo "installed binaries respond to --help"
 
 check_marketplace_version
+
+check_github_release_assets() {
+  local tag="${GITHUB_RELEASE_TAG:-v${VERSION}}"
+  local vsix="gemstone-rs-workbench-${VERSION}.vsix"
+  printf 'checking GitHub release %s assets... ' "$tag"
+  local assets
+  assets="$(gh release view "$tag" --repo "$REPO" --json assets --jq '.assets[].name')"
+  if ! grep -Fxq "$vsix" <<<"$assets"; then
+    echo "missing asset $vsix" >&2
+    echo "$assets" >&2
+    exit 1
+  fi
+  if ! grep -Fxq "SHA256SUMS" <<<"$assets"; then
+    echo "missing asset SHA256SUMS" >&2
+    echo "$assets" >&2
+    exit 1
+  fi
+  printf 'ok\n'
+}
+
+if [[ "$VERIFY_GITHUB_RELEASE" != "0" && "$VERIFY_GITHUB_RELEASE" != "false" ]]; then
+  check_github_release_assets
+else
+  echo "skipping GitHub release asset check"
+fi
+
 echo "publish verification complete"

@@ -1,0 +1,184 @@
+@page {
+  size: A4;
+  margin: 20mm 17mm 20mm 17mm;
+  @bottom-right {
+    content: counter(page);
+    color: #7a1d24;
+    font-family: "Georgia", serif;
+    font-size: 10pt;
+  }
+}
+
+body {
+  font-family: "Georgia", serif;
+  color: #2c2323;
+  line-height: 1.45;
+  font-size: 11pt;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: #2c2323;
+  page-break-after: avoid;
+}
+
+h1 {
+  font-size: 26pt;
+  margin: 0 0 10mm 0;
+  border-bottom: 2px solid #e8b7bb;
+  padding-bottom: 4mm;
+}
+
+h2 {
+  font-size: 18pt;
+  margin-top: 9mm;
+  margin-bottom: 4mm;
+}
+
+h3 {
+  font-size: 14pt;
+  margin-top: 6mm;
+  margin-bottom: 3mm;
+}
+
+p,
+li,
+td,
+th,
+blockquote {
+  orphans: 3;
+  widows: 3;
+}
+
+p code,
+li code,
+td code,
+th code {
+  font-family: "Menlo", "Consolas", monospace;
+  background: #f7e7e8;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+pre {
+  font-family: "Menlo", "Consolas", monospace;
+  background: #16181f;
+  color: #f6f6f6;
+  padding: 4mm;
+  border-radius: 8px;
+  font-size: 9pt;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+a {
+  color: #9b1d28;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 210mm;
+  margin: 6mm auto;
+  page-break-inside: avoid;
+}
+
+blockquote {
+  margin: 5mm 0;
+  padding: 0 0 0 5mm;
+  border-left: 4px solid #d9949b;
+  color: #5a4042;
+}
+
+ul,
+ol {
+  margin-top: 3mm;
+  margin-bottom: 4mm;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5mm 0;
+  font-size: 10pt;
+}
+
+th,
+td {
+  border: 1px solid #d8a4aa;
+  padding: 2.5mm 3mm;
+  vertical-align: top;
+}
+
+th {
+  background: #fae7e9;
+}
+
+.title-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 250mm;
+  page-break-after: always;
+  padding-top: 8mm;
+}
+
+.title-page h1 {
+  font-size: 32pt;
+  border: 0;
+  margin-bottom: 4mm;
+}
+
+.subtitle {
+  font-size: 15pt;
+  color: #7a1d24;
+  margin-bottom: 6mm;
+}
+
+.meta {
+  color: #7a5d61;
+  font-size: 10.5pt;
+}
+
+.cover-art {
+  width: 100%;
+  max-width: 155mm;
+  max-height: none;
+  margin: 4mm auto 7mm auto;
+}
+
+.page-break {
+  page-break-before: always;
+}
+
+.toc {
+  page-break-after: always;
+}
+
+.toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.toc li {
+  margin: 2mm 0;
+}
+
+.doc-note {
+  margin-top: 8mm;
+  padding: 4mm;
+  background: #fff1f2;
+  border: 1px solid #e6b7bb;
+  border-radius: 8px;
+  color: #5d3d41;
+}

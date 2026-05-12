@@ -75,6 +75,23 @@ let methods = browser.methods("Object", "-- all --", false, "")?;
 let source = browser.source("Object", "printString", false, "")?;
 ```
 
+Runnable examples in the repository:
+
+```bash
+cargo run -p gemstone-rs --example quickstart
+cargo run -p gemstone-rs --example browser
+cargo run -p gemstone-rs --example transactions
+cargo run -p gemstone-rs --example oop_values
+cargo run -p gemstone-rs --example codegen_preview
+cargo run -p gemstone-rs --example codegen_workflow
+cargo run -p gemstone-rs --example generated_wrapper_app
+cargo run -p gemstone-rs --example codegen_discover
+```
+
+The repository docs include setup, examples, user manual, cookbook,
+`gemstone-py` comparison, codegen, explorer, VS Code workbench, article, and
+PDF guides under `docs/`.
+
 Runtime environment:
 
 ```bash
