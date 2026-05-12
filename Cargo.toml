@@ -3,6 +3,7 @@ members = [
   "crates/gemstone-gci",
   "crates/gemstone-rs",
   "crates/gemstone-rs-cli",
+  "crates/gemstone-rs-explorer",
 ]
 resolver = "2"
 

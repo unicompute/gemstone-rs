@@ -30,6 +30,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "gemstone-rs-explorer"
+version = "0.1.0"
+dependencies = [
+ "gemstone-rs",
+]
+
+[[package]]
 name = "libloading"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

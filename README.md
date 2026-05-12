@@ -13,6 +13,7 @@ The Cargo package is named `gemstone-rs`; Rust code imports it as
 | `crates/gemstone-gci` | Low-level dynamic `libgcirpc` loader, OOP constants, and raw GCI ABI calls. |
 | `crates/gemstone-rs` | Safe Rust API with `Config`, `Session`, `Oop`, `Value`, and transaction helpers. |
 | `crates/gemstone-rs-cli` | CLI for evaluating Smalltalk, inspecting OOPs, and future codegen commands. |
+| `crates/gemstone-rs-explorer` | Local-only web explorer proving ground for browse, inspect, eval, and codegen endpoints. |
 
 `gemstone-gci` keeps unsafe C ABI calls isolated. `gemstone-rs` is the public
 crate Rust application developers should use.
@@ -65,6 +66,32 @@ The initial CLI intentionally uses only the standard library. The `eval` and
 `inspect oop` commands are wired to live GemStone calls. The codegen commands
 are placeholders for the next API/codegen layer.
 
+## Explorer
+
+The explorer is intentionally local-only and read-only by default:
+
+```bash
+cargo run -p gemstone-rs-explorer -- --port 8787
+```
+
+Open:
+
+```text
+http://127.0.0.1:8787/
+http://127.0.0.1:8787/api/status
+http://127.0.0.1:8787/api/browse/dictionaries
+http://127.0.0.1:8787/api/inspect?oop=20
+```
+
+Workspace eval is opt-in:
+
+```bash
+cargo run -p gemstone-rs-explorer -- --allow-eval
+```
+
+The first explorer pass uses standard-library HTTP only. It provides safe
+defaults and API endpoints before committing to a richer UI framework.
+
 ## Threading
 
 `Session` is deliberately not `Send` or `Sync`. Keep a session on the thread
@@ -89,6 +116,7 @@ The crates must be published in dependency order:
 cargo publish -p gemstone-gci
 cargo publish -p gemstone-rs
 cargo publish -p gemstone-rs-cli
+cargo publish -p gemstone-rs-explorer
 ```
 
 Before `gemstone-gci` is published, `cargo package --workspace` is expected to
@@ -107,7 +135,5 @@ GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_
 
 ## Explorer Roadmap
 
-A web explorer should live as a separate crate, for example
-`crates/gemstone-rs-explorer`, after the CLI and codegen APIs are stable. It
-should bind to `127.0.0.1` by default, start read-only, require explicit
-credentials, and make eval/write operations opt-in.
+Next explorer work should add structured endpoints for classes, methods,
+protocols, source, generated wrapper previews, and diffs against files.
