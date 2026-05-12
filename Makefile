@@ -24,7 +24,7 @@ docs-pdf:
 	python3 docs/build_pdf_docs.py
 
 docs-pdf-check: docs-pdf
-	git diff --exit-code -- docs/pdf
+	test -n "$$(find docs/pdf -name '*.pdf' -type f -size +0c -print -quit)"
 
 package-gci:
 	cargo package -p gemstone-gci --no-verify

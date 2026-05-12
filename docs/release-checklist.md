@@ -20,6 +20,10 @@ make vscode-package
 python3 docs/build_pdf_docs.py
 ```
 
+`make verify` checks that PDF generation completes and produces non-empty PDF
+files. The release workflow rebuilds and attaches fresh PDFs for the target
+runner because WeasyPrint output can differ byte-for-byte across platforms.
+
 ## Publish
 
 Set GitHub secrets once:
