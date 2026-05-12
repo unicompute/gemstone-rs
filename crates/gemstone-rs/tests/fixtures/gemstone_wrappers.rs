@@ -7,20 +7,10 @@ pub struct Object<'a> {
 }
 
 impl<'a> Object<'a> {
-    pub fn resolve(session: &'a mut Session) -> Result<Self> {
-        let oop = session.execute("(System myUserProfile symbolList objectNamed: 'Object' asSymbol)")?;
-        Ok(Self { session, oop })
-    }
-
     pub fn from_oop(session: &'a mut Session, oop: Oop) -> Self {
         Self { session, oop }
     }
 
-    pub fn oop(&self) -> Oop {
-        self.oop
-    }
-
-    /// Return the receiver printString.
     pub fn print_string(&mut self) -> Result<String> {
         let value = self.session.perform(self.oop, "printString", &[])?;
         match value {
@@ -32,10 +22,4 @@ impl<'a> Object<'a> {
             }),
         }
     }
-
-    pub fn class(&mut self) -> Result<Value> {
-        let value = self.session.perform(self.oop, "class", &[])?;
-        Ok(value)
-    }
 }
-

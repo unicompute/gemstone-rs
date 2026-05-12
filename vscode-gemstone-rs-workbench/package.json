@@ -18,19 +18,45 @@
   ],
   "main": "./src/extension.js",
   "activationEvents": [
+    "onView:gemstoneRsExplorer",
+    "onCommand:gemstoneRs.refreshExplorer",
     "onCommand:gemstoneRs.verifySetup",
     "onCommand:gemstoneRs.eval",
     "onCommand:gemstoneRs.browseDictionaries",
     "onCommand:gemstoneRs.browseClasses",
     "onCommand:gemstoneRs.codegenInit",
+    "onCommand:gemstoneRs.codegenDiscover",
     "onCommand:gemstoneRs.codegenPreview",
+    "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
     "onCommand:gemstoneRs.codegenGenerate",
     "onCommand:gemstoneRs.launchExplorer",
+    "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gemstoneRs",
+          "title": "GemStone RS",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "gemstoneRs": [
+        {
+          "id": "gemstoneRsExplorer",
+          "name": "GemStone RS"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "gemstoneRs.refreshExplorer",
+        "title": "GemStone RS: Refresh"
+      },
       {
         "command": "gemstoneRs.verifySetup",
         "title": "GemStone RS: Verify Setup"
@@ -52,8 +78,16 @@
         "title": "GemStone RS: Codegen Init"
       },
       {
+        "command": "gemstoneRs.codegenDiscover",
+        "title": "GemStone RS: Codegen Discover"
+      },
+      {
         "command": "gemstoneRs.codegenPreview",
         "title": "GemStone RS: Codegen Preview"
+      },
+      {
+        "command": "gemstoneRs.codegenDiff",
+        "title": "GemStone RS: Codegen Diff"
       },
       {
         "command": "gemstoneRs.codegenCheck",
@@ -68,10 +102,38 @@
         "title": "GemStone RS: Launch Explorer"
       },
       {
+        "command": "gemstoneRs.openMethodSource",
+        "title": "GemStone RS: Open Method Source"
+      },
+      {
         "command": "gemstoneRs.openCodegenDocs",
         "title": "GemStone RS: Open Codegen Docs"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gemstoneRs.refreshExplorer",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "gemstoneRs.codegenPreview",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "gemstoneRs.codegenCheck",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "gemstoneRs.codegenGenerate",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@4"
+        }
+      ]
+    },
     "configuration": {
       "title": "gemstone-rs Workbench",
       "properties": {

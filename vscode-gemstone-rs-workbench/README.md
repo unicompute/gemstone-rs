@@ -4,7 +4,8 @@ VS Code commands for `gemstone-rs` CLI, codegen, and local explorer workflows.
 
 The extension is intentionally thin: the Rust CLI remains the stable contract,
 and VS Code provides command palette actions, output panels, and generated-file
-previews.
+previews. The GemStone RS activity bar view also exposes a browsable tree for
+dictionaries, classes, protocols, methods, and codegen actions.
 
 ## Setup
 
@@ -35,14 +36,31 @@ For a source checkout:
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
 - `GemStone RS: Codegen Init`
+- `GemStone RS: Codegen Discover`
 - `GemStone RS: Codegen Preview`
+- `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Launch Explorer`
+- `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
 
 `Codegen Preview` opens generated Rust wrappers in an untitled Rust editor.
-`Codegen Generate` writes the generated file and opens it.
+`Codegen Diff` opens a generated diff. `Codegen Generate` shows that diff
+before writing, then opens the generated file after a successful write.
+
+## Sidebar
+
+Open the GemStone RS activity bar item to use the sidebar tree:
+
+- `Dictionaries` expands live dictionaries, classes, protocols, and methods.
+- Selecting a method opens its GemStone source through `gemstone-rs browse source`.
+- `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, and Docs.
+- `Explorer` exposes Verify Setup, Eval Smalltalk, and Launch Explorer.
+
+The tree uses the same settings as the command palette actions. If
+`gemstoneRs.useCargo` is true, commands run through the local checkout with
+`cargo run -p gemstone-rs-cli -- ...`.
 
 ## Package Locally
 

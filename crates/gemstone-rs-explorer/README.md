@@ -24,6 +24,7 @@ http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/codegen/sample
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
@@ -55,6 +56,7 @@ GET /api/browse/methods?class=Object&protocol=--%20all%20--&meta=0
 GET /api/browse/source?class=Object&selector=printString&meta=0
 GET /api/codegen/sample
 GET /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 GET /api/codegen/check?config=examples/codegen/gemstone-rs.codegen
 ```
 

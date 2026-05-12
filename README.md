@@ -19,6 +19,47 @@ The Cargo package is named `gemstone-rs`; Rust code imports it as
 `gemstone-gci` keeps unsafe C ABI calls isolated. `gemstone-rs` is the public
 crate Rust application developers should use.
 
+## Install
+
+For Rust applications:
+
+```bash
+cargo add gemstone-rs
+```
+
+For command-line tools:
+
+```bash
+cargo install gemstone-rs-cli
+cargo install gemstone-rs-explorer
+```
+
+The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
+
+```bash
+gemstone-rs --help
+gemstone-rs eval "3 + 4"
+gemstone-rs-explorer --help
+```
+
+For VS Code, install the workbench from the Marketplace:
+
+```text
+https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workbench
+```
+
+GemStone environment setup:
+
+```bash
+export GS_LIB=/opt/gemstone/product/lib
+export GS_STONE=gs64stone
+export GS_USERNAME=DataCurator
+export GS_PASSWORD=swordfish
+```
+
+`GS_STONE_NAME` is also accepted as a stone-name alias. Set `GS_LIB_PATH` when
+you want to point directly at a specific `libgcirpc` file.
+
 Minimal usage:
 
 ```rust
@@ -67,9 +108,6 @@ export GS_USERNAME=DataCurator
 export GS_PASSWORD=swordfish
 ```
 
-`GS_STONE_NAME` is also accepted as a stone-name alias. Set `GS_LIB_PATH` when
-you want to point directly at a specific `libgcirpc` file.
-
 ## CLI
 
 ```bash
@@ -82,15 +120,18 @@ cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
 cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 ```
 
 The initial CLI intentionally uses only the standard library. The `eval` and
 `inspect oop` commands are wired to live GemStone calls. The `browse` commands
 cover dictionaries, classes, protocols, methods, and source using the active
 user's symbol list. The `codegen` commands read a line-oriented config,
-preview generated Rust wrappers, check stale output, and write generated files.
+preview generated Rust wrappers, diff/check stale output, generate configs from
+a live stone, and write generated files.
 
 ## Codegen
 
@@ -117,6 +158,13 @@ class = UserGlobals:OkzBooking
 method = UserGlobals:OkzBooking>>findById:
 ```
 
+Optional metadata controls generated signatures and docs:
+
+```text
+method = UserGlobals:OkzBooking>>findById: | args=id | return=Oop | doc=Find a booking by id.
+method = Object>>printString | return=String | doc=Return the receiver printString.
+```
+
 See `examples/codegen/` for a concrete generated wrapper example.
 
 ## Explorer
@@ -139,6 +187,7 @@ http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/codegen/sample
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/inspect?oop=20
 ```
@@ -176,7 +225,10 @@ Rust CLI and open output/preview editors:
 ```
 
 Commands include setup verification, eval, browse dictionaries/classes,
-codegen init/preview/check/generate, and launch explorer.
+codegen init/discover/preview/diff/check/generate, and launch explorer. The
+GemStone RS activity bar view browses dictionaries, classes, protocols, methods,
+and the configured codegen actions. `Codegen Generate` shows the generated diff
+before writing files.
 
 ## Threading
 
@@ -205,6 +257,16 @@ make vscode-package
 That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.1.0.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
+Verify published artifacts with:
+
+```bash
+scripts/publish_verify.sh 0.1.0
+```
+
+The verification script checks crates.io package versions, installs
+`gemstone-rs-cli` and `gemstone-rs-explorer`, runs both binaries with `--help`,
+and confirms the Marketplace version matches the VS Code package metadata.
+
 ## Publishing
 
 The crates must be published in dependency order:
@@ -214,6 +276,13 @@ cargo publish -p gemstone-gci
 cargo publish -p gemstone-rs
 cargo publish -p gemstone-rs-cli
 cargo publish -p gemstone-rs-explorer
+```
+
+Or use the repository helper:
+
+```bash
+scripts/publish_crates.sh
+DRY_RUN=1 scripts/publish_crates.sh
 ```
 
 Before `gemstone-gci` is published, `cargo package --workspace` is expected to

@@ -25,7 +25,7 @@ The config format is intentionally line-oriented:
 ```text
 output = generated/gemstone_wrappers.rs
 class = Object
-method = Object>>printString
+method = Object>>printString | return=String | doc=Return the receiver printString.
 method = Object>>class
 ```
 
@@ -38,3 +38,21 @@ method = UserGlobals:OkzBooking>>findById:
 ```
 
 An empty dictionary resolves through the active user's symbol list.
+
+Optional method metadata controls generated signatures:
+
+```text
+method = UserGlobals:OkzBooking>>findById: | args=id | return=Oop | doc=Find a booking by id.
+```
+
+Generate a config from a live stone:
+
+```bash
+cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
+```
+
+Preview a diff before writing:
+
+```bash
+cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
+```

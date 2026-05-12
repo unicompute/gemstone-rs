@@ -4,6 +4,104 @@
 //! loading and raw ABI calls. `Session` provides RAII login/logout behavior,
 //! explicit OOP values, conservative transaction helpers, and basic value
 //! marshalling for nil, booleans, small integers, characters, and raw OOPs.
+//!
+//! Rust code imports this crate as `gemstone_rs`:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session, Value};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let config = Config::from_env()?;
+//!     let mut session = Session::login(config)?;
+//!
+//!     let value = session.eval("3 + 4")?;
+//!     assert_eq!(value, Value::SmallInt(7));
+//!
+//!     session.logout()?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Browse dictionaries, classes, protocols, methods, and source through the
+//! same browser API used by the CLI and explorer:
+//!
+//! ```no_run
+//! use gemstone_rs::{browser::Browser, Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let mut browser = Browser::new(&mut session);
+//!
+//!     let dictionaries = browser.dictionaries()?;
+//!     let classes = browser.classes("UserGlobals")?;
+//!     let protocols = browser.protocols("Object", false, "")?;
+//!     let methods = browser.methods("Object", "-- all --", false, "")?;
+//!     let source = browser.source("Object", "printString", false, "")?;
+//!
+//!     println!("{dictionaries:?} {classes:?} {protocols:?} {methods:?}");
+//!     println!("{source}");
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Transactions are explicit. `transaction` commits on success and aborts on
+//! error:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     session.transaction(|session| {
+//!         let value = session.new_string("hello from Rust")?;
+//!         session.global_put("GemStoneRsExample", value)
+//!     })?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! OOPs and values are explicit:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, Session, Value};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let oop = session.value_to_oop(&Value::SmallInt(7))?;
+//!     let value = session.perform(oop, "printString", &[])?;
+//!     println!("{value:?}");
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Codegen configs can be parsed and checked from Rust:
+//!
+//! ```
+//! use gemstone_rs::codegen;
+//!
+//! let config = codegen::Config::parse(
+//!     "output = generated/gemstone_wrappers.rs\nclass = Object\nmethod = Object>>printString | return=String\n",
+//!     None,
+//! )?;
+//! let generated = codegen::generate(&config);
+//! assert!(generated.source.contains("pub struct Object"));
+//! # Ok::<(), codegen::Error>(())
+//! ```
+//!
+//! Safety notes:
+//!
+//! - `Session` is deliberately not `Send` or `Sync`; keep it on the thread
+//!   that logged in.
+//! - Unsafe C ABI calls are isolated in `gemstone-gci`.
+//! - `libgcirpc` is loaded dynamically at runtime through `GS_LIB_PATH`,
+//!   `GS_LIB`, or the platform loader path.
+//!
+//! Roadmap:
+//!
+//! - Broader typed wrapper generation for Rust services and CLIs.
+//! - A richer local explorer over the same API.
+//! - Optional VS Code webview integration once the CLI and explorer contracts
+//!   are stable.
 
 pub mod browser;
 pub mod codegen;
@@ -39,6 +137,10 @@ pub enum Error {
     IllegalOop {
         operation: &'static str,
     },
+    UnexpectedType {
+        expected: &'static str,
+        actual: String,
+    },
     NegativeSize(i64),
     ArgumentCountTooLarge(usize),
 }
@@ -61,6 +163,9 @@ impl fmt::Display for Error {
             Self::IllegalOop { operation } => {
                 write!(f, "GemStone operation {operation} returned OOP_ILLEGAL")
             }
+            Self::UnexpectedType { expected, actual } => {
+                write!(f, "expected GemStone value type {expected}, got {actual}")
+            }
             Self::NegativeSize(size) => write!(f, "GemStone returned a negative size: {size}"),
             Self::ArgumentCountTooLarge(count) => {
                 write!(f, "too many GemStone selector arguments: {count}")
@@ -79,6 +184,7 @@ impl StdError for Error {
             | Self::NotLoggedIn
             | Self::GemStone { .. }
             | Self::IllegalOop { .. }
+            | Self::UnexpectedType { .. }
             | Self::NegativeSize(_)
             | Self::ArgumentCountTooLarge(_) => None,
         }

@@ -14,8 +14,10 @@ cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
 cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 ```
 
 The CLI uses the same GemStone environment variables as the library:
@@ -27,7 +29,8 @@ export GS_USERNAME=DataCurator
 export GS_PASSWORD=swordfish
 ```
 
-`codegen check` is suitable for CI. In this repository it verifies:
+`codegen diff` previews generated changes before writing. `codegen check` is
+suitable for CI. In this repository it verifies:
 
 ```bash
 cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen

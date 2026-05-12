@@ -111,6 +111,20 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print!("{}", codegen::generate(&config).source);
             Ok(())
         }
+        Command::CodegenDiff { config } => {
+            let config = codegen::Config::from_file(&config)?;
+            let report = codegen::diff(&config)?;
+            if report.up_to_date {
+                println!("codegen ok: {} is up to date", report.output.display());
+                Ok(())
+            } else {
+                print!("{}", report.diff);
+                Err(CliError::CodegenCheck(format!(
+                    "{} is stale or missing",
+                    report.output.display()
+                )))
+            }
+        }
         Command::CodegenCheck { config } => {
             let config_path = config;
             let config = codegen::Config::from_file(&config_path)?;
@@ -130,6 +144,23 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             let config = codegen::Config::from_file(config)?;
             let generated = codegen::generate_to_file(&config)?;
             println!("generated {}", generated.output.display());
+            Ok(())
+        }
+        Command::CodegenDiscover { config, classes } => {
+            let class_refs: Vec<codegen::ClassRef> = classes
+                .iter()
+                .map(|class| codegen::ClassRef::parse(class))
+                .collect::<Result<_, _>>()
+                .map_err(CliError::usage)?;
+            let mut session = login()?;
+            let discovered =
+                codegen::discover(&mut session, default_codegen_output(&config), &class_refs)?;
+            codegen::write_config(&config, &discovered)?;
+            println!(
+                "wrote {} with {} classes",
+                config.display(),
+                discovered.classes.len()
+            );
             Ok(())
         }
     }
@@ -196,11 +227,18 @@ enum Command {
     CodegenPreview {
         config: PathBuf,
     },
+    CodegenDiff {
+        config: PathBuf,
+    },
     CodegenCheck {
         config: PathBuf,
     },
     CodegenGenerate {
         config: PathBuf,
+    },
+    CodegenDiscover {
+        config: PathBuf,
+        classes: Vec<String>,
     },
 }
 
@@ -233,14 +271,21 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             Some("preview") => Ok(Command::CodegenPreview {
                 config: optional_path(args.get(2)),
             }),
+            Some("diff") => Ok(Command::CodegenDiff {
+                config: optional_path(args.get(2)),
+            }),
             Some("check") => Ok(Command::CodegenCheck {
                 config: optional_path(args.get(2)),
             }),
             Some("generate") => Ok(Command::CodegenGenerate {
                 config: optional_path(args.get(2)),
             }),
+            Some("discover") => Ok(Command::CodegenDiscover {
+                config: optional_path(args.get(2)),
+                classes: args.iter().skip(3).cloned().collect(),
+            }),
             _ => Err(CliError::usage(
-                "expected: codegen init|preview|check|generate",
+                "expected: codegen init|preview|diff|check|generate|discover",
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
@@ -331,6 +376,14 @@ fn optional_path(value: Option<&String>) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH))
 }
 
+fn default_codegen_output(config: &std::path::Path) -> PathBuf {
+    config
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("generated/gemstone_wrappers.rs")
+}
+
 fn usage() -> &'static str {
     "usage:
   gemstone-rs eval <smalltalk>
@@ -342,8 +395,10 @@ fn usage() -> &'static str {
   gemstone-rs inspect oop <raw-oop>
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
+  gemstone-rs codegen diff [config]
   gemstone-rs codegen check [config]
-  gemstone-rs codegen generate [config]"
+  gemstone-rs codegen generate [config]
+  gemstone-rs codegen discover [config] [class ...]"
 }
 
 #[derive(Debug)]
@@ -499,9 +554,22 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["codegen", "diff", "demo.codegen"])).unwrap(),
+            Command::CodegenDiff {
+                config: PathBuf::from("demo.codegen")
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["codegen", "generate", "demo.codegen"])).unwrap(),
             Command::CodegenGenerate {
                 config: PathBuf::from("demo.codegen")
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "discover", "demo.codegen", "Object"])).unwrap(),
+            Command::CodegenDiscover {
+                config: PathBuf::from("demo.codegen"),
+                classes: vec!["Object".to_string()]
             }
         );
     }

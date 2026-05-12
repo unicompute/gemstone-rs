@@ -1,4 +1,4 @@
-use crate::browser;
+use crate::{browser, browser::Browser, Session};
 use std::collections::BTreeMap;
 use std::error::Error as StdError;
 use std::fmt;
@@ -14,6 +14,7 @@ pub const DEFAULT_OUTPUT_PATH: &str = "src/generated/gemstone_wrappers.rs";
 #[derive(Debug)]
 pub enum Error {
     Io(io::Error),
+    GemStone(crate::Error),
     Config {
         path: Option<PathBuf>,
         line: usize,
@@ -35,6 +36,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Io(err) => write!(f, "{err}"),
+            Self::GemStone(err) => write!(f, "{err}"),
             Self::Config {
                 path,
                 line,
@@ -54,6 +56,7 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Self::Io(err) => Some(err),
+            Self::GemStone(err) => Some(err),
             Self::Config { .. } => None,
         }
     }
@@ -62,6 +65,12 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
+    }
+}
+
+impl From<crate::Error> for Error {
+    fn from(value: crate::Error) -> Self {
+        Self::GemStone(value)
     }
 }
 
@@ -215,11 +224,18 @@ impl ClassRef {
 pub struct MethodSpec {
     pub class_ref: ClassRef,
     pub selector: String,
+    pub args: Vec<String>,
+    pub return_type: ReturnType,
+    pub doc: Option<String>,
 }
 
 impl MethodSpec {
     pub fn parse(value: &str) -> std::result::Result<Self, String> {
-        let (class_ref, selector) = value
+        let mut parts = value.split('|').map(str::trim);
+        let head = parts
+            .next()
+            .ok_or_else(|| "method must look like Class>>selector".to_string())?;
+        let (class_ref, selector) = head
             .split_once(">>")
             .ok_or_else(|| "method must look like Class>>selector".to_string())?;
         let class_ref = ClassRef::parse(class_ref)?;
@@ -227,9 +243,40 @@ impl MethodSpec {
         if selector.is_empty() {
             return Err("method selector is empty".to_string());
         }
+        let mut args = Vec::new();
+        let mut return_type = ReturnType::Value;
+        let mut doc = None;
+        for option in parts {
+            let Some((key, value)) = option.split_once('=') else {
+                return Err(format!("method option must look like key=value: {option}"));
+            };
+            match key.trim() {
+                "args" => {
+                    args = value
+                        .split(',')
+                        .map(str::trim)
+                        .filter(|arg| !arg.is_empty())
+                        .map(str::to_string)
+                        .collect();
+                }
+                "return" => return_type = ReturnType::parse(value.trim())?,
+                "doc" => doc = Some(value.trim().to_string()),
+                other => return Err(format!("unknown method option: {other}")),
+            }
+        }
+        let selector_arg_count = selector.matches(':').count();
+        if !args.is_empty() && args.len() != selector_arg_count {
+            return Err(format!(
+                "selector {selector} expects {selector_arg_count} arguments, got {} names",
+                args.len()
+            ));
+        }
         Ok(Self {
             class_ref,
             selector: selector.to_string(),
+            args,
+            return_type,
+            doc,
         })
     }
 
@@ -239,6 +286,58 @@ impl MethodSpec {
 
     fn arg_count(&self) -> usize {
         self.selector.matches(':').count()
+    }
+
+    fn arg_names(&self) -> Vec<String> {
+        if self.args.is_empty() {
+            (0..self.arg_count())
+                .map(|index| format!("arg{index}"))
+                .collect()
+        } else {
+            self.args.iter().map(|arg| rust_fn_name(arg)).collect()
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ReturnType {
+    Value,
+    String,
+    SmallInt,
+    Bool,
+    Oop,
+}
+
+impl ReturnType {
+    fn parse(value: &str) -> std::result::Result<Self, String> {
+        match value {
+            "" | "Value" | "value" => Ok(Self::Value),
+            "String" | "string" => Ok(Self::String),
+            "SmallInt" | "smallInt" | "smallint" | "i64" => Ok(Self::SmallInt),
+            "Bool" | "Boolean" | "bool" | "boolean" => Ok(Self::Bool),
+            "Oop" | "OOP" | "oop" => Ok(Self::Oop),
+            other => Err(format!("unsupported return type: {other}")),
+        }
+    }
+
+    fn config_name(&self) -> &'static str {
+        match self {
+            Self::Value => "Value",
+            Self::String => "String",
+            Self::SmallInt => "SmallInt",
+            Self::Bool => "Bool",
+            Self::Oop => "Oop",
+        }
+    }
+
+    fn rust_type(&self) -> &'static str {
+        match self {
+            Self::Value => "Value",
+            Self::String => "String",
+            Self::SmallInt => "i64",
+            Self::Bool => "bool",
+            Self::Oop => "Oop",
+        }
     }
 }
 
@@ -253,6 +352,14 @@ pub struct CheckReport {
     pub output: PathBuf,
     pub exists: bool,
     pub up_to_date: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DiffReport {
+    pub output: PathBuf,
+    pub exists: bool,
+    pub up_to_date: bool,
+    pub diff: String,
 }
 
 pub fn load_or_sample(path: impl AsRef<Path>) -> Result<Config> {
@@ -282,6 +389,17 @@ pub fn generate_to_file(config: &Config) -> Result<GeneratedCode> {
     Ok(generated)
 }
 
+pub fn write_config(path: impl AsRef<Path>, config: &Config) -> Result<()> {
+    let path = path.as_ref();
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    fs::write(path, config_source(config))?;
+    Ok(())
+}
+
 pub fn check(config: &Config) -> Result<CheckReport> {
     let generated = generate(config);
     match fs::read_to_string(&generated.output) {
@@ -299,23 +417,120 @@ pub fn check(config: &Config) -> Result<CheckReport> {
     }
 }
 
+pub fn diff(config: &Config) -> Result<DiffReport> {
+    let generated = generate(config);
+    match fs::read_to_string(&generated.output) {
+        Ok(current) => {
+            let up_to_date = current == generated.source;
+            let diff = if up_to_date {
+                String::new()
+            } else {
+                simple_diff(&generated.output, &current, &generated.source)
+            };
+            Ok(DiffReport {
+                output: generated.output,
+                exists: true,
+                up_to_date,
+                diff,
+            })
+        }
+        Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(DiffReport {
+            output: generated.output.clone(),
+            exists: false,
+            up_to_date: false,
+            diff: simple_diff(&generated.output, "", &generated.source),
+        }),
+        Err(err) => Err(Error::Io(err)),
+    }
+}
+
+pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) -> Result<Config> {
+    let classes = if classes.is_empty() {
+        vec![ClassRef::parse("Object").map_err(|message| Error::config(None, 0, message))?]
+    } else {
+        classes.to_vec()
+    };
+    let mut browser = Browser::new(session);
+    let mut specs = Vec::new();
+    for class_ref in classes {
+        let selectors = browser.methods(
+            &class_ref.class_name,
+            browser::ALL_PROTOCOLS,
+            class_ref.meta,
+            &class_ref.dictionary,
+        )?;
+        let mut spec = ClassSpec::new(class_ref.clone());
+        for selector in selectors {
+            let source = browser
+                .source(
+                    &class_ref.class_name,
+                    &selector,
+                    class_ref.meta,
+                    &class_ref.dictionary,
+                )
+                .unwrap_or_default();
+            spec.methods.push(MethodSpec {
+                class_ref: class_ref.clone(),
+                selector,
+                args: Vec::new(),
+                return_type: ReturnType::Value,
+                doc: first_source_line(&source),
+            });
+        }
+        specs.push(spec);
+    }
+    Ok(Config {
+        output,
+        classes: specs,
+    })
+}
+
+pub fn config_source(config: &Config) -> String {
+    let mut source = String::new();
+    source.push_str("# gemstone-rs codegen config\n");
+    source.push_str("# Empty dictionary means resolve through the active user's symbol list.\n");
+    source.push_str(&format!("output = {}\n", config.output.display()));
+    for class in &config.classes {
+        source.push_str(&format!("class = {}\n", class.class_ref.display_name()));
+        for method in &class.methods {
+            source.push_str("method = ");
+            source.push_str(&method.class_ref.display_name());
+            source.push_str(">>");
+            source.push_str(&method.selector);
+            if !method.args.is_empty() {
+                source.push_str(" | args=");
+                source.push_str(&method.args.join(","));
+            }
+            if method.return_type != ReturnType::Value {
+                source.push_str(" | return=");
+                source.push_str(method.return_type.config_name());
+            }
+            if let Some(doc) = method.doc.as_deref().filter(|doc| !doc.is_empty()) {
+                source.push_str(" | doc=");
+                source.push_str(&doc.replace('\n', " "));
+            }
+            source.push('\n');
+        }
+    }
+    source
+}
+
 pub fn sample_config() -> &'static str {
     "# gemstone-rs codegen config\n\
      # Empty dictionary means resolve through the active user's symbol list.\n\
      output = src/generated/gemstone_wrappers.rs\n\
      class = Object\n\
-     method = Object>>printString\n\
+     method = Object>>printString | return=String | doc=Return the receiver printString.\n\
      method = Object>>class\n"
 }
 
 fn generate_source(config: &Config) -> String {
     let mut source = String::new();
     source.push_str("// @generated by gemstone-rs codegen. Do not edit by hand.\n");
-    source.push_str("use gemstone_rs::{Oop, Result, Session, Value};\n\n");
+    source.push_str("use gemstone_rs::{Error, Oop, Result, Session, Value};\n\n");
 
     for class in &config.classes {
         let struct_name = class.class_ref.struct_name();
-        source.push_str("#[derive(Debug)]\n");
         source.push_str(&format!("pub struct {struct_name}<'a> {{\n"));
         source.push_str("    session: &'a mut Session,\n");
         source.push_str("    oop: Oop,\n");
@@ -353,26 +568,60 @@ fn generate_source(config: &Config) -> String {
 fn method_source(method: &MethodSpec) -> String {
     let mut source = String::new();
     let fn_name = method.fn_name();
-    let args: Vec<String> = (0..method.arg_count())
-        .map(|index| format!("arg{index}: Oop"))
-        .collect();
-    let arg_names: Vec<String> = (0..method.arg_count())
-        .map(|index| format!("arg{index}"))
-        .collect();
+    let arg_names = method.arg_names();
+    let args: Vec<String> = arg_names.iter().map(|arg| format!("{arg}: Oop")).collect();
     let args_suffix = if args.is_empty() {
         String::new()
     } else {
         format!(", {}", args.join(", "))
     };
+    if let Some(doc) = method.doc.as_deref().filter(|doc| !doc.is_empty()) {
+        source.push_str(&format!("    /// {}\n", escape_doc(doc)));
+    }
     source.push_str(&format!(
-        "    pub fn {fn_name}(&mut self{args_suffix}) -> Result<Value> {{\n"
+        "    pub fn {fn_name}(&mut self{args_suffix}) -> Result<{}> {{\n",
+        method.return_type.rust_type()
     ));
     source.push_str(&format!(
-        "        self.session.perform(self.oop, {}, &[{}])\n",
+        "        let value = self.session.perform(self.oop, {}, &[{}])?;\n",
         rust_string_literal(&method.selector),
         arg_names.join(", ")
     ));
+    source.push_str(&return_conversion(&method.return_type));
     source.push_str("    }\n");
+    source
+}
+
+fn return_conversion(return_type: &ReturnType) -> String {
+    match return_type {
+        ReturnType::Value => "        Ok(value)\n".to_string(),
+        ReturnType::String => typed_match(
+            "String",
+            &[
+                "            Value::String(value) => Ok(value),",
+                "            Value::Oop(oop) => self.session.fetch_string(oop),",
+            ],
+        ),
+        ReturnType::SmallInt => typed_match(
+            "SmallInt",
+            &["            Value::SmallInt(value) => Ok(value),"],
+        ),
+        ReturnType::Bool => typed_match("Bool", &["            Value::Bool(value) => Ok(value),"]),
+        ReturnType::Oop => typed_match("Oop", &["            Value::Oop(oop) => Ok(oop),"]),
+    }
+}
+
+fn typed_match(expected: &'static str, arms: &[&str]) -> String {
+    let mut source = String::from("        match value {\n");
+    for arm in arms {
+        source.push_str(arm);
+        source.push('\n');
+    }
+    source.push_str("            other => Err(Error::UnexpectedType {\n");
+    source.push_str(&format!("                expected: {expected:?},\n"));
+    source.push_str("                actual: format!(\"{other:?}\"),\n");
+    source.push_str("            }),\n");
+    source.push_str("        }\n");
     source
 }
 
@@ -384,6 +633,35 @@ fn split_directive(line: &str) -> Option<(&str, &str)> {
     let key = parts.next()?.trim();
     let value = parts.next()?.trim();
     Some((key, value))
+}
+
+fn first_source_line(source: &str) -> Option<String> {
+    source
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(|line| line.chars().take(120).collect())
+}
+
+fn simple_diff(path: &Path, current: &str, generated: &str) -> String {
+    let mut diff = String::new();
+    diff.push_str(&format!("--- {}\n", path.display()));
+    diff.push_str(&format!("+++ {} (generated)\n", path.display()));
+    for line in current.lines() {
+        diff.push('-');
+        diff.push_str(line);
+        diff.push('\n');
+    }
+    for line in generated.lines() {
+        diff.push('+');
+        diff.push_str(line);
+        diff.push('\n');
+    }
+    diff
+}
+
+fn escape_doc(value: &str) -> String {
+    value.replace(['\r', '\n'], " ")
 }
 
 fn rust_type_name(value: &str) -> String {
@@ -507,7 +785,7 @@ mod tests {
     #[test]
     fn parses_line_oriented_config() -> Result<()> {
         let config = Config::parse(
-            "output = generated.rs\nclass = Object\nmethod = UserGlobals:Order>>findById:\n",
+            "output = generated.rs\nclass = Object\nmethod = UserGlobals:Order>>findById: | args=id | return=Oop | doc=Find an order.\n",
             Some(Path::new("fixtures/gemstone-rs.codegen")),
         )?;
 
@@ -516,6 +794,8 @@ mod tests {
         assert_eq!(config.classes[0].class_ref.class_name, "Object");
         assert_eq!(config.classes[1].class_ref.dictionary, "UserGlobals");
         assert_eq!(config.classes[1].methods[0].selector, "findById:");
+        assert_eq!(config.classes[1].methods[0].args, vec!["id"]);
+        assert_eq!(config.classes[1].methods[0].return_type, ReturnType::Oop);
         Ok(())
     }
 
@@ -540,20 +820,35 @@ mod tests {
     #[test]
     fn generates_wrapper_source() -> Result<()> {
         let config = Config::parse(
-            "class = Object\nmethod = Object>>printString\nmethod = Object>>at:put:\n",
+            "class = Object\nmethod = Object>>printString | return=String | doc=Print the receiver.\nmethod = Object>>at:put: | args=key,value\n",
             None,
         )?;
         let generated = generate(&config);
         assert!(generated.source.contains("pub struct Object<'a>"));
+        assert!(generated.source.contains("/// Print the receiver."));
         assert!(generated
             .source
-            .contains("pub fn print_string(&mut self) -> Result<Value>"));
+            .contains("pub fn print_string(&mut self) -> Result<String>"));
         assert!(generated
             .source
-            .contains("pub fn at_put(&mut self, arg0: Oop, arg1: Oop)"));
+            .contains("pub fn at_put(&mut self, key: Oop, value: Oop)"));
         assert!(generated
             .source
-            .contains("self.session.perform(self.oop, \"at:put:\", &[arg0, arg1])"));
+            .contains("self.session.perform(self.oop, \"at:put:\", &[key, value])"));
+        Ok(())
+    }
+
+    #[test]
+    fn creates_config_source_and_diff() -> Result<()> {
+        let config = Config::parse("class = Object\nmethod = Object>>class\n", None)?;
+        let source = config_source(&config);
+        assert!(source.contains("method = Object>>class"));
+        let report = diff(&Config {
+            output: std::env::temp_dir().join("gemstone-rs-missing-diff.rs"),
+            classes: config.classes,
+        })?;
+        assert!(!report.up_to_date);
+        assert!(report.diff.contains("+++"));
         Ok(())
     }
 

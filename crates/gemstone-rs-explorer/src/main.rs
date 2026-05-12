@@ -204,6 +204,7 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
             ),
         ),
         "/api/codegen/preview" => codegen_preview_response(&route),
+        "/api/codegen/diff" => codegen_diff_response(&route),
         "/api/codegen/check" => codegen_check_response(&route),
         "/api/codegen/generate" => {
             if config.read_only {
@@ -305,6 +306,24 @@ fn codegen_check_response(route: &Route) -> Response {
                 escape_json(&report.output.display().to_string()),
                 report.exists,
                 report.up_to_date
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_diff_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    match codegen::Config::from_file(&path).and_then(|config| codegen::diff(&config)) {
+        Ok(report) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","output":"{}","exists":{},"upToDate":{},"diff":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&report.output.display().to_string()),
+                report.exists,
+                report.up_to_date,
+                escape_json(&report.diff)
             ),
         ),
         Err(err) => codegen_error_response(err),
@@ -524,6 +543,7 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/browse/source?class=Object">/api/browse/source?class=Object</a></li>
 <li><a href="/api/codegen/sample">/api/codegen/sample</a></li>
 <li><a href="/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen">/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen</a></li>
+<li><a href="/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen">/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/codegen/check?config=examples/codegen/gemstone-rs.codegen">/api/codegen/check?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
 </ul>
@@ -757,5 +777,15 @@ mod tests {
         );
         assert_eq!(response.status, 403);
         assert!(response.body.contains("allow-write"));
+    }
+
+    #[test]
+    fn codegen_diff_requires_config_file() {
+        let response = handle_request(
+            "GET /api/codegen/diff?config=missing.codegen HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 500);
+        assert!(response.body.contains(r#""success":false"#));
     }
 }

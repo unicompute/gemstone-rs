@@ -6,6 +6,19 @@
 The Cargo package is named `gemstone-rs`; Rust code imports it as
 `gemstone_rs`.
 
+Install it in Rust applications with:
+
+```bash
+cargo add gemstone-rs
+```
+
+Install the companion tools with:
+
+```bash
+cargo install gemstone-rs-cli
+cargo install gemstone-rs-explorer
+```
+
 Minimal usage:
 
 ```rust
