@@ -54,6 +54,14 @@ impl BridgeKey {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BridgeKeySummary {
+    pub oop: Oop,
+    pub class_oop: Oop,
+    pub print_string: String,
+    pub identity_id: usize,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum BridgeValue {
     Nil,
@@ -387,6 +395,10 @@ impl<'a> BridgeRoot<'a> {
         self.session.identity_for_oop(self.oop)
     }
 
+    pub fn keys(&mut self) -> Result<Vec<BridgeKeySummary>> {
+        dictionary_keys(self.session, self.oop)
+    }
+
     pub fn put(&mut self, key: &str, value: impl Into<BridgeValue>) -> Result<Oop> {
         self.put_with_key_type(key, BridgeKeyType::String, value)
     }
@@ -513,6 +525,10 @@ impl<'a> BridgeDictionary<'a> {
 
     pub fn identity_id(&self) -> usize {
         self.session.identity_for_oop(self.oop)
+    }
+
+    pub fn keys(&mut self) -> Result<Vec<BridgeKeySummary>> {
+        dictionary_keys(self.session, self.oop)
     }
 
     pub fn put(&mut self, key: &str, value: impl Into<BridgeValue>) -> Result<Oop> {
@@ -664,4 +680,30 @@ fn unexpected_field(key: &str, expected: &'static str, actual: Value) -> Error {
         expected,
         actual: format!("{actual:?}"),
     }
+}
+
+fn dictionary_keys(session: &mut Session, dictionary: Oop) -> Result<Vec<BridgeKeySummary>> {
+    let keys = session.perform_oop(dictionary, "keys", &[])?;
+    let array = session.perform_oop(keys, "asArray", &[])?;
+    let size = session.fetch_size(array)?;
+    if size < 0 {
+        return Err(Error::NegativeSize(size));
+    }
+
+    let mut summaries = Vec::with_capacity(size as usize);
+    for index in 1..=size {
+        let index_oop = session.smallint_oop(index);
+        let oop = session.perform_oop(array, "at:", &[index_oop])?;
+        let class_oop = session.fetch_class(oop)?;
+        let printed = session.perform_oop(oop, "printString", &[])?;
+        let print_string = session.fetch_string(printed)?;
+        let identity_id = session.identity_for_oop(oop);
+        summaries.push(BridgeKeySummary {
+            oop,
+            class_oop,
+            print_string,
+            identity_id,
+        });
+    }
+    Ok(summaries)
 }

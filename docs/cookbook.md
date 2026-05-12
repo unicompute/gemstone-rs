@@ -156,7 +156,19 @@ let source = browser.source("Object", "printString", false, "")?;
 
 Pass an empty dictionary to resolve through the active user's symbol list.
 
-## Recipe 13: Inspect an OOP From the CLI
+## Recipe 13: Diagnose a New Machine
+
+```bash
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
+```
+
+The first command checks environment and GCI loading. The second command logs
+in and verifies that `3 + 4` returns `7`. The JSON form is useful in CI or
+editor tooling.
+
+## Recipe 14: Inspect an OOP From the CLI
 
 ```bash
 gemstone-rs inspect oop 20
@@ -164,7 +176,20 @@ gemstone-rs inspect oop 20
 
 This prints the raw OOP, class OOP, and `printString`.
 
-## Recipe 14: Preview Codegen
+## Recipe 15: Inspect BridgeRoot From the CLI
+
+```bash
+gemstone-rs bridge root
+gemstone-rs bridge keys
+gemstone-rs bridge get BookingDraft --symbol
+gemstone-rs bridge inspect BookingDraft --symbol
+```
+
+Use this when object-mapping examples or generated mappings write payloads
+under `GemStoneRsBridgeRoot`. `bridge keys` is the quickest way to see what is
+currently stored before inspecting a specific payload.
+
+## Recipe 16: Preview Codegen
 
 ```bash
 gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
@@ -172,7 +197,7 @@ gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
 
 Use preview before writing generated files.
 
-## Recipe 15: Check Generated Code in CI
+## Recipe 17: Check Generated Code in CI
 
 ```bash
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
@@ -180,7 +205,7 @@ gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 
 The repository runs the same check through `make verify`.
 
-## Recipe 16: Generate Wrappers
+## Recipe 18: Generate Wrappers
 
 ```bash
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
@@ -188,7 +213,7 @@ gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
 
 Generated files are meant to be checked in.
 
-## Recipe 17: Discover a Config From a Live Stone
+## Recipe 19: Discover a Config From a Live Stone
 
 ```bash
 gemstone-rs codegen discover examples/codegen/discovered.codegen Object
@@ -197,7 +222,7 @@ gemstone-rs codegen discover examples/codegen/discovered.codegen Object
 Use this to bootstrap a config, then edit the generated mapping down to the API
 you actually want.
 
-## Recipe 18: Run the Local Explorer
+## Recipe 20: Run the Local Explorer
 
 ```bash
 gemstone-rs-explorer --port 8787

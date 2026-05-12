@@ -165,3 +165,15 @@ match Config::from_env() {
     Err(err) => eprintln!("configuration error: {err}"),
 }
 ```
+
+The CLI exposes the same checks through `doctor`:
+
+```bash
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
+```
+
+The non-live form validates environment and GCI library loading. The live form
+also logs in and checks that `3 + 4` returns `7`. The JSON form is intended for
+automation and editor integrations.

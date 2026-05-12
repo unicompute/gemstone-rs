@@ -75,6 +75,9 @@ With the CLI:
 
 ```bash
 cargo install gemstone-rs-cli
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
 
@@ -83,6 +86,12 @@ Expected output:
 ```text
 7
 ```
+
+`gemstone-rs doctor` prints the relevant `GS_*` values with secrets masked,
+loads the configured `libgcirpc`, and reports setup problems without exposing
+passwords. Add `--live` when the stone should be reachable; it logs in and
+asserts that `3 + 4` returns `7`. Add `--json` when a script, CI job, or editor
+integration needs a parseable report.
 
 From a source checkout:
 

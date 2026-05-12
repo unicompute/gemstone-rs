@@ -34,6 +34,7 @@ For a source checkout:
 ## Commands
 
 - `GemStone RS: Verify Setup`
+- `GemStone RS: Doctor`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
@@ -41,6 +42,7 @@ For a source checkout:
 - `GemStone RS: Codegen Discover`
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
+- `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
@@ -55,8 +57,12 @@ For a source checkout:
 before writing, then opens the generated file after a successful write.
 `Generate Mapping Config` asks the live stone for a starter `BridgeMapped`
 config. `Preview BridgeRoot` opens the explorer BridgeRoot endpoint.
+`List BridgeRoot Keys` runs `gemstone-rs bridge keys` and shows the current
+root keys in the output panel.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
+`Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
+same masked environment and GCI-library checks as the terminal.
 
 ## Sidebar
 
@@ -66,8 +72,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 - Selecting a method opens its GemStone source through `gemstone-rs browse source`.
 - `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, and Docs.
 - `Codegen Config` also exposes Generate Mapping Config, Preview BridgeRoot,
-  and Run Generated Mapping Example.
-- `Explorer` exposes Verify Setup, Eval Smalltalk, and Launch Explorer.
+  List BridgeRoot Keys, and Run Generated Mapping Example.
+- `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, and Launch Explorer.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with
@@ -85,7 +91,7 @@ Or from this directory:
 
 ```bash
 npm ci
-npm run package -- --out gemstone-rs-workbench-0.2.1.vsix
+npm run package -- --out gemstone-rs-workbench-0.2.3.vsix
 ```
 
 ## Later

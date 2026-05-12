@@ -105,6 +105,9 @@ The CLI gives you the same live checks without compiling examples:
 
 ```bash
 cargo install gemstone-rs-cli
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 gemstone-rs browse dictionaries
 gemstone-rs browse classes UserGlobals
@@ -112,6 +115,9 @@ gemstone-rs browse protocols Object
 gemstone-rs browse methods Object "-- all --"
 gemstone-rs browse source Object printString
 gemstone-rs inspect oop 20
+gemstone-rs bridge root
+gemstone-rs bridge keys
+gemstone-rs bridge sample-config BookingDraft
 ```
 
 ## Codegen Workflow

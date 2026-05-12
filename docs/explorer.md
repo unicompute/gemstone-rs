@@ -47,6 +47,8 @@ Run these from a second terminal:
 ```bash
 curl -s http://127.0.0.1:8787/health
 curl -s http://127.0.0.1:8787/api/config
+curl -s http://127.0.0.1:8787/api/doctor
+curl -s 'http://127.0.0.1:8787/api/doctor?live=1'
 curl -s http://127.0.0.1:8787/api/status
 curl -s http://127.0.0.1:8787/api/browse/dictionaries
 curl -s 'http://127.0.0.1:8787/api/browse/classes?dictionary=UserGlobals'
@@ -61,6 +63,7 @@ Expected shapes:
 ```json
 {"status":"ok"}
 {"host":"127.0.0.1","port":8787,"readOnly":true,"allowEval":false}
+{"success":true,"environment":{"GS_PASSWORD":{"status":"set","masked":true}}}
 {"connected":true,"sessionId":12345,"needsCommit":false,"inTransaction":false}
 {"success":true,"dictionaries":["UserGlobals"]}
 ```
@@ -126,6 +129,7 @@ configuration as the browser endpoints:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/bridge/root
+curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft&key_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
@@ -135,6 +139,7 @@ Expected shapes:
 
 ```json
 {"success":true,"name":"GemStoneRsBridgeRoot","oop":1234,"identityId":1}
+{"success":true,"root":"GemStoneRsBridgeRoot","keys":[{"printString":"BookingDraft"}]}
 {"oop":5678,"classOop":9012,"printString":"aDictionary(...)"}
 {"success":true,"config":"mapped = BookingDraft ..."}
 ```

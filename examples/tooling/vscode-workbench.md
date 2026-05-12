@@ -14,7 +14,7 @@ code --install-extension unicompute.gemstone-rs-workbench
 From a local VSIX:
 
 ```bash
-code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.0.vsix --force
+code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.3.vsix --force
 ```
 
 ## Source Checkout Settings

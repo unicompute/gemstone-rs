@@ -56,6 +56,9 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 
 ```bash
 gemstone-rs --help
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 gemstone-rs-explorer --help
 ```
@@ -148,6 +151,9 @@ See [examples/README.md](examples/README.md) and
 ## CLI
 
 ```bash
+cargo run -p gemstone-rs-cli -- doctor
+cargo run -p gemstone-rs-cli -- doctor --live
+cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -155,6 +161,11 @@ cargo run -p gemstone-rs-cli -- browse protocols Object
 cargo run -p gemstone-rs-cli -- browse methods Object "-- all --"
 cargo run -p gemstone-rs-cli -- browse source Object printString
 cargo run -p gemstone-rs-cli -- inspect oop 20
+cargo run -p gemstone-rs-cli -- bridge root
+cargo run -p gemstone-rs-cli -- bridge keys
+cargo run -p gemstone-rs-cli -- bridge get BookingDraft --symbol
+cargo run -p gemstone-rs-cli -- bridge inspect BookingDraft --symbol
+cargo run -p gemstone-rs-cli -- bridge sample-config BookingDraft
 cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
@@ -163,12 +174,15 @@ cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.co
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 ```
 
-The initial CLI intentionally uses only the standard library. The `eval` and
-`inspect oop` commands are wired to live GemStone calls. The `browse` commands
-cover dictionaries, classes, protocols, methods, and source using the active
-user's symbol list. The `codegen` commands read a line-oriented config,
-preview generated Rust wrappers, diff/check stale output, generate configs from
-a live stone, and write generated files.
+The CLI intentionally uses only the standard library. `doctor` checks the
+GemStone environment, GCI library resolution, and optionally a live `3 + 4`
+probe; add `--json` when release scripts or VS Code need structured output.
+`eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
+`bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`.
+The `browse` commands cover dictionaries, classes, protocols, methods, and
+source using the active user's symbol list. The `codegen` commands read a
+line-oriented config, preview generated Rust wrappers, diff/check stale output,
+generate configs from a live stone, and write generated files.
 
 ## Codegen
 
@@ -291,7 +305,7 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.0.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.2.3.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:

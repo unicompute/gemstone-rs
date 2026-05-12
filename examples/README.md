@@ -55,8 +55,13 @@ After publishing or installing from crates.io:
 ```bash
 cargo install gemstone-rs-cli
 cargo install gemstone-rs-explorer
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 gemstone-rs browse dictionaries
+gemstone-rs bridge root
+gemstone-rs bridge keys
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs-explorer --port 8787
 ```

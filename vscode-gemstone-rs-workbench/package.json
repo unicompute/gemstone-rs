@@ -2,7 +2,7 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "publisher": "unicompute",
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -26,6 +26,7 @@
     "onView:gemstoneRsExplorer",
     "onCommand:gemstoneRs.refreshExplorer",
     "onCommand:gemstoneRs.verifySetup",
+    "onCommand:gemstoneRs.doctor",
     "onCommand:gemstoneRs.eval",
     "onCommand:gemstoneRs.browseDictionaries",
     "onCommand:gemstoneRs.browseClasses",
@@ -33,6 +34,7 @@
     "onCommand:gemstoneRs.codegenDiscover",
     "onCommand:gemstoneRs.generateMappingConfig",
     "onCommand:gemstoneRs.previewBridgeRoot",
+    "onCommand:gemstoneRs.listBridgeRootKeys",
     "onCommand:gemstoneRs.runGeneratedMappingExample",
     "onCommand:gemstoneRs.codegenPreview",
     "onCommand:gemstoneRs.codegenDiff",
@@ -70,6 +72,10 @@
         "title": "GemStone RS: Verify Setup"
       },
       {
+        "command": "gemstoneRs.doctor",
+        "title": "GemStone RS: Doctor"
+      },
+      {
         "command": "gemstoneRs.eval",
         "title": "GemStone RS: Eval Smalltalk"
       },
@@ -96,6 +102,10 @@
       {
         "command": "gemstoneRs.previewBridgeRoot",
         "title": "GemStone RS: Preview BridgeRoot"
+      },
+      {
+        "command": "gemstoneRs.listBridgeRootKeys",
+        "title": "GemStone RS: List BridgeRoot Keys"
       },
       {
         "command": "gemstoneRs.runGeneratedMappingExample",

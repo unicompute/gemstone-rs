@@ -109,6 +109,9 @@ fn main() -> gemstone_rs::Result<()> {
 Run the same check from the CLI:
 
 ```bash
+gemstone-rs doctor
+gemstone-rs doctor --live
+gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
 
@@ -363,6 +366,7 @@ The local explorer and VS Code extension expose this workflow too:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/bridge/root
+curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
 
@@ -370,6 +374,7 @@ In VS Code, use:
 
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
+- `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Run Generated Mapping Example`
 
 This is still explicit object mapping, not transparent persistence. That is the
@@ -419,6 +424,7 @@ The VS Code extension adds a GemStone RS sidebar:
 - protocols
 - methods
 - method source
+- BridgeRoot key listing
 - codegen preview/diff/check/generate
 - explorer launch
 
@@ -434,6 +440,10 @@ For a source checkout:
 
 The extension stays thin. The Rust CLI remains the contract, which keeps the
 tooling testable outside VS Code.
+
+The newest workbench setup check uses the same CLI `gemstone-rs doctor`
+report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
+diagnostics, and release automation can all agree.
 
 ---
 

@@ -231,8 +231,8 @@ pub mod browser;
 pub mod codegen;
 
 pub use bridge::{
-    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeyType, BridgeMapped,
-    BridgeRoot, BridgeValue, DEFAULT_BRIDGE_ROOT,
+    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,
+    BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue, DEFAULT_BRIDGE_ROOT,
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
@@ -394,6 +394,12 @@ impl Config {
             self.stone.clone()
         }
     }
+}
+
+pub fn gci_library_path(config: &Config) -> Result<PathBuf> {
+    Ok(GciLibrary::load(config.lib_path.clone())?
+        .path()
+        .to_path_buf())
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -1321,6 +1327,8 @@ mod tests {
         let payload_oop = bridge_root.put_mapped(&key, &payload)?;
         let stored = bridge_root.get_oop(&key)?;
         assert_eq!(payload_oop, stored);
+        let keys = bridge_root.keys()?;
+        assert!(keys.iter().any(|entry| entry.print_string.contains(&key)));
         let loaded: TestBookingDraft = bridge_root.get_mapped(&key)?;
         assert_eq!(loaded, payload);
         bridge_root.remove(&key)?;

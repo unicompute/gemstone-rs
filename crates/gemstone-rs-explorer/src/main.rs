@@ -1,7 +1,8 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    BridgeKeyType, Config, Oop, Session, Value,
+    gci_library_path, BridgeKeySummary, BridgeKeyType, Config, Oop, Session, Value,
+    DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -81,6 +82,7 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
         "/" => Response::html(200, landing_html(config)),
         "/health" => Response::json(200, r#"{"status":"ok"}"#.to_string()),
         "/api/config" => Response::json(200, config_json(config)),
+        "/api/doctor" => doctor_response(bool_query(route.query("live").as_deref())),
         "/api/status" => live_json(|session| {
             let needs_commit = session.needs_commit()?;
             let in_transaction = session.in_transaction()?;
@@ -218,8 +220,11 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
             codegen_generate_response(&route)
         }
         "/api/bridge/root" => live_json(|session| {
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
             let (name, oop, identity_id) = {
-                let root = session.bridge_root()?;
+                let root = session.bridge_root_named(root_name)?;
                 (root.name().to_string(), root.oop(), root.identity_id())
             };
             Ok(format!(
@@ -230,13 +235,32 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 session.identity_map_len()
             ))
         }),
+        "/api/bridge/keys" => live_json(|session| {
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
+            let (name, keys) = {
+                let mut root = session.bridge_root_named(root_name)?;
+                let name = root.name().to_string();
+                let keys = root.keys()?;
+                (name, keys)
+            };
+            Ok(format!(
+                r#"{{"success":true,"root":"{}","keys":{}}}"#,
+                escape_json(&name),
+                bridge_keys_json(&keys)
+            ))
+        }),
         "/api/bridge/get" => {
             let Some(key) = route.non_empty_query("key") else {
                 return Response::json(400, r#"{"error":"missing key"}"#.to_string());
             };
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
             let key_type = bridge_key_type_query(route.query("key_type").as_deref());
             live_json(|session| {
-                let mut root = session.bridge_root()?;
+                let mut root = session.bridge_root_named(root_name)?;
                 let oop = root.get_oop_with_key_type(&key, key_type)?;
                 drop(root);
                 inspect_oop(session, oop)
@@ -256,6 +280,93 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
         }
         _ => Response::json(404, r#"{"error":"not found"}"#.to_string()),
     }
+}
+
+fn doctor_response(live: bool) -> Response {
+    let mut ok = true;
+    let mut gci_json = String::from(r#"{"ok":false,"checked":false}"#);
+    let mut live_json = if live {
+        String::from(r#"{"ok":false,"checked":true,"error":"config incomplete"}"#)
+    } else {
+        String::from(r#"{"ok":true,"checked":false}"#)
+    };
+
+    let (config_json, config) = match Config::from_env() {
+        Ok(config) => {
+            let config_json = format!(
+                r#"{{"ok":true,"stone":"{}","stoneNrs":"{}","host":"{}","netldi":"{}","username":"{}","gemService":"{}"}}"#,
+                escape_json(&config.stone),
+                escape_json(&config.stone_nrs()),
+                escape_json(&config.host),
+                escape_json(&config.netldi),
+                escape_json(&config.username),
+                escape_json(&config.gem_service)
+            );
+            (config_json, Some(config))
+        }
+        Err(err) => {
+            ok = false;
+            (
+                format!(
+                    r#"{{"ok":false,"error":"{}"}}"#,
+                    escape_json(&err.to_string())
+                ),
+                None,
+            )
+        }
+    };
+
+    if let Some(config) = config {
+        match gci_library_path(&config) {
+            Ok(path) => {
+                gci_json = format!(
+                    r#"{{"ok":true,"checked":true,"path":"{}"}}"#,
+                    escape_json(&path.display().to_string())
+                );
+            }
+            Err(err) => {
+                ok = false;
+                gci_json = format!(
+                    r#"{{"ok":false,"checked":true,"error":"{}"}}"#,
+                    escape_json(&err.to_string())
+                );
+            }
+        }
+
+        if live {
+            match Session::login(config).and_then(|mut session| session.eval("3 + 4")) {
+                Ok(Value::SmallInt(7)) => {
+                    live_json = r#"{"ok":true,"checked":true,"result":7}"#.to_string();
+                }
+                Ok(value) => {
+                    ok = false;
+                    live_json = format!(
+                        r#"{{"ok":false,"checked":true,"error":"expected 7","actual":"{}"}}"#,
+                        escape_json(&format!("{value:?}"))
+                    );
+                }
+                Err(err) => {
+                    ok = false;
+                    live_json = format!(
+                        r#"{{"ok":false,"checked":true,"error":"{}"}}"#,
+                        escape_json(&err.to_string())
+                    );
+                }
+            }
+        }
+    }
+
+    Response::json(
+        if ok { 200 } else { 503 },
+        format!(
+            r#"{{"success":{},"environment":{},"config":{},"gciLibrary":{},"live":{}}}"#,
+            ok,
+            environment_json(),
+            config_json,
+            gci_json,
+            live_json
+        ),
+    )
 }
 
 fn live_json(body: impl FnOnce(&mut Session) -> gemstone_rs::Result<String>) -> Response {
@@ -291,6 +402,43 @@ fn live_json(body: impl FnOnce(&mut Session) -> gemstone_rs::Result<String>) -> 
     }
 }
 
+fn environment_json() -> String {
+    let entries = [
+        ("GS_LIB_PATH", false),
+        ("GS_LIB", false),
+        ("GEMSTONE", false),
+        ("GS_STONE", false),
+        ("GS_STONE_NAME", false),
+        ("GS_HOST", false),
+        ("GS_NETLDI", false),
+        ("GS_GEM_SERVICE", false),
+        ("GS_USERNAME", false),
+        ("GS_PASSWORD", true),
+        ("GS_HOST_USERNAME", false),
+        ("GS_HOST_PASSWORD", true),
+    ];
+    let mut output = String::from("{");
+    for (index, (name, secret)) in entries.iter().enumerate() {
+        if index > 0 {
+            output.push(',');
+        }
+        output.push('"');
+        output.push_str(name);
+        output.push_str(r#"":"#);
+        match env::var(name) {
+            Ok(value) if value.is_empty() => output.push_str(r#"{"status":"empty"}"#),
+            Ok(_) if *secret => output.push_str(r#"{"status":"set","masked":true}"#),
+            Ok(value) => output.push_str(&format!(
+                r#"{{"status":"set","value":"{}"}}"#,
+                escape_json(&value)
+            )),
+            Err(_) => output.push_str(r#"{"status":"unset"}"#),
+        }
+    }
+    output.push('}');
+    output
+}
+
 fn inspect_oop(session: &mut Session, oop: Oop) -> gemstone_rs::Result<String> {
     let class = session.fetch_class(oop)?;
     let printed = session.perform_oop(oop, "printString", &[])?;
@@ -301,6 +449,24 @@ fn inspect_oop(session: &mut Session, oop: Oop) -> gemstone_rs::Result<String> {
         class.raw(),
         escape_json(&print_string)
     ))
+}
+
+fn bridge_keys_json(keys: &[BridgeKeySummary]) -> String {
+    let mut result = String::from("[");
+    for (index, key) in keys.iter().enumerate() {
+        if index > 0 {
+            result.push(',');
+        }
+        result.push_str(&format!(
+            r#"{{"oop":{},"classOop":{},"printString":"{}","identityId":{}}}"#,
+            key.oop.raw(),
+            key.class_oop.raw(),
+            escape_json(&key.print_string),
+            key.identity_id
+        ));
+    }
+    result.push(']');
+    result
 }
 
 fn bool_query(value: Option<&str>) -> bool {
@@ -419,9 +585,7 @@ fn bridge_key_type_query(value: Option<&str>) -> BridgeKeyType {
 }
 
 fn sample_mapping_config(mapped: &str) -> String {
-    format!(
-        "mapped = {mapped} | doc=Typed payload stored under GemStoneRsBridgeRoot.\nfield = {mapped}.name | type=String | key=name | key_type=String\nfield = {mapped}.amount | type=SmallInt | key=amount | key_type=String\nfield = {mapped}.tags | type=Vec<String> | key=tags | key_type=String\n"
-    )
+    codegen::sample_mapping_config(mapped)
 }
 
 fn codegen_error_response(err: codegen::Error) -> Response {
@@ -613,6 +777,8 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <p>Local-only GemStone/S explorer.</p>
 <ul>
 <li><a href="/api/config">/api/config</a></li>
+<li><a href="/api/doctor">/api/doctor</a></li>
+<li><a href="/api/doctor?live=1">/api/doctor?live=1</a></li>
 <li><a href="/api/status">/api/status</a></li>
 <li><a href="/api/browse/dictionaries">/api/browse/dictionaries</a></li>
 <li><a href="/api/browse/classes?dictionary=UserGlobals">/api/browse/classes?dictionary=UserGlobals</a></li>
@@ -625,6 +791,7 @@ fn landing_html(config: &ExplorerConfig) -> String {
 <li><a href="/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen">/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/codegen/check?config=examples/codegen/gemstone-rs.codegen">/api/codegen/check?config=examples/codegen/gemstone-rs.codegen</a></li>
 <li><a href="/api/bridge/root">/api/bridge/root</a></li>
+<li><a href="/api/bridge/keys">/api/bridge/keys</a></li>
 <li><a href="/api/bridge/get?key=BookingDraft">/api/bridge/get?key=BookingDraft</a></li>
 <li><a href="/api/bridge/mapping-config?mapped=BookingDraft">/api/bridge/mapping-config?mapped=BookingDraft</a></li>
 <li><a href="/api/inspect?oop=20">/api/inspect?oop=20</a></li>
@@ -803,6 +970,22 @@ mod tests {
     }
 
     #[test]
+    fn doctor_endpoint_reports_environment() {
+        let response = handle_request("GET /api/doctor HTTP/1.1", &ExplorerConfig::default());
+        assert!(matches!(response.status, 200 | 503));
+        assert!(response.body.contains(r#""environment":"#));
+        assert!(response.body.contains(r#""checked":false"#));
+    }
+
+    #[test]
+    fn landing_page_links_doctor_and_bridge_keys() {
+        let response = handle_request("GET / HTTP/1.1", &ExplorerConfig::default());
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains("/api/doctor"));
+        assert!(response.body.contains("/api/bridge/keys"));
+    }
+
+    #[test]
     fn browse_classes_requires_dictionary() {
         let response = handle_request(
             "GET /api/browse/classes HTTP/1.1",
@@ -829,6 +1012,13 @@ mod tests {
         assert!(bool_query(Some("YES")));
         assert!(!bool_query(Some("0")));
         assert!(!bool_query(None));
+    }
+
+    #[test]
+    fn bridge_key_type_query_defaults_to_string() {
+        assert_eq!(bridge_key_type_query(Some("symbol")), BridgeKeyType::Symbol);
+        assert_eq!(bridge_key_type_query(Some("String")), BridgeKeyType::String);
+        assert_eq!(bridge_key_type_query(None), BridgeKeyType::String);
     }
 
     #[test]

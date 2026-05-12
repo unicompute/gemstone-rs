@@ -26,6 +26,7 @@ The initial mapping layer supports:
 - `BridgeRoot::commit`
 - `BridgeRoot::commit_with_retry`
 - `BridgeRoot::transaction`
+- `BridgeRoot::keys`
 - `BridgeDictionary::at_oop`
 - `BridgeDictionary::at_value`
 - `BridgeDictionary::at_string`
@@ -34,6 +35,7 @@ The initial mapping layer supports:
 - `BridgeDictionary::at_dictionary`
 - `BridgeDictionary::at_mapped`
 - `BridgeDictionary::at_vec`
+- `BridgeDictionary::keys`
 - `BridgeKey`
 - `BridgeKeyType::String`
 - `BridgeKeyType::Symbol`
@@ -348,6 +350,23 @@ Generate a mapping config proposal from a live GemStone class:
 gemstone-rs codegen discover-mapping gemstone-rs.codegen BookingDraft Object
 ```
 
+For quick CLI inspection of the bridge root itself:
+
+```bash
+gemstone-rs bridge root
+gemstone-rs bridge keys
+gemstone-rs bridge get BookingDraft --symbol
+gemstone-rs bridge inspect BookingDraft --symbol
+gemstone-rs bridge sample-config BookingDraft
+```
+
+Use `--root OtherBridgeRoot` when you intentionally use a non-default root
+dictionary, and `--key-type String|Symbol` when you want the key policy to be
+spelled out in scripts.
+
+`bridge keys` lists each root key with its key OOP, class OOP, `printString`,
+and session-local identity id.
+
 Run the live discovery example:
 
 ```bash
@@ -369,6 +388,7 @@ The local explorer exposes BridgeRoot-oriented endpoints:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/bridge/root
+curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object'
@@ -378,6 +398,7 @@ The VS Code workbench adds the same object-mapping workflow:
 
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
+- `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Run Generated Mapping Example`
 
 The sidebar also shows these actions under `Codegen Config`.

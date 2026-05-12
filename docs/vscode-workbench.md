@@ -52,6 +52,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Discover from Live Stone
 - Generate Mapping Config
 - Preview BridgeRoot
+- List BridgeRoot Keys
 - Run Generated Mapping Example
 - Preview Wrappers
 - Diff Generated Output
@@ -61,6 +62,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 
 `Explorer` exposes:
 
+- Doctor
 - Verify Setup
 - Eval Smalltalk
 - Launch Explorer
@@ -70,6 +72,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 Commands:
 
 - `GemStone RS: Verify Setup`
+- `GemStone RS: Doctor`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
@@ -77,6 +80,7 @@ Commands:
 - `GemStone RS: Codegen Discover`
 - `GemStone RS: Generate Mapping Config`
 - `GemStone RS: Preview BridgeRoot`
+- `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
@@ -85,6 +89,10 @@ Commands:
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
+
+`GemStone RS: Verify Setup` and `GemStone RS: Doctor` both run the CLI
+`gemstone-rs doctor` report, so the workbench setup view and terminal setup
+use the same diagnostic path.
 
 ## Codegen Workflow
 
@@ -114,6 +122,10 @@ opens:
 http://127.0.0.1:8787/api/bridge/root
 ```
 
+Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
+opening a browser; it runs `gemstone-rs bridge keys` and writes the key OOPs,
+class OOPs, `printString` values, and identity ids to the output panel.
+
 Use `GemStone RS: Run Generated Mapping Example` to run:
 
 ```bash
@@ -126,7 +138,7 @@ cargo run -p gemstone-rs --example generated_mapping_app
 cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
-npm run package -- --out gemstone-rs-workbench-0.2.0.vsix
+npm run package -- --out gemstone-rs-workbench-0.2.3.vsix
 ```
 
 From the repository root:

@@ -17,6 +17,7 @@ function activate(context) {
 
   register(context, "gemstoneRs.refreshExplorer", () => explorerProvider.refresh());
   register(context, "gemstoneRs.verifySetup", verifySetup);
+  register(context, "gemstoneRs.doctor", doctor);
   register(context, "gemstoneRs.eval", evalSmalltalk);
   register(context, "gemstoneRs.browseDictionaries", browseDictionaries);
   register(context, "gemstoneRs.browseClasses", browseClasses);
@@ -24,6 +25,7 @@ function activate(context) {
   register(context, "gemstoneRs.codegenDiscover", codegenDiscover);
   register(context, "gemstoneRs.generateMappingConfig", generateMappingConfig);
   register(context, "gemstoneRs.previewBridgeRoot", previewBridgeRoot);
+  register(context, "gemstoneRs.listBridgeRootKeys", listBridgeRootKeys);
   register(context, "gemstoneRs.runGeneratedMappingExample", runGeneratedMappingExample);
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
@@ -129,6 +131,7 @@ class GemStoneTreeProvider {
         actionNode("Discover from Live Stone", "gemstoneRs.codegenDiscover"),
         actionNode("Generate Mapping Config", "gemstoneRs.generateMappingConfig"),
         actionNode("Preview BridgeRoot", "gemstoneRs.previewBridgeRoot"),
+        actionNode("List BridgeRoot Keys", "gemstoneRs.listBridgeRootKeys"),
         actionNode("Run Generated Mapping Example", "gemstoneRs.runGeneratedMappingExample"),
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
@@ -140,6 +143,7 @@ class GemStoneTreeProvider {
 
     if (element.type === "explorer") {
       return [
+        actionNode("Doctor", "gemstoneRs.doctor"),
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
@@ -194,16 +198,20 @@ async function verifySetup() {
   output.appendLine(`codegenConfigExists: ${fs.existsSync(resolvePath(cfg.codegenConfig, cfg.cwd))}`);
   output.appendLine("");
 
-  const result = await runCli(["--help"], { allowFailure: true });
+  const result = await runCli(["doctor"], { allowFailure: true });
   output.append(result.stdout);
   output.append(result.stderr);
   output.show(true);
 
   if (result.code === 0) {
-    vscode.window.showInformationMessage("gemstone-rs CLI is available.");
+    vscode.window.showInformationMessage("gemstone-rs setup check passed.");
   } else {
-    vscode.window.showWarningMessage("gemstone-rs CLI check failed. See GemStone RS output.");
+    vscode.window.showWarningMessage("gemstone-rs setup check found issues. See GemStone RS output.");
   }
+}
+
+async function doctor() {
+  await runAndShow(["doctor"], { allowFailure: true });
 }
 
 async function evalSmalltalk() {
@@ -296,6 +304,10 @@ async function previewBridgeRoot() {
   output.appendLine(`Opened ${url}`);
   output.appendLine("Start the local explorer first if the browser reports that the page is unavailable.");
   output.show(true);
+}
+
+async function listBridgeRootKeys() {
+  await runAndShow(["bridge", "keys"], { allowFailure: true });
 }
 
 async function runGeneratedMappingExample() {
