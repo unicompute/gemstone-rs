@@ -40,7 +40,18 @@ publish_crate() {
       echo "skipping $package $version; already published"
       return 0
     fi
-    cargo publish -p "$package"
+    set +e
+    output="$(cargo publish -p "$package" 2>&1)"
+    status=$?
+    set -e
+    printf '%s\n' "$output"
+    if [[ "$status" != "0" ]]; then
+      if grep -q "already exists on crates.io index" <<<"$output"; then
+        echo "skipping $package $version; already published"
+        return 0
+      fi
+      return "$status"
+    fi
     sleep 30
   fi
 }
