@@ -18,8 +18,42 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
+      - run: cargo check --workspace
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+      - run: cargo package -p gemstone-gci --no-verify
+
+  vscode:
+    name: VS Code Workbench
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode-gemstone-rs-workbench
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run check
+      - run: npm run package -- --out gemstone-rs-workbench-0.1.0.vsix
+
+  release-smoke:
+    name: Release Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+        working-directory: vscode-gemstone-rs-workbench
+      - run: make verify
 
   live:
     name: Live GemStone

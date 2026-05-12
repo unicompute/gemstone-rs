@@ -44,6 +44,21 @@ For a source checkout:
 `Codegen Preview` opens generated Rust wrappers in an untitled Rust editor.
 `Codegen Generate` writes the generated file and opens it.
 
+## Package Locally
+
+From the repository root:
+
+```bash
+make vscode-package
+```
+
+Or from this directory:
+
+```bash
+npm ci
+npm run package -- --out gemstone-rs-workbench-0.1.0.vsix
+```
+
 ## Later
 
 Embedding `gemstone-rs-explorer` as a VS Code webview should be a later feature

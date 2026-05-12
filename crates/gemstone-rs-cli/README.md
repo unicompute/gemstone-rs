@@ -26,3 +26,9 @@ export GS_STONE=gs64stone
 export GS_USERNAME=DataCurator
 export GS_PASSWORD=swordfish
 ```
+
+`codegen check` is suitable for CI. In this repository it verifies:
+
+```bash
+cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+```

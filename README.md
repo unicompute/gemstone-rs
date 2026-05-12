@@ -189,10 +189,21 @@ broader sharing.
 The repository CI runs:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+make verify
 ```
+
+`make verify` runs Rust formatting, `cargo check`, clippy, tests, the codegen
+freshness check for `examples/codegen/gemstone-rs.codegen`, and the VS Code
+extension syntax check.
+
+Package the VS Code extension locally with:
+
+```bash
+make vscode-package
+```
+
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.1.0.vsix`.
+The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 ## Publishing
 
