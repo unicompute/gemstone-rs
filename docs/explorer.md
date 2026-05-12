@@ -28,8 +28,16 @@ The home page is a small browser UI over the same JSON endpoints. It can:
 - browse dictionaries, classes, protocols, methods, and source
 - run doctor/status checks
 - inspect BridgeRoot and list keys
-- preview codegen check/diff output
-- put/remove simple BridgeRoot strings when `--allow-write` is enabled
+- run codegen sample/discover/preview/diff/check/generate from an editable
+  config path
+- load and save the selected codegen config file; saving is still gated by
+  `--allow-write`, accepts a POST body for larger configs, and validates the
+  config before writing
+- render generated wrapper source, generated mapping config, colored unified
+  diff output, and a side-by-side diff in a dedicated detail pane
+- remember the current browser fields locally across reloads
+- put/remove BridgeRoot values with explicit string/symbol key policy and
+  string/small-int/bool value policy when `--allow-write` is enabled
 
 Screenshot:
 
@@ -98,10 +106,26 @@ Expected:
 
 ## Codegen Endpoints
 
+The home page includes a Codegen Workflow panel. Set `Config path`, optionally
+enter a mapped Rust type and GemStone class, then use:
+
+- `Load Config` to read the selected config file into the editor
+- `Save Config` to POST the editor contents, validate them, and write the file
+  when the explorer was started with `--allow-write`
+- `Sample Config` to view the starter config format
+- `Discover Mapping` to ask a live stone for a mapping config proposal
+- `Preview` to inspect generated Rust wrappers without writing files
+- `Diff` to compare generated output with the committed file; the detail pane
+  shows both the exact unified diff and a side-by-side view for review
+- `Check` to fail when generated output is stale
+- `Generate` to write wrappers when the explorer was started with
+  `--allow-write`
+
 Read-only endpoints:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/codegen/sample
+curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'
@@ -122,12 +146,16 @@ gemstone-rs-explorer --allow-write
 
 ```bash
 curl -s 'http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen'
+curl -s -X POST \
+  --data-binary @examples/codegen/gemstone-rs.codegen \
+  'http://127.0.0.1:8787/api/codegen/config/save?config=examples/codegen/draft.codegen'
 ```
 
 Expected:
 
 ```json
 {"success":true,"output":"examples/codegen/generated/gemstone_wrappers.rs","bytes":1234}
+{"success":true,"config":"examples/codegen/draft.codegen","bytes":512}
 ```
 
 ## BridgeRoot Endpoints
@@ -142,6 +170,13 @@ curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft&key_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
+
+The browser UI exposes `Bridge key type` and `Bridge value type` controls so
+you can explicitly test string-key, symbol-key, string-value, small-int-value,
+and bool-value mappings before encoding them in a reusable config file. It
+persists the selected key, value, class, selector, config, and mapping fields in
+browser local storage; use `Clear Saved Fields` to reset the page back to the
+documented defaults.
 
 Writes are disabled unless the explorer is started with `--allow-write`:
 
@@ -171,6 +206,5 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- generated wrapper preview and file diff UI
-- explicit codegen selection config
+- file-picker style config selection
 - deeper VS Code webview integration

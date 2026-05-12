@@ -168,12 +168,23 @@ It is still the same loopback-only explorer process. If the explorer is not
 running, the webview will show a connection error and the output panel will show
 the URL to start.
 
+The embedded page includes the same browse, BridgeRoot, and Codegen Workflow
+panels as the external browser view. That makes it the quickest place to
+preview generated wrappers, inspect unified and side-by-side diffs, run
+`codegen check`, and test BridgeRoot key/value policies without leaving VS
+Code. The explorer page can load and save the selected codegen config file,
+posting the editor contents as the request body; saves still require the
+explorer to run with `--allow-write`. It also remembers its current fields
+locally, so repeated codegen or BridgeRoot checks keep the same config path and
+class selection.
+
 ## Develop the Extension
 
 ```bash
 cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
+npm run test:smoke
 npm run package -- --out gemstone-rs-workbench-0.3.0.vsix
 ```
 
@@ -185,7 +196,7 @@ make vscode-package
 
 ## Later Feature Work
 
-Embedding `gemstone-rs-explorer` as a VS Code webview should remain a feature
-release because it changes the user experience and test surface. The current
-extension intentionally launches the explorer externally and opens the local
-URL.
+The first embedded webview is available. Next work should make the webview more
+IDE-like: generate wrapper diffs before writing, edit codegen selections,
+inspect BridgeRoot payloads visually, and keep browser fallback behavior for
+users who prefer the external explorer.

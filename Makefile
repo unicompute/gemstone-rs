@@ -16,6 +16,7 @@ codegen-check:
 
 vscode-check:
 	cd vscode-gemstone-rs-workbench && npm run check
+	cd vscode-gemstone-rs-workbench && npm run test:smoke
 
 vscode-package:
 	cd vscode-gemstone-rs-workbench && npm ci

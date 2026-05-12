@@ -7,6 +7,7 @@ use gemstone_rs::{
 use std::env;
 use std::error::Error as StdError;
 use std::fmt;
+use std::fs;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -56,28 +57,95 @@ fn run(args: Vec<String>) -> Result<(), ExplorerError> {
 }
 
 fn handle_stream(mut stream: TcpStream, config: &ExplorerConfig) -> Result<(), ExplorerError> {
-    let mut buffer = [0_u8; 8192];
-    let read = stream.read(&mut buffer)?;
-    let request = String::from_utf8_lossy(&buffer[..read]);
-    let Some(request_line) = request.lines().next() else {
+    let Some(request) = read_http_request(&mut stream)? else {
         return Ok(());
     };
-
-    let response = handle_request(request_line, config);
+    let response = handle_http_request(&request, config);
     stream.write_all(response.to_http().as_bytes())?;
     Ok(())
 }
 
-fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
-    let parts: Vec<&str> = request_line.split_whitespace().collect();
-    if parts.len() < 2 {
-        return Response::json(400, r#"{"error":"bad request"}"#.to_string());
+fn read_http_request(stream: &mut TcpStream) -> Result<Option<HttpRequest>, ExplorerError> {
+    let mut buffer = [0_u8; 8192];
+    let mut bytes = Vec::new();
+    let body_start = loop {
+        let read = stream.read(&mut buffer)?;
+        if read == 0 {
+            return Ok(None);
+        }
+        bytes.extend_from_slice(&buffer[..read]);
+        if let Some(body_start) = header_body_offset(&bytes) {
+            break body_start;
+        }
+        if bytes.len() > 64 * 1024 {
+            return Err(ExplorerError::usage("request headers too large"));
+        }
+    };
+
+    let headers = String::from_utf8_lossy(&bytes[..body_start]).to_string();
+    let content_length = content_length(&headers);
+    while bytes.len() < body_start + content_length {
+        let read = stream.read(&mut buffer)?;
+        if read == 0 {
+            break;
+        }
+        bytes.extend_from_slice(&buffer[..read]);
+        if bytes.len() > body_start + 1024 * 1024 {
+            return Err(ExplorerError::usage("request body too large"));
+        }
     }
-    if parts[0] != "GET" {
+    if bytes.len() < body_start + content_length {
+        return Err(ExplorerError::usage("incomplete request body"));
+    }
+
+    let Some(request_line) = headers.lines().next() else {
+        return Ok(None);
+    };
+    let body = String::from_utf8_lossy(&bytes[body_start..body_start + content_length]).to_string();
+    Ok(HttpRequest::from_request_line(request_line, body))
+}
+
+fn header_body_offset(bytes: &[u8]) -> Option<usize> {
+    bytes
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .map(|index| index + 4)
+        .or_else(|| {
+            bytes
+                .windows(2)
+                .position(|window| window == b"\n\n")
+                .map(|index| index + 2)
+        })
+}
+
+fn content_length(headers: &str) -> usize {
+    headers
+        .lines()
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse().ok())
+                .flatten()
+        })
+        .unwrap_or(0)
+}
+
+#[cfg(test)]
+fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
+    let Some(request) = HttpRequest::from_request_line(request_line, String::new()) else {
+        return Response::json(400, r#"{"error":"bad request"}"#.to_string());
+    };
+    handle_http_request(&request, config)
+}
+
+fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Response {
+    let route = Route::parse(&request.target);
+    if request.method != "GET"
+        && !(request.method == "POST" && route.path == "/api/codegen/config/save")
+    {
         return Response::json(405, r#"{"error":"method not allowed"}"#.to_string());
     }
 
-    let route = Route::parse(parts[1]);
     match route.path.as_str() {
         "/" => Response::html(200, landing_html(config)),
         "/health" => Response::json(200, r#"{"status":"ok"}"#.to_string()),
@@ -205,6 +273,17 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 escape_json(codegen::sample_config())
             ),
         ),
+        "/api/codegen/config" => codegen_config_response(&route),
+        "/api/codegen/config/save" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"codegen config save disabled; restart with --allow-write"}"#
+                        .to_string(),
+                );
+            }
+            codegen_config_save_response(&route, &request.body)
+        }
         "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route),
         "/api/codegen/preview" => codegen_preview_response(&route),
         "/api/codegen/diff" => codegen_diff_response(&route),
@@ -228,11 +307,10 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 (root.name().to_string(), root.oop(), root.identity_id())
             };
             Ok(format!(
-                r#"{{"success":true,"name":"{}","oop":{},"identityId":{},"identityMapSize":{}}}"#,
+                r#"{{"success":true,"name":"{}","oop":{},"identityId":{}}}"#,
                 escape_json(&name),
                 oop.raw(),
-                identity_id,
-                session.identity_map_len()
+                identity_id
             ))
         }),
         "/api/bridge/keys" => live_json(|session| {
@@ -241,9 +319,7 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
                 .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
             let (name, keys) = {
                 let mut root = session.bridge_root_named(root_name)?;
-                let name = root.name().to_string();
-                let keys = root.keys()?;
-                (name, keys)
+                (root.name().to_string(), root.keys()?)
             };
             Ok(format!(
                 r#"{{"success":true,"root":"{}","keys":{}}}"#,
@@ -552,6 +628,82 @@ fn codegen_config_path(route: &Route) -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH))
 }
 
+fn codegen_config_response(route: &Route) -> Response {
+    let path = codegen_config_path(route);
+    match fs::read_to_string(&path) {
+        Ok(source) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","source":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&source)
+            ),
+        ),
+        Err(err) => Response::json(
+            404,
+            format!(
+                r#"{{"success":false,"config":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
+fn codegen_config_save_response(route: &Route, body: &str) -> Response {
+    let path = codegen_config_path(route);
+    let Some(source) = route
+        .query("source")
+        .or_else(|| (!body.is_empty()).then(|| body.to_string()))
+    else {
+        return Response::json(400, r#"{"error":"missing source"}"#.to_string());
+    };
+    if let Err(err) = codegen::Config::parse(&source, Some(&path)) {
+        return Response::json(
+            400,
+            format!(
+                r#"{{"success":false,"config":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        );
+    }
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        if let Err(err) = fs::create_dir_all(parent) {
+            return Response::json(
+                500,
+                format!(
+                    r#"{{"success":false,"config":"{}","error":"{}"}}"#,
+                    escape_json(&path.display().to_string()),
+                    escape_json(&err.to_string())
+                ),
+            );
+        }
+    }
+    match fs::write(&path, &source) {
+        Ok(()) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","bytes":{},"source":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                source.len(),
+                escape_json(&source)
+            ),
+        ),
+        Err(err) => Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"config":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
 fn codegen_preview_response(route: &Route) -> Response {
     let path = codegen_config_path(route);
     match codegen::Config::from_file(&path).map(|config| codegen::generate(&config)) {
@@ -810,6 +962,26 @@ impl Default for ExplorerConfig {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct HttpRequest {
+    method: String,
+    target: String,
+    body: String,
+}
+
+impl HttpRequest {
+    fn from_request_line(request_line: &str, body: String) -> Option<Self> {
+        let mut parts = request_line.split_whitespace();
+        let method = parts.next()?.to_string();
+        let target = parts.next()?.to_string();
+        Some(Self {
+            method,
+            target,
+            body,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Route {
     path: String,
     query: Vec<(String, String)>,
@@ -907,17 +1079,30 @@ section { background: white; border: 1px solid #d0d7de; border-radius: 8px; padd
 h1, h2 { margin: 0 0 10px; }
 h1 { font-size: 24px; }
 h2 { font-size: 16px; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { border: 1px solid #9f1722; background: #9f1722; color: white; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
 button.secondary { background: white; color: #9f1722; }
-input, select { box-sizing: border-box; width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 7px; margin: 4px 0 8px; }
+input, select, textarea { box-sizing: border-box; width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 7px; margin: 4px 0 8px; }
+textarea { min-height: 150px; font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; resize: vertical; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .pill { border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 4px 8px; font-size: 12px; }
 .list { max-height: 420px; overflow: auto; }
 .item { display: block; width: 100%; text-align: left; border-color: #d0d7de; background: white; color: #24292f; margin-bottom: 4px; }
-pre { min-height: 260px; overflow: auto; white-space: pre-wrap; background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 12px; }
+pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 12px; }
+.panes { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.pane-title { color: #57606a; font-size: 12px; margin: 8px 0 4px; }
+.detail { min-height: 180px; }
+.diff span { display: block; min-height: 1em; }
+.diff-add { color: #7ee787; }
+.diff-remove { color: #ff7b72; }
+.diff-meta { color: #79c0ff; }
+.side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.side-cell { white-space: pre-wrap; background: #161b22; border-radius: 6px; padding: 6px 8px; min-height: 1em; }
+.side-old { color: #ffb3ad; }
+.side-new { color: #b7f7c8; }
+.side-meta { grid-column: 1 / -1; color: #79c0ff; background: #161b22; border-radius: 6px; padding: 6px 8px; }
 @media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -958,31 +1143,157 @@ pre { min-height: 260px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button onclick="callApi('/api/status')">Status</button>
 <button onclick="callApi('/api/bridge/root')">BridgeRoot</button>
 <button onclick="loadBridgeKeys()">Keys</button>
-<button onclick="callApi('/api/codegen/check?config=examples/codegen/gemstone-rs.codegen')">Codegen Check</button>
-<button onclick="callApi('/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen')">Codegen Diff</button>
 </div>
 <div class="row">
 <label>Bridge key<input id="bridgeKey" value="WorkbenchDraft"></label>
 <label>Bridge value<input id="bridgeValue" value="hello"></label>
 </div>
+<div class="row">
+<label>Bridge key type<select id="bridgeKeyType"><option>String</option><option>Symbol</option></select></label>
+<label>Bridge value type<select id="bridgeValueType"><option>String</option><option>SmallInt</option><option>Bool</option></select></label>
+</div>
 <div class="actions">
 <button class="secondary" onclick="getBridgeValue()">Get</button>
-<button class="secondary" onclick="putBridgeValue()">Put String</button>
+<button class="secondary" onclick="putBridgeValue()">Put Value</button>
 <button class="secondary" onclick="removeBridgeValue()">Remove</button>
 </div>
+<h2>Codegen Workflow</h2>
+<label>Config path<input id="codegenConfig" value="examples/codegen/gemstone-rs.codegen"></label>
+<label>Config editor<textarea id="configEditor" spellcheck="false">Load a config, sample config, or discovered mapping proposal.</textarea></label>
+<div class="row">
+<label>Mapped Rust type<input id="mappedName" value="BookingDraft"></label>
+<label>GemStone class<input id="mappingClass" value="Object"></label>
+</div>
+<div class="actions">
+<button class="secondary" onclick="loadCodegenConfig()">Load Config</button>
+<button class="secondary" onclick="saveCodegenConfig()">Save Config</button>
+<button class="secondary" onclick="codegenSample()">Sample Config</button>
+<button class="secondary" onclick="discoverMappingConfig()">Discover Mapping</button>
+<button class="secondary" onclick="codegenPreview()">Preview</button>
+<button class="secondary" onclick="codegenDiff()">Diff</button>
+<button class="secondary" onclick="codegenCheck()">Check</button>
+<button class="secondary" onclick="codegenGenerate()">Generate</button>
+<button class="secondary" onclick="clearSavedFields()">Clear Saved Fields</button>
+</div>
+<div class="panes">
+<div>
+<div class="pane-title">Response</div>
 <pre id="output">Ready.</pre>
+</div>
+<div>
+<div class="pane-title">Generated Source / Config / Diff</div>
+<pre id="detail" class="detail">Run Preview, Diff, Sample Config, or Discover Mapping.</pre>
+</div>
+</div>
 </section>
 </main>
 <script>
 const out = document.getElementById('output');
+const detail = document.getElementById('detail');
 const items = document.getElementById('items');
 function q(id) { return encodeURIComponent(document.getElementById(id).value); }
-async function callApi(path) {
-  out.textContent = 'GET ' + path + '\n';
-  const response = await fetch(path);
+function bridgeQuery() { return 'key=' + q('bridgeKey') + '&key_type=' + q('bridgeKeyType'); }
+function codegenQuery() { return 'config=' + q('codegenConfig'); }
+async function callApi(path, options = {}) {
+  const method = options.method || 'GET';
+  out.textContent = method + ' ' + path + '\n';
+  detail.className = 'detail';
+  detail.textContent = '';
+  const response = await fetch(path, options);
   const text = await response.text();
-  try { out.textContent += JSON.stringify(JSON.parse(text), null, 2); }
-  catch { out.textContent += text; }
+  try {
+    const data = JSON.parse(text);
+    out.textContent += JSON.stringify(data, null, 2);
+    renderDetail(data);
+    return data;
+  }
+  catch {
+    out.textContent += text;
+    detail.textContent = text;
+    return { raw: text };
+  }
+}
+function renderDetail(data) {
+  if (typeof data.diff === 'string') {
+    renderDiff(data.diff || 'No generated output changes.');
+  } else if (typeof data.source === 'string') {
+    detail.textContent = data.source;
+  } else if (typeof data.config === 'string') {
+    detail.textContent = data.config;
+  } else if (typeof data.error === 'string') {
+    detail.textContent = data.error;
+  } else {
+    detail.textContent = 'No generated source, config, or diff in this response.';
+  }
+}
+function renderDiff(diff) {
+  detail.className = 'detail diff';
+  const lines = diff.split('\n');
+  const raw = lines.map(line => {
+    let cls = '';
+    if (line.startsWith('+') && !line.startsWith('+++')) cls = 'diff-add';
+    else if (line.startsWith('-') && !line.startsWith('---')) cls = 'diff-remove';
+    else if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('---') || line.startsWith('+++')) cls = 'diff-meta';
+    return '<span class="' + cls + '">' + escapeHtml(line || ' ') + '</span>';
+  }).join('');
+  detail.innerHTML = '<div class="pane-title">Unified Diff</div>' + raw + renderSideBySideDiff(lines);
+}
+function renderSideBySideDiff(lines) {
+  const rows = [];
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    if (!line) continue;
+    if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('---') || line.startsWith('+++')) {
+      rows.push('<div class="side-meta">' + escapeHtml(line) + '</div>');
+    } else if (line.startsWith('-')) {
+      const next = lines[index + 1] || '';
+      if (next.startsWith('+') && !next.startsWith('+++')) {
+        rows.push(sideRow(line.slice(1), next.slice(1), 'side-old', 'side-new'));
+        index++;
+      } else {
+        rows.push(sideRow(line.slice(1), '', 'side-old', ''));
+      }
+    } else if (line.startsWith('+')) {
+      rows.push(sideRow('', line.slice(1), '', 'side-new'));
+    } else {
+      rows.push(sideRow(line.startsWith(' ') ? line.slice(1) : line, line.startsWith(' ') ? line.slice(1) : line, '', ''));
+    }
+  }
+  if (rows.length === 0) return '';
+  return '<div class="pane-title">Side-by-Side Diff</div><div class="side-by-side">' + rows.join('') + '</div>';
+}
+function sideRow(left, right, leftClass, rightClass) {
+  return '<div class="side-cell ' + leftClass + '">' + escapeHtml(left || ' ') + '</div><div class="side-cell ' + rightClass + '">' + escapeHtml(right || ' ') + '</div>';
+}
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function persistFields() {
+  const ids = ['dictionary', 'className', 'protocol', 'selector', 'bridgeKey', 'bridgeValue', 'bridgeKeyType', 'bridgeValueType', 'codegenConfig', 'configEditor', 'mappedName', 'mappingClass'];
+  for (const id of ids) {
+    const element = document.getElementById(id);
+    const key = 'gemstone-rs-explorer:' + id;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved !== null) element.value = saved;
+      element.addEventListener('input', () => localStorage.setItem(key, element.value));
+      element.addEventListener('change', () => localStorage.setItem(key, element.value));
+    } catch {
+      return;
+    }
+  }
+}
+function clearSavedFields() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('gemstone-rs-explorer:')) localStorage.removeItem(key);
+    }
+  } catch {}
+  detail.textContent = 'Saved explorer fields cleared. Reload to restore defaults.';
 }
 function button(label, onClick) {
   const element = document.createElement('button');
@@ -1037,9 +1348,41 @@ async function loadBridgeKeys() {
     }));
   }
 }
-function getBridgeValue() { callApi('/api/bridge/get?key=' + q('bridgeKey')); }
-function putBridgeValue() { callApi('/api/bridge/put?key=' + q('bridgeKey') + '&value=' + q('bridgeValue')); }
-function removeBridgeValue() { callApi('/api/bridge/remove?key=' + q('bridgeKey')); }
+function getBridgeValue() { callApi('/api/bridge/get?' + bridgeQuery()); }
+function putBridgeValue() {
+  callApi('/api/bridge/put?' + bridgeQuery() + '&value=' + q('bridgeValue') + '&value_type=' + q('bridgeValueType'));
+}
+function removeBridgeValue() { callApi('/api/bridge/remove?' + bridgeQuery()); }
+function setConfigEditor(source) {
+  const editor = document.getElementById('configEditor');
+  editor.value = source;
+  try { localStorage.setItem('gemstone-rs-explorer:configEditor', source); } catch {}
+}
+async function loadCodegenConfig() {
+  const data = await callApi('/api/codegen/config?' + codegenQuery());
+  if (typeof data.source === 'string') setConfigEditor(data.source);
+}
+async function saveCodegenConfig() {
+  const source = document.getElementById('configEditor').value;
+  await callApi('/api/codegen/config/save?' + codegenQuery(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: source
+  });
+}
+async function codegenSample() {
+  const data = await callApi('/api/codegen/sample');
+  if (typeof data.config === 'string') setConfigEditor(data.config);
+}
+async function discoverMappingConfig() {
+  const data = await callApi('/api/codegen/discover-mapping?' + codegenQuery() + '&mapped=' + q('mappedName') + '&class=' + q('mappingClass'));
+  if (typeof data.config === 'string') setConfigEditor(data.config);
+}
+function codegenPreview() { callApi('/api/codegen/preview?' + codegenQuery()); }
+function codegenDiff() { callApi('/api/codegen/diff?' + codegenQuery()); }
+function codegenCheck() { callApi('/api/codegen/check?' + codegenQuery()); }
+function codegenGenerate() { callApi('/api/codegen/generate?' + codegenQuery()); }
+persistFields();
 </script>
 </body>
 </html>"#,
@@ -1197,6 +1540,13 @@ mod tests {
     }
 
     #[test]
+    fn content_length_parses_case_insensitively() {
+        let headers = "POST /api/codegen/config/save HTTP/1.1\r\ncontent-length: 42\r\n\r\n";
+        assert_eq!(content_length(headers), 42);
+        assert_eq!(header_body_offset(headers.as_bytes()), Some(headers.len()));
+    }
+
+    #[test]
     fn eval_endpoint_is_disabled_by_default() {
         let response = handle_request(
             "GET /api/eval?source=3%20%2B%204 HTTP/1.1",
@@ -1225,8 +1575,29 @@ mod tests {
     fn landing_page_links_doctor_and_bridge_keys() {
         let response = handle_request("GET / HTTP/1.1", &ExplorerConfig::default());
         assert_eq!(response.status, 200);
+        assert!(response.body.contains("gemstone-rs Explorer"));
+        assert!(response.body.contains("loadDictionaries()"));
+        assert!(response.body.contains("BridgeRoot and Codegen"));
+        assert!(response.body.contains("Codegen Workflow"));
+        assert!(response.body.contains("codegenConfig"));
+        assert!(response.body.contains("configEditor"));
+        assert!(response.body.contains("loadCodegenConfig()"));
+        assert!(response.body.contains("saveCodegenConfig()"));
+        assert!(response.body.contains("method: 'POST'"));
+        assert!(response.body.contains("discoverMappingConfig()"));
+        assert!(response.body.contains("bridgeKeyType"));
+        assert!(response.body.contains("bridgeValueType"));
+        assert!(response.body.contains("Generated Source / Config / Diff"));
+        assert!(response.body.contains("renderDiff"));
+        assert!(response.body.contains("renderSideBySideDiff"));
+        assert!(response.body.contains("Side-by-Side Diff"));
+        assert!(response.body.contains("localStorage"));
+        assert!(response.body.contains("read_only=true"));
+        assert!(response.body.contains("allow_eval=false"));
         assert!(response.body.contains("/api/doctor"));
         assert!(response.body.contains("/api/bridge/keys"));
+        assert!(response.body.contains("/api/bridge/put"));
+        assert!(response.body.contains("/api/codegen/check"));
     }
 
     #[test]
@@ -1336,6 +1707,70 @@ mod tests {
         );
         assert_eq!(response.status, 200);
         assert!(response.body.contains("gemstone-rs codegen config"));
+    }
+
+    #[test]
+    fn codegen_config_endpoint_reads_config_text() {
+        let config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../examples/codegen/gemstone-rs.codegen");
+        let request = format!(
+            "GET /api/codegen/config?config={} HTTP/1.1",
+            config_path.display()
+        );
+        let response = handle_request(&request, &ExplorerConfig::default());
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(response.body.contains("gemstone-rs codegen config"));
+        assert!(response.body.contains("generated/gemstone_wrappers.rs"));
+    }
+
+    #[test]
+    fn codegen_config_save_is_disabled_by_default() {
+        let response = handle_request(
+            "GET /api/codegen/config/save?config=tmp.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 403);
+        assert!(response.body.contains("allow-write"));
+    }
+
+    #[test]
+    fn codegen_config_save_validates_before_writing() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/config/save?config=target/invalid-explorer.codegen&source=not-a-directive HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("expected key=value"));
+    }
+
+    #[test]
+    fn post_codegen_config_save_writes_request_body() {
+        let path = env::temp_dir().join(format!(
+            "gemstone-rs-explorer-post-save-{}.codegen",
+            std::process::id()
+        ));
+        let _ = fs::remove_file(&path);
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let source = "output = generated/post-save.rs\n";
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: format!("/api/codegen/config/save?config={}", path.display()),
+            body: source.to_string(),
+        };
+
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert_eq!(fs::read_to_string(&path).unwrap(), source);
+        let _ = fs::remove_file(path);
     }
 
     #[test]

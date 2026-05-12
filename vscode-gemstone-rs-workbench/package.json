@@ -222,6 +222,7 @@
   },
   "scripts": {
     "check": "node --check src/extension.js",
+    "test:smoke": "node scripts/smoke.js",
     "package": "npx @vscode/vsce package"
   },
   "devDependencies": {

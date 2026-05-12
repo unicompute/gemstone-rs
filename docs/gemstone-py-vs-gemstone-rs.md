@@ -53,7 +53,7 @@ file.
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Not yet a core feature |
-| Web frameworks | FastAPI, Litestar, Django examples | Future Axum/Actix examples recommended |
+| Web frameworks | FastAPI, Litestar, Django examples | Axum service sketch added; full app example still planned |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -79,9 +79,9 @@ file.
 | Live codegen discovery | Supported | Supported through CLI/API |
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
-| Axum/Actix demo | Not applicable | Planned |
-| Database explorer | Mature Python app | Minimal Rust explorer |
-| VS Code sidebar workflow | More complete | Initial Rust workbench |
+| Axum/Actix demo | Not applicable | Axum sketch documented; full app example still planned |
+| Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
+| VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
 
 ## How They Should Work Together
 

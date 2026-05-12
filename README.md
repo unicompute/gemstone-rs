@@ -249,6 +249,8 @@ http://127.0.0.1:8787/api/browse/protocols?class=Object
 http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/codegen/sample
+http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
@@ -263,8 +265,12 @@ Workspace eval is opt-in:
 cargo run -p gemstone-rs-explorer -- --allow-eval
 ```
 
-The first explorer pass uses standard-library HTTP only. It provides safe
-defaults and API endpoints before committing to a richer UI framework.
+The explorer uses standard-library HTTP only. The home page exposes the main
+browse, BridgeRoot, and codegen workflows directly, can load/save the selected
+codegen config file through a POST body when write mode is enabled, renders
+generated source/config/unified-diff/side-by-side-diff output in a dedicated
+detail pane, remembers the current fields locally, and keeps the JSON endpoints
+stable for curl, VS Code, and automation.
 
 Generate endpoints are write-gated:
 
@@ -276,11 +282,20 @@ cargo run -p gemstone-rs-explorer -- --allow-write
 http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
 ```
 
+For config saves, send the config as the request body:
+
+```bash
+curl -s -X POST \
+  --data-binary @examples/codegen/gemstone-rs.codegen \
+  'http://127.0.0.1:8787/api/codegen/config/save?config=examples/codegen/draft.codegen'
+```
+
 BridgeRoot write endpoints are also write-gated:
 
 ```bash
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchCount&value=7&value_type=SmallInt'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchFlag&value=true&value_type=Bool&key_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 ```
 
@@ -318,8 +333,8 @@ make verify
 ```
 
 `make verify` runs Rust formatting, `cargo check`, clippy, tests, the codegen
-freshness check for `examples/codegen/gemstone-rs.codegen`, and the VS Code
-extension syntax check.
+freshness check for `examples/codegen/gemstone-rs.codegen`, the VS Code
+extension syntax check, the VS Code smoke check, and PDF generation.
 
 Package the VS Code extension locally with:
 
@@ -377,7 +392,7 @@ process.
 
 ## Explorer Roadmap
 
-The first browse and codegen endpoints are now wired. Next explorer work should
-add generated wrapper diffs against files and a richer frontend over the stable
-local API. Embedding the explorer as a VS Code webview should remain a later
-feature release.
+The first browse, BridgeRoot, codegen, config load/save, diff detail, local
+field persistence, and webview paths are now wired. Next explorer work should
+add file-picker style config selection, screenshots or short GIFs, and deeper
+saved selection workflows over the stable local API.

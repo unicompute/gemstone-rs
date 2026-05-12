@@ -122,7 +122,7 @@ make verify
 ```
 
 `make verify` runs formatting, `cargo check`, clippy, tests, codegen freshness,
-and the VS Code extension syntax check.
+the VS Code extension syntax/smoke checks, and PDF generation.
 
 Package the VSIX locally:
 

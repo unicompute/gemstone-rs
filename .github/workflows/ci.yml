@@ -37,6 +37,7 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run check
+      - run: npm run test:smoke
       - run: npm run package
 
   release-smoke:

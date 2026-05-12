@@ -82,3 +82,14 @@ From the `Explorer` tree:
 `Launch Explorer` starts `gemstone-rs-explorer` in a VS Code terminal and opens
 the loopback URL. `Open Explorer Webview` embeds the running local explorer in a
 VS Code editor tab.
+
+Inside the embedded explorer, use the `Codegen Workflow` panel to change the
+config path, load and save the selected config file, preview wrappers, view
+diffs, run freshness checks, and discover a BridgeRoot mapping config from a
+live class. Use the BridgeRoot key/value type selectors to test string keys,
+symbol keys, strings, small integers, and bools before saving those choices in
+codegen config. The detail pane shows generated source, generated mapping
+config, unified diff output, or side-by-side diff output, and the page
+remembers the current fields locally across reloads. Config saves use a POST
+body, so the editor can handle realistic config files instead of being limited
+by URL length.
