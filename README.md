@@ -32,6 +32,7 @@ crate Rust application developers should use.
 | Codegen | [docs/codegen.md](docs/codegen.md) |
 | Explorer | [docs/explorer.md](docs/explorer.md) |
 | VS Code workbench | [docs/vscode-workbench.md](docs/vscode-workbench.md) |
+| Screenshot workflow | [docs/screenshots.md](docs/screenshots.md) |
 | Performance and safety | [docs/performance-safety.md](docs/performance-safety.md) |
 | Shared core integration | [docs/shared-core-integration.md](docs/shared-core-integration.md) |
 | Medium article | [docs/medium-article.md](docs/medium-article.md) |
@@ -394,5 +395,5 @@ process.
 
 The first browse, BridgeRoot, codegen, config load/save, diff detail, local
 field persistence, and webview paths are now wired. Next explorer work should
-add file-picker style config selection, screenshots or short GIFs, and deeper
-saved selection workflows over the stable local API.
+add file-picker style config selection, short GIFs, and deeper saved selection
+workflows over the stable local API.

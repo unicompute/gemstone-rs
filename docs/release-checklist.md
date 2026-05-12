@@ -12,6 +12,12 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 ```
 
+- Refresh screenshots when the explorer or workbench UI changed:
+
+```bash
+make screenshots
+```
+
 - Run local verification:
 
 ```bash

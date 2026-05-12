@@ -15,6 +15,7 @@ This directory contains the human-facing guides for `gemstone-rs`.
 | [Codegen Guide](codegen.md) | You want generated Rust wrappers for GemStone classes and methods. |
 | [Explorer Guide](explorer.md) | You want the local HTTP explorer API and safety defaults. |
 | [VS Code Workbench](vscode-workbench.md) | You want sidebar browsing, codegen preview/diff/generate, and explorer launch commands. |
+| [Screenshot Workflow](screenshots.md) | You want to refresh Explorer and Workbench images before docs or Marketplace releases. |
 | [Performance and Safety](performance-safety.md) | You want benchmark guidance, GCI loading notes, and threading rules. |
 | [Shared Core Integration](shared-core-integration.md) | You want the plan for `gemstone-py-native` to wrap the Rust core. |
 | [Medium Article](medium-article.md) | You want an article-style explanation suitable for publishing or sharing. |
@@ -27,6 +28,12 @@ Generated PDFs live in [pdf/](pdf/). Rebuild them after Markdown changes:
 
 ```bash
 python3 docs/build_pdf_docs.py
+```
+
+Refresh screenshots before a visual release:
+
+```bash
+make screenshots
 ```
 
 ## Shortest Path

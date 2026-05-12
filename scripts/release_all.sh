@@ -7,12 +7,20 @@ PUBLISH_CRATES="${PUBLISH_CRATES:-0}"
 PUBLISH_VSIX="${PUBLISH_VSIX:-0}"
 CREATE_GITHUB_RELEASE="${CREATE_GITHUB_RELEASE:-0}"
 VERIFY_PUBLIC="${VERIFY_PUBLIC:-0}"
+REFRESH_SCREENSHOTS="${REFRESH_SCREENSHOTS:-0}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VSIX_VERSION="$(node -p "require('$ROOT/vscode-gemstone-rs-workbench/package.json').version")"
 VSIX="$ROOT/vscode-gemstone-rs-workbench/gemstone-rs-workbench-${VSIX_VERSION}.vsix"
 CHECKSUMS="$ROOT/SHA256SUMS"
 
 cd "$ROOT"
+
+if [[ "$REFRESH_SCREENSHOTS" == "1" || "$REFRESH_SCREENSHOTS" == "true" ]]; then
+  echo "== screenshots =="
+  make screenshots
+else
+  echo "skipping screenshot refresh; set REFRESH_SCREENSHOTS=1"
+fi
 
 echo "== verify =="
 make verify

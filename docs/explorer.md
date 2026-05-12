@@ -43,6 +43,14 @@ Screenshot:
 
 ![gemstone-rs explorer home](assets/explorer-home.png)
 
+Refresh it with:
+
+```bash
+make screenshots
+```
+
+See [Screenshot Workflow](screenshots.md) for the repeatable capture process.
+
 ## Safety Defaults
 
 The explorer:

@@ -1,7 +1,7 @@
 VERSION ?= 0.2.0
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify rust-check codegen-check vscode-check vscode-package docs-pdf docs-pdf-check package-gci publish-verify release-all clean-vscode
+.PHONY: verify rust-check codegen-check vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
 
 verify: rust-check codegen-check vscode-check docs-pdf-check
 
@@ -27,6 +27,9 @@ docs-pdf:
 
 docs-pdf-check: docs-pdf
 	test -n "$$(find docs/pdf -name '*.pdf' -type f -size +0c -print -quit)"
+
+screenshots:
+	python3 scripts/capture_explorer_screenshots.py
 
 package-gci:
 	cargo package -p gemstone-gci --no-verify
