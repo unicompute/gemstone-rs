@@ -455,7 +455,10 @@ Useful endpoints:
 /api/browse/methods?class=Object&protocol=--%20all%20--
 /api/browse/source?class=Object&selector=printString
 /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+/api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
+/api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
+/api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 /api/codegen/profiles?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
@@ -475,7 +478,10 @@ examples/codegen/gemstone-rs.codegen-profiles.json
 That means a team can keep named workflows like `default`, `object-wrapper`,
 and `bridge-mapping` beside the codegen config. The explorer can import/export
 profile JSON, show which imported profiles are new, replaced, or unchanged, and
-save project profile files only when started with `--allow-write`.
+save project profile files only when started with `--allow-write`. Profile-aware
+preview, diff, check, explain, and generate endpoints let the browser, VS Code,
+and CI all resolve the same named project profile before operating on generated
+wrappers.
 
 The same schema is available from the CLI, so profile files can be checked in
 CI:
@@ -490,6 +496,8 @@ gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 gemstone-rs profile resolve default gemstone-rs.codegen-profiles.json
 gemstone-rs profile check gemstone-rs.codegen-profiles.json
 gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
+gemstone-rs codegen preview-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen diff-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen explain-profile --json default gemstone-rs.codegen-profiles.json
 ```

@@ -178,11 +178,17 @@ type and GemStone class, then use:
 - `Explain Profile` to render the same structured summary after resolving a
   named profile from the project profile file
 - `Preview` to inspect generated Rust wrappers without writing files
+- `Preview Profile` to inspect generated wrappers after resolving a named
+  project profile
 - `Diff` to compare generated output with the committed file; the detail pane
   shows both the exact unified diff and a side-by-side view for review
+- `Diff Profile` to compare generated output from a named project profile
 - `Check` to fail when generated output is stale
+- `Check Profile` to run the stale-output check from a named project profile
 - `Generate` to write wrappers when the explorer was started with
   `--allow-write`
+- `Generate Profile` to resolve a named project profile and write its wrappers
+  when the explorer was started with `--allow-write`
 
 Read-only endpoints:
 
@@ -194,8 +200,11 @@ curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemsto
 curl -s 'http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object'
 ```
 
@@ -221,6 +230,7 @@ gemstone-rs-explorer --allow-write
 
 ```bash
 curl -s 'http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/generate-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s -X POST \
   'http://127.0.0.1:8787/api/env/write?path=.env.gemstone-rs'
 curl -s -X POST \

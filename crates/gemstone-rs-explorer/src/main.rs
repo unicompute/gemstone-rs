@@ -313,10 +313,13 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
         }
         "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route, config),
         "/api/codegen/preview" => codegen_preview_response(&route, config),
+        "/api/codegen/preview-profile" => codegen_preview_profile_response(&route, config),
         "/api/codegen/explain" => codegen_explain_response(&route, config),
         "/api/codegen/explain-profile" => codegen_explain_profile_response(&route, config),
         "/api/codegen/diff" => codegen_diff_response(&route, config),
+        "/api/codegen/diff-profile" => codegen_diff_profile_response(&route, config),
         "/api/codegen/check" => codegen_check_response(&route, config),
+        "/api/codegen/check-profile" => codegen_check_profile_response(&route, config),
         "/api/codegen/generate" => {
             if config.read_only {
                 return Response::json(
@@ -326,6 +329,16 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 );
             }
             codegen_generate_response(&route, config)
+        }
+        "/api/codegen/generate-profile" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"codegen generate disabled; restart with --allow-write"}"#
+                        .to_string(),
+                );
+            }
+            codegen_generate_profile_response(&route, config)
         }
         "/api/bridge/root" => live_json(|session| {
             let root_name = route
@@ -1334,6 +1347,63 @@ fn codegen_config_save_response(route: &Route, config: &ExplorerConfig, body: &s
     }
 }
 
+struct CodegenProfileTarget {
+    profile_name: String,
+    profile_file: PathBuf,
+    config_path: PathBuf,
+}
+
+fn codegen_profile_target(
+    route: &Route,
+    config: &ExplorerConfig,
+) -> Result<CodegenProfileTarget, Response> {
+    let profile_name = route
+        .non_empty_query("profile")
+        .unwrap_or_else(|| "default".to_string());
+    let profile_file = codegen_profile_path(route, config);
+    let project = profiles::load_file(&profile_file).map_err(|err| {
+        Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                escape_json(&profile_file.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        )
+    })?;
+    let Some(profile) = project.get(&profile_name) else {
+        return Err(Response::json(
+            404,
+            format!(
+                r#"{{"success":false,"profile":"{}","profileFile":"{}","error":"profile not found"}}"#,
+                escape_json(&profile_name),
+                escape_json(&profile_file.display().to_string())
+            ),
+        ));
+    };
+    let config_path = match profile.resolved_config_path() {
+        Ok(path) if path.is_absolute() => path,
+        Ok(path) => codegen_root_path(route, config).join(path),
+        Err(err) => {
+            return Err(Response::json(
+                400,
+                format!(
+                    r#"{{"success":false,"profile":"{}","profileFile":"{}","error":"{}"}}"#,
+                    escape_json(&profile_name),
+                    escape_json(&profile_file.display().to_string()),
+                    escape_json(&err.to_string())
+                ),
+            ))
+        }
+    };
+
+    Ok(CodegenProfileTarget {
+        profile_name,
+        profile_file,
+        config_path,
+    })
+}
+
 fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response {
     let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).map(|config| codegen::generate(&config)) {
@@ -1342,6 +1412,27 @@ fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response 
             format!(
                 r#"{{"success":true,"config":"{}","output":"{}","source":"{}"}}"#,
                 escape_json(&path.display().to_string()),
+                escape_json(&generated.output.display().to_string()),
+                escape_json(&generated.source)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_preview_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
+    };
+    match codegen::Config::from_file(&target.config_path).map(|config| codegen::generate(&config)) {
+        Ok(generated) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profile":"{}","profileFile":"{}","config":"{}","output":"{}","source":"{}"}}"#,
+                escape_json(&target.profile_name),
+                escape_json(&target.profile_file.display().to_string()),
+                escape_json(&target.config_path.display().to_string()),
                 escape_json(&generated.output.display().to_string()),
                 escape_json(&generated.source)
             ),
@@ -1366,57 +1457,42 @@ fn codegen_explain_response(route: &Route, config: &ExplorerConfig) -> Response 
 }
 
 fn codegen_explain_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
-    let profile_name = route
-        .non_empty_query("profile")
-        .unwrap_or_else(|| "default".to_string());
-    let profile_file = codegen_profile_path(route, config);
-    let project = match profiles::load_file(&profile_file) {
-        Ok(project) => project,
-        Err(err) => {
-            return Response::json(
-                500,
-                format!(
-                    r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
-                    escape_json(&profile_file.display().to_string()),
-                    escape_json(&err.to_string())
-                ),
-            )
-        }
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
     };
-    let Some(profile) = project.get(&profile_name) else {
-        return Response::json(
-            404,
-            format!(
-                r#"{{"success":false,"profile":"{}","profileFile":"{}","error":"profile not found"}}"#,
-                escape_json(&profile_name),
-                escape_json(&profile_file.display().to_string())
-            ),
-        );
-    };
-    let config_path = match profile.resolved_config_path() {
-        Ok(path) if path.is_absolute() => path,
-        Ok(path) => codegen_root_path(route, config).join(path),
-        Err(err) => {
-            return Response::json(
-                400,
-                format!(
-                    r#"{{"success":false,"profile":"{}","profileFile":"{}","error":"{}"}}"#,
-                    escape_json(&profile_name),
-                    escape_json(&profile_file.display().to_string()),
-                    escape_json(&err.to_string())
-                ),
-            )
-        }
-    };
-    match codegen::Config::from_file(&config_path) {
+    match codegen::Config::from_file(&target.config_path) {
         Ok(config) => Response::json(
             200,
             format!(
                 r#"{{"success":true,"profile":"{}","profileFile":"{}","config":"{}","explain":{}}}"#,
-                escape_json(&profile_name),
-                escape_json(&profile_file.display().to_string()),
-                escape_json(&config_path.display().to_string()),
+                escape_json(&target.profile_name),
+                escape_json(&target.profile_file.display().to_string()),
+                escape_json(&target.config_path.display().to_string()),
                 codegen::explain_json(&config)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_check_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
+    };
+    match codegen::Config::from_file(&target.config_path).and_then(|config| codegen::check(&config))
+    {
+        Ok(report) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profile":"{}","profileFile":"{}","config":"{}","output":"{}","exists":{},"upToDate":{}}}"#,
+                escape_json(&target.profile_name),
+                escape_json(&target.profile_file.display().to_string()),
+                escape_json(&target.config_path.display().to_string()),
+                escape_json(&report.output.display().to_string()),
+                report.exists,
+                report.up_to_date
             ),
         ),
         Err(err) => codegen_error_response(err),
@@ -1440,6 +1516,30 @@ fn codegen_check_response(route: &Route, config: &ExplorerConfig) -> Response {
     }
 }
 
+fn codegen_diff_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
+    };
+    match codegen::Config::from_file(&target.config_path).and_then(|config| codegen::diff(&config))
+    {
+        Ok(report) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profile":"{}","profileFile":"{}","config":"{}","output":"{}","exists":{},"upToDate":{},"diff":"{}"}}"#,
+                escape_json(&target.profile_name),
+                escape_json(&target.profile_file.display().to_string()),
+                escape_json(&target.config_path.display().to_string()),
+                escape_json(&report.output.display().to_string()),
+                report.exists,
+                report.up_to_date,
+                escape_json(&report.diff)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
 fn codegen_diff_response(route: &Route, config: &ExplorerConfig) -> Response {
     let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).and_then(|config| codegen::diff(&config)) {
@@ -1452,6 +1552,29 @@ fn codegen_diff_response(route: &Route, config: &ExplorerConfig) -> Response {
                 report.exists,
                 report.up_to_date,
                 escape_json(&report.diff)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_generate_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
+    };
+    match codegen::Config::from_file(&target.config_path)
+        .and_then(|config| codegen::generate_to_file(&config))
+    {
+        Ok(generated) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profile":"{}","profileFile":"{}","config":"{}","output":"{}","bytes":{}}}"#,
+                escape_json(&target.profile_name),
+                escape_json(&target.profile_file.display().to_string()),
+                escape_json(&target.config_path.display().to_string()),
+                escape_json(&generated.output.display().to_string()),
+                generated.source.len()
             ),
         ),
         Err(err) => codegen_error_response(err),
@@ -1926,9 +2049,13 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="codegenExplain()">Explain</button>
 <button class="secondary" onclick="codegenExplainProfile()">Explain Profile</button>
 <button class="secondary" onclick="codegenPreview()">Preview</button>
+<button class="secondary" onclick="codegenPreviewProfile()">Preview Profile</button>
 <button class="secondary" onclick="codegenDiff()">Diff</button>
+<button class="secondary" onclick="codegenDiffProfile()">Diff Profile</button>
 <button class="secondary" onclick="codegenCheck()">Check</button>
+<button class="secondary" onclick="codegenCheckProfile()">Check Profile</button>
 <button class="secondary" onclick="codegenGenerate()">Generate</button>
+<button class="secondary" onclick="codegenGenerateProfile()">Generate Profile</button>
 <button class="secondary" onclick="saveCodegenProfile()">Save Profile</button>
 <button class="secondary" onclick="exportCodegenProfile()">Export Profile</button>
 <button class="secondary" onclick="importCodegenProfile()">Import Profile</button>
@@ -2167,6 +2294,9 @@ async function writeEnvTemplate() {
 }
 function setupAssistantQuery() {
   return 'env_file=' + q('envFilePath') + '&' + codegenQuery() + '&profile_file=' + q('profileFile');
+}
+function profileCodegenQuery() {
+  return 'profile=' + q('profileName') + '&' + profileFileQuery();
 }
 function runSetupAssistant() {
   rememberCodegenConfig();
@@ -2464,11 +2594,15 @@ async function discoverMappingConfig() {
   if (typeof data.config === 'string') setConfigEditor(data.config);
 }
 function codegenPreview() { rememberCodegenConfig(); callApi('/api/codegen/preview?' + codegenQuery()); }
+function codegenPreviewProfile() { rememberCodegenConfig(); callApi('/api/codegen/preview-profile?' + profileCodegenQuery()); }
 function codegenExplain() { rememberCodegenConfig(); callApi('/api/codegen/explain?' + codegenQuery()); }
-function codegenExplainProfile() { rememberCodegenConfig(); callApi('/api/codegen/explain-profile?profile=' + q('profileName') + '&' + profileFileQuery()); }
+function codegenExplainProfile() { rememberCodegenConfig(); callApi('/api/codegen/explain-profile?' + profileCodegenQuery()); }
 function codegenDiff() { rememberCodegenConfig(); callApi('/api/codegen/diff?' + codegenQuery()); }
+function codegenDiffProfile() { rememberCodegenConfig(); callApi('/api/codegen/diff-profile?' + profileCodegenQuery()); }
 function codegenCheck() { rememberCodegenConfig(); callApi('/api/codegen/check?' + codegenQuery()); }
+function codegenCheckProfile() { rememberCodegenConfig(); callApi('/api/codegen/check-profile?' + profileCodegenQuery()); }
 function codegenGenerate() { rememberCodegenConfig(); callApi('/api/codegen/generate?' + codegenQuery()); }
+function codegenGenerateProfile() { rememberCodegenConfig(); callApi('/api/codegen/generate-profile?' + profileCodegenQuery()); }
 persistFields();
 loadRecentCodegenConfigs();
 loadCodegenProfiles();
@@ -2748,6 +2882,10 @@ mod tests {
         assert!(response.body.contains("discoverMappingConfig()"));
         assert!(response.body.contains("codegenExplain()"));
         assert!(response.body.contains("codegenExplainProfile()"));
+        assert!(response.body.contains("codegenPreviewProfile()"));
+        assert!(response.body.contains("codegenDiffProfile()"));
+        assert!(response.body.contains("codegenCheckProfile()"));
+        assert!(response.body.contains("codegenGenerateProfile()"));
         assert!(response.body.contains("bridgeKeyType"));
         assert!(response.body.contains("bridgeValueType"));
         assert!(response.body.contains("Generated Source / Config / Diff"));
@@ -2764,8 +2902,12 @@ mod tests {
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
         assert!(response.body.contains("/api/codegen/configs"));
+        assert!(response.body.contains("/api/codegen/preview-profile"));
         assert!(response.body.contains("/api/codegen/explain"));
         assert!(response.body.contains("/api/codegen/explain-profile"));
+        assert!(response.body.contains("/api/codegen/diff-profile"));
+        assert!(response.body.contains("/api/codegen/check-profile"));
+        assert!(response.body.contains("/api/codegen/generate-profile"));
         assert!(response.body.contains("/api/codegen/check"));
     }
 
@@ -2950,6 +3092,51 @@ mod tests {
             .body
             .contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
         assert!(response.body.contains(r#""selector":"printString""#));
+    }
+
+    #[test]
+    fn codegen_profile_preview_diff_and_check_use_project_profile() {
+        let root =
+            fs::canonicalize(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+
+        let preview = handle_request(
+            "GET /api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(preview.status, 200);
+        assert!(preview.body.contains(r#""profile":"default""#));
+        assert!(preview.body.contains(r#""source":"#));
+        assert!(preview.body.contains("pub struct Object"));
+
+        let check = handle_request(
+            "GET /api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(check.status, 200);
+        assert!(check.body.contains(r#""profile":"default""#));
+        assert!(check.body.contains(r#""upToDate":true"#));
+
+        let diff = handle_request(
+            "GET /api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(diff.status, 200);
+        assert!(diff.body.contains(r#""profile":"default""#));
+        assert!(diff.body.contains(r#""upToDate":true"#));
+    }
+
+    #[test]
+    fn codegen_generate_profile_is_disabled_by_default() {
+        let response = handle_request(
+            "GET /api/codegen/generate-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 403);
+        assert!(response.body.contains("allow-write"));
     }
 
     #[test]

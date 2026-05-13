@@ -288,8 +288,11 @@ http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Obj
 http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/bridge/root
 http://127.0.0.1:8787/api/bridge/keys
 http://127.0.0.1:8787/api/inspect?oop=20
@@ -307,10 +310,10 @@ codegen config file through a POST body when write mode is enabled, lists known
 `.codegen` files through a project-aware picker, keeps a local recent-config
 history, saves named local codegen profiles, exports/imports profile JSON,
 loads/saves project profile files with schema validation, renders
-generated source, generated config, profile-aware explain summaries, unified
-diff, and side-by-side diff output in a dedicated detail pane, remembers the
-current fields locally, and keeps the JSON endpoints stable for curl, VS Code,
-and automation.
+generated source, generated config, profile-aware preview/diff/check/explain
+summaries, unified diff, and side-by-side diff output in a dedicated detail
+pane, remembers the current fields locally, and keeps the JSON endpoints stable
+for curl, VS Code, and automation.
 
 Generate endpoints are write-gated:
 
@@ -320,6 +323,7 @@ cargo run -p gemstone-rs-explorer -- --allow-write
 
 ```text
 http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/generate-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json
 ```
 

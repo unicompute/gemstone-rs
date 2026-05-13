@@ -62,14 +62,18 @@ GET /api/codegen/sample
 GET /api/codegen/configs?root=.
 GET /api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
 GET /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 GET /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 GET /api/codegen/check?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Codegen generation is write-gated. Start with `--allow-write` before using:
 
 ```text
 GET /api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+GET /api/codegen/generate-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 POST /api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json
 GET /api/bridge/put?key=ExplorerDraft&value=hello
 GET /api/bridge/put?key=ExplorerCount&value=7&value_type=SmallInt
