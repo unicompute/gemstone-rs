@@ -2159,6 +2159,13 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
                     .cloned()
                     .ok_or_else(|| CliError::usage("missing value for --root"))?;
             }
+            option if option.starts_with("--root=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing value for --root="));
+                }
+                root = value.to_string();
+            }
             "--symbol" => key_type = BridgeKeyType::Symbol,
             "--string" => key_type = BridgeKeyType::String,
             "--key-type" => {
@@ -2168,12 +2175,26 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
                         .ok_or_else(|| CliError::usage("missing value for --key-type"))?,
                 )?;
             }
+            option if option.starts_with("--key-type=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing value for --key-type="));
+                }
+                key_type = parse_bridge_key_type(value)?;
+            }
             "--type" | "--value-type" => {
                 index += 1;
                 value_type = Some(parse_bridge_value_type(
                     args.get(index)
                         .ok_or_else(|| CliError::usage("missing value for --type"))?,
                 )?);
+            }
+            option if option.starts_with("--type=") || option.starts_with("--value-type=") => {
+                let (name, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage(format!("missing value for {name}=")));
+                }
+                value_type = Some(parse_bridge_value_type(value)?);
             }
             other => {
                 return Err(CliError::usage(format!("unknown bridge option: {other}")));
@@ -2795,10 +2816,8 @@ GEMSTONE=/opt/gemstone # product root
                 "put",
                 "BookingDraft",
                 "42",
-                "--type",
-                "SmallInt",
-                "--root",
-                "DemoRoot"
+                "--type=SmallInt",
+                "--root=DemoRoot"
             ]))
             .unwrap(),
             Command::BridgePut {
@@ -2829,8 +2848,7 @@ GEMSTONE=/opt/gemstone # product root
                 "put-symbol",
                 "BookingState",
                 "confirmed",
-                "--key-type",
-                "Symbol"
+                "--key-type=Symbol"
             ]))
             .unwrap(),
             Command::BridgePut {

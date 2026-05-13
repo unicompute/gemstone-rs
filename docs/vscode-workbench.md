@@ -18,7 +18,8 @@ For installed CLI tools:
 {
   "gemstoneRs.cliPath": "gemstone-rs",
   "gemstoneRs.explorerPath": "gemstone-rs-explorer",
-  "gemstoneRs.codegenConfig": "gemstone-rs.codegen"
+  "gemstoneRs.codegenConfig": "gemstone-rs.codegen",
+  "gemstoneRs.bridgeRoot": "GemStoneRsBridgeRoot"
 }
 ```
 
@@ -28,7 +29,8 @@ For a source checkout:
 {
   "gemstoneRs.checkoutPath": "/path/to/gemstone-rs",
   "gemstoneRs.useCargo": true,
-  "gemstoneRs.codegenConfig": "examples/codegen/gemstone-rs.codegen"
+  "gemstoneRs.codegenConfig": "examples/codegen/gemstone-rs.codegen",
+  "gemstoneRs.bridgeRoot": "GemStoneRsBridgeRoot"
 }
 ```
 
@@ -50,6 +52,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 `Codegen Config` exposes:
 
 - Discover from Live Stone
+- BridgeRoot name from `gemstoneRs.bridgeRoot`
 - Generate Mapping Config
 - Preview BridgeRoot
 - List BridgeRoot Keys
@@ -147,9 +150,10 @@ available. `GemStone RS: Verify Strict Setup` runs `gemstone-rs doctor
 All setup checks add the active checkout, CLI, explorer, codegen config, and
 profile paths, plus whether the configured `gemstoneRs.envFile` exists. When
 that file exists, Workbench passes `--env-file` automatically to CLI commands
-and explorer startup. The checks offer result actions to copy the full report,
-copy a safe `GS_*` environment export script with a placeholder password, or
-open the extension settings.
+and explorer startup. The report also includes the configured BridgeRoot name
+used by BridgeRoot commands and explorer probes. The checks offer result
+actions to copy the full report, copy a safe `GS_*` environment export script
+with a placeholder password, or open the extension settings.
 
 `GemStone RS: Run Setup Assistant` calls the running local explorer at
 `/api/setup/assistant` and renders the structured env-file, GemStone
@@ -198,41 +202,46 @@ Use `GemStone RS: Preview BridgeRoot` after starting the local explorer. It
 opens:
 
 ```text
-http://127.0.0.1:8787/api/bridge/root
+http://127.0.0.1:8787/api/bridge/root?root=GemStoneRsBridgeRoot
 ```
 
 Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
-opening a browser; it runs `gemstone-rs bridge keys` and writes the key OOPs,
-class OOPs, `printString` values, and identity ids to the output panel.
+opening a browser; it runs `gemstone-rs bridge keys --root <bridge-root>` and
+writes the key OOPs, class OOPs, `printString` values, and identity ids to the
+output panel.
+
+Set `gemstoneRs.bridgeRoot` when a project uses a custom bridge dictionary
+global. The workbench passes that value to CLI commands as `--root` and to the
+explorer API as the `root=` query parameter.
 
 Use `GemStone RS: Put BridgeRoot String` when you want a quick live-write smoke
 test from VS Code. It asks for a key, whether that key is a String or Symbol,
 and a string value, then runs:
 
 ```bash
-gemstone-rs bridge put-string <key> <value> --key-type String
+gemstone-rs bridge put-string <key> <value> --key-type String --root GemStoneRsBridgeRoot
 ```
 
 Use `GemStone RS: Put BridgeRoot Symbol` for the same workflow when the stored
 value should be a GemStone Symbol:
 
 ```bash
-gemstone-rs bridge put-symbol <key> <value> --key-type String
+gemstone-rs bridge put-symbol <key> <value> --key-type String --root GemStoneRsBridgeRoot
 ```
 
 Use `GemStone RS: Put BridgeRoot SmallInt` or `GemStone RS: Put BridgeRoot
 Bool` when the stored value should be a GemStone SmallInteger or Boolean:
 
 ```bash
-gemstone-rs bridge put-smallint <key> <value> --key-type String
-gemstone-rs bridge put-bool <key> <value> --key-type String
+gemstone-rs bridge put-smallint <key> <value> --key-type String --root GemStoneRsBridgeRoot
+gemstone-rs bridge put-bool <key> <value> --key-type String --root GemStoneRsBridgeRoot
 ```
 
 Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a
 String/Symbol key-type prompt and confirmation prompt:
 
 ```bash
-gemstone-rs bridge remove <key> --key-type String
+gemstone-rs bridge remove <key> --key-type String --root GemStoneRsBridgeRoot
 ```
 
 Use `GemStone RS: Run Generated Mapping Example` to run:
@@ -268,10 +277,11 @@ the URL to start.
 The embedded page now acts as the main IDE surface for the local explorer. The
 iframe remains the full browser UI, while the side inspector can query explorer
 status, run setup checks, inspect project profile freshness, preview Codegen
-JSON, inspect diffs, check generated freshness, and inspect BridgeRoot keys. The
-same shell can hand off to native VS Code commands for generated wrapper
-preview, diff, check, generate-with-confirmation, profile checks, docs, and
-opening the last generated output file reported by the explorer.
+JSON, inspect diffs, check generated freshness, and inspect BridgeRoot keys for
+the configured root. The same shell can hand off to native VS Code commands for
+generated wrapper preview, diff, check, generate-with-confirmation, profile
+checks, docs, and opening the last generated output file reported by the
+explorer.
 
 The explorer page can load and save the selected codegen config file,
 posting the editor contents as the request body; saves still require the

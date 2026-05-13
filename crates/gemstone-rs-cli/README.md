@@ -97,7 +97,9 @@ gemstone-rs bridge sample-config BookingDraft
 `bridge put-bool` commit common scalar values without spelling out `--type`.
 The generic `bridge put` remains available when scripts prefer
 `--type String|Symbol|SmallInt|Bool`. Use `--symbol` or `--key-type Symbol`
-when the BridgeRoot key is a GemStone Symbol instead of a String.
+when the BridgeRoot key is a GemStone Symbol instead of a String. Scripts can
+also use equals-style options such as `--root=DemoRoot`,
+`--key-type=Symbol`, and `--type=SmallInt`.
 
 `codegen diff` previews generated changes before writing. `codegen check` is
 suitable for CI. In this repository it verifies:

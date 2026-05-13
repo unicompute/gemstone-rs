@@ -18,7 +18,8 @@ For an installed CLI:
   "gemstoneRs.cliPath": "gemstone-rs",
   "gemstoneRs.explorerPath": "gemstone-rs-explorer",
   "gemstoneRs.explorerAuthToken": "",
-  "gemstoneRs.codegenConfig": "gemstone-rs.codegen"
+  "gemstoneRs.codegenConfig": "gemstone-rs.codegen",
+  "gemstoneRs.bridgeRoot": "GemStoneRsBridgeRoot"
 }
 ```
 
@@ -28,7 +29,8 @@ For a source checkout:
 {
   "gemstoneRs.checkoutPath": "/path/to/gemstone-rs",
   "gemstoneRs.useCargo": true,
-  "gemstoneRs.codegenConfig": "examples/codegen/gemstone-rs.codegen"
+  "gemstoneRs.codegenConfig": "examples/codegen/gemstone-rs.codegen",
+  "gemstoneRs.bridgeRoot": "GemStoneRsBridgeRoot"
 }
 ```
 
@@ -115,7 +117,9 @@ root keys in the output panel.
 `Put BridgeRoot String`, `Put BridgeRoot Symbol`, `Put BridgeRoot SmallInt`,
 `Put BridgeRoot Bool`, and `Remove BridgeRoot Key` run explicit committed
 BridgeRoot writes through the CLI after prompting for a key, String/Symbol key
-type, and value.
+type, and value. They pass the configured `gemstoneRs.bridgeRoot` setting as
+`--root`, so teams can use a project-specific bridge dictionary instead of the
+default `GemStoneRsBridgeRoot`.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
@@ -137,12 +141,12 @@ Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
 are available. `Verify Strict Setup` runs `gemstone-rs doctor --strict` for
 CI-style validation of explicit stone and GCI library settings. All setup
 checks report the active checkout, CLI, explorer, codegen config, and profile
-paths, plus whether the configured `gemstoneRs.envFile` exists. When the env
-file exists, Workbench passes `--env-file` automatically to CLI commands and
-explorer startup. Their result actions can copy the setup report, copy a safe
-`GS_*` environment export script with a placeholder password, or open the
-extension settings. `Show Environment Template`, `Copy Environment Template`,
-and `Write .env.gemstone-rs` use the CLI
+paths, configured BridgeRoot, plus whether the configured `gemstoneRs.envFile`
+exists. When the env file exists, Workbench passes `--env-file` automatically
+to CLI commands and explorer startup. Their result actions can copy the setup
+report, copy a safe `GS_*` environment export script with a placeholder
+password, or open the extension settings. `Show Environment Template`, `Copy
+Environment Template`, and `Write .env.gemstone-rs` use the CLI
 `gemstone-rs env sample/write` commands so VS Code and terminal setup stay on
 the same safe template.
 `Run Setup Assistant` calls the local explorer endpoint `/api/setup/assistant`

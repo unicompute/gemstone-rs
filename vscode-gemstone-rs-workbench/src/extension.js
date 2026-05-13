@@ -157,9 +157,11 @@ class GemStoneTreeProvider {
     }
 
     if (element.type === "codegen") {
-      const configPath = settings().codegenConfig;
+      const cfg = settings();
+      const configPath = cfg.codegenConfig;
       return [
         node(`Config: ${configPath}`, "message", vscode.TreeItemCollapsibleState.None),
+        node(`BridgeRoot: ${cfg.bridgeRoot}`, "message", vscode.TreeItemCollapsibleState.None),
         actionNode("Discover from Live Stone", "gemstoneRs.codegenDiscover"),
         actionNode("Generate Mapping Config", "gemstoneRs.generateMappingConfig"),
         actionNode("Preview BridgeRoot", "gemstoneRs.previewBridgeRoot"),
@@ -402,6 +404,7 @@ function formatSetupReport(cfg, result, title) {
     `envFileExists: ${envFileExists(cfg)}`,
     `codegenConfig: ${cfg.codegenConfig}`,
     `codegenProfiles: ${cfg.codegenProfiles}`,
+    `bridgeRoot: ${cfg.bridgeRoot}`,
     `codegenConfigExists: ${fs.existsSync(resolvePath(cfg.codegenConfig, cfg.cwd))}`,
     `codegenProfilesExists: ${fs.existsSync(resolvePath(cfg.codegenProfiles, cfg.cwd))}`,
     "",
@@ -586,7 +589,7 @@ async function generateMappingConfig() {
 
 async function previewBridgeRoot() {
   const cfg = settings();
-  const url = explorerUrl(cfg, "/api/bridge/root");
+  const url = explorerUrlWithParams(cfg, "/api/bridge/root", { root: cfg.bridgeRoot });
   vscode.env.openExternal(vscode.Uri.parse(url));
   output.clear();
   output.appendLine(`Opened ${url}`);
@@ -595,7 +598,7 @@ async function previewBridgeRoot() {
 }
 
 async function listBridgeRootKeys() {
-  await runAndShow(["bridge", "keys"], { allowFailure: true });
+  await runAndShow(["bridge", "keys", ...bridgeRootArgs()], { allowFailure: true });
 }
 
 async function putBridgeRootString() {
@@ -659,9 +662,10 @@ async function putBridgeRootScalar({ title, prompt, defaultKey, defaultValue, co
   if (value === undefined) {
     return;
   }
-  const result = await runAndShow(["bridge", command, key, value, "--key-type", keyType], {
-    allowFailure: true,
-  });
+  const result = await runAndShow(
+    ["bridge", command, key, value, "--key-type", keyType, ...bridgeRootArgs()],
+    { allowFailure: true }
+  );
   if (result.code === 0) {
     explorerProvider?.refresh();
   }
@@ -681,16 +685,17 @@ async function removeBridgeRootKey() {
     return;
   }
   const choice = await vscode.window.showWarningMessage(
-    `Remove ${key} (${keyType} key) from GemStoneRsBridgeRoot?`,
+    `Remove ${key} (${keyType} key) from ${settings().bridgeRoot}?`,
     { modal: true },
     "Remove"
   );
   if (choice !== "Remove") {
     return;
   }
-  const result = await runAndShow(["bridge", "remove", key, "--key-type", keyType], {
-    allowFailure: true,
-  });
+  const result = await runAndShow(
+    ["bridge", "remove", key, "--key-type", keyType, ...bridgeRootArgs()],
+    { allowFailure: true }
+  );
   if (result.code === 0) {
     explorerProvider?.refresh();
   }
@@ -1434,6 +1439,7 @@ function explorerWebviewHtml(url, cfg = settings()) {
     authToken: cfg.explorerAuthToken,
     codegenConfig: cfg.codegenConfig,
     codegenProfiles: cfg.codegenProfiles,
+    bridgeRoot: cfg.bridgeRoot,
   };
   return `<!doctype html>
 <html>
@@ -1491,6 +1497,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <h2>Project</h2>
       <label class="field">Codegen config<input id="codegenConfig" value="${escapeHtml(cfg.codegenConfig)}"></label>
       <label class="field">Profile file<input id="codegenProfiles" value="${escapeHtml(cfg.codegenProfiles)}"></label>
+      <label class="field">BridgeRoot<input id="bridgeRoot" value="${escapeHtml(cfg.bridgeRoot)}"></label>
       <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
     </div>
@@ -1555,6 +1562,7 @@ function apiUrl(path) {
   }
   const config = configValue('codegenConfig') || state.codegenConfig;
   const profiles = configValue('codegenProfiles') || state.codegenProfiles;
+  const bridgeRoot = configValue('bridgeRoot') || state.bridgeRoot;
   if (path.includes('/api/codegen/') && !url.searchParams.has('config')) {
     url.searchParams.set('config', config);
   }
@@ -1563,6 +1571,9 @@ function apiUrl(path) {
   }
   if (path.includes('-profile') && !url.searchParams.has('profile')) {
     url.searchParams.set('profile', 'default');
+  }
+  if (path.includes('/api/bridge/') && bridgeRoot && !url.searchParams.has('root')) {
+    url.searchParams.set('root', bridgeRoot);
   }
   return url;
 }
@@ -1818,6 +1829,7 @@ function settings() {
     envFile: cfg.get("envFile", ".env.gemstone-rs"),
     codegenConfig: cfg.get("codegenConfig", "gemstone-rs.codegen"),
     codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
+    bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),
     explorerAuthToken: cfg.get("explorerAuthToken", "").trim(),
@@ -1830,6 +1842,20 @@ function explorerUrl(cfg = settings(), route = "/") {
     url.searchParams.set("token", cfg.explorerAuthToken);
   }
   return url.toString();
+}
+
+function explorerUrlWithParams(cfg, route, params) {
+  const url = new URL(explorerUrl(cfg, route));
+  for (const [name, value] of Object.entries(params || {})) {
+    if (value) {
+      url.searchParams.set(name, value);
+    }
+  }
+  return url.toString();
+}
+
+function bridgeRootArgs(cfg = settings()) {
+  return ["--root", cfg.bridgeRoot];
 }
 
 function explorerAuthArgs(cfg = settings()) {

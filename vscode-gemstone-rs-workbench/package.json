@@ -379,6 +379,11 @@
           "default": "gemstone-rs.codegen-profiles.json",
           "description": "Default gemstone-rs project profile JSON path."
         },
+        "gemstoneRs.bridgeRoot": {
+          "type": "string",
+          "default": "GemStoneRsBridgeRoot",
+          "description": "Default GemStone global dictionary used by BridgeRoot commands and explorer probes."
+        },
         "gemstoneRs.explorerHost": {
           "type": "string",
           "default": "127.0.0.1",

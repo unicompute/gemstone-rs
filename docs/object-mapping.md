@@ -528,9 +528,10 @@ gemstone-rs bridge sample-config BookingDraft
 
 Use `--root OtherBridgeRoot` when you intentionally use a non-default root
 dictionary, and `--key-type String|Symbol` when you want the key policy to be
-spelled out in scripts. The generic
-`bridge put --type String|Symbol|SmallInt|Bool` form is still available when
-the value type comes from script data.
+spelled out in scripts. Equals-style options such as `--root=OtherBridgeRoot`,
+`--key-type=Symbol`, and `--type=SmallInt` are accepted for CI scripts. The
+generic `bridge put --type String|Symbol|SmallInt|Bool` form is still
+available when the value type comes from script data.
 
 `bridge keys` lists each root key with its key OOP, class OOP, `printString`,
 and session-local identity id.
