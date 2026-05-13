@@ -29,6 +29,8 @@ cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemston
 cargo run -p gemstone-rs-cli -- profile list examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile show default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile resolve default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
@@ -42,6 +44,8 @@ gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 gemstone-rs profile list gemstone-rs.codegen-profiles.json
 gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 gemstone-rs profile resolve default gemstone-rs.codegen-profiles.json
+gemstone-rs profile check gemstone-rs.codegen-profiles.json
+gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
 ```
 
@@ -49,6 +53,8 @@ Expected output:
 
 ```text
 profile ok: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles: default, object-wrapper, bridge-mapping)
+profile check: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles)
+ok	default	config=examples/codegen/gemstone-rs.codegen	output=examples/codegen/generated/gemstone_wrappers.rs
 ```
 
 ## Shape

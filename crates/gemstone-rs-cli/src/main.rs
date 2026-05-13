@@ -265,6 +265,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             }
             Ok(())
         }
+        Command::ProfileCheck { path, format } => run_profile_check(&path, format),
         Command::CodegenInit { config } => {
             if config.exists() {
                 return Err(CliError::CodegenCheck(format!(
@@ -717,6 +718,139 @@ fn profile_field(value: Option<&str>) -> String {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct ProfileCheckEntry {
+    name: String,
+    config: Option<PathBuf>,
+    output: Option<PathBuf>,
+    up_to_date: bool,
+    error: Option<String>,
+}
+
+impl ProfileCheckEntry {
+    fn ok(&self) -> bool {
+        self.error.is_none() && self.up_to_date
+    }
+}
+
+fn run_profile_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
+    let project = profiles::load_file(path)?;
+    let entries = project
+        .profiles
+        .iter()
+        .map(check_project_profile)
+        .collect::<Vec<_>>();
+    let ok = entries.iter().all(ProfileCheckEntry::ok);
+    match format {
+        OutputFormat::Human => print_profile_check(path, &entries),
+        OutputFormat::Json => println!("{}", profile_check_json(path, &entries, ok)),
+    }
+    if ok {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "one or more profiles in {} are stale or invalid",
+            path.display()
+        )))
+    }
+}
+
+fn check_project_profile(profile: &profiles::CodegenProfile) -> ProfileCheckEntry {
+    let mut entry = ProfileCheckEntry {
+        name: profile.name.clone(),
+        config: None,
+        output: None,
+        up_to_date: false,
+        error: None,
+    };
+    let config_path = match profile.resolved_config_path() {
+        Ok(path) => path,
+        Err(err) => {
+            entry.error = Some(err.to_string());
+            return entry;
+        }
+    };
+    entry.config = Some(config_path.clone());
+    let config = match codegen::Config::from_file(&config_path) {
+        Ok(config) => config,
+        Err(err) => {
+            entry.error = Some(err.to_string());
+            return entry;
+        }
+    };
+    let report = match codegen::check(&config) {
+        Ok(report) => report,
+        Err(err) => {
+            entry.error = Some(err.to_string());
+            return entry;
+        }
+    };
+    entry.output = Some(report.output);
+    entry.up_to_date = report.up_to_date;
+    entry
+}
+
+fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
+    println!(
+        "profile check: {} ({} profiles)",
+        path.display(),
+        entries.len()
+    );
+    for entry in entries {
+        let status = if entry.ok() {
+            "ok"
+        } else if entry.error.is_some() {
+            "error"
+        } else {
+            "stale"
+        };
+        println!(
+            "{}\t{}\tconfig={}\toutput={}\t{}",
+            status,
+            entry.name,
+            path_field(entry.config.as_deref()),
+            path_field(entry.output.as_deref()),
+            entry.error.as_deref().unwrap_or("")
+        );
+    }
+}
+
+fn profile_check_json(path: &Path, entries: &[ProfileCheckEntry], ok: bool) -> String {
+    let entries = entries
+        .iter()
+        .map(profile_check_entry_json)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        r#"{{"ok":{},"path":"{}","profiles":[{}]}}"#,
+        ok,
+        escape_json(&path.display().to_string()),
+        entries
+    )
+}
+
+fn profile_check_entry_json(entry: &ProfileCheckEntry) -> String {
+    format!(
+        r#"{{"name":"{}","ok":{},"config":{},"output":{},"upToDate":{},"error":{}}}"#,
+        escape_json(&entry.name),
+        entry.ok(),
+        optional_json_path(entry.config.as_deref()),
+        optional_json_path(entry.output.as_deref()),
+        entry.up_to_date,
+        optional_json_string(entry.error.as_deref())
+    )
+}
+
+fn optional_json_path(value: Option<&Path>) -> String {
+    optional_json_string(value.map(|path| path.display().to_string()).as_deref())
+}
+
+fn path_field(value: Option<&Path>) -> String {
+    value
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "-".to_string())
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Command {
     Help,
     Doctor {
@@ -800,6 +934,10 @@ enum Command {
     ProfileResolve {
         path: PathBuf,
         name: String,
+        format: OutputFormat,
+    },
+    ProfileCheck {
+        path: PathBuf,
         format: OutputFormat,
     },
     CodegenInit {
@@ -959,8 +1097,13 @@ fn parse_profile_command(args: &[String]) -> Result<Command, CliError> {
             "profile resolve <name> [--json] [path]",
             |name, path, format| Command::ProfileResolve { path, name, format },
         ),
+        Some("check") => parse_profile_path_format_command(
+            &args[1..],
+            "profile check [--json] [path]",
+            |path, format| Command::ProfileCheck { path, format },
+        ),
         _ => Err(CliError::usage(
-            "expected: profile sample | profile init [path] | profile validate [--json] [path] | profile list [--json] [path] | profile show <name> [--json] [path] | profile resolve <name> [--json] [path]",
+            "expected: profile sample | profile init [path] | profile validate [--json] [path] | profile list [--json] [path] | profile show <name> [--json] [path] | profile resolve <name> [--json] [path] | profile check [--json] [path]",
         )),
     }
 }
@@ -1427,6 +1570,7 @@ fn usage() -> &'static str {
   gemstone-rs profile list [--json] [path]
   gemstone-rs profile show <name> [--json] [path]
   gemstone-rs profile resolve <name> [--json] [path]
+  gemstone-rs profile check [--json] [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
   gemstone-rs codegen preview-profile <profile-name> [profile-file]
@@ -1893,6 +2037,13 @@ mod tests {
             Command::ProfileResolve {
                 path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
                 name: "default".to_string(),
+                format: OutputFormat::Json
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "check", "--json", "profiles.json"])).unwrap(),
+            Command::ProfileCheck {
+                path: PathBuf::from("profiles.json"),
                 format: OutputFormat::Json
             }
         );

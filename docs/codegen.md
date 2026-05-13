@@ -166,6 +166,8 @@ gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 gemstone-rs profile list gemstone-rs.codegen-profiles.json
 gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 gemstone-rs profile resolve default gemstone-rs.codegen-profiles.json
+gemstone-rs profile check gemstone-rs.codegen-profiles.json
+gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
 gemstone-rs codegen preview-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen diff-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
@@ -306,6 +308,7 @@ sidebar:
 - Save Project Profiles
 - Export Codegen Profile
 - Validate Project Profiles
+- Check Project Profiles
 - Open Codegen Docs
 
 `Generate Wrappers` shows the diff first and asks before writing when output

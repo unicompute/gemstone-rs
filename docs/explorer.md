@@ -234,6 +234,8 @@ gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 gemstone-rs profile list gemstone-rs.codegen-profiles.json
 gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 gemstone-rs profile resolve default gemstone-rs.codegen-profiles.json
+gemstone-rs profile check gemstone-rs.codegen-profiles.json
+gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
 ```
 

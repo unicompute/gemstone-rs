@@ -46,6 +46,7 @@ function activate(context) {
   register(context, "gemstoneRs.listProjectProfiles", listProjectProfiles);
   register(context, "gemstoneRs.showProjectProfile", showProjectProfile);
   register(context, "gemstoneRs.resolveProjectProfile", resolveProjectProfile);
+  register(context, "gemstoneRs.checkProjectProfiles", checkProjectProfiles);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
@@ -168,6 +169,7 @@ class GemStoneTreeProvider {
         actionNode("List Project Profiles", "gemstoneRs.listProjectProfiles"),
         actionNode("Show Project Profile", "gemstoneRs.showProjectProfile"),
         actionNode("Resolve Project Profile", "gemstoneRs.resolveProjectProfile"),
+        actionNode("Check Project Profiles", "gemstoneRs.checkProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
       ];
     }
@@ -755,6 +757,18 @@ async function resolveProjectProfile() {
     return;
   }
   await runAndShow(["profile", "resolve", selection.name, selection.path], { allowFailure: true });
+}
+
+async function checkProjectProfiles() {
+  const profilePath = await vscode.window.showInputBox({
+    title: "Check Project Profiles",
+    prompt: "Path to gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return;
+  }
+  await runAndShow(["profile", "check", profilePath], { allowFailure: true });
 }
 
 function openExplorerProfileWorkflow(title, instruction) {

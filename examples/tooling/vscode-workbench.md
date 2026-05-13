@@ -99,9 +99,10 @@ Profiles` to write that sample into the project, and `Validate Project
 Profiles` to run the CLI schema check from VS Code. `List Project Profiles`
 and `Show Project Profile` inspect the parsed profile fields from VS Code, and
 `Resolve Project Profile` shows the config path used by profile-driven codegen
-without opening the explorer. Profile-specific commands use a QuickPick loaded
-from the project profile file. Imports summarize new, replaced, and unchanged
-profiles. Use the
+without opening the explorer. `Check Project Profiles` runs the CLI freshness
+check for every profile so stale generated wrappers are visible before commit.
+Profile-specific commands use a QuickPick loaded from the project profile file.
+Imports summarize new, replaced, and unchanged profiles. Use the
 BridgeRoot key/value type selectors to test string keys, symbol keys, strings,
 small integers, and bools before saving those choices in codegen config. The
 detail pane shows generated source, generated mapping config, unified diff

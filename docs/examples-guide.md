@@ -160,6 +160,7 @@ Validate profile files before committing them:
 
 ```bash
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generate a starter config from a live stone:
@@ -190,7 +191,7 @@ BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot Key,
 Run Generated Mapping Example, Load Project Profiles, Save Project Profiles,
 Export Codegen Profile, Show Sample Project Profiles, Create Project Profiles,
 Validate Project Profiles, List Project Profiles, Show Project Profile, and
-Resolve Project Profile, and Open Docs actions.
+Resolve Project Profile, Check Project Profiles, and Open Docs actions.
 
 ## Later Examples
 

@@ -41,6 +41,7 @@ const requiredCommands = [
   "gemstoneRs.listProjectProfiles",
   "gemstoneRs.showProjectProfile",
   "gemstoneRs.resolveProjectProfile",
+  "gemstoneRs.checkProjectProfiles",
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
@@ -73,6 +74,7 @@ assert(readme.includes("Codegen Check Profile"), "README should mention profile-
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
+assert(readme.includes("Check Project Profiles"), "README should mention profile checking");
 assert(readme.includes("Resolve Project Profile"), "README should mention profile resolution");
 assert(extensionSource.includes("showQuickPick"), "profile commands should offer a QuickPick");
 assert.deepStrictEqual(
