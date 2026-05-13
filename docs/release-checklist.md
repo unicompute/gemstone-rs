@@ -84,7 +84,9 @@ DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
 `make verify` includes the version check and checks that PDF generation
-completes and produces non-empty PDF files. The release workflow rebuilds and
+completes and produces non-empty PDF files. The release wrapper writes
+repository-relative SHA256 entries and verifies the expected VSIX plus every PDF
+with `scripts/verify_release_artifacts.py`. The release workflow rebuilds and
 attaches fresh PDFs for the target runner because WeasyPrint output can differ
 byte-for-byte across platforms. The VSIX filename uses
 `vscode-gemstone-rs-workbench/package.json`; the crate release tag still uses

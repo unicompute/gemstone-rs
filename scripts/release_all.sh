@@ -30,13 +30,17 @@ echo "== package VSIX ${VSIX_VERSION} =="
 make vscode-package
 
 echo "== checksums =="
-{
+(
+  cd "$ROOT"
   if [[ -f "$VSIX" ]]; then
-    shasum -a 256 "$VSIX"
+    shasum -a 256 "vscode-gemstone-rs-workbench/gemstone-rs-workbench-${VSIX_VERSION}.vsix"
   fi
   find docs/pdf -type f -name '*.pdf' -print0 | sort -z | xargs -0 shasum -a 256
-} > "$CHECKSUMS"
+) > "$CHECKSUMS"
 echo "wrote $CHECKSUMS"
+
+echo "== release artifact check =="
+python3 scripts/verify_release_artifacts.py --checksums "$CHECKSUMS" --vsix "$VSIX"
 
 if [[ "$PUBLISH_CRATES" == "1" || "$PUBLISH_CRATES" == "true" ]]; then
   echo "== publish crates =="
