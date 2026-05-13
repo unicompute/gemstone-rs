@@ -14,6 +14,7 @@ cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
 cargo run -p gemstone-rs-cli -- examples show quickstart
+cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -87,10 +88,14 @@ the installed CLI:
 gemstone-rs examples list
 gemstone-rs examples list --json
 gemstone-rs examples show quickstart
+gemstone-rs examples run codegen_preview --dry-run
 ```
 
-This is intentionally metadata-only: it tells you which Cargo example to run,
-whether it needs a live stone, and what API surface it proves.
+`list` and `show` tell you which Cargo example to run, whether it needs a live
+stone, and what API surface it proves. `run` launches the selected Cargo
+example when you are in a `gemstone-rs` source checkout. Use `--dry-run` in CI
+or docs checks to print the exact command without compiling or connecting to a
+stone.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

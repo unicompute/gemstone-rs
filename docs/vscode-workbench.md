@@ -171,7 +171,9 @@ values when available and keeps passwords as placeholders.
 renders the installed CLI example index, and lets you run a selected Cargo
 example in a terminal, copy its command, or open the examples guide. This
 closes one gemstone-py parity gap: gemstone-rs now has a CLI and editor
-example launcher instead of only Markdown tables.
+example launcher instead of only Markdown tables. The matching terminal
+command is also available as `gemstone-rs examples run <name>` from a source
+checkout.
 
 ## Codegen Workflow
 

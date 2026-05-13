@@ -96,7 +96,9 @@ named project profile in `gemstone-rs.codegen-profiles.json`.
 `Show Example Commands` uses `gemstone-rs examples list --json` to show the
 same curated example map that the CLI exposes, then lets you run a selected
 example in a terminal, copy its command, or open the examples guide. This is
-the Rust workbench equivalent of the gemstone-py examples launcher.
+the Rust workbench equivalent of the gemstone-py examples launcher. From a
+source checkout, the same examples can also be launched with
+`gemstone-rs examples run <name>`.
 `Load Project Profiles`, `Save Project Profiles`, and `Export Codegen Profile`
 open the local explorer workflow where project profile JSON can be loaded,
 schema-validated, summarized, and saved under `--allow-write`. `Show Sample

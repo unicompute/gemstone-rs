@@ -9,7 +9,7 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::process::{Command as ProcessCommand, ExitCode};
 
 fn main() -> ExitCode {
     match run(env::args().skip(1).collect()) {
@@ -66,6 +66,18 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             })?;
             print_example_details(example, format);
             Ok(())
+        }
+        Command::ExamplesRun {
+            name,
+            dry_run,
+            extra_args,
+        } => {
+            let example = find_example(&name).ok_or_else(|| {
+                CliError::Example(format!(
+                    "example {name} not found; run `gemstone-rs examples list`"
+                ))
+            })?;
+            run_example(example, dry_run, &extra_args)
         }
         Command::Eval { source, env_file } => {
             apply_env_file_option(env_file.as_deref())?;
@@ -1474,7 +1486,9 @@ fn print_examples_list(format: OutputFormat) {
     match format {
         OutputFormat::Human => {
             println!("gemstone-rs examples");
-            println!("Use `gemstone-rs examples show <name>` for one command and details.");
+            println!(
+                "Use `gemstone-rs examples show <name>` for details or `examples run <name>` from a source checkout."
+            );
             println!();
             for example in EXAMPLES {
                 println!(
@@ -1519,6 +1533,59 @@ fn example_json(example: &ExampleInfo) -> String {
         example.requires_live,
         escape_json(example.description)
     )
+}
+
+fn example_run_command(example: &ExampleInfo, extra_args: &[String]) -> String {
+    let mut command = example.command.to_string();
+    if !extra_args.is_empty() {
+        command.push_str(" --");
+        for arg in extra_args {
+            command.push(' ');
+            command.push_str(&display_command_arg(arg));
+        }
+    }
+    command
+}
+
+fn display_command_arg(value: &str) -> String {
+    if value
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | '/' | ':' | '='))
+    {
+        value.to_string()
+    } else {
+        shell_quote(value)
+    }
+}
+
+fn run_example(
+    example: &ExampleInfo,
+    dry_run: bool,
+    extra_args: &[String],
+) -> Result<(), CliError> {
+    let command = example_run_command(example, extra_args);
+    if dry_run {
+        println!("{command}");
+        return Ok(());
+    }
+
+    println!("running: {command}");
+    let mut process = ProcessCommand::new("cargo");
+    process.args(["run", "-p", "gemstone-rs", "--example", example.name]);
+    if !extra_args.is_empty() {
+        process.arg("--");
+        process.args(extra_args);
+    }
+
+    let status = process.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(CliError::Example(format!(
+            "example {} exited with {}",
+            example.name, status
+        )))
+    }
 }
 
 fn print_profile_list(path: &Path, project: &profiles::ProjectProfiles) {
@@ -1633,6 +1700,11 @@ enum Command {
     ExamplesShow {
         name: String,
         format: OutputFormat,
+    },
+    ExamplesRun {
+        name: String,
+        dry_run: bool,
+        extra_args: Vec<String>,
     },
     Eval {
         source: String,
@@ -1901,16 +1973,17 @@ fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
     match command {
         "list" => parse_examples_list_command(&args[1..]),
         "show" => parse_examples_show_command(&args[1..]),
+        "run" => parse_examples_run_command(&args[1..]),
         "--json" => Ok(Command::ExamplesList {
             format: OutputFormat::Json,
         }),
         "-h" | "--help" => Err(CliError::usage(
-            "expected: examples [list [--json] | show <name> [--json]]",
+            "expected: examples [list [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
         )),
         name => {
             if args.len() > 2 {
                 return Err(CliError::usage(
-                    "expected: examples [list [--json] | show <name> [--json]]",
+                    "expected: examples [list [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
                 ));
             }
             let format = if args.get(1).is_some_and(|arg| arg == "--json") {
@@ -1969,6 +2042,46 @@ fn parse_examples_show_command(args: &[String]) -> Result<Command, CliError> {
     Ok(Command::ExamplesShow {
         name: name.ok_or_else(|| CliError::usage("missing example name"))?,
         format,
+    })
+}
+
+fn parse_examples_run_command(args: &[String]) -> Result<Command, CliError> {
+    let mut dry_run = false;
+    let mut name = None;
+    let mut extra_args = Vec::new();
+    let mut passthrough = false;
+
+    for arg in args {
+        if passthrough {
+            extra_args.push(arg.clone());
+            continue;
+        }
+        match arg.as_str() {
+            "--dry-run" => dry_run = true,
+            "--" => passthrough = true,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: examples run <name> [--dry-run] [-- <args>...]",
+                ));
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown examples run option: {option}"
+                )));
+            }
+            value if name.is_none() => name = Some(value.to_string()),
+            other => {
+                return Err(CliError::usage(format!(
+                    "unexpected examples run argument: {other}; pass example arguments after --"
+                )))
+            }
+        }
+    }
+
+    Ok(Command::ExamplesRun {
+        name: name.ok_or_else(|| CliError::usage("missing example name"))?,
+        dry_run,
+        extra_args,
     })
 }
 
@@ -2643,6 +2756,7 @@ fn usage() -> &'static str {
   gemstone-rs env write [path] [--force]
   gemstone-rs examples list [--json]
   gemstone-rs examples show <name> [--json]
+  gemstone-rs examples run <name> [--dry-run] [-- <args>...]
   gemstone-rs eval [--env-file <path>] <smalltalk>
   gemstone-rs browse dictionaries [--env-file <path>]
   gemstone-rs browse classes [dictionary] [--env-file <path>]
@@ -2690,6 +2804,7 @@ enum CliError {
     Codegen(codegen::Error),
     Profiles(profiles::Error),
     CodegenCheck(String),
+    Example(String),
     Doctor(String),
     EnvFile(String),
     Io(std::io::Error),
@@ -2709,6 +2824,7 @@ impl fmt::Display for CliError {
             Self::Codegen(err) => write!(f, "{err}"),
             Self::Profiles(err) => write!(f, "{err}"),
             Self::CodegenCheck(message) => write!(f, "{message}"),
+            Self::Example(message) => write!(f, "{message}"),
             Self::Doctor(message) => write!(f, "{message}"),
             Self::EnvFile(message) => write!(f, "{message}"),
             Self::Io(err) => write!(f, "{err}"),
@@ -2723,7 +2839,7 @@ impl StdError for CliError {
             Self::GemStone(err) => Some(err),
             Self::Codegen(err) => Some(err),
             Self::Profiles(err) => Some(err),
-            Self::CodegenCheck(_) | Self::Doctor(_) | Self::EnvFile(_) => None,
+            Self::CodegenCheck(_) | Self::Example(_) | Self::Doctor(_) | Self::EnvFile(_) => None,
             Self::Io(err) => Some(err),
         }
     }
@@ -2857,6 +2973,31 @@ mod tests {
                 format: OutputFormat::Json,
             }
         );
+        assert_eq!(
+            parse_command(&args(&["examples", "run", "quickstart", "--dry-run"])).unwrap(),
+            Command::ExamplesRun {
+                name: "quickstart".to_string(),
+                dry_run: true,
+                extra_args: Vec::new(),
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "examples",
+                "run",
+                "codegen_workflow",
+                "--dry-run",
+                "--",
+                "--demo",
+                "value with spaces"
+            ]))
+            .unwrap(),
+            Command::ExamplesRun {
+                name: "codegen_workflow".to_string(),
+                dry_run: true,
+                extra_args: vec!["--demo".to_string(), "value with spaces".to_string()],
+            }
+        );
     }
 
     #[test]
@@ -2868,6 +3009,14 @@ mod tests {
         let workflow = find_example("codegen workflow").unwrap();
         assert!(!workflow.requires_live);
         assert!(example_json(workflow).contains(r#""requiresLive":false"#));
+        assert_eq!(
+            example_run_command(workflow, &[]),
+            "cargo run -p gemstone-rs --example codegen_workflow"
+        );
+        assert_eq!(
+            example_run_command(workflow, &["--flag".to_string(), "two words".to_string()]),
+            "cargo run -p gemstone-rs --example codegen_workflow -- --flag 'two words'"
+        );
     }
 
     #[test]

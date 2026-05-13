@@ -63,6 +63,7 @@ gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
 gemstone-rs examples show quickstart
+gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
@@ -178,6 +179,7 @@ cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
 cargo run -p gemstone-rs-cli -- examples show quickstart
+cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -223,8 +225,10 @@ library source is only coming from defaults. GCI diagnostics also report
 whether the selected `libgcirpc` exists, is a file, is readable, and whether
 the path appears to be arm64 or x86_64.
 `examples list` and `examples show <name>` provide an installed-CLI example
-index similar to `gemstone-examples list` in gemstone-py; the JSON form is used
-by the VS Code workbench to show and launch example commands.
+index similar to `gemstone-examples list` in gemstone-py; `examples run <name>`
+launches the selected Cargo example from a source checkout, and `--dry-run`
+prints the command without executing it. The JSON form is used by the VS Code
+workbench to show and launch example commands.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.

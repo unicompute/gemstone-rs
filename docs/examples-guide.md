@@ -32,7 +32,12 @@ repository docs:
 gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
+gemstone-rs examples run codegen_preview --dry-run
 ```
+
+From a source checkout, `gemstone-rs examples run <name>` can launch the
+selected Cargo example directly. Use `--dry-run` when you only want to verify
+the command that would run.
 
 ## Example Map
 

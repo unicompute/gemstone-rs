@@ -22,6 +22,7 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples list --json
 	cargo run -p gemstone-rs-cli -- examples show quickstart
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
+	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample
