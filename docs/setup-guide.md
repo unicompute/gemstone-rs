@@ -93,7 +93,9 @@ passwords. The GCI section reports the source that selected the library:
 explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path
 or directory searched. Add `--live` when the stone should be reachable; it logs
 in and asserts that `3 + 4` returns `7`. Add `--json` when a script, CI job, or
-editor integration needs a parseable report.
+editor integration needs a parseable report. Failed checks include hints for
+missing credentials, `libgcirpc` path/loading problems, and live stone
+connectivity.
 
 From a source checkout:
 

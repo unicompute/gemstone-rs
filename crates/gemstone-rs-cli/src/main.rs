@@ -383,6 +383,7 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     }
 
     let mut ok = true;
+    let mut hints = Vec::new();
     println!("gemstone-rs doctor");
     println!("environment:");
     print_env_value("GS_LIB_PATH", false);
@@ -397,6 +398,7 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     print_env_value("GS_PASSWORD", true);
     print_env_value("GS_HOST_USERNAME", false);
     print_env_value("GS_HOST_PASSWORD", true);
+    add_missing_credential_hints(&mut hints);
 
     let config = match Config::from_env() {
         Ok(config) => {
@@ -407,6 +409,7 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
         Err(err) => {
             ok = false;
             println!("config: error: {err}");
+            add_error_hints(&mut hints, &err);
             None
         }
     };
@@ -425,11 +428,13 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
                     println!("  source: {}", resolution.source);
                     println!("  path: {}", resolution.path.display());
                     print_searched_paths(&resolution.searched);
+                    add_error_hints(&mut hints, &err);
                 }
             },
             Err(err) => {
                 ok = false;
                 println!("gci_library: error: {err}");
+                add_error_hints(&mut hints, &err);
             }
         }
 
@@ -439,10 +444,15 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
                 Ok(value) => {
                     ok = false;
                     println!("live: error: expected 7, got {value:?}");
+                    add_hint(
+                        &mut hints,
+                        "Confirm the stone can evaluate simple Smalltalk expressions and rerun gemstone-rs doctor --live.",
+                    );
                 }
                 Err(err) => {
                     ok = false;
                     println!("live: error: {err}");
+                    add_error_hints(&mut hints, &err);
                 }
             }
         } else {
@@ -451,6 +461,8 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     } else if live {
         println!("live: skipped because config is incomplete");
     }
+
+    print_hints(&hints);
 
     if ok {
         Ok(())
@@ -463,6 +475,8 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
 
 fn run_doctor_json(live: bool) -> Result<(), CliError> {
     let mut ok = true;
+    let mut hints = Vec::new();
+    add_missing_credential_hints(&mut hints);
     let mut gci_json = String::from(r#"{"ok":false,"checked":false}"#);
     let mut live_json = if live {
         String::from(r#"{"ok":false,"checked":true,"error":"config incomplete"}"#)
@@ -485,6 +499,7 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
         }
         Err(err) => {
             ok = false;
+            add_error_hints(&mut hints, &err);
             (
                 format!(
                     r#"{{"ok":false,"error":"{}"}}"#,
@@ -508,6 +523,7 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
                 }
                 Err(err) => {
                     ok = false;
+                    add_error_hints(&mut hints, &err);
                     gci_json = format!(
                         r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","searched":[{}],"error":"{}"}}"#,
                         escape_json(resolution.source),
@@ -519,6 +535,7 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
             },
             Err(err) => {
                 ok = false;
+                add_error_hints(&mut hints, &err);
                 gci_json = format!(
                     r#"{{"ok":false,"checked":true,"error":"{}"}}"#,
                     escape_json(&err.to_string())
@@ -533,6 +550,10 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
                 }
                 Ok(value) => {
                     ok = false;
+                    add_hint(
+                        &mut hints,
+                        "Confirm the stone can evaluate simple Smalltalk expressions and rerun gemstone-rs doctor --live.",
+                    );
                     live_json = format!(
                         r#"{{"ok":false,"checked":true,"error":"expected 7","actual":"{}"}}"#,
                         escape_json(&format!("{value:?}"))
@@ -540,6 +561,7 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
                 }
                 Err(err) => {
                     ok = false;
+                    add_error_hints(&mut hints, &err);
                     live_json = format!(
                         r#"{{"ok":false,"checked":true,"error":"{}"}}"#,
                         escape_json(&err.to_string())
@@ -550,12 +572,13 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
     }
 
     println!(
-        r#"{{"success":{},"environment":{},"config":{},"gciLibrary":{},"live":{}}}"#,
+        r#"{{"success":{},"environment":{},"config":{},"gciLibrary":{},"live":{},"hints":[{}]}}"#,
         ok,
         environment_json(),
         config_json,
         gci_json,
-        live_json
+        live_json,
+        json_hint_array(&hints)
     );
 
     if ok {
@@ -645,6 +668,14 @@ fn json_path_array(values: &[PathBuf]) -> String {
         .join(",")
 }
 
+fn json_hint_array(values: &[&'static str]) -> String {
+    values
+        .iter()
+        .map(|value| format!(r#""{}""#, escape_json(value)))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn print_searched_paths(paths: &[PathBuf]) {
     if paths.is_empty() {
         return;
@@ -652,6 +683,83 @@ fn print_searched_paths(paths: &[PathBuf]) {
     println!("  searched:");
     for path in paths {
         println!("    {}", path.display());
+    }
+}
+
+fn add_error_hints(hints: &mut Vec<&'static str>, err: &GemStoneError) {
+    match err {
+        GemStoneError::MissingEnvironment("GS_USERNAME") => add_hint(
+            hints,
+            "Set GS_USERNAME to the GemStone account name before running live GemStone commands.",
+        ),
+        GemStoneError::MissingEnvironment("GS_PASSWORD") => add_hint(
+            hints,
+            "Set GS_PASSWORD for the GemStone account before running live GemStone commands.",
+        ),
+        GemStoneError::MissingConfig(_) => add_hint(
+            hints,
+            "Use Config::builder() to provide all required fields when environment variables are not used.",
+        ),
+        GemStoneError::Gci(_) => {
+            add_hint(
+                hints,
+                "Set GS_LIB_PATH to the full libgcirpc path, or set GS_LIB/GEMSTONE to the GemStone product location.",
+            );
+            add_hint(
+                hints,
+                "If libgcirpc is found but will not load, check CPU architecture, file permissions, and dependent dynamic libraries.",
+            );
+        }
+        GemStoneError::GemStone { .. } => add_hint(
+            hints,
+            "Check GS_STONE or GS_STONE_NAME, GS_HOST, GS_NETLDI, credentials, and stone status, then rerun gemstone-rs doctor --live.",
+        ),
+        GemStoneError::Nul(_)
+        | GemStoneError::NotLoggedIn
+        | GemStoneError::IllegalOop { .. }
+        | GemStoneError::UnexpectedType { .. }
+        | GemStoneError::Mapping { .. }
+        | GemStoneError::NegativeSize(_)
+        | GemStoneError::ArgumentCountTooLarge(_) => {}
+        GemStoneError::MissingEnvironment(_) => add_hint(
+            hints,
+            "Set the missing GemStone environment variable or pass the value through Config::builder().",
+        ),
+    }
+}
+
+fn add_missing_credential_hints(hints: &mut Vec<&'static str>) {
+    if env_var_missing_or_empty("GS_USERNAME") {
+        add_hint(
+            hints,
+            "Set GS_USERNAME to the GemStone account name before running live GemStone commands.",
+        );
+    }
+    if env_var_missing_or_empty("GS_PASSWORD") {
+        add_hint(
+            hints,
+            "Set GS_PASSWORD for the GemStone account before running live GemStone commands.",
+        );
+    }
+}
+
+fn env_var_missing_or_empty(name: &str) -> bool {
+    env::var(name).map(|value| value.is_empty()).unwrap_or(true)
+}
+
+fn add_hint(hints: &mut Vec<&'static str>, hint: &'static str) {
+    if !hints.contains(&hint) {
+        hints.push(hint);
+    }
+}
+
+fn print_hints(hints: &[&'static str]) {
+    if hints.is_empty() {
+        return;
+    }
+    println!("hints:");
+    for hint in hints {
+        println!("  - {hint}");
     }
 }
 
@@ -1768,6 +1876,49 @@ mod tests {
                 live: true,
                 format: OutputFormat::Json,
             }
+        );
+    }
+
+    #[test]
+    fn doctor_hints_are_deduplicated_and_json_escaped() {
+        let mut hints = Vec::new();
+        add_hint(
+            &mut hints,
+            "Set GS_USERNAME before running \"live\" checks.",
+        );
+        add_hint(
+            &mut hints,
+            "Set GS_USERNAME before running \"live\" checks.",
+        );
+
+        assert_eq!(
+            hints,
+            vec!["Set GS_USERNAME before running \"live\" checks."]
+        );
+        assert_eq!(
+            json_hint_array(&hints),
+            r#""Set GS_USERNAME before running \"live\" checks.""#
+        );
+    }
+
+    #[test]
+    fn doctor_hints_cover_missing_environment() {
+        let mut hints = Vec::new();
+        add_error_hints(
+            &mut hints,
+            &GemStoneError::MissingEnvironment("GS_USERNAME"),
+        );
+        add_error_hints(
+            &mut hints,
+            &GemStoneError::MissingEnvironment("GS_PASSWORD"),
+        );
+
+        assert_eq!(
+            hints,
+            vec![
+                "Set GS_USERNAME to the GemStone account name before running live GemStone commands.",
+                "Set GS_PASSWORD for the GemStone account before running live GemStone commands."
+            ]
         );
     }
 

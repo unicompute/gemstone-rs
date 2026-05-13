@@ -191,7 +191,9 @@ The CLI intentionally uses only the standard library. `doctor` checks the
 GemStone environment, GCI library resolution, and optionally a live `3 + 4`
 probe. The report includes which source selected `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the path or directory searched.
-Add `--json` when release scripts or VS Code need structured output.
+When setup fails, it prints actionable hints for credentials, library loading,
+or live stone connectivity. Add `--json` when release scripts or VS Code need
+structured output.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.

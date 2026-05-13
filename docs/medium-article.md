@@ -117,7 +117,8 @@ gemstone-rs eval "3 + 4"
 
 The doctor report names the source used to select `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory
-searched. That makes CLI, VS Code, and CI diagnostics much easier to compare.
+searched. Failed checks now include remediation hints, so CLI, VS Code, and CI
+diagnostics are easier to compare and act on.
 
 Expected output:
 
