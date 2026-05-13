@@ -65,6 +65,7 @@ Expected response shapes:
 curl -s http://127.0.0.1:8787/api/codegen/sample
 curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
 curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
+curl -s 'http://127.0.0.1:8787/api/codegen/profiles/check?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
@@ -79,6 +80,7 @@ Expected check result when generated output is current:
 ```json
 {"success":true,"root":".","configs":["examples/codegen/gemstone-rs.codegen"]}
 {"success":true,"exists":true,"upToDate":true}
+{"success":true,"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
 ```
 
 In the browser UI, use `Profile name` and `Save Profile` to save the current

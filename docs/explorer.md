@@ -168,6 +168,8 @@ type and GemStone class, then use:
 - `Load Project Profiles` and `Save Project Profiles` to use a committed
   project-level profile file; the server rejects invalid profile schemas and
   the browser reports which profiles are new, replaced, or unchanged
+- `Check Project Profiles` to verify every profile in the project profile file
+  and show ok/stale/error counts in one report
 - `Load Config` to read the selected config file into the editor
 - `Save Config` to POST the editor contents, validate them, and write the file
   when the explorer was started with `--allow-write`
@@ -196,6 +198,7 @@ Read-only endpoints:
 curl -s http://127.0.0.1:8787/api/codegen/sample
 curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
 curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
+curl -s 'http://127.0.0.1:8787/api/codegen/profiles/check?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
@@ -220,6 +223,7 @@ output check:
 ```json
 {"success":true,"root":".","configs":["examples/codegen/gemstone-rs.codegen"]}
 {"success":true,"exists":true,"upToDate":true}
+{"success":true,"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
 ```
 
 Write-gated endpoint:

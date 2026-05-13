@@ -460,6 +460,7 @@ Useful endpoints:
 /api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 /api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 /api/codegen/profiles?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
+/api/codegen/profiles/check?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 The explorer home page is now a usable UI rather than just a list of links. It
@@ -481,7 +482,9 @@ profile JSON, show which imported profiles are new, replaced, or unchanged, and
 save project profile files only when started with `--allow-write`. Profile-aware
 preview, diff, check, explain, and generate endpoints let the browser, VS Code,
 and CI all resolve the same named project profile before operating on generated
-wrappers.
+wrappers. A project-level profile check endpoint summarizes all profiles at
+once, including ok, stale, and error counts, so release tooling can fail before
+generated wrappers drift.
 
 The same schema is available from the CLI, so profile files can be checked in
 CI:

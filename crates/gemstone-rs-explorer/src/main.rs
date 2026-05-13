@@ -291,6 +291,7 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
         "/api/codegen/config" => codegen_config_response(&route, config),
         "/api/codegen/configs" => codegen_configs_response(&route, config),
         "/api/codegen/profiles" => codegen_profiles_response(&route, config),
+        "/api/codegen/profiles/check" => codegen_profiles_check_response(&route, config),
         "/api/codegen/profiles/save" => {
             if config.read_only {
                 return Response::json(
@@ -1353,6 +1354,33 @@ struct CodegenProfileTarget {
     config_path: PathBuf,
 }
 
+struct CodegenProfileStatus {
+    name: String,
+    config_path: Option<PathBuf>,
+    output_path: Option<PathBuf>,
+    exists: bool,
+    up_to_date: bool,
+    error: Option<String>,
+}
+
+impl CodegenProfileStatus {
+    fn ok(&self) -> bool {
+        self.error.is_none() && self.up_to_date
+    }
+}
+
+fn resolve_profile_config_path(
+    route: &Route,
+    config: &ExplorerConfig,
+    profile: &profiles::CodegenProfile,
+) -> Result<PathBuf, String> {
+    match profile.resolved_config_path() {
+        Ok(path) if path.is_absolute() => Ok(path),
+        Ok(path) => Ok(codegen_root_path(route, config).join(path)),
+        Err(err) => Err(err.to_string()),
+    }
+}
+
 fn codegen_profile_target(
     route: &Route,
     config: &ExplorerConfig,
@@ -1381,9 +1409,8 @@ fn codegen_profile_target(
             ),
         ));
     };
-    let config_path = match profile.resolved_config_path() {
-        Ok(path) if path.is_absolute() => path,
-        Ok(path) => codegen_root_path(route, config).join(path),
+    let config_path = match resolve_profile_config_path(route, config, profile) {
+        Ok(path) => path,
         Err(err) => {
             return Err(Response::json(
                 400,
@@ -1402,6 +1429,116 @@ fn codegen_profile_target(
         profile_file,
         config_path,
     })
+}
+
+fn codegen_profiles_check_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let profile_file = codegen_profile_path(route, config);
+    let project = match profiles::load_file(&profile_file) {
+        Ok(project) => project,
+        Err(err) => {
+            return Response::json(
+                if profile_file.exists() { 400 } else { 404 },
+                format!(
+                    r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                    escape_json(&profile_file.display().to_string()),
+                    escape_json(&err.to_string())
+                ),
+            )
+        }
+    };
+
+    let statuses = project
+        .profiles
+        .iter()
+        .map(|profile| codegen_profile_status(route, config, profile))
+        .collect::<Vec<_>>();
+    let profile_count = statuses.len();
+    let ok_count = statuses.iter().filter(|status| status.ok()).count();
+    let error_count = statuses
+        .iter()
+        .filter(|status| status.error.is_some())
+        .count();
+    let stale_count = profile_count.saturating_sub(ok_count + error_count);
+    let ok = ok_count == profile_count;
+    let profiles_json = statuses
+        .iter()
+        .map(codegen_profile_status_json)
+        .collect::<Vec<_>>()
+        .join(",");
+
+    Response::json(
+        200,
+        format!(
+            r#"{{"success":true,"ok":{},"profileFile":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
+            ok,
+            escape_json(&profile_file.display().to_string()),
+            profile_count,
+            ok_count,
+            stale_count,
+            error_count,
+            profiles_json
+        ),
+    )
+}
+
+fn codegen_profile_status(
+    route: &Route,
+    config: &ExplorerConfig,
+    profile: &profiles::CodegenProfile,
+) -> CodegenProfileStatus {
+    let mut status = CodegenProfileStatus {
+        name: profile.name.clone(),
+        config_path: None,
+        output_path: None,
+        exists: false,
+        up_to_date: false,
+        error: None,
+    };
+    let config_path = match resolve_profile_config_path(route, config, profile) {
+        Ok(path) => path,
+        Err(err) => {
+            status.error = Some(err);
+            return status;
+        }
+    };
+    status.config_path = Some(config_path.clone());
+    let codegen_config = match codegen::Config::from_file(&config_path) {
+        Ok(config) => config,
+        Err(err) => {
+            status.error = Some(err.to_string());
+            return status;
+        }
+    };
+    match codegen::check(&codegen_config) {
+        Ok(report) => {
+            status.output_path = Some(report.output);
+            status.exists = report.exists;
+            status.up_to_date = report.up_to_date;
+        }
+        Err(err) => status.error = Some(err.to_string()),
+    }
+    status
+}
+
+fn codegen_profile_status_json(status: &CodegenProfileStatus) -> String {
+    let config = status
+        .config_path
+        .as_ref()
+        .map(|path| path.display().to_string());
+    let output = status
+        .output_path
+        .as_ref()
+        .map(|path| path.display().to_string());
+    format!(
+        r#"{{"name":"{}","ok":{},"config":{},"output":{},"exists":{},"upToDate":{},"error":{}}}"#,
+        escape_json(&status.name),
+        status.ok(),
+        optional_json_string(config.as_deref()),
+        optional_json_string(output.as_deref()),
+        status.exists,
+        status.up_to_date,
+        optional_json_string(status.error.as_deref())
+    )
 }
 
 fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response {
@@ -2060,6 +2197,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="exportCodegenProfile()">Export Profile</button>
 <button class="secondary" onclick="importCodegenProfile()">Import Profile</button>
 <button class="secondary" onclick="loadProjectProfiles()">Load Project Profiles</button>
+<button class="secondary" onclick="checkProjectProfiles()">Check Project Profiles</button>
 <button class="secondary" onclick="saveProjectProfiles()">Save Project Profiles</button>
 <button class="secondary" onclick="deleteCodegenProfile()">Delete Profile</button>
 <button class="secondary" onclick="clearSavedFields()">Clear Saved Fields</button>
@@ -2113,6 +2251,8 @@ async function callApi(path, options = {}) {
 function renderDetail(data) {
   if (typeof data.diff === 'string') {
     renderDiff(data.diff || 'No generated output changes.');
+  } else if (Array.isArray(data.profiles) && typeof data.profileCount === 'number') {
+    detail.textContent = renderProfileCheck(data);
   } else if (Array.isArray(data.steps)) {
     detail.textContent = renderSetupAssistant(data.steps);
   } else if (data.explain && typeof data.explain === 'object') {
@@ -2133,6 +2273,22 @@ function renderSetupAssistant(steps) {
     const action = step.action ? '\n  Action: ' + step.action : '';
     return status + ': ' + step.name + '\n  ' + (step.detail || '-') + action;
   }).join('\n\n');
+}
+function renderProfileCheck(data) {
+  const lines = [
+    'Project profiles: ' + (data.profileFile || '-'),
+    'Summary: ' + data.okCount + ' ok, ' + data.staleCount + ' stale, ' + data.errorCount + ' errors, ' + data.profileCount + ' total',
+    ''
+  ];
+  for (const profile of data.profiles || []) {
+    const status = profile.ok ? 'OK' : (profile.error ? 'ERROR' : 'STALE');
+    lines.push(status + ': ' + profile.name);
+    lines.push('  config: ' + (profile.config || '-'));
+    lines.push('  output: ' + (profile.output || '-'));
+    lines.push('  exists: ' + profile.exists + ' upToDate: ' + profile.upToDate);
+    if (profile.error) lines.push('  error: ' + profile.error);
+  }
+  return lines.join('\n');
 }
 function renderCodegenExplain(explain) {
   const lines = [
@@ -2529,6 +2685,9 @@ async function loadProjectProfiles() {
     importCodegenProfilesSource(data.source, false);
   }
 }
+function checkProjectProfiles() {
+  callApi('/api/codegen/profiles/check?' + profileFileQuery());
+}
 async function saveProjectProfiles() {
   const profiles = readCodegenProfiles();
   const source = JSON.stringify(profilesExportPayload(profiles), null, 2);
@@ -2869,6 +3028,7 @@ mod tests {
         assert!(response.body.contains("importCodegenProfile()"));
         assert!(response.body.contains("renderImportSummary"));
         assert!(response.body.contains("loadProjectProfiles()"));
+        assert!(response.body.contains("checkProjectProfiles()"));
         assert!(response.body.contains("saveProjectProfiles()"));
         assert!(response.body.contains("deleteCodegenProfile()"));
         assert!(response
@@ -2902,6 +3062,7 @@ mod tests {
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
         assert!(response.body.contains("/api/codegen/configs"));
+        assert!(response.body.contains("/api/codegen/profiles/check"));
         assert!(response.body.contains("/api/codegen/preview-profile"));
         assert!(response.body.contains("/api/codegen/explain"));
         assert!(response.body.contains("/api/codegen/explain-profile"));
@@ -3127,6 +3288,32 @@ mod tests {
         assert_eq!(diff.status, 200);
         assert!(diff.body.contains(r#""profile":"default""#));
         assert!(diff.body.contains(r#""upToDate":true"#));
+    }
+
+    #[test]
+    fn codegen_profiles_check_reports_all_project_profiles() {
+        let root =
+            fs::canonicalize(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+
+        let response = handle_request(
+            "GET /api/codegen/profiles/check?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(response.body.contains(r#""ok":true"#));
+        assert!(response.body.contains(r#""profileCount":3"#));
+        assert!(response.body.contains(r#""okCount":3"#));
+        assert!(response.body.contains(r#""staleCount":0"#));
+        assert!(response.body.contains(r#""errorCount":0"#));
+        assert!(response.body.contains(r#""name":"default""#));
+        assert!(response.body.contains(r#""name":"object-wrapper""#));
+        assert!(response.body.contains(r#""name":"bridge-mapping""#));
+        assert!(response.body.contains("gemstone_wrappers.rs"));
     }
 
     #[test]

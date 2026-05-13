@@ -61,6 +61,7 @@ GET /api/browse/source?class=Object&selector=printString&meta=0
 GET /api/codegen/sample
 GET /api/codegen/configs?root=.
 GET /api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
+GET /api/codegen/profiles/check?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 GET /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 GET /api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 GET /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
