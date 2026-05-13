@@ -1,8 +1,8 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, profiles, BridgeKeyType, BridgeValue, Config, Error as GemStoneError, Oop,
-    Session, Value, DEFAULT_BRIDGE_ROOT,
+    gci_library_path, gci_library_resolution, profiles, BridgeKeyType, BridgeValue, Config,
+    Error as GemStoneError, Oop, Session, Value, DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -412,8 +412,19 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     };
 
     if let Some(config) = config {
-        match gci_library_path(&config) {
-            Ok(path) => println!("gci_library: ok: {}", path.display()),
+        match gci_library_resolution(&config) {
+            Ok(resolution) => match gci_library_path(&config) {
+                Ok(path) => {
+                    println!("gci_library: ok: {}", path.display());
+                    println!("  source: {}", resolution.source);
+                }
+                Err(err) => {
+                    ok = false;
+                    println!("gci_library: error: {err}");
+                    println!("  source: {}", resolution.source);
+                    println!("  path: {}", resolution.path.display());
+                }
+            },
             Err(err) => {
                 ok = false;
                 println!("gci_library: error: {err}");
@@ -483,13 +494,25 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
     };
 
     if let Some(config) = config {
-        match gci_library_path(&config) {
-            Ok(path) => {
-                gci_json = format!(
-                    r#"{{"ok":true,"checked":true,"path":"{}"}}"#,
-                    escape_json(&path.display().to_string())
-                );
-            }
+        match gci_library_resolution(&config) {
+            Ok(resolution) => match gci_library_path(&config) {
+                Ok(path) => {
+                    gci_json = format!(
+                        r#"{{"ok":true,"checked":true,"source":"{}","path":"{}"}}"#,
+                        escape_json(resolution.source),
+                        escape_json(&path.display().to_string())
+                    );
+                }
+                Err(err) => {
+                    ok = false;
+                    gci_json = format!(
+                        r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","error":"{}"}}"#,
+                        escape_json(resolution.source),
+                        escape_json(&resolution.path.display().to_string()),
+                        escape_json(&err.to_string())
+                    );
+                }
+            },
             Err(err) => {
                 ok = false;
                 gci_json = format!(

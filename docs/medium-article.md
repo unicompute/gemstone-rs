@@ -115,6 +115,10 @@ gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
 
+The doctor report names the source used to select `libgcirpc`: explicit config,
+`GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`. That makes CLI, VS Code, and CI
+diagnostics much easier to compare.
+
 Expected output:
 
 ```text

@@ -237,8 +237,8 @@ pub use bridge::{
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
-    char_from_oop, is_char, is_smallint, GciErrSType, GciLibrary, RawOop, GCI_ENCRYPT_BUF_SIZE,
-    GCI_INVALID_SESSION,
+    char_from_oop, find_gcirpc_in_dir, is_char, is_smallint, GciErrSType, GciLibrary, RawOop,
+    GCI_ENCRYPT_BUF_SIZE, GCI_INVALID_SESSION,
 };
 pub use gemstone_rs_macros::BridgeMapped;
 use std::cell::{Cell, RefCell};
@@ -248,7 +248,7 @@ use std::error::Error as StdError;
 use std::ffi::{c_char, c_double, c_uint, CString, NulError};
 use std::fmt;
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -401,6 +401,61 @@ pub fn gci_library_path(config: &Config) -> Result<PathBuf> {
     Ok(GciLibrary::load(config.lib_path.clone())?
         .path()
         .to_path_buf())
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GciLibraryResolution {
+    pub source: &'static str,
+    pub path: PathBuf,
+}
+
+pub fn gci_library_resolution(config: &Config) -> Result<GciLibraryResolution> {
+    if let Some(path) = &config.lib_path {
+        if env::var("GS_LIB_PATH")
+            .ok()
+            .filter(|value| !value.is_empty())
+            .is_some_and(|value| PathBuf::from(value) == *path)
+        {
+            return Ok(GciLibraryResolution {
+                source: "GS_LIB_PATH",
+                path: path.clone(),
+            });
+        }
+        return Ok(GciLibraryResolution {
+            source: "config.lib_path",
+            path: path.clone(),
+        });
+    }
+    if let Ok(path) = env::var("GS_LIB_PATH") {
+        if !path.is_empty() {
+            return Ok(GciLibraryResolution {
+                source: "GS_LIB_PATH",
+                path: PathBuf::from(path),
+            });
+        }
+    }
+    if let Ok(dir) = env::var("GS_LIB") {
+        if !dir.is_empty() {
+            if let Some(path) = find_gcirpc_in_dir(Path::new(&dir))? {
+                return Ok(GciLibraryResolution {
+                    source: "GS_LIB",
+                    path,
+                });
+            }
+        }
+    }
+    if let Ok(gemstone) = env::var("GEMSTONE") {
+        if !gemstone.is_empty() {
+            let lib_dir = PathBuf::from(gemstone).join("lib");
+            if let Some(path) = find_gcirpc_in_dir(&lib_dir)? {
+                return Ok(GciLibraryResolution {
+                    source: "GEMSTONE/lib",
+                    path,
+                });
+            }
+        }
+    }
+    Err(gemstone_gci::GciError::LibraryNotFound.into())
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -1089,6 +1144,20 @@ mod tests {
         };
 
         assert_eq!(config.stone_nrs(), "!@db.example.test!netldi!seaside");
+    }
+
+    #[test]
+    fn gci_library_resolution_reports_explicit_config_path() -> Result<()> {
+        let config = Config {
+            lib_path: Some(PathBuf::from("/tmp/libgcirpc-test.dylib")),
+            ..Config::default()
+        };
+
+        let resolution = gci_library_resolution(&config)?;
+
+        assert_eq!(resolution.source, "config.lib_path");
+        assert_eq!(resolution.path, PathBuf::from("/tmp/libgcirpc-test.dylib"));
+        Ok(())
     }
 
     #[test]
