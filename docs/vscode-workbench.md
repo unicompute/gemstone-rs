@@ -122,7 +122,10 @@ Commands:
 
 `GemStone RS: Verify Setup` and `GemStone RS: Doctor` both run the CLI
 `gemstone-rs doctor` report, so the workbench setup view and terminal setup
-use the same diagnostic path.
+use the same diagnostic path. `Verify Setup` adds the active checkout, CLI,
+explorer, codegen config, and profile paths, then offers result actions to copy
+the full report, copy a safe `GS_*` environment export script with a placeholder
+password, or open the extension settings.
 
 ## Codegen Workflow
 

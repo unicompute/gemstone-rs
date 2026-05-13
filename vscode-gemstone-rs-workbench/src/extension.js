@@ -222,26 +222,85 @@ async function childrenFromCli(args, mapper) {
 
 async function verifySetup() {
   const cfg = settings();
-  output.clear();
-  output.appendLine("gemstone-rs Workbench setup");
-  output.appendLine(`cwd: ${cfg.cwd}`);
-  output.appendLine(`useCargo: ${cfg.useCargo}`);
-  output.appendLine(`cliPath: ${cfg.cliPath}`);
-  output.appendLine(`explorerPath: ${cfg.explorerPath}`);
-  output.appendLine(`codegenConfig: ${cfg.codegenConfig}`);
-  output.appendLine(`codegenConfigExists: ${fs.existsSync(resolvePath(cfg.codegenConfig, cfg.cwd))}`);
-  output.appendLine("");
-
   const result = await runCli(["doctor"], { allowFailure: true });
-  output.append(result.stdout);
-  output.append(result.stderr);
+  const reportText = formatSetupReport(cfg, result);
+  output.clear();
+  output.append(reportText);
   output.show(true);
 
+  let action;
   if (result.code === 0) {
-    vscode.window.showInformationMessage("gemstone-rs setup check passed.");
+    action = await vscode.window.showInformationMessage(
+      "gemstone-rs setup check passed.",
+      "Copy Report",
+      "Copy Env Script",
+      "Open Settings"
+    );
   } else {
-    vscode.window.showWarningMessage("gemstone-rs setup check found issues. See GemStone RS output.");
+    action = await vscode.window.showWarningMessage(
+      "gemstone-rs setup check found issues. See GemStone RS output.",
+      "Copy Report",
+      "Copy Env Script",
+      "Open Settings"
+    );
   }
+  await handleSetupAction(action, reportText);
+}
+
+function formatSetupReport(cfg, result) {
+  const lines = [
+    "gemstone-rs Workbench setup",
+    `cwd: ${cfg.cwd}`,
+    `useCargo: ${cfg.useCargo}`,
+    `cliPath: ${cfg.cliPath}`,
+    `explorerPath: ${cfg.explorerPath}`,
+    `codegenConfig: ${cfg.codegenConfig}`,
+    `codegenProfiles: ${cfg.codegenProfiles}`,
+    `codegenConfigExists: ${fs.existsSync(resolvePath(cfg.codegenConfig, cfg.cwd))}`,
+    `codegenProfilesExists: ${fs.existsSync(resolvePath(cfg.codegenProfiles, cfg.cwd))}`,
+    "",
+    commandLine(result).trimEnd(),
+  ];
+  if (result.stdout.trim()) {
+    lines.push(result.stdout.trimEnd());
+  }
+  if (result.stderr.trim()) {
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+async function handleSetupAction(action, reportText) {
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied gemstone-rs setup report.");
+  } else if (action === "Copy Env Script") {
+    await vscode.env.clipboard.writeText(setupEnvironmentExportScript());
+    vscode.window.showInformationMessage("Copied gemstone-rs environment export script.");
+  } else if (action === "Open Settings") {
+    await vscode.commands.executeCommand(
+      "workbench.action.openSettings",
+      "@ext:unicompute.gemstone-rs-workbench"
+    );
+  }
+}
+
+function setupEnvironmentExportScript() {
+  const stone = process.env.GS_STONE || process.env.GS_STONE_NAME || "gs64stone";
+  const lines = [
+    "# gemstone-rs environment",
+    `export GS_LIB=${shellExportValue(process.env.GS_LIB || "/opt/gemstone/product/lib")}`,
+    "# Optional when you want to point at one libgcirpc file:",
+    `# export GS_LIB_PATH=${shellExportValue(process.env.GS_LIB_PATH || "/full/path/to/libgcirpc.dylib")}`,
+    `export GS_STONE=${shellExportValue(stone)}`,
+    `export GS_STONE_NAME=${shellExportValue(stone)}`,
+    `export GS_USERNAME=${shellExportValue(process.env.GS_USERNAME || "DataCurator")}`,
+    "export GS_PASSWORD='change-me'",
+    `export GS_HOST=${shellExportValue(process.env.GS_HOST || "localhost")}`,
+    `export GS_NETLDI=${shellExportValue(process.env.GS_NETLDI || "50377")}`,
+    `export GS_GEM_SERVICE=${shellExportValue(process.env.GS_GEM_SERVICE || "gemnetobject")}`,
+  ];
+  return `${lines.join("\n")}\n`;
 }
 
 async function doctor() {
@@ -1085,6 +1144,10 @@ function shellQuote(value) {
     return String(value);
   }
   return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function shellExportValue(value) {
+  return `'${String(value).replace(/'/g, "'\"'\"'")}'`;
 }
 
 function escapeHtml(value) {

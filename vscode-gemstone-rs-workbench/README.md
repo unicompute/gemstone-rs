@@ -100,7 +100,11 @@ BridgeRoot writes through the CLI after prompting for a key and value.
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
-same masked environment and GCI-library checks as the terminal.
+same masked environment and GCI-library checks as the terminal. `Verify Setup`
+also reports the active checkout, CLI, explorer, codegen config, and profile
+paths. Its result actions can copy the setup report, copy a safe `GS_*`
+environment export script with a placeholder password, or open the extension
+settings.
 
 ## Sidebar
 
