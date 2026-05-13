@@ -258,6 +258,7 @@ gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
@@ -265,6 +266,9 @@ Generated wrapper files now include a small `#[cfg(test)]` surface-name test
 stub, and `codegen explain` reports that stub beside the classes, selectors,
 return helpers, and mapped fields that will be generated. Add `--json` for the
 explorer or VS Code when they need the same summary as structured data.
+`codegen explain-profile` gives the same report after resolving a named
+project profile, which is useful when the committed profile file is the source
+of truth for generation.
 The repository also commits schemas for the codegen model, project profiles,
 and `codegen explain --json` output, so editor panels and release checks can
 reason about the same structures.
@@ -487,6 +491,7 @@ gemstone-rs profile resolve default gemstone-rs.codegen-profiles.json
 gemstone-rs profile check gemstone-rs.codegen-profiles.json
 gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen explain-profile --json default gemstone-rs.codegen-profiles.json
 ```
 
 Write endpoints are deliberately constrained. Relative `config=` and

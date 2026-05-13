@@ -44,6 +44,26 @@ const explainOutput = childProcess.execFileSync(
 );
 
 assertExplain(JSON.parse(lastJsonLine(explainOutput)));
+const profileExplainOutput = childProcess.execFileSync(
+  "cargo",
+  [
+    "run",
+    "-p",
+    "gemstone-rs-cli",
+    "--",
+    "codegen",
+    "explain-profile",
+    "--json",
+    "default",
+    "examples/codegen/gemstone-rs.codegen-profiles.json",
+  ],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+assertExplain(JSON.parse(lastJsonLine(profileExplainOutput)));
 assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 
 console.log("gemstone-rs codegen schema checks passed");

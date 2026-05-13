@@ -2,7 +2,7 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "publisher": "unicompute",
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -47,10 +47,12 @@
     "onCommand:gemstoneRs.codegenPreview",
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
+    "onCommand:gemstoneRs.codegenExplain",
     "onCommand:gemstoneRs.codegenGenerate",
     "onCommand:gemstoneRs.codegenPreviewProfile",
     "onCommand:gemstoneRs.codegenDiffProfile",
     "onCommand:gemstoneRs.codegenCheckProfile",
+    "onCommand:gemstoneRs.codegenExplainProfile",
     "onCommand:gemstoneRs.codegenGenerateProfile",
     "onCommand:gemstoneRs.loadProjectProfiles",
     "onCommand:gemstoneRs.saveProjectProfiles",
@@ -179,6 +181,10 @@
         "title": "GemStone RS: Codegen Check"
       },
       {
+        "command": "gemstoneRs.codegenExplain",
+        "title": "GemStone RS: Codegen Explain"
+      },
+      {
         "command": "gemstoneRs.codegenGenerate",
         "title": "GemStone RS: Codegen Generate"
       },
@@ -193,6 +199,10 @@
       {
         "command": "gemstoneRs.codegenCheckProfile",
         "title": "GemStone RS: Codegen Check Profile"
+      },
+      {
+        "command": "gemstoneRs.codegenExplainProfile",
+        "title": "GemStone RS: Codegen Explain Profile"
       },
       {
         "command": "gemstoneRs.codegenGenerateProfile",
@@ -273,9 +283,14 @@
           "group": "navigation@3"
         },
         {
-          "command": "gemstoneRs.codegenGenerate",
+          "command": "gemstoneRs.codegenExplain",
           "when": "view == gemstoneRsExplorer",
           "group": "navigation@4"
+        },
+        {
+          "command": "gemstoneRs.codegenGenerate",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@5"
         }
       ]
     },

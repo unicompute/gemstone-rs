@@ -339,6 +339,19 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             }
             Ok(())
         }
+        Command::CodegenExplainProfile {
+            name,
+            profiles,
+            format,
+        } => {
+            let config_path = profile_codegen_config_path(&profiles, &name)?;
+            let config = codegen::Config::from_file(config_path)?;
+            match format {
+                OutputFormat::Human => print!("{}", codegen::explain(&config)),
+                OutputFormat::Json => println!("{}", codegen::explain_json(&config)),
+            }
+            Ok(())
+        }
         Command::CodegenCheckProfile { name, profiles } => {
             let config_path = profile_codegen_config_path(&profiles, &name)?;
             run_codegen_check(&config_path)
@@ -1638,6 +1651,11 @@ enum Command {
         config: PathBuf,
         format: OutputFormat,
     },
+    CodegenExplainProfile {
+        name: String,
+        profiles: PathBuf,
+        format: OutputFormat,
+    },
     CodegenCheckProfile {
         name: String,
         profiles: PathBuf,
@@ -1705,6 +1723,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                 config: optional_path(args.get(2)),
             }),
             Some("explain") => parse_codegen_explain_command(&args[2..]),
+            Some("explain-profile") => parse_codegen_explain_profile_command(&args[2..]),
             Some("check-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
                 Command::CodegenCheckProfile { name, profiles }
             }),
@@ -1732,7 +1751,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                     .ok_or_else(|| CliError::usage("missing GemStone class"))?,
             }),
             _ => Err(CliError::usage(
-                "expected: codegen init|preview|preview-profile|diff|diff-profile|check|check-profile|explain|generate|generate-profile|discover|discover-mapping",
+                "expected: codegen init|preview|preview-profile|diff|diff-profile|check|check-profile|explain|explain-profile|generate|generate-profile|discover|discover-mapping",
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
@@ -1985,6 +2004,39 @@ fn parse_codegen_explain_command(args: &[String]) -> Result<Command, CliError> {
     }
     Ok(Command::CodegenExplain {
         config: config.unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH)),
+        format,
+    })
+}
+
+fn parse_codegen_explain_profile_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut name = None;
+    let mut profiles = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: codegen explain-profile [--json] <profile-name> [profile-file]",
+                ));
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown codegen explain-profile option: {option}"
+                )));
+            }
+            value if name.is_none() => name = Some(value.to_string()),
+            value if profiles.is_none() => profiles = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected codegen explain-profile argument: {value}"
+                )));
+            }
+        }
+    }
+    Ok(Command::CodegenExplainProfile {
+        name: name.ok_or_else(|| CliError::usage("missing profile name"))?,
+        profiles: profiles.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
         format,
     })
 }
@@ -2391,6 +2443,7 @@ fn usage() -> &'static str {
   gemstone-rs codegen check [config] [--env-file <path>]
   gemstone-rs codegen check-profile <profile-name> [profile-file]
   gemstone-rs codegen explain [--json] [config]
+  gemstone-rs codegen explain-profile [--json] <profile-name> [profile-file]
   gemstone-rs codegen generate [config] [--env-file <path>]
   gemstone-rs codegen generate-profile <profile-name> [profile-file]
   gemstone-rs codegen discover [config] [class ...]
@@ -2894,6 +2947,28 @@ GEMSTONE=/opt/gemstone # product root
             Command::CodegenExplain {
                 config: PathBuf::from("demo.codegen"),
                 format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "explain-profile", "--json", "default"])).unwrap(),
+            Command::CodegenExplainProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from(profiles::DEFAULT_PROFILE_PATH),
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "codegen",
+                "explain-profile",
+                "default",
+                "examples/codegen/gemstone-rs.codegen-profiles.json"
+            ]))
+            .unwrap(),
+            Command::CodegenExplainProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                format: OutputFormat::Human,
             }
         );
         assert_eq!(

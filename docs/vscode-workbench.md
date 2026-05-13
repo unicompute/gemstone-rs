@@ -106,10 +106,12 @@ Commands:
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
+- `GemStone RS: Codegen Explain`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Codegen Preview Profile`
 - `GemStone RS: Codegen Diff Profile`
 - `GemStone RS: Codegen Check Profile`
+- `GemStone RS: Codegen Explain Profile`
 - `GemStone RS: Codegen Generate Profile`
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
@@ -155,16 +157,22 @@ values when available and keeps passwords as placeholders.
 2. Run `GemStone RS: Codegen Discover` or edit the config manually.
 3. Run `GemStone RS: Codegen Preview`.
 4. Run `GemStone RS: Codegen Diff`.
-5. Run `GemStone RS: Codegen Generate`.
+5. Run `GemStone RS: Codegen Explain`.
+6. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
 
+`Codegen Explain` runs `codegen explain --json` and renders the output path,
+generated test stubs, wrapper classes, selectors, return types, and
+BridgeRoot mappings in the output panel. Result actions can copy the summary,
+copy the raw JSON, open the JSON in an editor, or open the config file.
+
 When a project profile file is checked in, use the profile variants instead:
 `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`,
-and `Codegen Generate Profile`. They prompt for a profile name and
-`gemstone-rs.codegen-profiles.json`, resolve the profile's config/root fields,
-and then run the same codegen operation.
+`Codegen Explain Profile`, and `Codegen Generate Profile`. They prompt for a
+profile name and `gemstone-rs.codegen-profiles.json`, resolve the profile's
+config/root fields, and then run the same codegen operation.
 
 ## Object Mapping Workflow
 

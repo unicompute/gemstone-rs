@@ -30,10 +30,12 @@ const requiredCommands = [
   "gemstoneRs.codegenPreview",
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
+  "gemstoneRs.codegenExplain",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
+  "gemstoneRs.codegenExplainProfile",
   "gemstoneRs.codegenGenerateProfile",
   "gemstoneRs.loadProjectProfiles",
   "gemstoneRs.saveProjectProfiles",
@@ -90,12 +92,26 @@ assert(readme.includes("Verify Live Setup"), "README should mention live setup v
 assert(readme.includes("Verify Strict Setup"), "README should mention strict setup verification");
 assert(readme.includes("Run Setup Assistant"), "README should mention setup assistant");
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
+assert(readme.includes("Codegen Explain"), "README should mention codegen explain");
+assert(readme.includes("Codegen Explain Profile"), "README should mention profile codegen explain");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
 assert(readme.includes("Check Project Profiles"), "README should mention profile checking");
 assert(readme.includes("Resolve Project Profile"), "README should mention profile resolution");
 assert(extensionSource.includes("showQuickPick"), "profile commands should offer a QuickPick");
+assert(
+  extensionSource.includes('"codegen", "explain", "--json"'),
+  "codegen explain should use JSON output"
+);
+assert(
+  extensionSource.includes('"codegen", "explain-profile", "--json"'),
+  "profile codegen explain should use JSON output"
+);
+assert(
+  extensionSource.includes("Codegen config explanation"),
+  "codegen explain should render a readable summary"
+);
 assert(
   extensionSource.includes('"profile", "check", "--json"'),
   "profile checking should use JSON output"

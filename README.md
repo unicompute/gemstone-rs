@@ -197,6 +197,7 @@ cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 ```
 
@@ -340,6 +341,7 @@ cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-r
 cargo run -p gemstone-rs-cli -- codegen preview-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen diff-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen generate-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
@@ -386,10 +388,12 @@ Rust CLI and open output/preview editors:
 ```
 
 Commands include setup verification, eval, browse dictionaries/classes,
-codegen init/discover/preview/diff/check/generate, launch explorer, and open an
-embedded explorer webview. The GemStone RS activity bar view browses
-dictionaries, classes, protocols, methods, and the configured codegen actions.
-`Codegen Generate` shows the generated diff before writing files.
+codegen init/discover/preview/diff/check/explain/generate, launch explorer,
+and open an embedded explorer webview. The GemStone RS activity bar view
+browses dictionaries, classes, protocols, methods, and the configured codegen
+actions. `Codegen Explain` renders the structured classes, selectors, mapped
+fields, and generated test stubs. `Codegen Generate` shows the generated diff
+before writing files.
 
 ## Threading
 

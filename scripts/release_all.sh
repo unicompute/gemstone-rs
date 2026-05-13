@@ -75,10 +75,10 @@ Highlights:
 
 - \`--env-file .env.gemstone-rs\` support across CLI and explorer startup.
 - Workbench automatically passes the configured env file when it exists.
-- \`codegen explain --json\` for structured Codegen summaries.
+- \`codegen explain --json\` and \`codegen explain-profile --json\` for structured Codegen summaries.
 - Codegen schemas and generated-wrapper compile smoke checks.
 - Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
-- VS Code command for rendering the explorer setup assistant report.
+- VS Code commands for rendering setup assistant and Codegen explain reports.
 - Clearer object-mapping path diagnostics for nested fields and arrays.
 
 Release assets:

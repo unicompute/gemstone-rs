@@ -55,10 +55,12 @@ For a source checkout:
 - `GemStone RS: Codegen Preview`
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
+- `GemStone RS: Codegen Explain`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Codegen Preview Profile`
 - `GemStone RS: Codegen Diff Profile`
 - `GemStone RS: Codegen Check Profile`
+- `GemStone RS: Codegen Explain Profile`
 - `GemStone RS: Codegen Generate Profile`
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
@@ -78,8 +80,10 @@ For a source checkout:
 `Codegen Preview` opens generated Rust wrappers in an untitled Rust editor.
 `Codegen Diff` opens a generated diff. `Codegen Generate` shows that diff
 before writing, then opens the generated file after a successful write. The
-profile variants run the same preview/diff/check/generate loop from a named
-project profile in `gemstone-rs.codegen-profiles.json`.
+`Codegen Explain` renders the structured `codegen explain --json` summary with
+classes, selectors, return types, mapped fields, and generated test stubs. The
+profile variants run the same preview/diff/check/explain/generate loop from a
+named project profile in `gemstone-rs.codegen-profiles.json`.
 `Load Project Profiles`, `Save Project Profiles`, and `Export Codegen Profile`
 open the local explorer workflow where project profile JSON can be loaded,
 schema-validated, summarized, and saved under `--allow-write`. `Show Sample

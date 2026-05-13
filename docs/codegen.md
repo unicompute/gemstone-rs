@@ -18,6 +18,7 @@ cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 ## Config Format
@@ -202,6 +203,7 @@ gemstone-rs profile check --json gemstone-rs.codegen-profiles.json
 gemstone-rs codegen preview-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen diff-profile default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen explain-profile --json default gemstone-rs.codegen-profiles.json
 gemstone-rs codegen generate-profile default gemstone-rs.codegen-profiles.json
 ```
 

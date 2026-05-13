@@ -39,10 +39,12 @@ function activate(context) {
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
+  register(context, "gemstoneRs.codegenExplain", codegenExplain);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
   register(context, "gemstoneRs.codegenPreviewProfile", codegenPreviewProfile);
   register(context, "gemstoneRs.codegenDiffProfile", codegenDiffProfile);
   register(context, "gemstoneRs.codegenCheckProfile", codegenCheckProfile);
+  register(context, "gemstoneRs.codegenExplainProfile", codegenExplainProfile);
   register(context, "gemstoneRs.codegenGenerateProfile", codegenGenerateProfile);
   register(context, "gemstoneRs.loadProjectProfiles", loadProjectProfiles);
   register(context, "gemstoneRs.saveProjectProfiles", saveProjectProfiles);
@@ -162,10 +164,12 @@ class GemStoneTreeProvider {
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
+        actionNode("Explain Config", "gemstoneRs.codegenExplain"),
         actionNode("Generate Wrappers", "gemstoneRs.codegenGenerate"),
         actionNode("Preview Profile Wrappers", "gemstoneRs.codegenPreviewProfile"),
         actionNode("Diff Profile Output", "gemstoneRs.codegenDiffProfile"),
         actionNode("Check Profile Freshness", "gemstoneRs.codegenCheckProfile"),
+        actionNode("Explain Profile Config", "gemstoneRs.codegenExplainProfile"),
         actionNode("Generate Profile Wrappers", "gemstoneRs.codegenGenerateProfile"),
         actionNode("Load Project Profiles", "gemstoneRs.loadProjectProfiles"),
         actionNode("Save Project Profiles", "gemstoneRs.saveProjectProfiles"),
@@ -698,6 +702,18 @@ async function codegenCheck() {
   await runAndShow(["codegen", "check", configPath], { allowFailure: true });
 }
 
+async function codegenExplain() {
+  const configPath = await askConfigPath();
+  if (!configPath) {
+    return;
+  }
+  await runCodegenExplain(["codegen", "explain", "--json", configPath], {
+    title: "Codegen config explanation",
+    sourcePath: configPath,
+    openLabel: "Open Config",
+  });
+}
+
 async function codegenGenerate() {
   const configPath = await askConfigPath();
   if (!configPath) {
@@ -803,6 +819,18 @@ async function codegenCheckProfile() {
   await runAndShow(["codegen", "check-profile", ...args], { allowFailure: true });
 }
 
+async function codegenExplainProfile() {
+  const selection = await pickProjectProfile("Codegen Explain Profile");
+  if (!selection) {
+    return;
+  }
+  await runCodegenExplain(["codegen", "explain-profile", "--json", selection.name, selection.path], {
+    title: `Codegen profile explanation: ${selection.name}`,
+    sourcePath: selection.path,
+    openLabel: "Open Profile File",
+  });
+}
+
 async function codegenGenerateProfile() {
   const args = await askProfileCodegenArgs("Codegen Generate Profile");
   if (!args) {
@@ -837,6 +865,94 @@ async function codegenGenerateProfile() {
   if (result.code === 0) {
     explorerProvider?.refresh();
   }
+}
+
+async function runCodegenExplain(args, { title, sourcePath, openLabel }) {
+  const result = await runCli(args, { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs codegen explain returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = showCodegenExplainReport(result, title, report);
+  const classes = Array.isArray(report.classes) ? report.classes.length : 0;
+  const mapped = Array.isArray(report.mapped) ? report.mapped.length : 0;
+  const action = await vscode.window.showInformationMessage(
+    `Codegen explain: ${classes} classes, ${mapped} mappings.`,
+    "Copy Summary",
+    "Copy JSON",
+    "Open JSON",
+    openLabel
+  );
+  if (action === "Copy Summary") {
+    await vscode.env.clipboard.writeText(reportText);
+  } else if (action === "Copy JSON") {
+    await vscode.env.clipboard.writeText(JSON.stringify(report, null, 2));
+  } else if (action === "Open JSON") {
+    const document = await vscode.workspace.openTextDocument({
+      content: `${JSON.stringify(report, null, 2)}\n`,
+      language: "json",
+    });
+    await vscode.window.showTextDocument(document, { preview: true });
+  } else if (action === openLabel) {
+    await openPathInEditor(sourcePath);
+  }
+}
+
+function showCodegenExplainReport(result, title, report) {
+  const reportText = formatCodegenExplainReport(result, title, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+  return reportText;
+}
+
+function formatCodegenExplainReport(result, title, report) {
+  const classes = Array.isArray(report.classes) ? report.classes : [];
+  const mapped = Array.isArray(report.mapped) ? report.mapped : [];
+  const testStubs = Array.isArray(report.testStubs) ? report.testStubs : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    title,
+    `output: ${report.output || "-"}`,
+    `testStubs: ${testStubs.length ? testStubs.join(", ") : "-"}`,
+    `classes: ${classes.length}`,
+    `mapped: ${mapped.length}`,
+    "",
+  ];
+
+  for (const cls of classes) {
+    const methodCount = Array.isArray(cls.methods) ? cls.methods.length : 0;
+    const target = cls.meta ? `${cls.className} class` : cls.className;
+    lines.push(`class: ${cls.name || target || "(unnamed)"} methods=${methodCount}`);
+    lines.push(`  target: ${target || "-"} dictionary=${cls.dictionary || "-"}`);
+    for (const method of cls.methods || []) {
+      const args = Array.isArray(method.args) ? method.args.join(", ") : "";
+      lines.push(`  method: ${method.selector || "-"}(${args}) -> ${method.return || "Value"}`);
+      if (method.doc) {
+        lines.push(`    ${method.doc}`);
+      }
+    }
+    lines.push("");
+  }
+
+  for (const mapping of mapped) {
+    const fields = Array.isArray(mapping.fields) ? mapping.fields : [];
+    lines.push(`mapped: ${mapping.name || "(unnamed)"} fields=${fields.length}`);
+    if (mapping.doc) {
+      lines.push(`  ${mapping.doc}`);
+    }
+    for (const field of fields) {
+      lines.push(
+        `  field: ${field.name || "-"} key=${field.key || "-"} keyType=${field.keyType || "-"} type=${field.type || "-"}`
+      );
+    }
+    lines.push("");
+  }
+
+  if (result.stderr.trim()) {
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 async function openMethodSource(method) {

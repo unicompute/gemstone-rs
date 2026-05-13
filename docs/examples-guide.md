@@ -140,6 +140,7 @@ gemstone-rs bridge keys
 gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
@@ -171,6 +172,7 @@ Validate profile files before committing them:
 ```bash
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generate a starter config from a live stone:

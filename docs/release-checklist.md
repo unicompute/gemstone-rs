@@ -23,6 +23,13 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
   `scripts/validate_codegen_schemas.js`.
 - Examples: the generated-wrapper smoke crate now runs `cargo test`.
 
+## Workbench 0.3.3 Notes
+
+- CLI: `codegen explain-profile [--json] <profile-name> [profile-file]`
+  resolves project profiles before rendering codegen summaries.
+- VS Code: `GemStone RS: Codegen Explain` and `GemStone RS: Codegen Explain
+  Profile` render structured classes, selectors, mappings, and test stubs.
+
 ## Before Release
 
 - Update crate versions in `Cargo.toml` files.
@@ -39,6 +46,7 @@ cargo run -p gemstone-rs-cli -- profile show default --json examples/codegen/gem
 cargo run -p gemstone-rs-cli -- profile resolve default --json examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
