@@ -65,7 +65,8 @@ From the `Codegen Config` tree:
 2. Run `Diff Generated Output`.
 3. Run `Check Freshness`.
 4. Run `Generate Wrappers`.
-5. Run `Open Codegen Docs`.
+5. Run `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`, or `Codegen Generate Profile` when you want a checked-in project profile to supply the config path.
+6. Run `Open Codegen Docs`.
 
 `Generate Wrappers` shows the generated diff before writing if output would
 change.

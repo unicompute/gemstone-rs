@@ -13,6 +13,7 @@ rust-check:
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+	cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 
 profile-check:
 	cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json

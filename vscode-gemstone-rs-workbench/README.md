@@ -50,6 +50,10 @@ For a source checkout:
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
+- `GemStone RS: Codegen Preview Profile`
+- `GemStone RS: Codegen Diff Profile`
+- `GemStone RS: Codegen Check Profile`
+- `GemStone RS: Codegen Generate Profile`
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
 - `GemStone RS: Export Codegen Profile`
@@ -65,7 +69,9 @@ For a source checkout:
 
 `Codegen Preview` opens generated Rust wrappers in an untitled Rust editor.
 `Codegen Diff` opens a generated diff. `Codegen Generate` shows that diff
-before writing, then opens the generated file after a successful write.
+before writing, then opens the generated file after a successful write. The
+profile variants run the same preview/diff/check/generate loop from a named
+project profile in `gemstone-rs.codegen-profiles.json`.
 `Load Project Profiles`, `Save Project Profiles`, and `Export Codegen Profile`
 open the local explorer workflow where project profile JSON can be loaded,
 schema-validated, summarized, and saved under `--allow-write`. `Show Sample
@@ -95,7 +101,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 
 - `Dictionaries` expands live dictionaries, classes, protocols, and methods.
 - Selecting a method opens its GemStone source through `gemstone-rs browse source`.
-- `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, and Docs.
+- `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, profile
+  preview/diff/check/generate, and Docs.
 - `Codegen Config` also exposes Load Project Profiles, Save Project Profiles,
   Export Codegen Profile, Show Sample Project Profiles, Create Project
   Profiles, Validate Project Profiles, List Project Profiles, Show Project

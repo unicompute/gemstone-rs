@@ -15,6 +15,7 @@ From a checkout:
 
 ```bash
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 ## Config Format
@@ -164,6 +165,10 @@ gemstone-rs profile validate gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 gemstone-rs profile list gemstone-rs.codegen-profiles.json
 gemstone-rs profile show default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen preview-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen diff-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen generate-profile default gemstone-rs.codegen-profiles.json
 ```
 
 See [Codegen Profile Schema](profile-schema.md) and

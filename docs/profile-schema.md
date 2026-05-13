@@ -28,6 +28,7 @@ cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.co
 cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile list examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile show default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 For an installed CLI:
@@ -39,6 +40,7 @@ gemstone-rs profile validate gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 gemstone-rs profile list gemstone-rs.codegen-profiles.json
 gemstone-rs profile show default gemstone-rs.codegen-profiles.json
+gemstone-rs codegen check-profile default gemstone-rs.codegen-profiles.json
 ```
 
 Expected output:

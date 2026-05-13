@@ -33,6 +33,10 @@ function activate(context) {
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
+  register(context, "gemstoneRs.codegenPreviewProfile", codegenPreviewProfile);
+  register(context, "gemstoneRs.codegenDiffProfile", codegenDiffProfile);
+  register(context, "gemstoneRs.codegenCheckProfile", codegenCheckProfile);
+  register(context, "gemstoneRs.codegenGenerateProfile", codegenGenerateProfile);
   register(context, "gemstoneRs.loadProjectProfiles", loadProjectProfiles);
   register(context, "gemstoneRs.saveProjectProfiles", saveProjectProfiles);
   register(context, "gemstoneRs.exportCodegenProfile", exportCodegenProfile);
@@ -150,6 +154,10 @@ class GemStoneTreeProvider {
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
         actionNode("Generate Wrappers", "gemstoneRs.codegenGenerate"),
+        actionNode("Preview Profile Wrappers", "gemstoneRs.codegenPreviewProfile"),
+        actionNode("Diff Profile Output", "gemstoneRs.codegenDiffProfile"),
+        actionNode("Check Profile Freshness", "gemstoneRs.codegenCheckProfile"),
+        actionNode("Generate Profile Wrappers", "gemstoneRs.codegenGenerateProfile"),
         actionNode("Load Project Profiles", "gemstoneRs.loadProjectProfiles"),
         actionNode("Save Project Profiles", "gemstoneRs.saveProjectProfiles"),
         actionNode("Export Codegen Profile", "gemstoneRs.exportCodegenProfile"),
@@ -494,6 +502,100 @@ async function codegenGenerate() {
   }
 }
 
+async function codegenPreviewProfile() {
+  const args = await askProfileCodegenArgs("Codegen Preview Profile");
+  if (!args) {
+    return;
+  }
+  const result = await runCli(["codegen", "preview-profile", ...args], { allowFailure: true });
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stderr);
+  output.show(true);
+
+  if (result.code !== 0) {
+    vscode.window.showErrorMessage("gemstone-rs codegen profile preview failed. See GemStone RS output.");
+    return;
+  }
+
+  const document = await vscode.workspace.openTextDocument({
+    content: result.stdout,
+    language: "rust",
+  });
+  await vscode.window.showTextDocument(document, { preview: true });
+}
+
+async function codegenDiffProfile() {
+  const args = await askProfileCodegenArgs("Codegen Diff Profile");
+  if (!args) {
+    return;
+  }
+  const result = await runCli(["codegen", "diff-profile", ...args], { allowFailure: true });
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stdout);
+  output.append(result.stderr);
+  output.show(true);
+
+  if (result.stdout.trim()) {
+    const document = await vscode.workspace.openTextDocument({
+      content: result.stdout,
+      language: "diff",
+    });
+    await vscode.window.showTextDocument(document, { preview: true });
+  }
+
+  if (result.code === 0) {
+    vscode.window.showInformationMessage("gemstone-rs profile generated output is up to date.");
+  } else if (!result.stdout.trim()) {
+    vscode.window.showErrorMessage("gemstone-rs codegen profile diff failed. See GemStone RS output.");
+  }
+}
+
+async function codegenCheckProfile() {
+  const args = await askProfileCodegenArgs("Codegen Check Profile");
+  if (!args) {
+    return;
+  }
+  await runAndShow(["codegen", "check-profile", ...args], { allowFailure: true });
+}
+
+async function codegenGenerateProfile() {
+  const args = await askProfileCodegenArgs("Codegen Generate Profile");
+  if (!args) {
+    return;
+  }
+  const diff = await runCli(["codegen", "diff-profile", ...args], { allowFailure: true });
+  if (diff.code !== 0 && diff.stdout.trim()) {
+    const document = await vscode.workspace.openTextDocument({
+      content: diff.stdout,
+      language: "diff",
+    });
+    await vscode.window.showTextDocument(document, { preview: true });
+    const choice = await vscode.window.showWarningMessage(
+      "Profile-generated wrappers differ from the current file. Generate anyway?",
+      { modal: true },
+      "Generate"
+    );
+    if (choice !== "Generate") {
+      return;
+    }
+  } else if (diff.code !== 0) {
+    output.clear();
+    output.appendLine(commandLine(diff));
+    output.append(diff.stdout);
+    output.append(diff.stderr);
+    output.show(true);
+    vscode.window.showErrorMessage("gemstone-rs codegen profile diff failed. See GemStone RS output.");
+    return;
+  }
+
+  const result = await runAndShow(["codegen", "generate-profile", ...args], { allowFailure: true });
+  if (result.code === 0) {
+    explorerProvider?.refresh();
+  }
+}
+
 async function openMethodSource(method) {
   if (!method?.className) {
     return;
@@ -711,6 +813,26 @@ async function askConfigPath() {
     prompt: "Path to gemstone-rs.codegen",
     value: settings().codegenConfig,
   });
+}
+
+async function askProfileCodegenArgs(title) {
+  const profileName = await vscode.window.showInputBox({
+    title,
+    prompt: "Project profile name",
+    value: "default",
+  });
+  if (!profileName) {
+    return undefined;
+  }
+  const profilePath = await vscode.window.showInputBox({
+    title,
+    prompt: "Path to gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return undefined;
+  }
+  return [profileName, profilePath];
 }
 
 async function runAndShow(args, options = {}) {

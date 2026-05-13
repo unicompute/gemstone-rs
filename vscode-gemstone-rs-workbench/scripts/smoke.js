@@ -28,6 +28,10 @@ const requiredCommands = [
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
   "gemstoneRs.codegenGenerate",
+  "gemstoneRs.codegenPreviewProfile",
+  "gemstoneRs.codegenDiffProfile",
+  "gemstoneRs.codegenCheckProfile",
+  "gemstoneRs.codegenGenerateProfile",
   "gemstoneRs.loadProjectProfiles",
   "gemstoneRs.saveProjectProfiles",
   "gemstoneRs.exportCodegenProfile",
@@ -64,6 +68,7 @@ assert(extensionSource.includes("<iframe"), "webview should embed the explorer i
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
+assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");

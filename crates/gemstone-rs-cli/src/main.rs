@@ -264,6 +264,12 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print!("{}", codegen::generate(&config).source);
             Ok(())
         }
+        Command::CodegenPreviewProfile { name, profiles } => {
+            let config_path = profile_codegen_config_path(&profiles, &name)?;
+            let config = codegen::Config::from_file(config_path)?;
+            print!("{}", codegen::generate(&config).source);
+            Ok(())
+        }
         Command::CodegenDiff { config } => {
             let config = codegen::Config::from_file(&config)?;
             let report = codegen::diff(&config)?;
@@ -278,23 +284,27 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
                 )))
             }
         }
+        Command::CodegenDiffProfile { name, profiles } => {
+            let config_path = profile_codegen_config_path(&profiles, &name)?;
+            run_codegen_diff(&config_path)
+        }
         Command::CodegenCheck { config } => {
             let config_path = config;
-            let config = codegen::Config::from_file(&config_path)?;
-            let report = codegen::check(&config)?;
-            if report.up_to_date {
-                println!("codegen ok: {} is up to date", report.output.display());
-                Ok(())
-            } else {
-                Err(CliError::CodegenCheck(format!(
-                    "{} is stale or missing; run `gemstone-rs codegen generate {}`",
-                    report.output.display(),
-                    config_path.display()
-                )))
-            }
+            run_codegen_check(&config_path)
+        }
+        Command::CodegenCheckProfile { name, profiles } => {
+            let config_path = profile_codegen_config_path(&profiles, &name)?;
+            run_codegen_check(&config_path)
         }
         Command::CodegenGenerate { config } => {
             let config = codegen::Config::from_file(config)?;
+            let generated = codegen::generate_to_file(&config)?;
+            println!("generated {}", generated.output.display());
+            Ok(())
+        }
+        Command::CodegenGenerateProfile { name, profiles } => {
+            let config_path = profile_codegen_config_path(&profiles, &name)?;
+            let config = codegen::Config::from_file(config_path)?;
             let generated = codegen::generate_to_file(&config)?;
             println!("generated {}", generated.output.display());
             Ok(())
@@ -767,14 +777,30 @@ enum Command {
     CodegenPreview {
         config: PathBuf,
     },
+    CodegenPreviewProfile {
+        name: String,
+        profiles: PathBuf,
+    },
     CodegenDiff {
         config: PathBuf,
+    },
+    CodegenDiffProfile {
+        name: String,
+        profiles: PathBuf,
     },
     CodegenCheck {
         config: PathBuf,
     },
+    CodegenCheckProfile {
+        name: String,
+        profiles: PathBuf,
+    },
     CodegenGenerate {
         config: PathBuf,
+    },
+    CodegenGenerateProfile {
+        name: String,
+        profiles: PathBuf,
     },
     CodegenDiscover {
         config: PathBuf,
@@ -825,15 +851,29 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             Some("preview") => Ok(Command::CodegenPreview {
                 config: optional_path(args.get(2)),
             }),
+            Some("preview-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
+                Command::CodegenPreviewProfile { name, profiles }
+            }),
             Some("diff") => Ok(Command::CodegenDiff {
                 config: optional_path(args.get(2)),
+            }),
+            Some("diff-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
+                Command::CodegenDiffProfile { name, profiles }
             }),
             Some("check") => Ok(Command::CodegenCheck {
                 config: optional_path(args.get(2)),
             }),
+            Some("check-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
+                Command::CodegenCheckProfile { name, profiles }
+            }),
             Some("generate") => Ok(Command::CodegenGenerate {
                 config: optional_path(args.get(2)),
             }),
+            Some("generate-profile") => {
+                parse_codegen_profile_command(&args[2..], |name, profiles| {
+                    Command::CodegenGenerateProfile { name, profiles }
+                })
+            }
             Some("discover") => Ok(Command::CodegenDiscover {
                 config: optional_path(args.get(2)),
                 classes: args.iter().skip(3).cloned().collect(),
@@ -850,7 +890,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                     .ok_or_else(|| CliError::usage("missing GemStone class"))?,
             }),
             _ => Err(CliError::usage(
-                "expected: codegen init|preview|diff|check|generate|discover|discover-mapping",
+                "expected: codegen init|preview|preview-profile|diff|diff-profile|check|check-profile|generate|generate-profile|discover|discover-mapping",
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
@@ -956,6 +996,27 @@ fn parse_profile_show_command(args: &[String]) -> Result<Command, CliError> {
         name: name.ok_or_else(|| CliError::usage("missing profile name"))?,
         format,
     })
+}
+
+fn parse_codegen_profile_command(
+    args: &[String],
+    build: impl FnOnce(String, PathBuf) -> Command,
+) -> Result<Command, CliError> {
+    if args.len() > 2 {
+        return Err(CliError::usage(
+            "expected: codegen <action>-profile <profile-name> [profile-file]",
+        ));
+    }
+    let name = args
+        .first()
+        .filter(|value| !value.trim().is_empty())
+        .cloned()
+        .ok_or_else(|| CliError::usage("missing profile name"))?;
+    let profiles = args
+        .get(1)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH));
+    Ok(build(name, profiles))
 }
 
 fn parse_u64(value: &str) -> Result<u64, CliError> {
@@ -1257,6 +1318,69 @@ fn default_codegen_output(config: &std::path::Path) -> PathBuf {
         .join("generated/gemstone_wrappers.rs")
 }
 
+fn profile_codegen_config_path(
+    profile_file: &Path,
+    profile_name: &str,
+) -> Result<PathBuf, CliError> {
+    let project = profiles::load_file(profile_file)?;
+    let profile = project.get(profile_name).ok_or_else(|| {
+        CliError::CodegenCheck(format!(
+            "profile {profile_name} not found in {}",
+            profile_file.display()
+        ))
+    })?;
+    let config = profile
+        .config
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            CliError::CodegenCheck(format!(
+                "profile {profile_name} in {} does not define config",
+                profile_file.display()
+            ))
+        })?;
+    let config_path = PathBuf::from(config);
+    if config_path.is_absolute() {
+        return Ok(config_path);
+    }
+    let root = profile.root.as_deref().unwrap_or_default().trim();
+    if root.is_empty() {
+        Ok(config_path)
+    } else {
+        Ok(PathBuf::from(root).join(config_path))
+    }
+}
+
+fn run_codegen_diff(config_path: &Path) -> Result<(), CliError> {
+    let config = codegen::Config::from_file(config_path)?;
+    let report = codegen::diff(&config)?;
+    if report.up_to_date {
+        println!("codegen ok: {} is up to date", report.output.display());
+        Ok(())
+    } else {
+        print!("{}", report.diff);
+        Err(CliError::CodegenCheck(format!(
+            "{} is stale or missing",
+            report.output.display()
+        )))
+    }
+}
+
+fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
+    let config = codegen::Config::from_file(config_path)?;
+    let report = codegen::check(&config)?;
+    if report.up_to_date {
+        println!("codegen ok: {} is up to date", report.output.display());
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "{} is stale or missing; run `gemstone-rs codegen generate {}`",
+            report.output.display(),
+            config_path.display()
+        )))
+    }
+}
+
 fn usage() -> &'static str {
     "usage:
   gemstone-rs doctor [--live] [--json]
@@ -1281,9 +1405,13 @@ fn usage() -> &'static str {
   gemstone-rs profile show <name> [--json] [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
+  gemstone-rs codegen preview-profile <profile-name> [profile-file]
   gemstone-rs codegen diff [config]
+  gemstone-rs codegen diff-profile <profile-name> [profile-file]
   gemstone-rs codegen check [config]
+  gemstone-rs codegen check-profile <profile-name> [profile-file]
   gemstone-rs codegen generate [config]
+  gemstone-rs codegen generate-profile <profile-name> [profile-file]
   gemstone-rs codegen discover [config] [class ...]
   gemstone-rs codegen discover-mapping [config] <mapped-name> <class>"
 }
@@ -1554,9 +1682,29 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["codegen", "preview-profile", "default"])).unwrap(),
+            Command::CodegenPreviewProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from(profiles::DEFAULT_PROFILE_PATH)
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["codegen", "check"])).unwrap(),
             Command::CodegenCheck {
                 config: PathBuf::from(DEFAULT_CONFIG_PATH)
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "codegen",
+                "check-profile",
+                "default",
+                "examples/codegen/gemstone-rs.codegen-profiles.json"
+            ]))
+            .unwrap(),
+            Command::CodegenCheckProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json")
             }
         );
         assert_eq!(
@@ -1566,9 +1714,29 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&[
+                "codegen",
+                "diff-profile",
+                "default",
+                "profiles.json"
+            ]))
+            .unwrap(),
+            Command::CodegenDiffProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from("profiles.json")
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["codegen", "generate", "demo.codegen"])).unwrap(),
             Command::CodegenGenerate {
                 config: PathBuf::from("demo.codegen")
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "generate-profile", "default"])).unwrap(),
+            Command::CodegenGenerateProfile {
+                name: "default".to_string(),
+                profiles: PathBuf::from(profiles::DEFAULT_PROFILE_PATH)
             }
         );
         assert_eq!(

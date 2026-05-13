@@ -99,6 +99,10 @@ Commands:
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
+- `GemStone RS: Codegen Preview Profile`
+- `GemStone RS: Codegen Diff Profile`
+- `GemStone RS: Codegen Check Profile`
+- `GemStone RS: Codegen Generate Profile`
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
 - `GemStone RS: Export Codegen Profile`
@@ -124,6 +128,12 @@ use the same diagnostic path.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
+
+When a project profile file is checked in, use the profile variants instead:
+`Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`,
+and `Codegen Generate Profile`. They prompt for a profile name and
+`gemstone-rs.codegen-profiles.json`, resolve the profile's config/root fields,
+and then run the same codegen operation.
 
 ## Object Mapping Workflow
 

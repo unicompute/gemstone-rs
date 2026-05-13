@@ -42,6 +42,10 @@
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
     "onCommand:gemstoneRs.codegenGenerate",
+    "onCommand:gemstoneRs.codegenPreviewProfile",
+    "onCommand:gemstoneRs.codegenDiffProfile",
+    "onCommand:gemstoneRs.codegenCheckProfile",
+    "onCommand:gemstoneRs.codegenGenerateProfile",
     "onCommand:gemstoneRs.loadProjectProfiles",
     "onCommand:gemstoneRs.saveProjectProfiles",
     "onCommand:gemstoneRs.exportCodegenProfile",
@@ -145,6 +149,22 @@
       {
         "command": "gemstoneRs.codegenGenerate",
         "title": "GemStone RS: Codegen Generate"
+      },
+      {
+        "command": "gemstoneRs.codegenPreviewProfile",
+        "title": "GemStone RS: Codegen Preview Profile"
+      },
+      {
+        "command": "gemstoneRs.codegenDiffProfile",
+        "title": "GemStone RS: Codegen Diff Profile"
+      },
+      {
+        "command": "gemstoneRs.codegenCheckProfile",
+        "title": "GemStone RS: Codegen Check Profile"
+      },
+      {
+        "command": "gemstoneRs.codegenGenerateProfile",
+        "title": "GemStone RS: Codegen Generate Profile"
       },
       {
         "command": "gemstoneRs.loadProjectProfiles",
