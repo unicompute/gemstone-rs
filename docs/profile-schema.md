@@ -22,13 +22,19 @@ schemas/gemstone-rs.codegen-profiles.schema.json
 Validate the sample from a checkout:
 
 ```bash
+cargo run -p gemstone-rs-cli -- profile sample
+cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 For an installed CLI:
 
 ```bash
+gemstone-rs profile sample
+gemstone-rs profile init gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 ```
 
 Expected output:
@@ -74,9 +80,11 @@ rejected.
 
 ## VS Code
 
-Use `GemStone RS: Validate Project Profiles` from the command palette. The
-command runs the same CLI validator and shows the result in the GemStone RS
-output panel. The workbench also contributes JSON validation for files named
+Use `GemStone RS: Show Sample Project Profiles` to open the built-in sample in
+an untitled JSON editor, `GemStone RS: Create Project Profiles` to write the
+sample to a project file, and `GemStone RS: Validate Project Profiles` to run
+the same CLI validator and show the result in the GemStone RS output panel.
+The workbench also contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`, using the packaged schema copy in
 `vscode-gemstone-rs-workbench/schemas/`.
 

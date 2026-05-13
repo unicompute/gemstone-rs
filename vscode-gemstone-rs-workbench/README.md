@@ -53,6 +53,8 @@ For a source checkout:
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
 - `GemStone RS: Export Codegen Profile`
+- `GemStone RS: Show Sample Project Profiles`
+- `GemStone RS: Create Project Profiles`
 - `GemStone RS: Validate Project Profiles`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
@@ -64,10 +66,13 @@ For a source checkout:
 before writing, then opens the generated file after a successful write.
 `Load Project Profiles`, `Save Project Profiles`, and `Export Codegen Profile`
 open the local explorer workflow where project profile JSON can be loaded,
-schema-validated, summarized, and saved under `--allow-write`. `Validate
-Project Profiles` runs `gemstone-rs profile validate` directly and shows the
-result in the GemStone RS output panel. The extension also contributes JSON
-validation for files named `gemstone-rs.codegen-profiles.json`.
+schema-validated, summarized, and saved under `--allow-write`. `Show Sample
+Project Profiles` opens the built-in `gemstone-rs profile sample` output in an
+untitled JSON editor, `Create Project Profiles` writes that sample with
+`gemstone-rs profile init`, and `Validate Project Profiles` runs
+`gemstone-rs profile validate` directly and shows the result in the GemStone RS
+output panel. The extension also contributes JSON validation for files named
+`gemstone-rs.codegen-profiles.json`.
 `Generate Mapping Config` asks the live stone for a starter `BridgeMapped`
 config. `Preview BridgeRoot` opens the explorer BridgeRoot endpoint.
 `List BridgeRoot Keys` runs `gemstone-rs bridge keys` and shows the current
@@ -88,9 +93,10 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 - Selecting a method opens its GemStone source through `gemstone-rs browse source`.
 - `Codegen Config` exposes Discover, Preview, Diff, Check, Generate, and Docs.
 - `Codegen Config` also exposes Load Project Profiles, Save Project Profiles,
-  Export Codegen Profile, Validate Project Profiles, Generate Mapping Config,
-  Preview BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove
-  BridgeRoot Key, and Run Generated Mapping Example.
+  Export Codegen Profile, Show Sample Project Profiles, Create Project
+  Profiles, Validate Project Profiles, Generate Mapping Config, Preview
+  BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
+  Key, and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, Launch Explorer, and
   Open Explorer Webview.
 

@@ -296,10 +296,13 @@ Project profile samples live at:
 examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
-Validate profile files from the CLI:
+Create, inspect, and validate profile files from the CLI:
 
 ```bash
+cargo run -p gemstone-rs-cli -- profile sample
+cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 The schema and validation guide live at [docs/profile-schema.md](docs/profile-schema.md),

@@ -90,7 +90,10 @@ imported profiles are new, replaced, or unchanged.
 Validate the committed sample profile file without starting the explorer:
 
 ```bash
+cargo run -p gemstone-rs-cli -- profile sample
+cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generation is disabled until you opt in:

@@ -63,6 +63,8 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Load Project Profiles
 - Save Project Profiles
 - Export Codegen Profile
+- Show Sample Project Profiles
+- Create Project Profiles
 - Validate Project Profiles
 - Open Codegen Docs
 
@@ -98,6 +100,8 @@ Commands:
 - `GemStone RS: Load Project Profiles`
 - `GemStone RS: Save Project Profiles`
 - `GemStone RS: Export Codegen Profile`
+- `GemStone RS: Show Sample Project Profiles`
+- `GemStone RS: Create Project Profiles`
 - `GemStone RS: Validate Project Profiles`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
@@ -199,10 +203,13 @@ profiles are new, replaced, or unchanged. It remembers its current fields
 locally, so repeated codegen or BridgeRoot checks keep the same config path and
 class selection.
 
-Use `GemStone RS: Validate Project Profiles` when you want a direct CLI check
-without opening the explorer. It runs `gemstone-rs profile validate` against
-the selected profile file and writes the result to the GemStone RS output
-panel. The extension also contributes JSON validation for files named
+Use `GemStone RS: Show Sample Project Profiles` to open the built-in sample
+from `gemstone-rs profile sample`, `GemStone RS: Create Project Profiles` to
+write that sample into a project file with `gemstone-rs profile init`, and
+`GemStone RS: Validate Project Profiles` when you want a direct CLI check
+without opening the explorer. Validation runs `gemstone-rs profile validate`
+against the selected profile file and writes the result to the GemStone RS
+output panel. The extension also contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`.
 
 ## Develop the Extension

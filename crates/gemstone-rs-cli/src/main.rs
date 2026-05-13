@@ -188,18 +188,41 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print!("{}", codegen::sample_mapping_config(&mapped_name));
             Ok(())
         }
-        Command::ProfileValidate { path } => {
+        Command::ProfileSample => {
+            print!("{}", profiles::sample_source());
+            Ok(())
+        }
+        Command::ProfileInit { path } => {
+            if path.exists() {
+                return Err(CliError::CodegenCheck(format!(
+                    "{} already exists",
+                    path.display()
+                )));
+            }
+            fs::write(&path, profiles::sample_source())?;
+            println!("wrote {}", path.display());
+            Ok(())
+        }
+        Command::ProfileValidate { path, format } => {
             let report = profiles::validate_file(&path)?;
-            println!(
-                "profile ok: {} ({} profiles: {})",
-                path.display(),
-                report.profile_count,
-                if report.profile_names.is_empty() {
-                    "-".to_string()
-                } else {
-                    report.profile_names.join(", ")
-                }
-            );
+            match format {
+                OutputFormat::Human => println!(
+                    "profile ok: {} ({} profiles: {})",
+                    path.display(),
+                    report.profile_count,
+                    if report.profile_names.is_empty() {
+                        "-".to_string()
+                    } else {
+                        report.profile_names.join(", ")
+                    }
+                ),
+                OutputFormat::Json => println!(
+                    r#"{{"ok":true,"path":"{}","profileCount":{},"profileNames":[{}]}}"#,
+                    escape_json(&path.display().to_string()),
+                    report.profile_count,
+                    json_string_array(&report.profile_names)
+                ),
+            }
             Ok(())
         }
         Command::CodegenInit { config } => {
@@ -528,6 +551,14 @@ fn escape_json(value: &str) -> String {
     result
 }
 
+fn json_string_array(values: &[String]) -> String {
+    values
+        .iter()
+        .map(|value| format!(r#""{}""#, escape_json(value)))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn print_value(session: &mut Session, value: Value) -> Result<(), CliError> {
     match value {
         Value::Nil => println!("nil"),
@@ -622,8 +653,13 @@ enum Command {
     BridgeSampleConfig {
         mapped_name: String,
     },
+    ProfileSample,
+    ProfileInit {
+        path: PathBuf,
+    },
     ProfileValidate {
         path: PathBuf,
+        format: OutputFormat,
     },
     CodegenInit {
         config: PathBuf,
@@ -675,15 +711,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
         }
         "browse" => parse_browse_command(&args[1..]),
         "bridge" => parse_bridge_command(&args[1..]),
-        "profile" => match args.get(1).map(String::as_str) {
-            Some("validate") => Ok(Command::ProfileValidate {
-                path: args
-                    .get(2)
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
-            }),
-            _ => Err(CliError::usage("expected: profile validate [path]")),
-        },
+        "profile" => parse_profile_command(&args[1..]),
         "inspect" => match (args.get(1).map(String::as_str), args.get(2)) {
             (Some("oop"), Some(raw)) => Ok(Command::InspectOop {
                 oop: Oop(parse_u64(raw)?),
@@ -727,6 +755,63 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
     }
+}
+
+fn parse_profile_command(args: &[String]) -> Result<Command, CliError> {
+    match args.first().map(String::as_str) {
+        Some("sample") => {
+            if args.len() > 1 {
+                return Err(CliError::usage("expected: profile sample"));
+            }
+            Ok(Command::ProfileSample)
+        }
+        Some("init") => {
+            if args.len() > 2 {
+                return Err(CliError::usage("expected: profile init [path]"));
+            }
+            Ok(Command::ProfileInit {
+                path: args
+                    .get(1)
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
+            })
+        }
+        Some("validate") => parse_profile_validate_command(&args[1..]),
+        _ => Err(CliError::usage(
+            "expected: profile sample | profile init [path] | profile validate [--json] [path]",
+        )),
+    }
+}
+
+fn parse_profile_validate_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut path = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: profile validate [--json] [path]",
+                ));
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown profile validate option: {option}"
+                )));
+            }
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected profile validate argument: {value}"
+                )));
+            }
+        }
+    }
+
+    Ok(Command::ProfileValidate {
+        path: path.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
+        format,
+    })
 }
 
 fn parse_u64(value: &str) -> Result<u64, CliError> {
@@ -1045,7 +1130,9 @@ fn usage() -> &'static str {
   gemstone-rs bridge put <key> <value> [--type String|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge remove <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge sample-config [mapped-name]
-  gemstone-rs profile validate [path]
+  gemstone-rs profile sample
+  gemstone-rs profile init [path]
+  gemstone-rs profile validate [--json] [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
   gemstone-rs codegen diff [config]
@@ -1365,9 +1452,33 @@ mod tests {
     #[test]
     fn parses_profile_commands() {
         assert_eq!(
+            parse_command(&args(&["profile", "sample"])).unwrap(),
+            Command::ProfileSample
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "init"])).unwrap(),
+            Command::ProfileInit {
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH)
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "init", "profiles.json"])).unwrap(),
+            Command::ProfileInit {
+                path: PathBuf::from("profiles.json")
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["profile", "validate"])).unwrap(),
             Command::ProfileValidate {
-                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH)
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH),
+                format: OutputFormat::Human
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "validate", "--json"])).unwrap(),
+            Command::ProfileValidate {
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH),
+                format: OutputFormat::Json
             }
         );
         assert_eq!(
@@ -1378,7 +1489,21 @@ mod tests {
             ]))
             .unwrap(),
             Command::ProfileValidate {
-                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json")
+                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                format: OutputFormat::Human
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "profile",
+                "validate",
+                "examples/codegen/gemstone-rs.codegen-profiles.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::ProfileValidate {
+                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                format: OutputFormat::Json
             }
         );
     }

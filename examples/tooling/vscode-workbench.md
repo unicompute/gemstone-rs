@@ -92,7 +92,9 @@ to switch between root/config/mapping/class combinations, and export the
 profile JSON when you want to share that setup with another browser or
 teammate. When a profile belongs in the project, use `Load Project Profiles`
 and `Save Project Profiles` with `gemstone-rs.codegen-profiles.json`, then use
-`Export Codegen Profile` for a single shareable profile. Use `Validate Project
+`Export Codegen Profile` for a single shareable profile. Use `Show Sample
+Project Profiles` to inspect the built-in profile JSON, `Create Project
+Profiles` to write that sample into the project, and `Validate Project
 Profiles` to run the CLI schema check from VS Code. Imports summarize new,
 replaced, and unchanged profiles. Use the
 BridgeRoot key/value type selectors to test string keys, symbol keys, strings,

@@ -31,6 +31,8 @@ const requiredCommands = [
   "gemstoneRs.loadProjectProfiles",
   "gemstoneRs.saveProjectProfiles",
   "gemstoneRs.exportCodegenProfile",
+  "gemstoneRs.showSampleProjectProfiles",
+  "gemstoneRs.createProjectProfiles",
   "gemstoneRs.validateProjectProfiles",
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
@@ -60,6 +62,7 @@ assert(extensionSource.includes("<iframe"), "webview should embed the explorer i
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
+assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert.deepStrictEqual(
   JSON.parse(extensionSchema),

@@ -119,5 +119,8 @@ profile fields, and `..` path traversal before writing.
 Validate before committing:
 
 ```bash
+cargo run -p gemstone-rs-cli -- profile sample
+cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
 ```

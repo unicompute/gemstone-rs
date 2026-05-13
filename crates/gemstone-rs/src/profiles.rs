@@ -9,6 +9,34 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub const PROFILE_KIND: &str = "gemstone-rs-explorer-codegen-profiles";
 pub const DEFAULT_PROFILE_PATH: &str = "gemstone-rs.codegen-profiles.json";
 pub const PROFILE_SCHEMA_PATH: &str = "schemas/gemstone-rs.codegen-profiles.schema.json";
+pub const SAMPLE_PROFILE_SOURCE: &str = r#"{
+  "kind": "gemstone-rs-explorer-codegen-profiles",
+  "version": 1,
+  "profiles": [
+    {
+      "name": "default",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "BookingDraft",
+      "className": "Object"
+    },
+    {
+      "name": "object-wrapper",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "ObjectWrapper",
+      "className": "Object"
+    },
+    {
+      "name": "bridge-mapping",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "BookingDraft",
+      "className": "Object"
+    }
+  ]
+}
+"#;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ValidationReport {
@@ -55,6 +83,10 @@ impl From<io::Error> for Error {
 pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationReport> {
     let source = fs::read_to_string(path)?;
     validate_source(&source)
+}
+
+pub fn sample_source() -> &'static str {
+    SAMPLE_PROFILE_SOURCE
 }
 
 pub fn validate_source(source: &str) -> Result<ValidationReport> {
@@ -425,6 +457,20 @@ mod tests {
             .unwrap_err()
             .to_string(),
             "profiles[1].name duplicates default"
+        );
+    }
+
+    #[test]
+    fn sample_source_is_valid() {
+        let report = validate_source(sample_source()).unwrap();
+        assert_eq!(report.profile_count, 3);
+        assert_eq!(
+            report.profile_names,
+            vec![
+                "default".to_string(),
+                "object-wrapper".to_string(),
+                "bridge-mapping".to_string()
+            ]
         );
     }
 }

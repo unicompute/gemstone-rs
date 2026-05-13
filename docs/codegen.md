@@ -158,7 +158,10 @@ examples/codegen/gemstone-rs.codegen-profiles.json
 Validate it from CI or a terminal:
 
 ```bash
+gemstone-rs profile sample
+gemstone-rs profile init gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 ```
 
 See [Codegen Profile Schema](profile-schema.md) and

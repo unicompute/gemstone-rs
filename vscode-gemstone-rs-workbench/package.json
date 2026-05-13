@@ -45,6 +45,8 @@
     "onCommand:gemstoneRs.loadProjectProfiles",
     "onCommand:gemstoneRs.saveProjectProfiles",
     "onCommand:gemstoneRs.exportCodegenProfile",
+    "onCommand:gemstoneRs.showSampleProjectProfiles",
+    "onCommand:gemstoneRs.createProjectProfiles",
     "onCommand:gemstoneRs.validateProjectProfiles",
     "onCommand:gemstoneRs.launchExplorer",
     "onCommand:gemstoneRs.openExplorerWebview",
@@ -153,6 +155,14 @@
       {
         "command": "gemstoneRs.exportCodegenProfile",
         "title": "GemStone RS: Export Codegen Profile"
+      },
+      {
+        "command": "gemstoneRs.showSampleProjectProfiles",
+        "title": "GemStone RS: Show Sample Project Profiles"
+      },
+      {
+        "command": "gemstoneRs.createProjectProfiles",
+        "title": "GemStone RS: Create Project Profiles"
       },
       {
         "command": "gemstoneRs.validateProjectProfiles",

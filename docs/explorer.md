@@ -227,7 +227,10 @@ Project profile files use this shape:
 Validate the file before sharing or saving it from CI:
 
 ```bash
+gemstone-rs profile sample
+gemstone-rs profile init gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
 ```
 
 The schema reference is [Codegen Profile Schema](profile-schema.md).

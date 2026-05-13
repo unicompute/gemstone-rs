@@ -36,6 +36,8 @@ function activate(context) {
   register(context, "gemstoneRs.loadProjectProfiles", loadProjectProfiles);
   register(context, "gemstoneRs.saveProjectProfiles", saveProjectProfiles);
   register(context, "gemstoneRs.exportCodegenProfile", exportCodegenProfile);
+  register(context, "gemstoneRs.showSampleProjectProfiles", showSampleProjectProfiles);
+  register(context, "gemstoneRs.createProjectProfiles", createProjectProfiles);
   register(context, "gemstoneRs.validateProjectProfiles", validateProjectProfiles);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
@@ -149,6 +151,8 @@ class GemStoneTreeProvider {
         actionNode("Load Project Profiles", "gemstoneRs.loadProjectProfiles"),
         actionNode("Save Project Profiles", "gemstoneRs.saveProjectProfiles"),
         actionNode("Export Codegen Profile", "gemstoneRs.exportCodegenProfile"),
+        actionNode("Show Sample Project Profiles", "gemstoneRs.showSampleProjectProfiles"),
+        actionNode("Create Project Profiles", "gemstoneRs.createProjectProfiles"),
         actionNode("Validate Project Profiles", "gemstoneRs.validateProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
       ];
@@ -569,6 +573,40 @@ function exportCodegenProfile() {
     "Export Codegen Profile",
     "Use Profile name and Save Profile if needed, then click Export Profile and copy Profile JSON."
   );
+}
+
+async function showSampleProjectProfiles() {
+  const result = await runCli(["profile", "sample"], { allowFailure: true });
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stderr);
+  output.show(true);
+
+  if (result.code !== 0) {
+    vscode.window.showErrorMessage("gemstone-rs profile sample failed. See GemStone RS output.");
+    return;
+  }
+
+  const document = await vscode.workspace.openTextDocument({
+    content: result.stdout,
+    language: "json",
+  });
+  await vscode.window.showTextDocument(document, { preview: true });
+}
+
+async function createProjectProfiles() {
+  const profilePath = await vscode.window.showInputBox({
+    title: "Create Project Profiles",
+    prompt: "Path to write gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return;
+  }
+  const result = await runAndShow(["profile", "init", profilePath], { allowFailure: true });
+  if (result.code === 0) {
+    explorerProvider?.refresh();
+  }
 }
 
 async function validateProjectProfiles() {
