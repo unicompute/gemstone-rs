@@ -30,6 +30,8 @@ cargo run -p gemstone-rs-cli -- profile sample
 cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile list examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile show default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 The CLI uses the same GemStone environment variables as the library:
@@ -69,4 +71,6 @@ suitable for CI. In this repository it verifies:
 cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile list --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile show default --json examples/codegen/gemstone-rs.codegen-profiles.json
 ```

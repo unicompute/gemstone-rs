@@ -34,6 +34,8 @@ const requiredCommands = [
   "gemstoneRs.showSampleProjectProfiles",
   "gemstoneRs.createProjectProfiles",
   "gemstoneRs.validateProjectProfiles",
+  "gemstoneRs.listProjectProfiles",
+  "gemstoneRs.showProjectProfile",
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
@@ -64,6 +66,7 @@ assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview 
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
+assert(readme.includes("List Project Profiles"), "README should mention profile listing");
 assert.deepStrictEqual(
   JSON.parse(extensionSchema),
   JSON.parse(rootSchema),

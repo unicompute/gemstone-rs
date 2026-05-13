@@ -95,8 +95,10 @@ and `Save Project Profiles` with `gemstone-rs.codegen-profiles.json`, then use
 `Export Codegen Profile` for a single shareable profile. Use `Show Sample
 Project Profiles` to inspect the built-in profile JSON, `Create Project
 Profiles` to write that sample into the project, and `Validate Project
-Profiles` to run the CLI schema check from VS Code. Imports summarize new,
-replaced, and unchanged profiles. Use the
+Profiles` to run the CLI schema check from VS Code. `List Project Profiles`
+and `Show Project Profile` inspect the parsed profile fields from VS Code
+without opening the explorer. Imports summarize new, replaced, and unchanged
+profiles. Use the
 BridgeRoot key/value type selectors to test string keys, symbol keys, strings,
 small integers, and bools before saving those choices in codegen config. The
 detail pane shows generated source, generated mapping config, unified diff

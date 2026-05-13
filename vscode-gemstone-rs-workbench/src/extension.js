@@ -39,6 +39,8 @@ function activate(context) {
   register(context, "gemstoneRs.showSampleProjectProfiles", showSampleProjectProfiles);
   register(context, "gemstoneRs.createProjectProfiles", createProjectProfiles);
   register(context, "gemstoneRs.validateProjectProfiles", validateProjectProfiles);
+  register(context, "gemstoneRs.listProjectProfiles", listProjectProfiles);
+  register(context, "gemstoneRs.showProjectProfile", showProjectProfile);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
@@ -154,6 +156,8 @@ class GemStoneTreeProvider {
         actionNode("Show Sample Project Profiles", "gemstoneRs.showSampleProjectProfiles"),
         actionNode("Create Project Profiles", "gemstoneRs.createProjectProfiles"),
         actionNode("Validate Project Profiles", "gemstoneRs.validateProjectProfiles"),
+        actionNode("List Project Profiles", "gemstoneRs.listProjectProfiles"),
+        actionNode("Show Project Profile", "gemstoneRs.showProjectProfile"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
       ];
     }
@@ -619,6 +623,38 @@ async function validateProjectProfiles() {
     return;
   }
   await runAndShow(["profile", "validate", profilePath], { allowFailure: true });
+}
+
+async function listProjectProfiles() {
+  const profilePath = await vscode.window.showInputBox({
+    title: "List Project Profiles",
+    prompt: "Path to gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return;
+  }
+  await runAndShow(["profile", "list", profilePath], { allowFailure: true });
+}
+
+async function showProjectProfile() {
+  const profileName = await vscode.window.showInputBox({
+    title: "Show Project Profile",
+    prompt: "Project profile name",
+    value: "default",
+  });
+  if (!profileName) {
+    return;
+  }
+  const profilePath = await vscode.window.showInputBox({
+    title: "Show Project Profile",
+    prompt: "Path to gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return;
+  }
+  await runAndShow(["profile", "show", profileName, profilePath], { allowFailure: true });
 }
 
 function openExplorerProfileWorkflow(title, instruction) {

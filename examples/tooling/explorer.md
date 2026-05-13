@@ -94,6 +94,8 @@ cargo run -p gemstone-rs-cli -- profile sample
 cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile list examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile show default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generation is disabled until you opt in:

@@ -26,6 +26,8 @@ cargo run -p gemstone-rs-cli -- profile sample
 cargo run -p gemstone-rs-cli -- profile init gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile list examples/codegen/gemstone-rs.codegen-profiles.json
+cargo run -p gemstone-rs-cli -- profile show default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 For an installed CLI:
@@ -35,6 +37,8 @@ gemstone-rs profile sample
 gemstone-rs profile init gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
+gemstone-rs profile list gemstone-rs.codegen-profiles.json
+gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 ```
 
 Expected output:
@@ -84,6 +88,9 @@ Use `GemStone RS: Show Sample Project Profiles` to open the built-in sample in
 an untitled JSON editor, `GemStone RS: Create Project Profiles` to write the
 sample to a project file, and `GemStone RS: Validate Project Profiles` to run
 the same CLI validator and show the result in the GemStone RS output panel.
+`GemStone RS: List Project Profiles` and `GemStone RS: Show Project Profile`
+render the parsed profile summary through the same CLI parser, so you can
+check the active config/root/mapped/class fields without opening the explorer.
 The workbench also contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`, using the packaged schema copy in
 `vscode-gemstone-rs-workbench/schemas/`.

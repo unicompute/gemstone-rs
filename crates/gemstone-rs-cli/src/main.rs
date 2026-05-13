@@ -8,7 +8,7 @@ use std::env;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -221,6 +221,29 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
                     escape_json(&path.display().to_string()),
                     report.profile_count,
                     json_string_array(&report.profile_names)
+                ),
+            }
+            Ok(())
+        }
+        Command::ProfileList { path, format } => {
+            let project = profiles::load_file(&path)?;
+            match format {
+                OutputFormat::Human => print_profile_list(&path, &project),
+                OutputFormat::Json => println!("{}", project_profiles_json(&path, &project)),
+            }
+            Ok(())
+        }
+        Command::ProfileShow { path, name, format } => {
+            let project = profiles::load_file(&path)?;
+            let profile = project.get(&name).ok_or_else(|| {
+                CliError::CodegenCheck(format!("profile {name} not found in {}", path.display()))
+            })?;
+            match format {
+                OutputFormat::Human => print_project_profile(&path, profile),
+                OutputFormat::Json => println!(
+                    r#"{{"path":"{}","profile":{}}}"#,
+                    escape_json(&path.display().to_string()),
+                    codegen_profile_json(profile)
                 ),
             }
             Ok(())
@@ -559,6 +582,40 @@ fn json_string_array(values: &[String]) -> String {
         .join(",")
 }
 
+fn project_profiles_json(path: &Path, project: &profiles::ProjectProfiles) -> String {
+    let profiles = project
+        .profiles
+        .iter()
+        .map(codegen_profile_json)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        r#"{{"path":"{}","kind":"{}","version":{},"profiles":[{}]}}"#,
+        escape_json(&path.display().to_string()),
+        escape_json(&project.kind),
+        project.version,
+        profiles
+    )
+}
+
+fn codegen_profile_json(profile: &profiles::CodegenProfile) -> String {
+    format!(
+        r#"{{"name":"{}","config":{},"root":{},"mapped":{},"className":{}}}"#,
+        escape_json(&profile.name),
+        optional_json_string(profile.config.as_deref()),
+        optional_json_string(profile.root.as_deref()),
+        optional_json_string(profile.mapped.as_deref()),
+        optional_json_string(profile.class_name.as_deref())
+    )
+}
+
+fn optional_json_string(value: Option<&str>) -> String {
+    match value {
+        Some(value) => format!(r#""{}""#, escape_json(value)),
+        None => "null".to_string(),
+    }
+}
+
 fn print_value(session: &mut Session, value: Value) -> Result<(), CliError> {
     match value {
         Value::Nil => println!("nil"),
@@ -586,6 +643,40 @@ fn print_oop_inspection(session: &mut Session, oop: Oop) -> Result<(), CliError>
 fn print_lines(values: impl IntoIterator<Item = String>) {
     for value in values {
         println!("{value}");
+    }
+}
+
+fn print_profile_list(path: &Path, project: &profiles::ProjectProfiles) {
+    println!("profiles: {} ({})", path.display(), project.profiles.len());
+    for profile in &project.profiles {
+        println!(
+            "{}\tconfig={}\troot={}\tmapped={}\tclassName={}",
+            profile.name,
+            profile_field(profile.config.as_deref()),
+            profile_field(profile.root.as_deref()),
+            profile_field(profile.mapped.as_deref()),
+            profile_field(profile.class_name.as_deref())
+        );
+    }
+}
+
+fn print_project_profile(path: &Path, profile: &profiles::CodegenProfile) {
+    println!("profile: {}", profile.name);
+    println!("path: {}", path.display());
+    println!("config: {}", profile_field(profile.config.as_deref()));
+    println!("root: {}", profile_field(profile.root.as_deref()));
+    println!("mapped: {}", profile_field(profile.mapped.as_deref()));
+    println!(
+        "className: {}",
+        profile_field(profile.class_name.as_deref())
+    );
+}
+
+fn profile_field(value: Option<&str>) -> String {
+    match value {
+        Some("") => "\"\"".to_string(),
+        Some(value) => value.to_string(),
+        None => "-".to_string(),
     }
 }
 
@@ -659,6 +750,15 @@ enum Command {
     },
     ProfileValidate {
         path: PathBuf,
+        format: OutputFormat,
+    },
+    ProfileList {
+        path: PathBuf,
+        format: OutputFormat,
+    },
+    ProfileShow {
+        path: PathBuf,
+        name: String,
         format: OutputFormat,
     },
     CodegenInit {
@@ -777,39 +877,83 @@ fn parse_profile_command(args: &[String]) -> Result<Command, CliError> {
             })
         }
         Some("validate") => parse_profile_validate_command(&args[1..]),
+        Some("list") => parse_profile_path_format_command(
+            &args[1..],
+            "profile list [--json] [path]",
+            |path, format| Command::ProfileList { path, format },
+        ),
+        Some("show") => parse_profile_show_command(&args[1..]),
         _ => Err(CliError::usage(
-            "expected: profile sample | profile init [path] | profile validate [--json] [path]",
+            "expected: profile sample | profile init [path] | profile validate [--json] [path] | profile list [--json] [path] | profile show <name> [--json] [path]",
         )),
     }
 }
 
 fn parse_profile_validate_command(args: &[String]) -> Result<Command, CliError> {
+    parse_profile_path_format_command(args, "profile validate [--json] [path]", |path, format| {
+        Command::ProfileValidate { path, format }
+    })
+}
+
+fn parse_profile_path_format_command(
+    args: &[String],
+    usage: &'static str,
+    build: impl FnOnce(PathBuf, OutputFormat) -> Command,
+) -> Result<Command, CliError> {
     let mut format = OutputFormat::Human;
+    let mut path = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => return Err(CliError::usage(format!("expected: {usage}"))),
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!("unknown profile option: {option}")));
+            }
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected profile argument: {value}"
+                )));
+            }
+        }
+    }
+
+    Ok(build(
+        path.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
+        format,
+    ))
+}
+
+fn parse_profile_show_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut name = None;
     let mut path = None;
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: profile validate [--json] [path]",
+                    "expected: profile show <name> [--json] [path]",
                 ));
             }
             option if option.starts_with('-') => {
                 return Err(CliError::usage(format!(
-                    "unknown profile validate option: {option}"
+                    "unknown profile show option: {option}"
                 )));
             }
+            value if name.is_none() => name = Some(value.to_string()),
             value if path.is_none() => path = Some(PathBuf::from(value)),
             value => {
                 return Err(CliError::usage(format!(
-                    "unexpected profile validate argument: {value}"
+                    "unexpected profile show argument: {value}"
                 )));
             }
         }
     }
 
-    Ok(Command::ProfileValidate {
+    Ok(Command::ProfileShow {
         path: path.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
+        name: name.ok_or_else(|| CliError::usage("missing profile name"))?,
         format,
     })
 }
@@ -1133,6 +1277,8 @@ fn usage() -> &'static str {
   gemstone-rs profile sample
   gemstone-rs profile init [path]
   gemstone-rs profile validate [--json] [path]
+  gemstone-rs profile list [--json] [path]
+  gemstone-rs profile show <name> [--json] [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
   gemstone-rs codegen diff [config]
@@ -1503,6 +1649,43 @@ mod tests {
             .unwrap(),
             Command::ProfileValidate {
                 path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                format: OutputFormat::Json
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "list"])).unwrap(),
+            Command::ProfileList {
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH),
+                format: OutputFormat::Human
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "list", "--json", "profiles.json"])).unwrap(),
+            Command::ProfileList {
+                path: PathBuf::from("profiles.json"),
+                format: OutputFormat::Json
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["profile", "show", "default"])).unwrap(),
+            Command::ProfileShow {
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH),
+                name: "default".to_string(),
+                format: OutputFormat::Human
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "profile",
+                "show",
+                "default",
+                "examples/codegen/gemstone-rs.codegen-profiles.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::ProfileShow {
+                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                name: "default".to_string(),
                 format: OutputFormat::Json
             }
         );

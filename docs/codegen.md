@@ -162,6 +162,8 @@ gemstone-rs profile sample
 gemstone-rs profile init gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate gemstone-rs.codegen-profiles.json
 gemstone-rs profile validate --json gemstone-rs.codegen-profiles.json
+gemstone-rs profile list gemstone-rs.codegen-profiles.json
+gemstone-rs profile show default gemstone-rs.codegen-profiles.json
 ```
 
 See [Codegen Profile Schema](profile-schema.md) and

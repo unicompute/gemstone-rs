@@ -44,6 +44,39 @@ pub struct ValidationReport {
     pub profile_names: Vec<String>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProjectProfiles {
+    pub kind: String,
+    pub version: u32,
+    pub profiles: Vec<CodegenProfile>,
+}
+
+impl ProjectProfiles {
+    pub fn validation_report(&self) -> ValidationReport {
+        ValidationReport {
+            profile_count: self.profiles.len(),
+            profile_names: self
+                .profiles
+                .iter()
+                .map(|profile| profile.name.clone())
+                .collect(),
+        }
+    }
+
+    pub fn get(&self, name: &str) -> Option<&CodegenProfile> {
+        self.profiles.iter().find(|profile| profile.name == name)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CodegenProfile {
+    pub name: String,
+    pub config: Option<String>,
+    pub root: Option<String>,
+    pub mapped: Option<String>,
+    pub class_name: Option<String>,
+}
+
 #[derive(Debug)]
 pub enum Error {
     Io(io::Error),
@@ -81,8 +114,12 @@ impl From<io::Error> for Error {
 }
 
 pub fn validate_file(path: impl AsRef<Path>) -> Result<ValidationReport> {
+    Ok(load_file(path)?.validation_report())
+}
+
+pub fn load_file(path: impl AsRef<Path>) -> Result<ProjectProfiles> {
     let source = fs::read_to_string(path)?;
-    validate_source(&source)
+    parse_source(&source)
 }
 
 pub fn sample_source() -> &'static str {
@@ -90,6 +127,10 @@ pub fn sample_source() -> &'static str {
 }
 
 pub fn validate_source(source: &str) -> Result<ValidationReport> {
+    Ok(parse_source(source)?.validation_report())
+}
+
+pub fn parse_source(source: &str) -> Result<ProjectProfiles> {
     let value = ProfileJsonParser::new(source)
         .parse()
         .map_err(|err| Error::schema(format!("profile JSON parse error: {err}")))?;
@@ -104,21 +145,21 @@ pub fn validate_source(source: &str) -> Result<ValidationReport> {
         }
     }
 
-    match profile_json_get(&root, "kind") {
-        Some(ProfileJson::String(kind)) if kind == PROFILE_KIND => {}
+    let kind = match profile_json_get(&root, "kind") {
+        Some(ProfileJson::String(kind)) if kind == PROFILE_KIND => kind.clone(),
         Some(ProfileJson::String(_)) => {
             return Err(Error::schema(format!("kind must be {PROFILE_KIND}")));
         }
         Some(_) => return Err(Error::schema("kind must be a string")),
         None => return Err(Error::schema("missing kind")),
-    }
+    };
 
-    match profile_json_get(&root, "version") {
-        Some(ProfileJson::Number(version)) if version == "1" => {}
+    let version = match profile_json_get(&root, "version") {
+        Some(ProfileJson::Number(version)) if version == "1" => 1,
         Some(ProfileJson::Number(_)) => return Err(Error::schema("version must be 1")),
         Some(_) => return Err(Error::schema("version must be a number")),
         None => return Err(Error::schema("missing version")),
-    }
+    };
 
     let profiles = match profile_json_get(&root, "profiles") {
         Some(ProfileJson::Array(profiles)) => profiles,
@@ -126,13 +167,35 @@ pub fn validate_source(source: &str) -> Result<ValidationReport> {
         None => return Err(Error::schema("missing profiles")),
     };
 
-    let mut names = Vec::new();
+    let mut parsed_profiles = Vec::new();
     for (index, profile) in profiles.iter().enumerate() {
         let ProfileJson::Object(fields) = profile else {
             return Err(Error::schema(format!(
                 "profiles[{index}] must be an object"
             )));
         };
+        let profile = CodegenProfile::from_fields(index, fields)?;
+        if parsed_profiles
+            .iter()
+            .any(|existing: &CodegenProfile| existing.name == profile.name)
+        {
+            return Err(Error::schema(format!(
+                "profiles[{index}].name duplicates {}",
+                profile.name
+            )));
+        }
+        parsed_profiles.push(profile);
+    }
+
+    Ok(ProjectProfiles {
+        kind,
+        version,
+        profiles: parsed_profiles,
+    })
+}
+
+impl CodegenProfile {
+    fn from_fields(index: usize, fields: &[(String, ProfileJson)]) -> Result<Self> {
         for (field, value) in fields {
             match field.as_str() {
                 "name" | "config" | "root" | "mapped" | "className" => {}
@@ -148,8 +211,9 @@ pub fn validate_source(source: &str) -> Result<ValidationReport> {
                 )));
             }
         }
-        match profile_json_get(fields, "name") {
-            Some(ProfileJson::String(name)) if !name.trim().is_empty() => {}
+
+        let name = match profile_json_get(fields, "name") {
+            Some(ProfileJson::String(name)) if !name.trim().is_empty() => name.clone(),
             Some(ProfileJson::String(_)) => {
                 return Err(Error::schema(format!(
                     "profiles[{index}].name must not be empty"
@@ -161,21 +225,16 @@ pub fn validate_source(source: &str) -> Result<ValidationReport> {
                 )));
             }
             None => return Err(Error::schema(format!("profiles[{index}].name is required"))),
-        }
-        if let Some(ProfileJson::String(name)) = profile_json_get(fields, "name") {
-            if names.iter().any(|existing: &String| existing == name) {
-                return Err(Error::schema(format!(
-                    "profiles[{index}].name duplicates {name}"
-                )));
-            }
-            names.push(name.clone());
-        }
-    }
+        };
 
-    Ok(ValidationReport {
-        profile_count: names.len(),
-        profile_names: names,
-    })
+        Ok(Self {
+            name,
+            config: optional_string_field(fields, "config"),
+            root: optional_string_field(fields, "root"),
+            mapped: optional_string_field(fields, "mapped"),
+            class_name: optional_string_field(fields, "className"),
+        })
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -193,6 +252,13 @@ fn profile_json_get<'a>(object: &'a [(String, ProfileJson)], key: &str) -> Optio
         .iter()
         .find(|(candidate, _)| candidate == key)
         .map(|(_, value)| value)
+}
+
+fn optional_string_field(object: &[(String, ProfileJson)], key: &str) -> Option<String> {
+    match profile_json_get(object, key) {
+        Some(ProfileJson::String(value)) => Some(value.clone()),
+        _ => None,
+    }
 }
 
 struct ProfileJsonParser<'a> {
@@ -416,6 +482,25 @@ mod tests {
         let report = validate_source(VALID).unwrap();
         assert_eq!(report.profile_count, 1);
         assert_eq!(report.profile_names, vec!["default".to_string()]);
+    }
+
+    #[test]
+    fn parses_project_profiles() {
+        let project = parse_source(VALID).unwrap();
+        assert_eq!(project.kind, PROFILE_KIND);
+        assert_eq!(project.version, 1);
+        assert_eq!(project.profiles.len(), 1);
+        assert_eq!(
+            project.get("default"),
+            Some(&CodegenProfile {
+                name: "default".to_string(),
+                config: Some("examples/codegen/gemstone-rs.codegen".to_string()),
+                root: Some("".to_string()),
+                mapped: Some("BookingDraft".to_string()),
+                class_name: Some("Object".to_string()),
+            })
+        );
+        assert!(project.get("missing").is_none());
     }
 
     #[test]
