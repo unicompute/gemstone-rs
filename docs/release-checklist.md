@@ -183,6 +183,7 @@ The script checks:
 - VS Code Marketplace version matches `package.json`
 - GitHub Release `v<version>` exists
 - GitHub Release assets include the VSIX, `SHA256SUMS`, and every generated PDF
+- downloaded GitHub Release assets match the published `SHA256SUMS`
 
 To skip the GitHub Release asset check during early testing:
 

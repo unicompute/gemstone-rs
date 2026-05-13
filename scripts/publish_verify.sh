@@ -9,9 +9,11 @@ VERIFY_GITHUB_RELEASE="${VERIFY_GITHUB_RELEASE:-1}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VSIX_VERSION="$(node -e "console.log(require('$ROOT/vscode-gemstone-rs-workbench/package.json').version)")"
 INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/gemstone-rs-install.XXXXXX")"
+RELEASE_DOWNLOAD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/gemstone-rs-release-assets.XXXXXX")"
 
 cleanup() {
   rm -rf "$INSTALL_ROOT"
+  rm -rf "$RELEASE_DOWNLOAD_ROOT"
 }
 trap cleanup EXIT
 
@@ -63,6 +65,7 @@ require node
 require npx
 if [[ "$VERIFY_GITHUB_RELEASE" != "0" && "$VERIFY_GITHUB_RELEASE" != "false" ]]; then
   require gh
+  require python3
 fi
 
 for crate in gemstone-gci gemstone-rs-macros gemstone-rs gemstone-rs-cli gemstone-rs-explorer; do
@@ -98,6 +101,10 @@ check_github_release_assets() {
     echo "$assets" >&2
     exit 1
   fi
+  while IFS= read -r expected; do
+    gh release download "$tag" --repo "$REPO" --dir "$RELEASE_DOWNLOAD_ROOT" --pattern "$expected" --clobber >/dev/null
+  done < <(expected_github_release_assets)
+  python3 "$ROOT/scripts/verify_downloaded_release_assets.py" "$RELEASE_DOWNLOAD_ROOT"
   printf 'ok (%s expected assets)\n' "$expected_count"
 }
 
