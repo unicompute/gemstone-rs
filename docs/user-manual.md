@@ -169,14 +169,16 @@ match Config::from_env() {
 The CLI exposes the same checks through `doctor`:
 
 ```bash
+gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --json
 ```
 
-The non-live form validates environment and GCI library loading. The live form
-also logs in and checks that `3 + 4` returns `7`. Human and JSON reports show
-which source selected `libgcirpc`: explicit config, `GS_LIB_PATH`, `GS_LIB`, or
-`GEMSTONE/lib`, plus the exact path or directory searched. The JSON form is
-intended for automation and editor integrations, and includes the same
+`env sample` prints a safe shell export template with password placeholders.
+The non-live doctor form validates environment and GCI library loading. The
+live form also logs in and checks that `3 + 4` returns `7`. Human and JSON
+reports show which source selected `libgcirpc`: explicit config, `GS_LIB_PATH`,
+`GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory searched. The JSON
+form is intended for automation and editor integrations, and includes the same
 remediation hints as the human report.

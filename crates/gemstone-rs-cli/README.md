@@ -8,6 +8,7 @@ The binary name is `gemstone-rs`:
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --json
+cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -50,6 +51,10 @@ export GS_STONE=gs64stone
 export GS_USERNAME=DataCurator
 export GS_PASSWORD=swordfish
 ```
+
+Use `gemstone-rs env sample` to print a copy-pasteable shell export template.
+It reuses current non-secret values when they are set and always prints password
+placeholders instead of real secrets.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`

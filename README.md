@@ -59,6 +59,7 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 
 ```bash
 gemstone-rs --help
+gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --json
@@ -75,6 +76,7 @@ https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workb
 GemStone environment setup:
 
 ```bash
+gemstone-rs env sample
 export GS_LIB=/opt/gemstone/product/lib
 export GS_STONE=gs64stone
 export GS_USERNAME=DataCurator
@@ -163,6 +165,7 @@ See [examples/README.md](examples/README.md) and
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --json
+cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -193,7 +196,8 @@ probe. The report includes which source selected `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the path or directory searched.
 When setup fails, it prints actionable hints for credentials, library loading,
 or live stone connectivity. Add `--json` when release scripts or VS Code need
-structured output.
+structured output. `env sample` prints a safe shell export template for the
+same `GS_*` variables and replaces password values with placeholders.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.

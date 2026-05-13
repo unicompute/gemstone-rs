@@ -35,6 +35,7 @@ For the full local development experience:
 Most live commands use `Config::from_env()`:
 
 ```bash
+gemstone-rs env sample
 export GS_LIB=/opt/gemstone/product/lib
 export GS_STONE=gs64stone
 export GS_STONE_NAME=gs64stone
@@ -45,6 +46,11 @@ export GS_PASSWORD=swordfish
 `GS_STONE` is canonical. `GS_STONE_NAME` is accepted as an alias when
 `GS_STONE` is absent. Setting both to the same value keeps CLI, examples,
 explorer, and VS Code settings aligned.
+
+`gemstone-rs env sample` prints a safe shell export template. It carries over
+current non-secret values such as `GS_LIB` or `GS_STONE`, comments optional
+values when they are absent, and prints placeholders for `GS_PASSWORD` and
+`GS_HOST_PASSWORD` instead of copying secrets.
 
 Optional variables:
 
@@ -75,6 +81,7 @@ With the CLI:
 
 ```bash
 cargo install gemstone-rs-cli
+gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --json

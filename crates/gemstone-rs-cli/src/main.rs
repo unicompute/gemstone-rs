@@ -34,6 +34,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             Ok(())
         }
         Command::Doctor { live, format } => run_doctor(live, format),
+        Command::EnvSample => {
+            print!("{}", env_template_source());
+            Ok(())
+        }
         Command::Eval { source } => {
             let mut session = login()?;
             let value = session.eval(&source)?;
@@ -375,6 +379,144 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
 
 fn login() -> Result<Session, CliError> {
     Ok(Session::login(Config::from_env()?)?)
+}
+
+fn env_template_source() -> String {
+    env_template_source_with(|name| env::var(name).ok())
+}
+
+fn env_template_source_with(lookup: impl Fn(&str) -> Option<String>) -> String {
+    let stone = env_value(&lookup, "GS_STONE")
+        .or_else(|| env_value(&lookup, "GS_STONE_NAME"))
+        .unwrap_or_else(|| "gs64stone".to_string());
+    let stone_alias = env_value(&lookup, "GS_STONE_NAME").unwrap_or_else(|| stone.clone());
+
+    let mut output = String::new();
+    output.push_str("# gemstone-rs GemStone/S environment template\n");
+    output.push_str("# Source this file or paste these exports into your shell.\n");
+    output.push_str(
+        "# Password values are placeholders and are never copied from the current environment.\n\n",
+    );
+
+    append_export(
+        &mut output,
+        "GS_LIB",
+        env_value(&lookup, "GS_LIB")
+            .as_deref()
+            .unwrap_or("/opt/gemstone/product/lib"),
+    );
+    append_optional_export(
+        &mut output,
+        "GS_LIB_PATH",
+        env_value(&lookup, "GS_LIB_PATH").as_deref(),
+        "/full/path/to/libgcirpc.dylib",
+    );
+    append_export(&mut output, "GS_STONE", &stone);
+    append_export(&mut output, "GS_STONE_NAME", &stone_alias);
+    append_export(
+        &mut output,
+        "GS_HOST",
+        env_value(&lookup, "GS_HOST")
+            .as_deref()
+            .unwrap_or("localhost"),
+    );
+    append_export(
+        &mut output,
+        "GS_NETLDI",
+        env_value(&lookup, "GS_NETLDI")
+            .as_deref()
+            .unwrap_or("netldi"),
+    );
+    append_export(
+        &mut output,
+        "GS_GEM_SERVICE",
+        env_value(&lookup, "GS_GEM_SERVICE")
+            .as_deref()
+            .unwrap_or("gemnetobject"),
+    );
+    append_export(
+        &mut output,
+        "GS_USERNAME",
+        env_value(&lookup, "GS_USERNAME")
+            .as_deref()
+            .unwrap_or("DataCurator"),
+    );
+    append_secret_export(
+        &mut output,
+        "GS_PASSWORD",
+        lookup("GS_PASSWORD").as_deref(),
+        "<set-your-password>",
+    );
+    append_optional_export(
+        &mut output,
+        "GS_HOST_USERNAME",
+        env_value(&lookup, "GS_HOST_USERNAME").as_deref(),
+        "host-user-if-needed",
+    );
+    append_optional_secret_export(
+        &mut output,
+        "GS_HOST_PASSWORD",
+        lookup("GS_HOST_PASSWORD").as_deref(),
+        "<set-host-password-if-needed>",
+    );
+    output.push_str("\n# Verify after editing:\n");
+    output.push_str("# gemstone-rs doctor\n");
+    output.push_str("# gemstone-rs doctor --live\n");
+    output
+}
+
+fn env_value(lookup: &impl Fn(&str) -> Option<String>, name: &str) -> Option<String> {
+    lookup(name).filter(|value| !value.is_empty())
+}
+
+fn append_export(output: &mut String, name: &str, value: &str) {
+    output.push_str("export ");
+    output.push_str(name);
+    output.push('=');
+    output.push_str(&shell_quote(value));
+    output.push('\n');
+}
+
+fn append_optional_export(output: &mut String, name: &str, value: Option<&str>, placeholder: &str) {
+    match value.filter(|value| !value.is_empty()) {
+        Some(value) => append_export(output, name, value),
+        None => {
+            output.push_str("# export ");
+            output.push_str(name);
+            output.push('=');
+            output.push_str(&shell_quote(placeholder));
+            output.push('\n');
+        }
+    }
+}
+
+fn append_secret_export(output: &mut String, name: &str, current: Option<&str>, placeholder: &str) {
+    if current.is_some_and(|value| !value.is_empty()) {
+        output.push_str("# ");
+        output.push_str(name);
+        output.push_str(" is set in this shell; the real value is not printed.\n");
+    }
+    append_export(output, name, placeholder);
+}
+
+fn append_optional_secret_export(
+    output: &mut String,
+    name: &str,
+    current: Option<&str>,
+    placeholder: &str,
+) {
+    if current.is_some_and(|value| !value.is_empty()) {
+        output.push_str("# ");
+        output.push_str(name);
+        output.push_str(" is set in this shell; the real value is not printed.\n");
+        append_export(output, name, placeholder);
+    } else {
+        append_optional_export(output, name, None, placeholder);
+    }
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
 
 fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
@@ -1045,6 +1187,7 @@ enum Command {
         live: bool,
         format: OutputFormat,
     },
+    EnvSample,
     Eval {
         source: String,
     },
@@ -1184,6 +1327,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
     match command {
         "-h" | "--help" | "help" => Ok(Command::Help),
         "doctor" => parse_doctor_command(&args[1..]),
+        "env" => parse_env_command(&args[1..]),
         "eval" => {
             let source = args
                 .get(1)
@@ -1251,6 +1395,21 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
+    }
+}
+
+fn parse_env_command(args: &[String]) -> Result<Command, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("sample") => {
+            if args.len() > 1 {
+                return Err(CliError::usage("expected: env sample"));
+            }
+            Ok(Command::EnvSample)
+        }
+        Some("-h" | "--help") => Err(CliError::usage("expected: env sample")),
+        Some(command) => Err(CliError::usage(format!(
+            "unknown env command: {command}; expected env sample"
+        ))),
     }
 }
 
@@ -1738,6 +1897,7 @@ fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
 fn usage() -> &'static str {
     "usage:
   gemstone-rs doctor [--live] [--json]
+  gemstone-rs env sample
   gemstone-rs eval <smalltalk>
   gemstone-rs browse dictionaries
   gemstone-rs browse classes [dictionary]
@@ -1877,6 +2037,48 @@ mod tests {
                 format: OutputFormat::Json,
             }
         );
+    }
+
+    #[test]
+    fn parses_env_sample_command() {
+        assert_eq!(parse_command(&args(&["env"])).unwrap(), Command::EnvSample);
+        assert_eq!(
+            parse_command(&args(&["env", "sample"])).unwrap(),
+            Command::EnvSample
+        );
+    }
+
+    #[test]
+    fn env_sample_uses_current_non_secret_values_without_leaking_passwords() {
+        let output = env_template_source_with(|name| match name {
+            "GS_LIB" => Some("/opt/GemStone lib".to_string()),
+            "GS_STONE_NAME" => Some("demoStone".to_string()),
+            "GS_USERNAME" => Some("Data Curator".to_string()),
+            "GS_PASSWORD" => Some("secret-password".to_string()),
+            "GS_HOST_PASSWORD" => Some("host-secret".to_string()),
+            _ => None,
+        });
+
+        assert!(output.contains("export GS_LIB='/opt/GemStone lib'"));
+        assert!(output.contains("export GS_STONE='demoStone'"));
+        assert!(output.contains("export GS_STONE_NAME='demoStone'"));
+        assert!(output.contains("export GS_USERNAME='Data Curator'"));
+        assert!(output.contains("# GS_PASSWORD is set in this shell"));
+        assert!(output.contains("export GS_PASSWORD='<set-your-password>'"));
+        assert!(output.contains("# GS_HOST_PASSWORD is set in this shell"));
+        assert!(output.contains("export GS_HOST_PASSWORD='<set-host-password-if-needed>'"));
+        assert!(!output.contains("secret-password"));
+        assert!(!output.contains("host-secret"));
+
+        let default_output = env_template_source_with(|_| None);
+        assert!(
+            default_output.contains("# export GS_HOST_PASSWORD='<set-host-password-if-needed>'")
+        );
+    }
+
+    #[test]
+    fn shell_quote_handles_single_quotes() {
+        assert_eq!(shell_quote("Data'Curator"), r#"'Data'"'"'Curator'"#);
     }
 
     #[test]

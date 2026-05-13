@@ -109,11 +109,16 @@ fn main() -> gemstone_rs::Result<()> {
 Run the same check from the CLI:
 
 ```bash
+gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
+
+`env sample` prints a copy-pasteable setup script with placeholders for
+passwords, so a new shell can be configured without accidentally dumping
+secrets into docs, tickets, or chat.
 
 The doctor report names the source used to select `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory
