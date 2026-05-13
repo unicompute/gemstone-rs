@@ -6,8 +6,11 @@
 // MyTestDict OOP: <number>
 // loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
 // loaded labels: {"source": "manual"}
+// loaded symbol labels: {"source": "manual"}
 
-use gemstone_rs::{BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session};
+use gemstone_rs::{
+    BridgeDictionary, BridgeFieldWrite, BridgeKeyType, BridgeMapped, BridgeValue, Config, Session,
+};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -66,13 +69,24 @@ fn main() -> gemstone_rs::Result<()> {
     let loaded_labels: BTreeMap<String, String> = bridge_root.get_map("MyTestLabels")?;
     assert_eq!(loaded_labels, payload.labels);
 
+    bridge_root.put_field_with_key_type(
+        "MyTestLabelsSymbol",
+        BridgeKeyType::Symbol,
+        &payload.labels,
+    )?;
+    let loaded_symbol_labels: BTreeMap<String, String> =
+        bridge_root.get_map_with_key_type("MyTestLabelsSymbol", BridgeKeyType::Symbol)?;
+    assert_eq!(loaded_symbol_labels, payload.labels);
+
     println!("bridge root: {}", bridge_root.name());
     println!("bridge root OOP: {}", bridge_root.oop().raw());
     println!("MyTestDict OOP: {}", stored.raw());
     println!("loaded payload: {loaded:?}");
     println!("loaded labels: {loaded_labels:?}");
+    println!("loaded symbol labels: {loaded_symbol_labels:?}");
 
     bridge_root.remove("MyTestLabels")?;
+    bridge_root.remove_with_key_type("MyTestLabelsSymbol", BridgeKeyType::Symbol)?;
     bridge_root.commit()?;
     Ok(())
 }

@@ -529,6 +529,15 @@ impl<'a> BridgeRoot<'a> {
         self.put(key, value.to_bridge_value())
     }
 
+    pub fn put_mapped_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &impl BridgeMapped,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, value.to_bridge_value())
+    }
+
     pub fn put_field<T: BridgeFieldWrite + ?Sized>(&mut self, key: &str, value: &T) -> Result<Oop> {
         self.put_field_with_key_type(key, BridgeKeyType::String, value)
     }
@@ -563,26 +572,54 @@ impl<'a> BridgeRoot<'a> {
     }
 
     pub fn get_string(&mut self, key: &str) -> Result<String> {
-        let oop = self.get_oop(key)?;
+        self.get_string_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_string_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<String> {
+        let oop = self.get_oop_with_key_type(key, key_type)?;
         self.session.fetch_string(oop)
     }
 
     pub fn get_smallint(&mut self, key: &str) -> Result<i64> {
-        match self.get_value(key)? {
+        self.get_smallint_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_smallint_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<i64> {
+        match self.get_value_with_key_type(key, key_type)? {
             Value::SmallInt(value) => Ok(value),
             other => Err(unexpected_field(key, "SmallInt", other)),
         }
     }
 
     pub fn get_bool(&mut self, key: &str) -> Result<bool> {
-        match self.get_value(key)? {
+        self.get_bool_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_bool_with_key_type(&mut self, key: &str, key_type: BridgeKeyType) -> Result<bool> {
+        match self.get_value_with_key_type(key, key_type)? {
             Value::Bool(value) => Ok(value),
             other => Err(unexpected_field(key, "Bool", other)),
         }
     }
 
     pub fn get_dictionary(&mut self, key: &str) -> Result<BridgeDictionary<'_>> {
-        let oop = self.get_oop(key)?;
+        self.get_dictionary_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_dictionary_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<BridgeDictionary<'_>> {
+        let oop = self.get_oop_with_key_type(key, key_type)?;
         Ok(BridgeDictionary::from_oop(self.session, oop))
     }
 
@@ -603,16 +640,48 @@ impl<'a> BridgeRoot<'a> {
         self.get_field(key)
     }
 
+    pub fn get_mapped_with_key_type<T: BridgeMapped>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<T> {
+        self.get_field_with_key_type(key, key_type)
+    }
+
     pub fn get_vec<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Vec<T>> {
         self.get_field(key)
+    }
+
+    pub fn get_vec_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<Vec<T>> {
+        self.get_field_with_key_type(key, key_type)
     }
 
     pub fn get_map<T: BridgeFieldRead>(&mut self, key: &str) -> Result<BTreeMap<String, T>> {
         self.get_field(key)
     }
 
+    pub fn get_map_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<BTreeMap<String, T>> {
+        self.get_field_with_key_type(key, key_type)
+    }
+
     pub fn get_optional<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Option<T>> {
         self.get_field(key)
+    }
+
+    pub fn get_optional_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<Option<T>> {
+        self.get_field_with_key_type(key, key_type)
     }
 
     pub fn remove(&mut self, key: &str) -> Result<Oop> {

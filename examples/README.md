@@ -113,6 +113,7 @@ bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
 loaded labels: {"source": "manual"}
+loaded symbol labels: {"source": "manual"}
 
 $ cargo run -p gemstone-rs --example derive_mapping
 derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], labels: {"source": "derive"}, note: None }

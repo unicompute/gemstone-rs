@@ -139,7 +139,7 @@ The default root is `UserGlobals at: #GemStoneRsBridgeRoot`.
 
 ```rust
 use gemstone_rs::{
-    BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session,
+    BridgeDictionary, BridgeFieldWrite, BridgeKeyType, BridgeMapped, BridgeValue, Config, Session,
 };
 use std::collections::BTreeMap;
 
@@ -179,6 +179,11 @@ assert_eq!(loaded.labels["source"], "cookbook");
 bridge_root.put_field("CookbookLabels", &draft.labels)?;
 let labels: BTreeMap<String, String> = bridge_root.get_map("CookbookLabels")?;
 assert_eq!(labels["source"], "cookbook");
+
+bridge_root.put_field_with_key_type("CookbookLabelsSymbol", BridgeKeyType::Symbol, &draft.labels)?;
+let symbol_labels: BTreeMap<String, String> =
+    bridge_root.get_map_with_key_type("CookbookLabelsSymbol", BridgeKeyType::Symbol)?;
+assert_eq!(symbol_labels["source"], "cookbook");
 ```
 
 Use map fields for string-keyed metadata or lookup tables. Use nested

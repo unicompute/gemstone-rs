@@ -15,19 +15,31 @@ The initial mapping layer supports:
 - `Session::bridge_root_named(name)`
 - `BridgeRoot::put`
 - `BridgeRoot::put_mapped`
+- `BridgeRoot::put_mapped_with_key_type`
 - `BridgeRoot::put_field`
+- `BridgeRoot::put_field_with_key_type`
 - `BridgeRoot::get_oop`
 - `BridgeRoot::get_value`
 - `BridgeRoot::get_field`
+- `BridgeRoot::get_field_with_key_type`
 - `BridgeRoot::get_vec`
+- `BridgeRoot::get_vec_with_key_type`
 - `BridgeRoot::get_map`
+- `BridgeRoot::get_map_with_key_type`
 - `BridgeRoot::get_optional`
+- `BridgeRoot::get_optional_with_key_type`
 - `BridgeRoot::get_string`
+- `BridgeRoot::get_string_with_key_type`
 - `BridgeRoot::get_smallint`
+- `BridgeRoot::get_smallint_with_key_type`
 - `BridgeRoot::get_bool`
+- `BridgeRoot::get_bool_with_key_type`
 - `BridgeRoot::get_dictionary`
+- `BridgeRoot::get_dictionary_with_key_type`
 - `BridgeRoot::get_mapped`
+- `BridgeRoot::get_mapped_with_key_type`
 - `BridgeRoot::remove`
+- `BridgeRoot::remove_with_key_type`
 - `BridgeRoot::commit`
 - `BridgeRoot::commit_with_retry`
 - `BridgeRoot::transaction`
@@ -113,7 +125,7 @@ field reads from application code.
 
 ```rust
 use gemstone_rs::{
-    BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session,
+    BridgeDictionary, BridgeFieldWrite, BridgeKeyType, BridgeMapped, BridgeValue, Config, Session,
 };
 use std::collections::BTreeMap;
 
@@ -164,6 +176,15 @@ fn main() -> gemstone_rs::Result<()> {
     let labels: BTreeMap<String, String> = bridge_root.get_map("MyTestLabels")?;
     assert_eq!(labels, draft.labels);
 
+    bridge_root.put_field_with_key_type(
+        "MyTestLabelsSymbol",
+        BridgeKeyType::Symbol,
+        &draft.labels,
+    )?;
+    let symbol_labels: BTreeMap<String, String> =
+        bridge_root.get_map_with_key_type("MyTestLabelsSymbol", BridgeKeyType::Symbol)?;
+    assert_eq!(symbol_labels, draft.labels);
+
     bridge_root.commit()?;
     Ok(())
 }
@@ -182,6 +203,7 @@ bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
 loaded labels: {"source": "manual"}
+loaded symbol labels: {"source": "manual"}
 ```
 
 ## Derive-Based Mapping
@@ -316,6 +338,14 @@ use gemstone_rs::BridgeKeyType;
 
 bridge_root.put_with_key_type("BookingDraft", BridgeKeyType::Symbol, "stored")?;
 let oop = bridge_root.get_oop_with_key_type("BookingDraft", BridgeKeyType::Symbol)?;
+```
+
+The typed helpers have the same key-policy variants:
+
+```rust
+bridge_root.put_field_with_key_type("BookingLabels", BridgeKeyType::Symbol, &draft.labels)?;
+let labels: BTreeMap<String, String> =
+    bridge_root.get_map_with_key_type("BookingLabels", BridgeKeyType::Symbol)?;
 ```
 
 Use string keys when interoperating with JSON-like payloads and symbol keys when

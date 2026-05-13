@@ -1428,12 +1428,22 @@ mod tests {
         bridge_root.put_field(&labels_key, &payload.labels)?;
         let labels: BTreeMap<String, String> = bridge_root.get_map(&labels_key)?;
         assert_eq!(labels, payload.labels);
+        let symbol_labels_key = live_key("GemStoneRsBridgeLabelsSymbol");
+        bridge_root.put_field_with_key_type(
+            &symbol_labels_key,
+            BridgeKeyType::Symbol,
+            &payload.labels,
+        )?;
+        let symbol_labels: BTreeMap<String, String> =
+            bridge_root.get_map_with_key_type(&symbol_labels_key, BridgeKeyType::Symbol)?;
+        assert_eq!(symbol_labels, payload.labels);
         let keys = bridge_root.keys()?;
         assert!(keys.iter().any(|entry| entry.print_string.contains(&key)));
         let loaded: TestBookingDraft = bridge_root.get_mapped(&key)?;
         assert_eq!(loaded, payload);
         bridge_root.remove(&key)?;
         bridge_root.remove(&labels_key)?;
+        bridge_root.remove_with_key_type(&symbol_labels_key, BridgeKeyType::Symbol)?;
         bridge_root.commit()?;
         Ok(())
     }

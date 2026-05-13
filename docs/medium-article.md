@@ -409,6 +409,15 @@ bridge_root.put_field("BookingLabels", &draft.labels)?;
 let labels: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
 ```
 
+When a Smalltalk-facing dictionary should use symbols, use the matching
+key-policy variants:
+
+```rust
+bridge_root.put_field_with_key_type("BookingLabels", BridgeKeyType::Symbol, &draft.labels)?;
+let labels: BTreeMap<String, String> =
+    bridge_root.get_map_with_key_type("BookingLabels", BridgeKeyType::Symbol)?;
+```
+
 Generate a mapping proposal from a live stone:
 
 ```bash
