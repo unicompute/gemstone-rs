@@ -215,7 +215,7 @@
 //!   that logged in.
 //! - Unsafe C ABI calls are isolated in `gemstone-gci`.
 //! - `libgcirpc` is loaded dynamically at runtime through `GS_LIB_PATH`,
-//!   `GS_LIB`, or the platform loader path.
+//!   `GS_LIB`, or `GEMSTONE/lib`.
 //!
 //! Roadmap:
 //!
@@ -237,8 +237,8 @@ pub use bridge::{
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
-    char_from_oop, find_gcirpc_in_dir, is_char, is_smallint, GciErrSType, GciLibrary, RawOop,
-    GCI_ENCRYPT_BUF_SIZE, GCI_INVALID_SESSION,
+    char_from_oop, is_char, is_smallint, resolve_library_path_with_source, GciErrSType, GciLibrary,
+    RawOop, GCI_ENCRYPT_BUF_SIZE, GCI_INVALID_SESSION,
 };
 pub use gemstone_rs_macros::BridgeMapped;
 use std::cell::{Cell, RefCell};
@@ -248,7 +248,7 @@ use std::error::Error as StdError;
 use std::ffi::{c_char, c_double, c_uint, CString, NulError};
 use std::fmt;
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -434,28 +434,11 @@ pub fn gci_library_resolution(config: &Config) -> Result<GciLibraryResolution> {
             });
         }
     }
-    if let Ok(dir) = env::var("GS_LIB") {
-        if !dir.is_empty() {
-            if let Some(path) = find_gcirpc_in_dir(Path::new(&dir))? {
-                return Ok(GciLibraryResolution {
-                    source: "GS_LIB",
-                    path,
-                });
-            }
-        }
-    }
-    if let Ok(gemstone) = env::var("GEMSTONE") {
-        if !gemstone.is_empty() {
-            let lib_dir = PathBuf::from(gemstone).join("lib");
-            if let Some(path) = find_gcirpc_in_dir(&lib_dir)? {
-                return Ok(GciLibraryResolution {
-                    source: "GEMSTONE/lib",
-                    path,
-                });
-            }
-        }
-    }
-    Err(gemstone_gci::GciError::LibraryNotFound.into())
+    let resolution = resolve_library_path_with_source(None)?;
+    Ok(GciLibraryResolution {
+        source: resolution.source,
+        path: resolution.path,
+    })
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

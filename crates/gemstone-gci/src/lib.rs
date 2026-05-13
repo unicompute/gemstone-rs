@@ -217,9 +217,15 @@ pub struct GciLibrary {
     path: PathBuf,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GciLibraryPathResolution {
+    pub source: &'static str,
+    pub path: PathBuf,
+}
+
 impl GciLibrary {
     pub fn load(lib_path: Option<PathBuf>) -> Result<Self> {
-        let path = resolve_library_path(lib_path)?;
+        let path = resolve_library_path_with_source(lib_path)?.path;
         // SAFETY: Loading a dynamic library can execute platform loader hooks.
         // Callers opt into this by selecting the GemStone GCI library path.
         unsafe { Self::load_path(path) }
@@ -723,18 +729,33 @@ pub fn char_to_oop(value: char) -> RawOop {
 }
 
 pub fn resolve_library_path(lib_path: Option<PathBuf>) -> Result<PathBuf> {
+    Ok(resolve_library_path_with_source(lib_path)?.path)
+}
+
+pub fn resolve_library_path_with_source(
+    lib_path: Option<PathBuf>,
+) -> Result<GciLibraryPathResolution> {
     if let Some(path) = lib_path {
-        return Ok(path);
+        return Ok(GciLibraryPathResolution {
+            source: "explicit",
+            path,
+        });
     }
     if let Ok(path) = env::var("GS_LIB_PATH") {
         if !path.is_empty() {
-            return Ok(PathBuf::from(path));
+            return Ok(GciLibraryPathResolution {
+                source: "GS_LIB_PATH",
+                path: PathBuf::from(path),
+            });
         }
     }
     if let Ok(dir) = env::var("GS_LIB") {
         if !dir.is_empty() {
             if let Some(path) = find_gcirpc_in_dir(Path::new(&dir))? {
-                return Ok(path);
+                return Ok(GciLibraryPathResolution {
+                    source: "GS_LIB",
+                    path,
+                });
             }
         }
     }
@@ -742,7 +763,10 @@ pub fn resolve_library_path(lib_path: Option<PathBuf>) -> Result<PathBuf> {
         if !gemstone.is_empty() {
             let lib_dir = Path::new(&gemstone).join("lib");
             if let Some(path) = find_gcirpc_in_dir(&lib_dir)? {
-                return Ok(path);
+                return Ok(GciLibraryPathResolution {
+                    source: "GEMSTONE/lib",
+                    path,
+                });
             }
         }
     }
@@ -815,5 +839,30 @@ mod tests {
             assert_eq!(oop.as_char().unwrap(), Some(value));
             assert_eq!(char_from_oop(char_to_oop(value)).unwrap(), value);
         }
+    }
+
+    #[test]
+    fn library_resolution_reports_explicit_source() {
+        let path = PathBuf::from("/tmp/libgcirpc-test.dylib");
+        let resolution = resolve_library_path_with_source(Some(path.clone())).unwrap();
+
+        assert_eq!(resolution.source, "explicit");
+        assert_eq!(resolution.path, path);
+        assert_eq!(resolve_library_path(Some(path.clone())).unwrap(), path);
+    }
+
+    #[test]
+    fn library_resolution_finds_latest_gcirpc_in_directory() {
+        let dir = env::temp_dir().join(format!("gemstone-gci-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("libgcirpc-1.dylib"), "").unwrap();
+        fs::write(dir.join("libgcirpc-2.dylib"), "").unwrap();
+        fs::write(dir.join("not-gcirpc.dylib"), "").unwrap();
+
+        let found = find_gcirpc_in_dir(&dir).unwrap();
+
+        assert_eq!(found, Some(dir.join("libgcirpc-2.dylib")));
+        fs::remove_dir_all(&dir).unwrap();
     }
 }
