@@ -17,6 +17,13 @@ From a checkout:
 cargo run -p gemstone-rs-explorer -- --port 8787
 ```
 
+If you launch the explorer outside the project checkout, point codegen
+discovery and relative config paths at the checkout explicitly:
+
+```bash
+gemstone-rs-explorer --port 8787 --codegen-root /path/to/gemstone-rs
+```
+
 Open:
 
 ```text
@@ -30,6 +37,18 @@ The home page is a small browser UI over the same JSON endpoints. It can:
 - inspect BridgeRoot and list keys
 - run codegen sample/discover/preview/diff/check/generate from an editable
   config path
+- refresh a picker of known `.codegen` files and load one without typing the
+  path by hand
+- set a project codegen root through `--codegen-root`, or override it from the
+  page before refreshing configs
+- reuse recently loaded, saved, previewed, diffed, checked, or generated config
+  paths from local browser storage
+- save named codegen profiles containing config root, config path, mapped Rust
+  type, and GemStone class
+- export and import codegen profiles as versioned JSON for sharing between
+  browsers or teammates
+- load project profile files from the codegen root, and save them back when
+  the explorer runs with `--allow-write`
 - load and save the selected codegen config file; saving is still gated by
   `--allow-write`, accepts a POST body for larger configs, and validates the
   config before writing
@@ -115,8 +134,28 @@ Expected:
 ## Codegen Endpoints
 
 The home page includes a Codegen Workflow panel. Set `Config path`, optionally
-enter a mapped Rust type and GemStone class, then use:
+set `Config root`, or start the server with `--codegen-root`. `Refresh Configs`
+and the `Known configs` picker choose an existing `.codegen` file relative to
+that root. The `Recent configs` picker remembers paths used by Load, Save,
+Preview, Diff, Check, and Generate in local browser storage. `Saved profiles`
+store the root, config path, mapped Rust type, and GemStone class as a named
+local browser profile. `Export Profile` writes a versioned JSON payload to
+`Profile JSON`; paste that JSON into another explorer and use `Import Profile`
+to merge it into saved profiles. `Load Project Profiles` reads
+`gemstone-rs.codegen-profiles.json` from the codegen root by default, while
+`Save Project Profiles` writes the current saved profiles back to that file
+when the explorer runs with `--allow-write`. Optionally enter a mapped Rust
+type and GemStone class, then use:
 
+- `Config root` to override the server default for config discovery and
+  relative config paths
+- `Refresh Configs` to scan the project root for known `.codegen` files
+- `Recent configs` to return to the last few config paths used in this browser
+- `Save Profile` and `Saved profiles` to switch between named codegen workflows
+- `Export Profile` and `Import Profile` to share a codegen workflow as JSON
+- `Load Project Profiles` and `Save Project Profiles` to use a committed
+  project-level profile file; the server rejects invalid profile schemas and
+  the browser reports which profiles are new, replaced, or unchanged
 - `Load Config` to read the selected config file into the editor
 - `Save Config` to POST the editor contents, validate them, and write the file
   when the explorer was started with `--allow-write`
@@ -133,6 +172,8 @@ Read-only endpoints:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/codegen/sample
+curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
+curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
@@ -140,9 +181,17 @@ curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemston
 curl -s 'http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object'
 ```
 
-Expected check result when generated output is current:
+The repository includes a sample project profile file:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+Expected read-only results include the config list and a current generated
+output check:
 
 ```json
+{"success":true,"root":".","configs":["examples/codegen/gemstone-rs.codegen"]}
 {"success":true,"exists":true,"upToDate":true}
 ```
 
@@ -155,6 +204,9 @@ gemstone-rs-explorer --allow-write
 ```bash
 curl -s 'http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen'
 curl -s -X POST \
+  --data-binary @gemstone-rs.codegen-profiles.json \
+  'http://127.0.0.1:8787/api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json'
+curl -s -X POST \
   --data-binary @examples/codegen/gemstone-rs.codegen \
   'http://127.0.0.1:8787/api/codegen/config/save?config=examples/codegen/draft.codegen'
 ```
@@ -165,6 +217,30 @@ Expected:
 {"success":true,"output":"examples/codegen/generated/gemstone_wrappers.rs","bytes":1234}
 {"success":true,"config":"examples/codegen/draft.codegen","bytes":512}
 ```
+
+Project profile files use this shape:
+
+```json
+{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{"name":"default","config":"examples/codegen/gemstone-rs.codegen","root":"","mapped":"BookingDraft","className":"Object"}]}
+```
+
+Validate the file before sharing or saving it from CI:
+
+```bash
+gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+```
+
+The schema reference is [Codegen Profile Schema](profile-schema.md).
+
+For write endpoints, relative `config=` and `profile_file=` paths are resolved
+inside the codegen root. Paths containing `..` are rejected after URL decoding,
+`root=...` traversal is rejected as well, and absolute write paths require
+starting the explorer with `--allow-absolute-write-paths`.
+
+Project profile saves validate the JSON before writing. The top-level object
+must contain only `kind`, `version`, and `profiles`; profile names are required
+and unique; and each profile may contain only string-valued `name`, `config`,
+`root`, `mapped`, and `className` fields.
 
 ## BridgeRoot Endpoints
 
@@ -214,5 +290,5 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- file-picker style config selection
+- short GIFs showing profile import, codegen preview, and BridgeRoot checks
 - deeper VS Code webview integration

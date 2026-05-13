@@ -237,6 +237,7 @@ The explorer is intentionally local-only and read-only by default:
 
 ```bash
 cargo run -p gemstone-rs-explorer -- --port 8787
+cargo run -p gemstone-rs-explorer -- --port 8787 --codegen-root /path/to/gemstone-rs
 ```
 
 Open:
@@ -250,6 +251,8 @@ http://127.0.0.1:8787/api/browse/protocols?class=Object
 http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/codegen/sample
+http://127.0.0.1:8787/api/codegen/configs?root=.
+http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
@@ -268,10 +271,13 @@ cargo run -p gemstone-rs-explorer -- --allow-eval
 
 The explorer uses standard-library HTTP only. The home page exposes the main
 browse, BridgeRoot, and codegen workflows directly, can load/save the selected
-codegen config file through a POST body when write mode is enabled, renders
-generated source/config/unified-diff/side-by-side-diff output in a dedicated
-detail pane, remembers the current fields locally, and keeps the JSON endpoints
-stable for curl, VS Code, and automation.
+codegen config file through a POST body when write mode is enabled, lists known
+`.codegen` files through a project-aware picker, keeps a local recent-config
+history, saves named local codegen profiles, exports/imports profile JSON,
+loads/saves project profile files with schema validation, renders
+generated source, generated config, unified diff, and side-by-side diff output
+in a dedicated detail pane, remembers the current fields locally, and keeps the
+JSON endpoints stable for curl, VS Code, and automation.
 
 Generate endpoints are write-gated:
 
@@ -281,7 +287,32 @@ cargo run -p gemstone-rs-explorer -- --allow-write
 
 ```text
 http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json
 ```
+
+Project profile samples live at:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+Validate profile files from the CLI:
+
+```bash
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+The schema and validation guide live at [docs/profile-schema.md](docs/profile-schema.md),
+with the JSON Schema at
+[schemas/gemstone-rs.codegen-profiles.schema.json](schemas/gemstone-rs.codegen-profiles.schema.json).
+
+Write endpoints reject `..` traversal in `config=`, `profile_file=`, and
+`root=` after URL decoding, keep relative writes under the configured codegen
+root, and require
+`--allow-absolute-write-paths` before absolute write targets are accepted.
+Project profile saves also validate the schema before writing: only `kind`,
+`version`, and `profiles` are allowed at the top level, profile names must be
+present and unique, and profile fields must be string-valued.
 
 For config saves, send the config as the request body:
 
@@ -393,7 +424,8 @@ process.
 
 ## Explorer Roadmap
 
-The first browse, BridgeRoot, codegen, config load/save, diff detail, local
-field persistence, and webview paths are now wired. Next explorer work should
-add file-picker style config selection, short GIFs, and deeper saved selection
-workflows over the stable local API.
+The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
+recent config history, named local profiles, diff detail, local field
+persistence, project profile file load/save, and webview paths are now wired.
+Next explorer work should add short GIFs, deeper saved selection workflows, and
+more BridgeRoot inspection actions over the stable local API.

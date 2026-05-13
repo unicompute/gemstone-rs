@@ -144,6 +144,24 @@ cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.co
 cargo run -p gemstone-rs-cli -- codegen discover-mapping examples/codegen/mapping.codegen BookingDraft Object
 ```
 
+Use the checked-in explorer profile sample when you want a repeatable browser
+workflow for codegen:
+
+```bash
+cat examples/codegen/gemstone-rs.codegen-profiles.json
+gemstone-rs-explorer --port 8787 --codegen-root .
+```
+
+In the explorer, click `Load Project Profiles` with
+`examples/codegen/gemstone-rs.codegen-profiles.json` as the project profile
+file, then select `default`, `object-wrapper`, or `bridge-mapping`.
+
+Validate profile files before committing them:
+
+```bash
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
 Generate a starter config from a live stone:
 
 ```bash
@@ -169,7 +187,8 @@ Use the GemStone RS sidebar to browse dictionaries, classes, protocols, and
 methods. The same sidebar exposes Codegen Discover, Preview, Diff, Check,
 Generate, Generate Mapping Config, Preview BridgeRoot, List BridgeRoot Keys,
 Put BridgeRoot String, Remove BridgeRoot Key, Run Generated Mapping Example,
-and Open Docs actions.
+Load Project Profiles, Save Project Profiles, Export Codegen Profile, Validate
+Project Profiles, and Open Docs actions.
 
 ## Later Examples
 

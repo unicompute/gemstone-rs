@@ -229,6 +229,7 @@ extern crate self as gemstone_rs;
 pub mod bridge;
 pub mod browser;
 pub mod codegen;
+pub mod profiles;
 
 pub use bridge::{
     BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,

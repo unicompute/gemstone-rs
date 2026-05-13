@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.codegen-profiles.schema.json",
+  "title": "gemstone-rs Explorer Codegen Profiles",
+  "description": "Project-level profile file for repeatable gemstone-rs explorer and VS Code codegen workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "version", "profiles"],
+  "properties": {
+    "kind": {
+      "const": "gemstone-rs-explorer-codegen-profiles"
+    },
+    "version": {
+      "const": 1
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "config": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          },
+          "mapped": {
+            "type": "string"
+          },
+          "className": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}

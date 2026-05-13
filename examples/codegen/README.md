@@ -95,3 +95,29 @@ Run the generated mapping example:
 ```bash
 cargo run -p gemstone-rs --example generated_mapping_app
 ```
+
+Project profile sample:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+Schema and docs:
+
+```text
+schemas/gemstone-rs.codegen-profiles.schema.json
+docs/profile-schema.md
+```
+
+Open it from the explorer Codegen Workflow panel with `Load Project Profiles`.
+It includes `default`, `object-wrapper`, and `bridge-mapping` profiles for
+repeatable wrapper and BridgeRoot mapping demos. `Save Project Profiles`
+requires `gemstone-rs-explorer --allow-write`; server-side validation rejects
+unknown fields, missing or duplicate names, invalid versions, non-string
+profile fields, and `..` path traversal before writing.
+
+Validate before committing:
+
+```bash
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+```

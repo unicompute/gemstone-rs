@@ -42,6 +42,10 @@
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
     "onCommand:gemstoneRs.codegenGenerate",
+    "onCommand:gemstoneRs.loadProjectProfiles",
+    "onCommand:gemstoneRs.saveProjectProfiles",
+    "onCommand:gemstoneRs.exportCodegenProfile",
+    "onCommand:gemstoneRs.validateProjectProfiles",
     "onCommand:gemstoneRs.launchExplorer",
     "onCommand:gemstoneRs.openExplorerWebview",
     "onCommand:gemstoneRs.openMethodSource",
@@ -139,6 +143,22 @@
         "title": "GemStone RS: Codegen Generate"
       },
       {
+        "command": "gemstoneRs.loadProjectProfiles",
+        "title": "GemStone RS: Load Project Profiles"
+      },
+      {
+        "command": "gemstoneRs.saveProjectProfiles",
+        "title": "GemStone RS: Save Project Profiles"
+      },
+      {
+        "command": "gemstoneRs.exportCodegenProfile",
+        "title": "GemStone RS: Export Codegen Profile"
+      },
+      {
+        "command": "gemstoneRs.validateProjectProfiles",
+        "title": "GemStone RS: Validate Project Profiles"
+      },
+      {
         "command": "gemstoneRs.launchExplorer",
         "title": "GemStone RS: Launch Explorer"
       },
@@ -179,6 +199,14 @@
         }
       ]
     },
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "gemstone-rs.codegen-profiles.json"
+        ],
+        "url": "./schemas/gemstone-rs.codegen-profiles.schema.json"
+      }
+    ],
     "configuration": {
       "title": "gemstone-rs Workbench",
       "properties": {
@@ -206,6 +234,11 @@
           "type": "string",
           "default": "gemstone-rs.codegen",
           "description": "Default gemstone-rs codegen config path."
+        },
+        "gemstoneRs.codegenProfiles": {
+          "type": "string",
+          "default": "gemstone-rs.codegen-profiles.json",
+          "description": "Default gemstone-rs project profile JSON path."
         },
         "gemstoneRs.explorerHost": {
           "type": "string",

@@ -6,7 +6,7 @@ Marketplace text, and articles can point at stable image paths.
 ## Explorer Screenshot
 
 `docs/assets/explorer-home.png` is captured from the local explorer at a
-1440x1000 viewport.
+1440x1500 viewport.
 
 Install Playwright once:
 
@@ -14,6 +14,9 @@ Install Playwright once:
 python3 -m pip install playwright
 python3 -m playwright install chromium
 ```
+
+If Playwright is not installed, the capture script falls back to a local
+Chrome, Chromium, or Microsoft Edge executable when one is available.
 
 Then refresh the screenshot:
 

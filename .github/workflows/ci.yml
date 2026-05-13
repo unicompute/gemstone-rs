@@ -22,6 +22,7 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
       - run: cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+      - run: cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo package -p gemstone-gci --no-verify
 
   vscode:
@@ -38,6 +39,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run test:smoke
+      - run: node ../scripts/profile_import_summary_test.js
       - run: npm run package
 
   release-smoke:

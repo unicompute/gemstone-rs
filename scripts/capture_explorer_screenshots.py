@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -22,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--width", type=int, default=1440)
-    parser.add_argument("--height", type=int, default=1000)
+    parser.add_argument("--height", type=int, default=1500)
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument(
         "--no-server",
@@ -124,16 +125,76 @@ def capture_with_playwright_cli(url: str, output: Path, width: int, height: int)
     return True
 
 
+def local_chrome_cli() -> list[str] | None:
+    candidates = [
+        Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+        Path("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+        Path("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return [str(candidate)]
+    for command in ("google-chrome", "chromium", "chromium-browser", "microsoft-edge"):
+        resolved = shutil.which(command)
+        if resolved:
+            return [resolved]
+    return None
+
+
+def capture_with_chrome(url: str, output: Path, width: int, height: int) -> bool:
+    command = local_chrome_cli()
+    if command is None:
+        return False
+    with tempfile.TemporaryDirectory(prefix="gemstone-rs-screenshot-") as user_data_dir:
+        process = subprocess.Popen(
+            [
+                *command,
+                "--headless=new",
+                "--disable-background-networking",
+                "--disable-component-update",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                "--no-first-run",
+                f"--user-data-dir={user_data_dir}",
+                f"--window-size={width},{height}",
+                f"--screenshot={output}",
+                url,
+            ],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            process.communicate(timeout=20)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            try:
+                process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate(timeout=5)
+            if output.exists() and output.stat().st_size > 0:
+                return True
+            return False
+        if process.returncode != 0:
+            return output.exists() and output.stat().st_size > 0
+    return True
+
+
 def capture(url: str, output: Path, width: int, height: int) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     if capture_with_python_playwright(url, output, width, height):
         return
     if capture_with_playwright_cli(url, output, width, height):
         return
+    if capture_with_chrome(url, output, width, height):
+        return
     raise RuntimeError(
         "Playwright is required for screenshot capture. Install either "
         "'python3 -m pip install playwright && python3 -m playwright install chromium' "
-        "or a local Playwright CLI."
+        "or a local Playwright CLI. A local Chrome/Chromium executable can also "
+        "be used as a dependency-free fallback."
     )
 
 

@@ -138,6 +138,53 @@ Write generated wrappers:
 gemstone-rs codegen generate gemstone-rs.codegen
 ```
 
+## Explorer Profiles
+
+The local explorer can save repeatable codegen workflows as profiles. A profile
+captures:
+
+- codegen root
+- config path
+- mapped Rust type
+- GemStone class
+
+Use the browser UI to save a local profile, export a single profile as JSON, or
+load a project-level profile file. The repository includes a sample:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+Validate it from CI or a terminal:
+
+```bash
+gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+```
+
+See [Codegen Profile Schema](profile-schema.md) and
+[`schemas/gemstone-rs.codegen-profiles.schema.json`](../schemas/gemstone-rs.codegen-profiles.schema.json)
+for editor validation.
+
+The project profile file uses this shape:
+
+```json
+{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{"name":"default","config":"examples/codegen/gemstone-rs.codegen","root":"","mapped":"BookingDraft","className":"Object"}]}
+```
+
+Start the explorer with a project root:
+
+```bash
+gemstone-rs-explorer --port 8787 --codegen-root /path/to/gemstone-rs
+```
+
+Profile writes are disabled unless the explorer was started with
+`--allow-write`. The server rejects path traversal in `config=` and
+`profile_file=` after URL decoding, rejects traversal in `root=`, keeps writes
+under the configured codegen root by default, and requires
+`--allow-absolute-write-paths` before absolute write targets are accepted.
+Project profile saves reject unsupported top-level fields, unsupported profile
+fields, missing or duplicate profile names, and non-string profile values.
+
 ## Generated Shape
 
 For:
@@ -244,6 +291,10 @@ sidebar:
 - Diff Generated Output
 - Check Freshness
 - Generate Wrappers
+- Load Project Profiles
+- Save Project Profiles
+- Export Codegen Profile
+- Validate Project Profiles
 - Open Codegen Docs
 
 `Generate Wrappers` shows the diff first and asks before writing when output

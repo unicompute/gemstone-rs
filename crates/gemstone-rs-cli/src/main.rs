@@ -1,8 +1,8 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, BridgeKeyType, BridgeValue, Config, Error as GemStoneError, Oop, Session,
-    Value, DEFAULT_BRIDGE_ROOT,
+    gci_library_path, profiles, BridgeKeyType, BridgeValue, Config, Error as GemStoneError, Oop,
+    Session, Value, DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -186,6 +186,20 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         }
         Command::BridgeSampleConfig { mapped_name } => {
             print!("{}", codegen::sample_mapping_config(&mapped_name));
+            Ok(())
+        }
+        Command::ProfileValidate { path } => {
+            let report = profiles::validate_file(&path)?;
+            println!(
+                "profile ok: {} ({} profiles: {})",
+                path.display(),
+                report.profile_count,
+                if report.profile_names.is_empty() {
+                    "-".to_string()
+                } else {
+                    report.profile_names.join(", ")
+                }
+            );
             Ok(())
         }
         Command::CodegenInit { config } => {
@@ -608,6 +622,9 @@ enum Command {
     BridgeSampleConfig {
         mapped_name: String,
     },
+    ProfileValidate {
+        path: PathBuf,
+    },
     CodegenInit {
         config: PathBuf,
     },
@@ -658,6 +675,15 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
         }
         "browse" => parse_browse_command(&args[1..]),
         "bridge" => parse_bridge_command(&args[1..]),
+        "profile" => match args.get(1).map(String::as_str) {
+            Some("validate") => Ok(Command::ProfileValidate {
+                path: args
+                    .get(2)
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
+            }),
+            _ => Err(CliError::usage("expected: profile validate [path]")),
+        },
         "inspect" => match (args.get(1).map(String::as_str), args.get(2)) {
             (Some("oop"), Some(raw)) => Ok(Command::InspectOop {
                 oop: Oop(parse_u64(raw)?),
@@ -1019,6 +1045,7 @@ fn usage() -> &'static str {
   gemstone-rs bridge put <key> <value> [--type String|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge remove <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge sample-config [mapped-name]
+  gemstone-rs profile validate [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
   gemstone-rs codegen diff [config]
@@ -1033,6 +1060,7 @@ enum CliError {
     Usage(String),
     GemStone(GemStoneError),
     Codegen(codegen::Error),
+    Profiles(profiles::Error),
     CodegenCheck(String),
     Doctor(String),
     Io(std::io::Error),
@@ -1050,6 +1078,7 @@ impl fmt::Display for CliError {
             Self::Usage(message) => write!(f, "{message}"),
             Self::GemStone(err) => write!(f, "{err}"),
             Self::Codegen(err) => write!(f, "{err}"),
+            Self::Profiles(err) => write!(f, "{err}"),
             Self::CodegenCheck(message) => write!(f, "{message}"),
             Self::Doctor(message) => write!(f, "{message}"),
             Self::Io(err) => write!(f, "{err}"),
@@ -1063,6 +1092,7 @@ impl StdError for CliError {
             Self::Usage(_) => None,
             Self::GemStone(err) => Some(err),
             Self::Codegen(err) => Some(err),
+            Self::Profiles(err) => Some(err),
             Self::CodegenCheck(_) | Self::Doctor(_) => None,
             Self::Io(err) => Some(err),
         }
@@ -1078,6 +1108,12 @@ impl From<GemStoneError> for CliError {
 impl From<codegen::Error> for CliError {
     fn from(value: codegen::Error) -> Self {
         Self::Codegen(value)
+    }
+}
+
+impl From<profiles::Error> for CliError {
+    fn from(value: profiles::Error) -> Self {
+        Self::Profiles(value)
     }
 }
 
@@ -1322,6 +1358,27 @@ mod tests {
                 config: PathBuf::from("mapping.codegen"),
                 mapped_name: "BookingDraft".to_string(),
                 class_name: "UserGlobals:Booking".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn parses_profile_commands() {
+        assert_eq!(
+            parse_command(&args(&["profile", "validate"])).unwrap(),
+            Command::ProfileValidate {
+                path: PathBuf::from(profiles::DEFAULT_PROFILE_PATH)
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "profile",
+                "validate",
+                "examples/codegen/gemstone-rs.codegen-profiles.json"
+            ]))
+            .unwrap(),
+            Command::ProfileValidate {
+                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json")
             }
         );
     }

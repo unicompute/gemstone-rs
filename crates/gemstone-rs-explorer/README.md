@@ -23,6 +23,8 @@ http://127.0.0.1:8787/api/browse/protocols?class=Object
 http://127.0.0.1:8787/api/browse/methods?class=Object&protocol=--%20all%20--
 http://127.0.0.1:8787/api/browse/source?class=Object
 http://127.0.0.1:8787/api/codegen/sample
+http://127.0.0.1:8787/api/codegen/configs?root=.
+http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
@@ -43,8 +45,8 @@ http://127.0.0.1:8787/api/eval?source=3%20%2B%204
 
 Planned next steps:
 
-- compare generated output against files
 - add a richer frontend once the API endpoints are stable
+- keep VS Code webview and CLI workflows aligned with the explorer API
 
 Browse endpoints are read-only. They use the active user's symbol list and the
 same dictionary/class lookup convention as the Python GemStone database
@@ -57,6 +59,8 @@ GET /api/browse/protocols?class=Object&meta=0
 GET /api/browse/methods?class=Object&protocol=--%20all%20--&meta=0
 GET /api/browse/source?class=Object&selector=printString&meta=0
 GET /api/codegen/sample
+GET /api/codegen/configs?root=.
+GET /api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
 GET /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 GET /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 GET /api/codegen/check?config=examples/codegen/gemstone-rs.codegen
@@ -66,7 +70,14 @@ Codegen generation is write-gated. Start with `--allow-write` before using:
 
 ```text
 GET /api/codegen/generate?config=examples/codegen/gemstone-rs.codegen
+POST /api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json
 GET /api/bridge/put?key=ExplorerDraft&value=hello
 GET /api/bridge/put?key=ExplorerCount&value=7&value_type=SmallInt
 GET /api/bridge/remove?key=ExplorerDraft
 ```
+
+Project profile saves are schema-validated through the shared
+`gemstone-rs profile validate` rules. Relative `config=` and `profile_file=`
+write targets stay under the configured codegen root, `..` traversal is
+rejected after URL decoding, and absolute write targets require
+`--allow-absolute-write-paths`.

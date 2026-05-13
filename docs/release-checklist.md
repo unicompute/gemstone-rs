@@ -10,6 +10,7 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
 
 ```bash
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 - Refresh screenshots when the explorer or workbench UI changed:
@@ -37,6 +38,21 @@ files. The release workflow rebuilds and attaches fresh PDFs for the target
 runner because WeasyPrint output can differ byte-for-byte across platforms.
 The VSIX filename uses `vscode-gemstone-rs-workbench/package.json`; the crate
 release tag still uses the workflow `version` input.
+
+## Commit Review Pass
+
+Before publishing, make a deliberate release commit review pass:
+
+```bash
+git status --short
+git diff --stat
+make verify
+```
+
+Confirm the release commit includes any regenerated PDFs, refreshed screenshots,
+profile schema changes, sample profile updates, and VSIX docs. Keep publishing
+for a separate step unless the release workflow is intentionally being run from
+that commit.
 
 ## Publish
 

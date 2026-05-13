@@ -83,13 +83,21 @@ From the `Explorer` tree:
 the loopback URL. `Open Explorer Webview` embeds the running local explorer in a
 VS Code editor tab.
 
-Inside the embedded explorer, use the `Codegen Workflow` panel to change the
-config path, load and save the selected config file, preview wrappers, view
-diffs, run freshness checks, and discover a BridgeRoot mapping config from a
-live class. Use the BridgeRoot key/value type selectors to test string keys,
-symbol keys, strings, small integers, and bools before saving those choices in
-codegen config. The detail pane shows generated source, generated mapping
-config, unified diff output, or side-by-side diff output, and the page
-remembers the current fields locally across reloads. Config saves use a POST
-body, so the editor can handle realistic config files instead of being limited
-by URL length.
+Inside the embedded explorer, use the `Codegen Workflow` panel to refresh the
+known `.codegen` file picker, set `Config root` when the explorer started
+outside the checkout, reuse a recent config path, load and save the selected
+config file, preview wrappers, view diffs, run freshness checks, and discover a
+BridgeRoot mapping config from a live class. Save a named profile when you want
+to switch between root/config/mapping/class combinations, and export the
+profile JSON when you want to share that setup with another browser or
+teammate. When a profile belongs in the project, use `Load Project Profiles`
+and `Save Project Profiles` with `gemstone-rs.codegen-profiles.json`, then use
+`Export Codegen Profile` for a single shareable profile. Use `Validate Project
+Profiles` to run the CLI schema check from VS Code. Imports summarize new,
+replaced, and unchanged profiles. Use the
+BridgeRoot key/value type selectors to test string keys, symbol keys, strings,
+small integers, and bools before saving those choices in codegen config. The
+detail pane shows generated source, generated mapping config, unified diff
+output, or side-by-side diff output, and the page remembers the current fields
+locally across reloads. Config saves use a POST body, so the editor can handle
+realistic config files instead of being limited by URL length.

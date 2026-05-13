@@ -9,6 +9,7 @@ From a source checkout:
 
 ```bash
 cargo run -p gemstone-rs-explorer -- --port 8787
+cargo run -p gemstone-rs-explorer -- --port 8787 --codegen-root /path/to/gemstone-rs
 ```
 
 From installed tools:
@@ -59,6 +60,8 @@ Expected response shapes:
 
 ```bash
 curl -s http://127.0.0.1:8787/api/codegen/sample
+curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
+curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'
@@ -67,7 +70,27 @@ curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemston
 Expected check result when generated output is current:
 
 ```json
+{"success":true,"root":".","configs":["examples/codegen/gemstone-rs.codegen"]}
 {"success":true,"exists":true,"upToDate":true}
+```
+
+In the browser UI, use `Profile name` and `Save Profile` to save the current
+config root, config path, mapped Rust type, and GemStone class as a local
+profile. `Saved profiles` lets you switch back to that setup later without
+retyping paths. Use `Export Profile` to copy a versioned JSON payload from
+`Profile JSON`; paste that JSON into another explorer and use `Import Profile`
+to merge it into that browser's saved profiles. Use `Load Project Profiles` to
+read `gemstone-rs.codegen-profiles.json` from the codegen root, and `Save
+Project Profiles` under `--allow-write` to commit the browser's saved profiles
+back to that file. The server rejects invalid project profile schemas before
+writing, including unsupported fields, duplicate names, non-string profile
+fields, and traversal attempts in write paths. The browser reports which
+imported profiles are new, replaced, or unchanged.
+
+Validate the committed sample profile file without starting the explorer:
+
+```bash
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generation is disabled until you opt in:

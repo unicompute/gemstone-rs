@@ -1,0 +1,27 @@
+{
+  "kind": "gemstone-rs-explorer-codegen-profiles",
+  "version": 1,
+  "profiles": [
+    {
+      "name": "default",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "BookingDraft",
+      "className": "Object"
+    },
+    {
+      "name": "object-wrapper",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "ObjectWrapper",
+      "className": "Object"
+    },
+    {
+      "name": "bridge-mapping",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "BookingDraft",
+      "className": "Object"
+    }
+  ]
+}

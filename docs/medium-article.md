@@ -416,12 +416,41 @@ Useful endpoints:
 /api/browse/source?class=Object&selector=printString
 /api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 /api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
+/api/codegen/profiles?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 The explorer home page is now a usable UI rather than just a list of links. It
 lets you browse dictionaries/classes/protocols/methods/source, inspect
 BridgeRoot, list keys, run codegen checks, and exercise write-gated
 BridgeRoot edits from a browser.
+
+The codegen workflow now has project profiles. A profile captures the codegen
+root, config path, mapped Rust type, and GemStone class. Local profiles stay in
+browser storage, while project profiles can live in a checked-in file such as:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+That means a team can keep named workflows like `default`, `object-wrapper`,
+and `bridge-mapping` beside the codegen config. The explorer can import/export
+profile JSON, show which imported profiles are new, replaced, or unchanged, and
+save project profile files only when started with `--allow-write`.
+
+The same schema is available from the CLI, so profile files can be checked in
+CI:
+
+```bash
+gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+```
+
+Write endpoints are deliberately constrained. Relative `config=` and
+`profile_file=` writes stay under the configured codegen root, `..` traversal
+in `config=`, `profile_file=`, or `root=` is rejected after URL decoding, and
+absolute write paths require an explicit `--allow-absolute-write-paths` opt-in.
+Project profile files are schema-validated before writing, including required
+unique names and string-valued `config`, `root`, `mapped`, and `className`
+fields.
 
 The explorer binds to loopback by default, starts read-only, and requires
 explicit flags for eval and write operations.

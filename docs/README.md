@@ -13,6 +13,7 @@ This directory contains the human-facing guides for `gemstone-rs`.
 | [gemstone-py vs gemstone-rs](gemstone-py-vs-gemstone-rs.md) | You want install paths, use cases, maturity, and feature differences between the Python and Rust projects. |
 | [BridgeRoot and Object Mapping](object-mapping.md) | You want MagLev-style bridge-root storage and explicit Rust-to-GemStone value mapping. |
 | [Codegen Guide](codegen.md) | You want generated Rust wrappers for GemStone classes and methods. |
+| [Codegen Profile Schema](profile-schema.md) | You want project profile JSON validation for explorer and VS Code workflows. |
 | [Explorer Guide](explorer.md) | You want the local HTTP explorer API and safety defaults. |
 | [VS Code Workbench](vscode-workbench.md) | You want sidebar browsing, codegen preview/diff/generate, and explorer launch commands. |
 | [Screenshot Workflow](screenshots.md) | You want to refresh Explorer and Workbench images before docs or Marketplace releases. |

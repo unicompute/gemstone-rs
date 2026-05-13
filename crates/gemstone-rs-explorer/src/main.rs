@@ -1,8 +1,8 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, BridgeKeySummary, BridgeKeyType, BridgeValue, Config, Oop, Session, Value,
-    DEFAULT_BRIDGE_ROOT,
+    gci_library_path, profiles, BridgeKeySummary, BridgeKeyType, BridgeValue, Config, Oop, Session,
+    Value, DEFAULT_BRIDGE_ROOT,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -10,7 +10,7 @@ use std::fmt;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -142,6 +142,7 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
     let route = Route::parse(&request.target);
     if request.method != "GET"
         && !(request.method == "POST" && route.path == "/api/codegen/config/save")
+        && !(request.method == "POST" && route.path == "/api/codegen/profiles/save")
     {
         return Response::json(405, r#"{"error":"method not allowed"}"#.to_string());
     }
@@ -273,7 +274,19 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 escape_json(codegen::sample_config())
             ),
         ),
-        "/api/codegen/config" => codegen_config_response(&route),
+        "/api/codegen/config" => codegen_config_response(&route, config),
+        "/api/codegen/configs" => codegen_configs_response(&route, config),
+        "/api/codegen/profiles" => codegen_profiles_response(&route, config),
+        "/api/codegen/profiles/save" => {
+            if config.read_only {
+                return Response::json(
+                    403,
+                    r#"{"error":"codegen profile save disabled; restart with --allow-write"}"#
+                        .to_string(),
+                );
+            }
+            codegen_profiles_save_response(&route, config, &request.body)
+        }
         "/api/codegen/config/save" => {
             if config.read_only {
                 return Response::json(
@@ -282,12 +295,12 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                         .to_string(),
                 );
             }
-            codegen_config_save_response(&route, &request.body)
+            codegen_config_save_response(&route, config, &request.body)
         }
-        "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route),
-        "/api/codegen/preview" => codegen_preview_response(&route),
-        "/api/codegen/diff" => codegen_diff_response(&route),
-        "/api/codegen/check" => codegen_check_response(&route),
+        "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route, config),
+        "/api/codegen/preview" => codegen_preview_response(&route, config),
+        "/api/codegen/diff" => codegen_diff_response(&route, config),
+        "/api/codegen/check" => codegen_check_response(&route, config),
         "/api/codegen/generate" => {
             if config.read_only {
                 return Response::json(
@@ -296,7 +309,7 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                         .to_string(),
                 );
             }
-            codegen_generate_response(&route)
+            codegen_generate_response(&route, config)
         }
         "/api/bridge/root" => live_json(|session| {
             let root_name = route
@@ -621,15 +634,97 @@ fn bool_query(value: Option<&str>) -> bool {
     )
 }
 
-fn codegen_config_path(route: &Route) -> PathBuf {
+fn codegen_root_path(route: &Route, config: &ExplorerConfig) -> PathBuf {
     route
-        .non_empty_query("config")
+        .non_empty_query("root")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH))
+        .unwrap_or_else(|| config.codegen_root.clone())
 }
 
-fn codegen_config_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_config_path(route: &Route, config: &ExplorerConfig) -> PathBuf {
+    let path = route
+        .non_empty_query("config")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH));
+    if path.is_absolute() {
+        path
+    } else {
+        codegen_root_path(route, config).join(path)
+    }
+}
+
+fn codegen_profile_path(route: &Route, config: &ExplorerConfig) -> PathBuf {
+    let path = route
+        .non_empty_query("profile_file")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH));
+    if path.is_absolute() {
+        path
+    } else {
+        codegen_root_path(route, config).join(path)
+    }
+}
+
+fn codegen_write_path(
+    route: &Route,
+    config: &ExplorerConfig,
+    query_name: &str,
+    default_path: &str,
+) -> Result<PathBuf, String> {
+    let path = route
+        .non_empty_query(query_name)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(default_path));
+    validate_write_component(&path, query_name, config.allow_absolute_write_paths)?;
+    if path.is_absolute() {
+        return Ok(path);
+    }
+
+    let root = if let Some(root) = route.non_empty_query("root").map(PathBuf::from) {
+        validate_write_component(&root, "root", config.allow_absolute_write_paths)?;
+        if root.is_absolute() {
+            root
+        } else {
+            config.codegen_root.join(root)
+        }
+    } else {
+        validate_no_parent_component(&config.codegen_root, "codegen_root")?;
+        config.codegen_root.clone()
+    };
+    Ok(root.join(path))
+}
+
+fn validate_write_component(path: &Path, field: &str, allow_absolute: bool) -> Result<(), String> {
+    if path.is_absolute() && !allow_absolute {
+        return Err(format!(
+            "{field} absolute paths are disabled; restart with --allow-absolute-write-paths"
+        ));
+    }
+    for component in path.components() {
+        match component {
+            Component::ParentDir => {
+                return Err(format!("{field} must not contain '..' path traversal"));
+            }
+            Component::Prefix(_) | Component::RootDir if !allow_absolute => {
+                return Err(format!("{field} absolute paths are disabled"));
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn validate_no_parent_component(path: &Path, field: &str) -> Result<(), String> {
+    for component in path.components() {
+        if matches!(component, Component::ParentDir) {
+            return Err(format!("{field} must not contain '..' path traversal"));
+        }
+    }
+    Ok(())
+}
+
+fn codegen_config_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     match fs::read_to_string(&path) {
         Ok(source) => Response::json(
             200,
@@ -650,8 +745,184 @@ fn codegen_config_response(route: &Route) -> Response {
     }
 }
 
-fn codegen_config_save_response(route: &Route, body: &str) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_profiles_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_profile_path(route, config);
+    match fs::read_to_string(&path) {
+        Ok(source) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profileFile":"{}","source":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&source)
+            ),
+        ),
+        Err(err) => Response::json(
+            404,
+            format!(
+                r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
+fn codegen_profiles_save_response(route: &Route, config: &ExplorerConfig, body: &str) -> Response {
+    let path = match codegen_write_path(
+        route,
+        config,
+        "profile_file",
+        profiles::DEFAULT_PROFILE_PATH,
+    ) {
+        Ok(path) => path,
+        Err(message) => {
+            return Response::json(400, format!(r#"{{"error":"{}"}}"#, escape_json(&message)))
+        }
+    };
+    if body.trim().is_empty() {
+        return Response::json(400, r#"{"error":"missing profile source"}"#.to_string());
+    }
+    if let Err(message) = profiles::validate_source(body) {
+        return Response::json(
+            400,
+            format!(
+                r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&message.to_string())
+            ),
+        );
+    }
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        if let Err(err) = fs::create_dir_all(parent) {
+            return Response::json(
+                500,
+                format!(
+                    r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                    escape_json(&path.display().to_string()),
+                    escape_json(&err.to_string())
+                ),
+            );
+        }
+    }
+    match fs::write(&path, body) {
+        Ok(()) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"profileFile":"{}","bytes":{},"source":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                body.len(),
+                escape_json(body)
+            ),
+        ),
+        Err(err) => Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
+fn codegen_configs_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let root = codegen_root_path(route, config);
+    if !root.is_dir() {
+        return Response::json(
+            400,
+            format!(
+                r#"{{"success":false,"root":"{}","error":"root is not a directory"}}"#,
+                escape_json(&root.display().to_string())
+            ),
+        );
+    }
+
+    let mut paths = Vec::new();
+    if let Err(err) = collect_codegen_configs(&root, 0, &mut paths) {
+        return Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"root":"{}","error":"{}"}}"#,
+                escape_json(&root.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        );
+    }
+
+    paths.sort();
+    paths.truncate(200);
+    let configs = paths
+        .iter()
+        .map(|path| {
+            path.strip_prefix(&root)
+                .unwrap_or(path)
+                .display()
+                .to_string()
+        })
+        .collect::<Vec<_>>();
+    Response::json(
+        200,
+        format!(
+            r#"{{"success":true,"root":"{}","configs":{}}}"#,
+            escape_json(&root.display().to_string()),
+            json_string_array(configs)
+        ),
+    )
+}
+
+fn collect_codegen_configs(
+    root: &Path,
+    depth: usize,
+    paths: &mut Vec<PathBuf>,
+) -> std::io::Result<()> {
+    if depth > 6 || paths.len() >= 200 {
+        return Ok(());
+    }
+    for entry in fs::read_dir(root)? {
+        let entry = entry?;
+        let path = entry.path();
+        let file_type = entry.file_type()?;
+        if file_type.is_dir() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if matches!(
+                name.as_ref(),
+                ".git"
+                    | ".vscode-test"
+                    | "target"
+                    | "node_modules"
+                    | ".pdf-build"
+                    | "pdf"
+                    | "__pycache__"
+            ) {
+                continue;
+            }
+            collect_codegen_configs(&path, depth + 1, paths)?;
+        } else if file_type.is_file()
+            && path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension == "codegen")
+        {
+            paths.push(path);
+        }
+        if paths.len() >= 200 {
+            break;
+        }
+    }
+    Ok(())
+}
+
+fn codegen_config_save_response(route: &Route, config: &ExplorerConfig, body: &str) -> Response {
+    let path = match codegen_write_path(route, config, "config", DEFAULT_CONFIG_PATH) {
+        Ok(path) => path,
+        Err(message) => {
+            return Response::json(400, format!(r#"{{"error":"{}"}}"#, escape_json(&message)))
+        }
+    };
     let Some(source) = route
         .query("source")
         .or_else(|| (!body.is_empty()).then(|| body.to_string()))
@@ -704,8 +975,8 @@ fn codegen_config_save_response(route: &Route, body: &str) -> Response {
     }
 }
 
-fn codegen_preview_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).map(|config| codegen::generate(&config)) {
         Ok(generated) => Response::json(
             200,
@@ -720,8 +991,8 @@ fn codegen_preview_response(route: &Route) -> Response {
     }
 }
 
-fn codegen_check_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_check_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).and_then(|config| codegen::check(&config)) {
         Ok(report) => Response::json(
             200,
@@ -737,8 +1008,8 @@ fn codegen_check_response(route: &Route) -> Response {
     }
 }
 
-fn codegen_diff_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_diff_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).and_then(|config| codegen::diff(&config)) {
         Ok(report) => Response::json(
             200,
@@ -755,8 +1026,8 @@ fn codegen_diff_response(route: &Route) -> Response {
     }
 }
 
-fn codegen_generate_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_generate_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path).and_then(|config| codegen::generate_to_file(&config)) {
         Ok(generated) => Response::json(
             200,
@@ -771,8 +1042,8 @@ fn codegen_generate_response(route: &Route) -> Response {
     }
 }
 
-fn codegen_discover_mapping_response(route: &Route) -> Response {
-    let path = codegen_config_path(route);
+fn codegen_discover_mapping_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
     let mapped_name = route
         .non_empty_query("mapped")
         .unwrap_or_else(|| "BookingDraft".to_string());
@@ -905,6 +1176,8 @@ struct ExplorerConfig {
     port: u16,
     read_only: bool,
     allow_eval: bool,
+    codegen_root: PathBuf,
+    allow_absolute_write_paths: bool,
 }
 
 impl ExplorerConfig {
@@ -931,8 +1204,16 @@ impl ExplorerConfig {
                         .parse()
                         .map_err(|_| ExplorerError::usage(format!("invalid port: {value}")))?;
                 }
+                "--codegen-root" => {
+                    index += 1;
+                    let value = args
+                        .get(index)
+                        .ok_or_else(|| ExplorerError::usage("missing value for --codegen-root"))?;
+                    config.codegen_root = PathBuf::from(value);
+                }
                 "--allow-eval" => config.allow_eval = true,
                 "--allow-write" => config.read_only = false,
+                "--allow-absolute-write-paths" => config.allow_absolute_write_paths = true,
                 other => return Err(ExplorerError::usage(format!("unknown option: {other}"))),
             }
             index += 1;
@@ -957,6 +1238,8 @@ impl Default for ExplorerConfig {
             port: 8787,
             read_only: true,
             allow_eval: false,
+            codegen_root: PathBuf::from("."),
+            allow_absolute_write_paths: false,
         }
     }
 }
@@ -1084,6 +1367,7 @@ button { border: 1px solid #9f1722; background: #9f1722; color: white; border-ra
 button.secondary { background: white; color: #9f1722; }
 input, select, textarea { box-sizing: border-box; width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 7px; margin: 4px 0 8px; }
 textarea { min-height: 150px; font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; resize: vertical; }
+textarea.compact, pre.compact { min-height: 80px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .status { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -1159,12 +1443,24 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 </div>
 <h2>Codegen Workflow</h2>
 <label>Config path<input id="codegenConfig" value="examples/codegen/gemstone-rs.codegen"></label>
+<label>Config root<input id="codegenRoot" placeholder="server default from --codegen-root"></label>
+<label>Known configs<select id="codegenConfigPicker" onchange="pickCodegenConfig()"><option value="">Refresh to list configs</option></select></label>
+<label>Recent configs<select id="codegenRecent" onchange="pickRecentCodegenConfig()"><option value="">No recent configs</option></select></label>
+<div class="row">
+<label>Profile name<input id="profileName" value="default"></label>
+<label>Saved profiles<select id="codegenProfile" onchange="loadCodegenProfile()"><option value="">No saved profiles</option></select></label>
+</div>
+<label>Profile JSON<textarea id="profileJson" class="compact" spellcheck="false">Export a profile here, or paste one to import.</textarea></label>
+<label>Project profile file<input id="profileFile" value="gemstone-rs.codegen-profiles.json"></label>
+<div class="pane-title">Import Summary</div>
+<pre id="importSummary" class="compact">No profile import yet.</pre>
 <label>Config editor<textarea id="configEditor" spellcheck="false">Load a config, sample config, or discovered mapping proposal.</textarea></label>
 <div class="row">
 <label>Mapped Rust type<input id="mappedName" value="BookingDraft"></label>
 <label>GemStone class<input id="mappingClass" value="Object"></label>
 </div>
 <div class="actions">
+<button class="secondary" onclick="loadCodegenConfigs()">Refresh Configs</button>
 <button class="secondary" onclick="loadCodegenConfig()">Load Config</button>
 <button class="secondary" onclick="saveCodegenConfig()">Save Config</button>
 <button class="secondary" onclick="codegenSample()">Sample Config</button>
@@ -1173,6 +1469,12 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="codegenDiff()">Diff</button>
 <button class="secondary" onclick="codegenCheck()">Check</button>
 <button class="secondary" onclick="codegenGenerate()">Generate</button>
+<button class="secondary" onclick="saveCodegenProfile()">Save Profile</button>
+<button class="secondary" onclick="exportCodegenProfile()">Export Profile</button>
+<button class="secondary" onclick="importCodegenProfile()">Import Profile</button>
+<button class="secondary" onclick="loadProjectProfiles()">Load Project Profiles</button>
+<button class="secondary" onclick="saveProjectProfiles()">Save Project Profiles</button>
+<button class="secondary" onclick="deleteCodegenProfile()">Delete Profile</button>
 <button class="secondary" onclick="clearSavedFields()">Clear Saved Fields</button>
 </div>
 <div class="panes">
@@ -1191,9 +1493,17 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 const out = document.getElementById('output');
 const detail = document.getElementById('detail');
 const items = document.getElementById('items');
+const importSummary = document.getElementById('importSummary');
+const recentConfigsKey = 'gemstone-rs-explorer:recentCodegenConfigs';
+const profilesKey = 'gemstone-rs-explorer:codegenProfiles';
 function q(id) { return encodeURIComponent(document.getElementById(id).value); }
 function bridgeQuery() { return 'key=' + q('bridgeKey') + '&key_type=' + q('bridgeKeyType'); }
-function codegenQuery() { return 'config=' + q('codegenConfig'); }
+function codegenRootQuery() {
+  const root = document.getElementById('codegenRoot').value.trim();
+  return root ? '&root=' + encodeURIComponent(root) : '';
+}
+function codegenQuery() { return 'config=' + q('codegenConfig') + codegenRootQuery(); }
+function profileFileQuery() { return 'profile_file=' + q('profileFile') + codegenRootQuery(); }
 async function callApi(path, options = {}) {
   const method = options.method || 'GET';
   out.textContent = method + ' ' + path + '\n';
@@ -1273,7 +1583,7 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 function persistFields() {
-  const ids = ['dictionary', 'className', 'protocol', 'selector', 'bridgeKey', 'bridgeValue', 'bridgeKeyType', 'bridgeValueType', 'codegenConfig', 'configEditor', 'mappedName', 'mappingClass'];
+  const ids = ['dictionary', 'className', 'protocol', 'selector', 'bridgeKey', 'bridgeValue', 'bridgeKeyType', 'bridgeValueType', 'codegenConfig', 'codegenRoot', 'configEditor', 'mappedName', 'mappingClass', 'profileName', 'profileFile'];
   for (const id of ids) {
     const element = document.getElementById(id);
     const key = 'gemstone-rs-explorer:' + id;
@@ -1293,6 +1603,8 @@ function clearSavedFields() {
       if (key.startsWith('gemstone-rs-explorer:')) localStorage.removeItem(key);
     }
   } catch {}
+  loadRecentCodegenConfigs();
+  loadCodegenProfiles();
   detail.textContent = 'Saved explorer fields cleared. Reload to restore defaults.';
 }
 function button(label, onClick) {
@@ -1358,17 +1670,283 @@ function setConfigEditor(source) {
   editor.value = source;
   try { localStorage.setItem('gemstone-rs-explorer:configEditor', source); } catch {}
 }
+function setCodegenConfig(value) {
+  const input = document.getElementById('codegenConfig');
+  input.value = value;
+  try { localStorage.setItem('gemstone-rs-explorer:codegenConfig', value); } catch {}
+  rememberCodegenConfig(value);
+}
+function loadRecentCodegenConfigs() {
+  let configs = [];
+  try {
+    const raw = localStorage.getItem(recentConfigsKey);
+    configs = raw ? JSON.parse(raw) : [];
+  } catch {
+    configs = [];
+  }
+  if (!Array.isArray(configs)) configs = [];
+  renderRecentCodegenConfigs(configs.filter(value => typeof value === 'string' && value.trim()));
+}
+function renderRecentCodegenConfigs(configs) {
+  const picker = document.getElementById('codegenRecent');
+  picker.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = configs.length ? 'Select a recent config' : 'No recent configs';
+  picker.appendChild(empty);
+  for (const config of configs) {
+    const option = document.createElement('option');
+    option.value = config;
+    option.textContent = config;
+    picker.appendChild(option);
+  }
+}
+function rememberCodegenConfig(value) {
+  const config = String(value || document.getElementById('codegenConfig').value || '').trim();
+  if (!config) return;
+  let configs = [];
+  try {
+    const raw = localStorage.getItem(recentConfigsKey);
+    configs = raw ? JSON.parse(raw) : [];
+  } catch {
+    configs = [];
+  }
+  if (!Array.isArray(configs)) configs = [];
+  configs = [config, ...configs.filter(item => item !== config)].slice(0, 8);
+  try { localStorage.setItem(recentConfigsKey, JSON.stringify(configs)); } catch {}
+  renderRecentCodegenConfigs(configs);
+}
+function readCodegenProfiles() {
+  let profiles = [];
+  try {
+    const raw = localStorage.getItem(profilesKey);
+    profiles = raw ? JSON.parse(raw) : [];
+  } catch {
+    profiles = [];
+  }
+  if (!Array.isArray(profiles)) return [];
+  return profiles.map(normalizeCodegenProfile).filter(Boolean);
+}
+function normalizeCodegenProfile(profile) {
+  if (!profile || typeof profile !== 'object') return null;
+  const name = String(profile.name || '').trim();
+  if (!name) return null;
+  return {
+    name,
+    config: String(profile.config || '').trim(),
+    root: String(profile.root || '').trim(),
+    mapped: String(profile.mapped || '').trim(),
+    className: String(profile.className || profile.class || '').trim()
+  };
+}
+function writeCodegenProfiles(profiles) {
+  const clean = profiles.map(normalizeCodegenProfile).filter(Boolean);
+  try { localStorage.setItem(profilesKey, JSON.stringify(clean)); } catch {}
+  renderCodegenProfiles(clean);
+}
+function profileFingerprint(profile) {
+  const clean = normalizeCodegenProfile(profile);
+  return clean ? JSON.stringify(clean) : '';
+}
+function renderImportSummary(summary) {
+  importSummary.textContent = [
+    'New: ' + (summary.created.length ? summary.created.join(', ') : '-'),
+    'Replaced: ' + (summary.replaced.length ? summary.replaced.join(', ') : '-'),
+    'Unchanged: ' + (summary.unchanged.length ? summary.unchanged.join(', ') : '-')
+  ].join('\n');
+}
+function loadCodegenProfiles() {
+  renderCodegenProfiles(readCodegenProfiles());
+}
+function renderCodegenProfiles(profiles) {
+  const picker = document.getElementById('codegenProfile');
+  picker.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = profiles.length ? 'Select a saved profile' : 'No saved profiles';
+  picker.appendChild(empty);
+  for (const profile of profiles) {
+    const option = document.createElement('option');
+    option.value = profile.name;
+    option.textContent = profile.name;
+    if (profile.name === document.getElementById('profileName').value.trim()) option.selected = true;
+    picker.appendChild(option);
+  }
+}
+function currentCodegenProfile() {
+  const name = document.getElementById('profileName').value.trim()
+    || document.getElementById('codegenConfig').value.trim()
+    || 'default';
+  return {
+    name,
+    config: document.getElementById('codegenConfig').value.trim(),
+    root: document.getElementById('codegenRoot').value.trim(),
+    mapped: document.getElementById('mappedName').value.trim(),
+    className: document.getElementById('mappingClass').value.trim()
+  };
+}
+function profileExportPayload(profile) {
+  return {
+    kind: 'gemstone-rs-explorer-codegen-profile',
+    version: 1,
+    profile
+  };
+}
+function profilesExportPayload(profiles) {
+  return {
+    kind: 'gemstone-rs-explorer-codegen-profiles',
+    version: 1,
+    profiles
+  };
+}
+function applyCodegenProfile(profile) {
+  document.getElementById('profileName').value = profile.name || 'default';
+  if (profile.config) document.getElementById('codegenConfig').value = profile.config;
+  document.getElementById('codegenRoot').value = profile.root || '';
+  document.getElementById('mappedName').value = profile.mapped || 'BookingDraft';
+  document.getElementById('mappingClass').value = profile.className || 'Object';
+  for (const id of ['profileName', 'codegenConfig', 'codegenRoot', 'mappedName', 'mappingClass']) {
+    try { localStorage.setItem('gemstone-rs-explorer:' + id, document.getElementById(id).value); } catch {}
+  }
+  rememberCodegenConfig(profile.config);
+  loadCodegenConfigs();
+  loadCodegenConfig();
+}
+function saveCodegenProfile() {
+  const profile = currentCodegenProfile();
+  const profiles = [profile, ...readCodegenProfiles().filter(item => item.name !== profile.name)].slice(0, 16);
+  writeCodegenProfiles(profiles);
+  detail.textContent = 'Saved codegen profile: ' + profile.name;
+}
+function exportCodegenProfile() {
+  const profile = currentCodegenProfile();
+  saveCodegenProfile();
+  const source = JSON.stringify(profileExportPayload(profile), null, 2);
+  document.getElementById('profileJson').value = source;
+  detail.textContent = source;
+}
+function importCodegenProfile() {
+  const source = document.getElementById('profileJson').value;
+  importCodegenProfilesSource(source, true);
+}
+function importCodegenProfilesSource(source, applyFirst) {
+  let payload;
+  try {
+    payload = JSON.parse(source);
+  } catch (error) {
+    detail.textContent = 'Profile import failed: ' + error.message;
+    return;
+  }
+  const candidates = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.profiles)
+      ? payload.profiles
+      : [payload.profile || payload];
+  const imported = candidates.map(normalizeCodegenProfile).filter(Boolean);
+  if (!imported.length) {
+    detail.textContent = 'Profile import failed: no valid profiles found.';
+    return;
+  }
+  const current = readCodegenProfiles();
+  const created = [];
+  const replaced = [];
+  const unchanged = [];
+  for (const profile of imported) {
+    const existing = current.find(item => item.name === profile.name);
+    if (!existing) created.push(profile.name);
+    else if (profileFingerprint(existing) === profileFingerprint(profile)) unchanged.push(profile.name);
+    else replaced.push(profile.name);
+  }
+  const existing = current.filter(item => !imported.some(profile => profile.name === item.name));
+  const merged = [...imported, ...existing].slice(0, 16);
+  writeCodegenProfiles(merged);
+  if (applyFirst) applyCodegenProfile(imported[0]);
+  const message = imported.length === 1
+    ? 'Imported codegen profile: ' + imported[0].name
+    : 'Imported ' + imported.length + ' codegen profiles.';
+  renderImportSummary({ created, replaced, unchanged });
+  detail.textContent = [
+    message,
+    'New: ' + (created.length ? created.join(', ') : '-'),
+    'Replaced: ' + (replaced.length ? replaced.join(', ') : '-'),
+    'Unchanged: ' + (unchanged.length ? unchanged.join(', ') : '-')
+  ].join('\n');
+}
+function loadCodegenProfile() {
+  const name = document.getElementById('codegenProfile').value;
+  if (!name) return;
+  const profile = readCodegenProfiles().find(item => item.name === name);
+  if (profile) applyCodegenProfile(profile);
+}
+function deleteCodegenProfile() {
+  const name = document.getElementById('profileName').value.trim() || document.getElementById('codegenProfile').value;
+  if (!name) return;
+  const profiles = readCodegenProfiles().filter(item => item.name !== name);
+  writeCodegenProfiles(profiles);
+  detail.textContent = 'Deleted codegen profile: ' + name;
+}
+async function loadProjectProfiles() {
+  const data = await callApi('/api/codegen/profiles?' + profileFileQuery());
+  if (typeof data.source === 'string') {
+    document.getElementById('profileJson').value = data.source;
+    importCodegenProfilesSource(data.source, false);
+  }
+}
+async function saveProjectProfiles() {
+  const profiles = readCodegenProfiles();
+  const source = JSON.stringify(profilesExportPayload(profiles), null, 2);
+  document.getElementById('profileJson').value = source;
+  const data = await callApi('/api/codegen/profiles/save?' + profileFileQuery(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: source
+  });
+  if (data.success) detail.textContent = 'Saved project profiles: ' + data.profileFile;
+}
 async function loadCodegenConfig() {
   const data = await callApi('/api/codegen/config?' + codegenQuery());
-  if (typeof data.source === 'string') setConfigEditor(data.source);
+  if (typeof data.source === 'string') {
+    setConfigEditor(data.source);
+    rememberCodegenConfig();
+  }
+}
+async function loadCodegenConfigs() {
+  const root = document.getElementById('codegenRoot').value.trim();
+  const data = await callApi('/api/codegen/configs' + (root ? '?root=' + encodeURIComponent(root) : ''));
+  const picker = document.getElementById('codegenConfigPicker');
+  picker.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = data.configs && data.configs.length ? 'Select a config' : 'No .codegen files found';
+  picker.appendChild(empty);
+  for (const config of data.configs || []) {
+    const option = document.createElement('option');
+    option.value = config;
+    option.textContent = config;
+    if (config === document.getElementById('codegenConfig').value) option.selected = true;
+    picker.appendChild(option);
+  }
+}
+function pickCodegenConfig() {
+  const picker = document.getElementById('codegenConfigPicker');
+  if (!picker.value) return;
+  setCodegenConfig(picker.value);
+  loadCodegenConfig();
+}
+function pickRecentCodegenConfig() {
+  const picker = document.getElementById('codegenRecent');
+  if (!picker.value) return;
+  setCodegenConfig(picker.value);
+  loadCodegenConfig();
 }
 async function saveCodegenConfig() {
   const source = document.getElementById('configEditor').value;
-  await callApi('/api/codegen/config/save?' + codegenQuery(), {
+  const data = await callApi('/api/codegen/config/save?' + codegenQuery(), {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     body: source
   });
+  if (data.success) rememberCodegenConfig();
 }
 async function codegenSample() {
   const data = await callApi('/api/codegen/sample');
@@ -1378,11 +1956,14 @@ async function discoverMappingConfig() {
   const data = await callApi('/api/codegen/discover-mapping?' + codegenQuery() + '&mapped=' + q('mappedName') + '&class=' + q('mappingClass'));
   if (typeof data.config === 'string') setConfigEditor(data.config);
 }
-function codegenPreview() { callApi('/api/codegen/preview?' + codegenQuery()); }
-function codegenDiff() { callApi('/api/codegen/diff?' + codegenQuery()); }
-function codegenCheck() { callApi('/api/codegen/check?' + codegenQuery()); }
-function codegenGenerate() { callApi('/api/codegen/generate?' + codegenQuery()); }
+function codegenPreview() { rememberCodegenConfig(); callApi('/api/codegen/preview?' + codegenQuery()); }
+function codegenDiff() { rememberCodegenConfig(); callApi('/api/codegen/diff?' + codegenQuery()); }
+function codegenCheck() { rememberCodegenConfig(); callApi('/api/codegen/check?' + codegenQuery()); }
+function codegenGenerate() { rememberCodegenConfig(); callApi('/api/codegen/generate?' + codegenQuery()); }
 persistFields();
+loadRecentCodegenConfigs();
+loadCodegenProfiles();
+loadCodegenConfigs();
 </script>
 </body>
 </html>"#,
@@ -1392,8 +1973,13 @@ persistFields();
 
 fn config_json(config: &ExplorerConfig) -> String {
     format!(
-        r#"{{"host":"{}","port":{},"readOnly":{},"allowEval":{},"loopbackOnly":true}}"#,
-        config.host, config.port, config.read_only, config.allow_eval
+        r#"{{"host":"{}","port":{},"readOnly":{},"allowEval":{},"codegenRoot":"{}","allowAbsoluteWritePaths":{},"loopbackOnly":true}}"#,
+        config.host,
+        config.port,
+        config.read_only,
+        config.allow_eval,
+        escape_json(&config.codegen_root.display().to_string()),
+        config.allow_absolute_write_paths
     )
 }
 
@@ -1464,7 +2050,7 @@ fn reason_phrase(status: u16) -> &'static str {
 }
 
 fn usage() -> &'static str {
-    "usage: gemstone-rs-explorer [--host 127.0.0.1] [--port 8787] [--allow-eval] [--allow-write]"
+    "usage: gemstone-rs-explorer [--host 127.0.0.1] [--port 8787] [--codegen-root .] [--allow-eval] [--allow-write] [--allow-absolute-write-paths]"
 }
 
 #[derive(Debug)]
@@ -1517,6 +2103,7 @@ mod tests {
         assert_eq!(config.addr(), SocketAddr::from(([127, 0, 0, 1], 8787)));
         assert!(config.read_only);
         assert!(!config.allow_eval);
+        assert_eq!(config.codegen_root, PathBuf::from("."));
     }
 
     #[test]
@@ -1527,9 +2114,17 @@ mod tests {
 
     #[test]
     fn config_accepts_eval_flag_and_port() {
-        let config = ExplorerConfig::parse(&args(&["--port", "9000", "--allow-eval"])).unwrap();
+        let config = ExplorerConfig::parse(&args(&[
+            "--port",
+            "9000",
+            "--allow-eval",
+            "--codegen-root",
+            "examples",
+        ]))
+        .unwrap();
         assert_eq!(config.port, 9000);
         assert!(config.allow_eval);
+        assert_eq!(config.codegen_root, PathBuf::from("examples"));
     }
 
     #[test]
@@ -1561,6 +2156,7 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""loopbackOnly":true"#));
         assert!(response.body.contains(r#""readOnly":true"#));
+        assert!(response.body.contains(r#""codegenRoot":".""#));
     }
 
     #[test]
@@ -1580,7 +2176,33 @@ mod tests {
         assert!(response.body.contains("BridgeRoot and Codegen"));
         assert!(response.body.contains("Codegen Workflow"));
         assert!(response.body.contains("codegenConfig"));
+        assert!(response.body.contains("codegenRoot"));
+        assert!(response.body.contains("codegenRootQuery()"));
+        assert!(response.body.contains("codegenConfigPicker"));
+        assert!(response.body.contains("codegenRecent"));
+        assert!(response.body.contains("profileName"));
+        assert!(response.body.contains("codegenProfile"));
+        assert!(response.body.contains("profileJson"));
+        assert!(response.body.contains("profileFile"));
+        assert!(response.body.contains("importSummary"));
         assert!(response.body.contains("configEditor"));
+        assert!(response.body.contains("loadCodegenConfigs()"));
+        assert!(response.body.contains("pickCodegenConfig()"));
+        assert!(response.body.contains("loadRecentCodegenConfigs()"));
+        assert!(response.body.contains("pickRecentCodegenConfig()"));
+        assert!(response.body.contains("loadCodegenProfiles()"));
+        assert!(response.body.contains("saveCodegenProfile()"));
+        assert!(response.body.contains("exportCodegenProfile()"));
+        assert!(response.body.contains("importCodegenProfile()"));
+        assert!(response.body.contains("renderImportSummary"));
+        assert!(response.body.contains("loadProjectProfiles()"));
+        assert!(response.body.contains("saveProjectProfiles()"));
+        assert!(response.body.contains("deleteCodegenProfile()"));
+        assert!(response
+            .body
+            .contains("gemstone-rs-explorer-codegen-profile"));
+        assert!(response.body.contains("/api/codegen/profiles"));
+        assert!(response.body.contains("rememberCodegenConfig"));
         assert!(response.body.contains("loadCodegenConfig()"));
         assert!(response.body.contains("saveCodegenConfig()"));
         assert!(response.body.contains("method: 'POST'"));
@@ -1597,6 +2219,7 @@ mod tests {
         assert!(response.body.contains("/api/doctor"));
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
+        assert!(response.body.contains("/api/codegen/configs"));
         assert!(response.body.contains("/api/codegen/check"));
     }
 
@@ -1725,6 +2348,268 @@ mod tests {
     }
 
     #[test]
+    fn codegen_config_endpoint_uses_configured_root_for_relative_paths() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/config?config=examples/codegen/gemstone-rs.codegen HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(response.body.contains("generated/gemstone_wrappers.rs"));
+    }
+
+    #[test]
+    fn codegen_configs_endpoint_lists_known_configs() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request("GET /api/codegen/configs HTTP/1.1", &config);
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(response
+            .body
+            .contains("examples/codegen/gemstone-rs.codegen"));
+    }
+
+    #[test]
+    fn codegen_configs_endpoint_rejects_missing_root() {
+        let response = handle_request(
+            "GET /api/codegen/configs?root=target/definitely-missing-codegen-root HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("root is not a directory"));
+    }
+
+    #[test]
+    fn codegen_profiles_save_is_disabled_by_default() {
+        let response = handle_request(
+            "GET /api/codegen/profiles/save?profile_file=tmp.json HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 403);
+        assert!(response.body.contains("allow-write"));
+    }
+
+    #[test]
+    fn post_codegen_profiles_save_writes_request_body() {
+        let root = env::temp_dir().join(format!(
+            "gemstone-rs-explorer-profiles-{}",
+            std::process::id()
+        ));
+        let path = root.join("profiles.json");
+        let _ = fs::remove_dir_all(&root);
+        let config = ExplorerConfig {
+            read_only: false,
+            codegen_root: root.clone(),
+            ..ExplorerConfig::default()
+        };
+        let source =
+            r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[]}"#;
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: "/api/codegen/profiles/save?profile_file=profiles.json".to_string(),
+            body: source.to_string(),
+        };
+
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert_eq!(fs::read_to_string(&path).unwrap(), source);
+
+        let read = handle_request(
+            "GET /api/codegen/profiles?profile_file=profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(read.status, 200);
+        assert!(read.body.contains("gemstone-rs-explorer-codegen-profiles"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn codegen_config_save_rejects_path_traversal() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/config/save?config=../escape.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("path traversal"));
+    }
+
+    #[test]
+    fn codegen_config_save_rejects_encoded_path_traversal() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/config/save?config=%2e%2e/escape.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("path traversal"));
+    }
+
+    #[test]
+    fn codegen_config_save_rejects_root_path_traversal() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/config/save?root=../escape&config=draft.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("path traversal"));
+    }
+
+    #[test]
+    fn codegen_config_save_rejects_absolute_root_query_by_default() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let root = env::temp_dir().join("gemstone-rs-absolute-root");
+        let response = handle_request(
+            &format!(
+                "GET /api/codegen/config/save?root={}&config=draft.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
+                root.display()
+            ),
+            &config,
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("absolute paths are disabled"));
+    }
+
+    #[test]
+    fn codegen_config_save_allows_absolute_target_when_explicitly_enabled() {
+        let root = env::temp_dir().join(format!(
+            "gemstone-rs-explorer-absolute-save-{}",
+            std::process::id()
+        ));
+        let path = root.join("absolute.codegen");
+        let _ = fs::remove_dir_all(&root);
+        let config = ExplorerConfig {
+            read_only: false,
+            allow_absolute_write_paths: true,
+            ..ExplorerConfig::default()
+        };
+        let source = "output = generated/absolute.rs\n";
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: format!("/api/codegen/config/save?config={}", path.display()),
+            body: source.to_string(),
+        };
+
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert_eq!(fs::read_to_string(&path).unwrap(), source);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn codegen_profile_save_rejects_absolute_path_by_default() {
+        let config = ExplorerConfig {
+            read_only: false,
+            ..ExplorerConfig::default()
+        };
+        let path = env::temp_dir().join("gemstone-rs-absolute-profile.json");
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: format!("/api/codegen/profiles/save?profile_file={}", path.display()),
+            body: r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[]}"#
+                .to_string(),
+        };
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("absolute paths are disabled"));
+    }
+
+    #[test]
+    fn codegen_profiles_save_rejects_invalid_profile_source() {
+        let root = env::temp_dir().join(format!(
+            "gemstone-rs-explorer-invalid-profiles-{}.json",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let config = ExplorerConfig {
+            read_only: false,
+            codegen_root: root.clone(),
+            ..ExplorerConfig::default()
+        };
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: "/api/codegen/profiles/save?profile_file=invalid-profiles.json".to_string(),
+            body: "not json".to_string(),
+        };
+
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("profile JSON parse error"));
+        assert!(!root.join("invalid-profiles.json").exists());
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn profile_schema_requires_kind_version_and_profile_names() {
+        assert!(profiles::validate_source(
+            r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{"name":"default","config":"examples/codegen/gemstone-rs.codegen","root":"","mapped":"BookingDraft","className":"Object"}]}"#
+        )
+        .is_ok());
+        assert_eq!(
+            profiles::validate_source(r#"{"kind":"bad","version":1,"profiles":[]}"#)
+                .unwrap_err()
+                .to_string(),
+            "kind must be gemstone-rs-explorer-codegen-profiles"
+        );
+        assert_eq!(
+            profiles::validate_source(
+                r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{}]}"#
+            )
+            .unwrap_err()
+            .to_string(),
+            "profiles[0].name is required"
+        );
+        assert_eq!(
+            profiles::validate_source(
+                r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"extra":true,"profiles":[]}"#
+            )
+            .unwrap_err()
+            .to_string(),
+            "extra is not supported"
+        );
+        assert_eq!(
+            profiles::validate_source(
+                r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{"name":"default","unsupported":"value"}]}"#
+            )
+            .unwrap_err()
+            .to_string(),
+            "profiles[0].unsupported is not supported"
+        );
+        assert_eq!(
+            profiles::validate_source(
+                r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[{"name":"default"},{"name":"default"}]}"#
+            )
+            .unwrap_err()
+            .to_string(),
+            "profiles[1].name duplicates default"
+        );
+    }
+
+    #[test]
     fn codegen_config_save_is_disabled_by_default() {
         let response = handle_request(
             "GET /api/codegen/config/save?config=tmp.codegen&source=output%20%3D%20tmp.rs HTTP/1.1",
@@ -1750,19 +2635,21 @@ mod tests {
 
     #[test]
     fn post_codegen_config_save_writes_request_body() {
-        let path = env::temp_dir().join(format!(
-            "gemstone-rs-explorer-post-save-{}.codegen",
+        let root = env::temp_dir().join(format!(
+            "gemstone-rs-explorer-post-save-{}",
             std::process::id()
         ));
-        let _ = fs::remove_file(&path);
+        let path = root.join("post-save.codegen");
+        let _ = fs::remove_dir_all(&root);
         let config = ExplorerConfig {
             read_only: false,
+            codegen_root: root.clone(),
             ..ExplorerConfig::default()
         };
         let source = "output = generated/post-save.rs\n";
         let request = HttpRequest {
             method: "POST".to_string(),
-            target: format!("/api/codegen/config/save?config={}", path.display()),
+            target: "/api/codegen/config/save?config=post-save.codegen".to_string(),
             body: source.to_string(),
         };
 
@@ -1770,7 +2657,7 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""success":true"#));
         assert_eq!(fs::read_to_string(&path).unwrap(), source);
-        let _ = fs::remove_file(path);
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

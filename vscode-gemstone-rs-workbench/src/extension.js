@@ -33,6 +33,10 @@ function activate(context) {
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
+  register(context, "gemstoneRs.loadProjectProfiles", loadProjectProfiles);
+  register(context, "gemstoneRs.saveProjectProfiles", saveProjectProfiles);
+  register(context, "gemstoneRs.exportCodegenProfile", exportCodegenProfile);
+  register(context, "gemstoneRs.validateProjectProfiles", validateProjectProfiles);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
@@ -142,6 +146,10 @@ class GemStoneTreeProvider {
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
         actionNode("Generate Wrappers", "gemstoneRs.codegenGenerate"),
+        actionNode("Load Project Profiles", "gemstoneRs.loadProjectProfiles"),
+        actionNode("Save Project Profiles", "gemstoneRs.saveProjectProfiles"),
+        actionNode("Export Codegen Profile", "gemstoneRs.exportCodegenProfile"),
+        actionNode("Validate Project Profiles", "gemstoneRs.validateProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
       ];
     }
@@ -542,6 +550,51 @@ function openExplorerWebview() {
   output.show(true);
 }
 
+function loadProjectProfiles() {
+  openExplorerProfileWorkflow(
+    "Load Project Profiles",
+    "Use the Codegen Workflow panel: set Config root if needed, then click Load Project Profiles."
+  );
+}
+
+function saveProjectProfiles() {
+  openExplorerProfileWorkflow(
+    "Save Project Profiles",
+    "Start the explorer with --allow-write, then use the Codegen Workflow panel to click Save Project Profiles."
+  );
+}
+
+function exportCodegenProfile() {
+  openExplorerProfileWorkflow(
+    "Export Codegen Profile",
+    "Use Profile name and Save Profile if needed, then click Export Profile and copy Profile JSON."
+  );
+}
+
+async function validateProjectProfiles() {
+  const profilePath = await vscode.window.showInputBox({
+    title: "Validate Project Profiles",
+    prompt: "Path to gemstone-rs.codegen-profiles.json",
+    value: settings().codegenProfiles,
+  });
+  if (!profilePath) {
+    return;
+  }
+  await runAndShow(["profile", "validate", profilePath], { allowFailure: true });
+}
+
+function openExplorerProfileWorkflow(title, instruction) {
+  const cfg = settings();
+  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/`;
+  openExplorerWebview();
+  output.appendLine("");
+  output.appendLine(`Profile workflow: ${title}`);
+  output.appendLine(instruction);
+  output.appendLine(`Explorer URL: ${url}`);
+  output.appendLine("Run GemStone RS: Launch Explorer first if the webview cannot connect.");
+  output.show(true);
+}
+
 function explorerWebviewHtml(url) {
   const escaped = escapeHtml(url);
   return `<!doctype html>
@@ -642,6 +695,7 @@ function settings() {
     explorerPath: cfg.get("explorerPath", "gemstone-rs-explorer"),
     useCargo: cfg.get("useCargo", false),
     codegenConfig: cfg.get("codegenConfig", "gemstone-rs.codegen"),
+    codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),
   };

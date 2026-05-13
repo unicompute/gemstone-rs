@@ -1,0 +1,101 @@
+# Codegen Profile Schema
+
+`gemstone-rs` project profile files make explorer and VS Code codegen workflows
+repeatable. The default file name is:
+
+```text
+gemstone-rs.codegen-profiles.json
+```
+
+This repository includes a sample:
+
+```text
+examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+The JSON Schema is checked in at:
+
+```text
+schemas/gemstone-rs.codegen-profiles.schema.json
+```
+
+Validate the sample from a checkout:
+
+```bash
+cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
+```
+
+For an installed CLI:
+
+```bash
+gemstone-rs profile validate gemstone-rs.codegen-profiles.json
+```
+
+Expected output:
+
+```text
+profile ok: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles: default, object-wrapper, bridge-mapping)
+```
+
+## Shape
+
+```json
+{
+  "kind": "gemstone-rs-explorer-codegen-profiles",
+  "version": 1,
+  "profiles": [
+    {
+      "name": "default",
+      "config": "examples/codegen/gemstone-rs.codegen",
+      "root": "",
+      "mapped": "BookingDraft",
+      "className": "Object"
+    }
+  ]
+}
+```
+
+Top-level fields:
+
+- `kind` must be `gemstone-rs-explorer-codegen-profiles`.
+- `version` must be `1`.
+- `profiles` must be an array.
+
+Profile fields:
+
+- `name` is required, string-valued, non-empty, and unique.
+- `config` is optional and string-valued.
+- `root` is optional and string-valued.
+- `mapped` is optional and string-valued.
+- `className` is optional and string-valued.
+
+Unknown top-level or profile fields are rejected. Non-string profile fields are
+rejected.
+
+## VS Code
+
+Use `GemStone RS: Validate Project Profiles` from the command palette. The
+command runs the same CLI validator and shows the result in the GemStone RS
+output panel. The workbench also contributes JSON validation for files named
+`gemstone-rs.codegen-profiles.json`, using the packaged schema copy in
+`vscode-gemstone-rs-workbench/schemas/`.
+
+Without the extension, associate the schema with the profile file in VS Code:
+
+```json
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["gemstone-rs.codegen-profiles.json"],
+      "url": "./schemas/gemstone-rs.codegen-profiles.schema.json"
+    }
+  ]
+}
+```
+
+## Explorer Safety
+
+The explorer validates project profile JSON before saving. It also rejects
+write paths containing `..` after URL decoding. Relative profile writes stay
+inside the configured `--codegen-root`; absolute write targets require
+`--allow-absolute-write-paths`.

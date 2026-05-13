@@ -60,6 +60,10 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Diff Generated Output
 - Check Freshness
 - Generate Wrappers
+- Load Project Profiles
+- Save Project Profiles
+- Export Codegen Profile
+- Validate Project Profiles
 - Open Codegen Docs
 
 `Explorer` exposes:
@@ -91,6 +95,10 @@ Commands:
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Generate`
+- `GemStone RS: Load Project Profiles`
+- `GemStone RS: Save Project Profiles`
+- `GemStone RS: Export Codegen Profile`
+- `GemStone RS: Validate Project Profiles`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
@@ -174,9 +182,28 @@ preview generated wrappers, inspect unified and side-by-side diffs, run
 `codegen check`, and test BridgeRoot key/value policies without leaving VS
 Code. The explorer page can load and save the selected codegen config file,
 posting the editor contents as the request body; saves still require the
-explorer to run with `--allow-write`. It also remembers its current fields
+explorer to run with `--allow-write`. Use `Refresh Configs` in the embedded
+page to populate the `Known configs` picker from the explorer process working
+tree, or set `Config root` in the page when the explorer was launched from a
+different directory. The page also keeps a local `Recent configs` picker for
+paths used by Load, Save, Preview, Diff, Check, and Generate. Use `Save
+Profile` when you want to switch between named codegen workflows; a profile
+stores the config root, config path, mapped Rust type, and GemStone class in
+local browser storage. `Export Profile` writes a JSON payload into `Profile
+JSON`, and `Import Profile` merges pasted profile JSON from another browser or
+teammate. `Load Project Profiles` reads `gemstone-rs.codegen-profiles.json`
+from the configured codegen root, and `Save Project Profiles` writes the saved
+profile list back when the explorer was launched with `--allow-write`. Project
+profile payloads are schema-validated before writing, and imports report which
+profiles are new, replaced, or unchanged. It remembers its current fields
 locally, so repeated codegen or BridgeRoot checks keep the same config path and
 class selection.
+
+Use `GemStone RS: Validate Project Profiles` when you want a direct CLI check
+without opening the explorer. It runs `gemstone-rs profile validate` against
+the selected profile file and writes the result to the GemStone RS output
+panel. The extension also contributes JSON validation for files named
+`gemstone-rs.codegen-profiles.json`.
 
 ## Develop the Extension
 

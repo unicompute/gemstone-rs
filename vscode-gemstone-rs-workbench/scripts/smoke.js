@@ -7,6 +7,15 @@ const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), 
 const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
 const extensionSource = fs.readFileSync(path.join(root, "src", "extension.js"), "utf8");
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+const repoRoot = path.resolve(root, "..");
+const rootSchema = fs.readFileSync(
+  path.join(repoRoot, "schemas/gemstone-rs.codegen-profiles.schema.json"),
+  "utf8"
+);
+const extensionSchema = fs.readFileSync(
+  path.join(root, "schemas/gemstone-rs.codegen-profiles.schema.json"),
+  "utf8"
+);
 
 function includes(list, value) {
   return Array.isArray(list) && list.includes(value);
@@ -19,6 +28,10 @@ const requiredCommands = [
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
   "gemstoneRs.codegenGenerate",
+  "gemstoneRs.loadProjectProfiles",
+  "gemstoneRs.saveProjectProfiles",
+  "gemstoneRs.exportCodegenProfile",
+  "gemstoneRs.validateProjectProfiles",
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
@@ -47,5 +60,17 @@ assert(extensionSource.includes("<iframe"), "webview should embed the explorer i
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
+assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
+assert.deepStrictEqual(
+  JSON.parse(extensionSchema),
+  JSON.parse(rootSchema),
+  "extension profile schema must match the repository schema"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.includes("gemstone-rs.codegen-profiles.json")
+  ),
+  "package.json should contribute JSON validation for profile files"
+);
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

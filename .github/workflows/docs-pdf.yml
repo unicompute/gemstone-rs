@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - "docs/**"
+      - "schemas/**"
       - ".github/workflows/docs-pdf.yml"
       - "README.md"
   pull_request:
     paths:
       - "docs/**"
+      - "schemas/**"
       - ".github/workflows/docs-pdf.yml"
       - "README.md"
   workflow_dispatch:
