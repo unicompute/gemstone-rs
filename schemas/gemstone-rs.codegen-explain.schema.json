@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.codegen-explain.schema.json",
+  "title": "gemstone-rs Codegen Explain Output",
+  "description": "JSON output emitted by gemstone-rs codegen explain --json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["output", "testStubs", "classes", "mapped"],
+  "properties": {
+    "output": {
+      "type": "string"
+    },
+    "testStubs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/class"
+      }
+    },
+    "mapped": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mapped"
+      }
+    }
+  },
+  "$defs": {
+    "class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "dictionary", "className", "meta", "methods"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dictionary": {
+          "type": "string"
+        },
+        "className": {
+          "type": "string"
+        },
+        "meta": {
+          "type": "boolean"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/method"
+          }
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selector", "args", "return", "doc"],
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "return": {
+          "type": "string"
+        },
+        "doc": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "mapped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "doc", "fields"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "doc": {
+          "type": ["string", "null"]
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "key", "keyType"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "keyType": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

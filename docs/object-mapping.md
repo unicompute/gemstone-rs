@@ -313,6 +313,45 @@ println!("bridge root identity={identity}, payload oop={}", oop.raw());
 That is not transparent object persistence. It is a stable in-session cache key
 for wrappers, inspectors, and explorer views.
 
+## Relationship-Shaped Payloads
+
+Use nested structs and vectors when the Rust boundary needs a relationship-like
+shape but you still want explicit persistence. This keeps the GemStone side a
+plain dictionary graph and keeps the Rust side strongly typed:
+
+```rust
+use gemstone_rs::BridgeMapped;
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct CustomerDraft {
+    name: String,
+    email: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct LineItemDraft {
+    sku: String,
+    quantity: i64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct BookingDraft {
+    customer: CustomerDraft,
+    items: Vec<LineItemDraft>,
+    tags: Vec<String>,
+}
+```
+
+A failed nested read reports the path that a user would naturally inspect:
+
+```text
+booking.items[2].customer.name expected GemStone value type String, got OOP 1234
+```
+
+This is the practical middle ground between raw OOPs and transparent object
+persistence: relationships are visible in config and generated Rust source, and
+the low-level OOP API remains available for special cases.
+
 ## Comparison With MagLev/GBS
 
 The MagLev branch example uses:

@@ -68,11 +68,24 @@ names, return helpers, mapped structs, and BridgeRoot field mappings:
 ```bash
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
+gemstone-rs --env-file .env.gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 ```
 
 The JSON form is intended for editor and explorer integrations that want to
 render the output path, generated test stubs, class wrappers, selector
 arguments, return helpers, and mapped fields as structured data.
+
+Machine-readable schema files are committed for tooling:
+
+```text
+schemas/gemstone-rs.codegen.schema.json
+schemas/gemstone-rs.codegen-explain.schema.json
+schemas/gemstone-rs.codegen-profiles.schema.json
+```
+
+`gemstone-rs.codegen` remains the line-oriented CLI format. The config schema
+describes an equivalent structured JSON model for editor panels and generated
+summaries, while the explain schema matches `codegen explain --json`.
 
 Supported return types:
 
@@ -148,6 +161,7 @@ Check freshness in CI:
 
 ```bash
 gemstone-rs codegen check gemstone-rs.codegen
+cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Write generated wrappers:

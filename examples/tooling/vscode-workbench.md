@@ -82,11 +82,13 @@ From the `Explorer` tree:
 5. Run `Launch Explorer`.
 6. Run `Open Explorer Webview`.
 
-`Verify Setup` shows the active checkout, CLI, explorer, codegen config, and
-project profile paths beside the `gemstone-rs doctor` output. Use the result
-actions to copy the report, copy a safe `GS_*` environment export script with a
-placeholder password, or jump straight to the workbench settings. `Verify Live
-Setup` uses the same report format but calls `gemstone-rs doctor --live`.
+`Verify Setup` shows the active checkout, CLI, explorer, env file, codegen
+config, and project profile paths beside the `gemstone-rs doctor` output. If
+`gemstoneRs.envFile` points at an existing file, Workbench passes `--env-file`
+automatically to CLI commands and explorer startup. Use the result actions to
+copy the report, copy a safe `GS_*` environment export script with a placeholder
+password, or jump straight to the workbench settings. `Verify Live Setup` uses
+the same report format but calls `gemstone-rs doctor --live`.
 
 `Launch Explorer` starts `gemstone-rs-explorer` in a VS Code terminal and opens
 the loopback URL. `Open Explorer Webview` embeds the running local explorer in a

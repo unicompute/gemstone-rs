@@ -277,6 +277,13 @@
     "jsonValidation": [
       {
         "fileMatch": [
+          "gemstone-rs.codegen.json",
+          "*.gemstone-rs.codegen.json"
+        ],
+        "url": "./schemas/gemstone-rs.codegen.schema.json"
+      },
+      {
+        "fileMatch": [
           "gemstone-rs.codegen-profiles.json"
         ],
         "url": "./schemas/gemstone-rs.codegen-profiles.schema.json"
@@ -304,6 +311,11 @@
           "type": "boolean",
           "default": false,
           "description": "Run commands through cargo run -p gemstone-rs-cli / gemstone-rs-explorer."
+        },
+        "gemstoneRs.envFile": {
+          "type": "string",
+          "default": ".env.gemstone-rs",
+          "description": "Optional GemStone environment file. When this file exists, Workbench commands pass --env-file automatically."
         },
         "gemstoneRs.codegenConfig": {
           "type": "string",

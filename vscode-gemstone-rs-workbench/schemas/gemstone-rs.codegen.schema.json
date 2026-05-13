@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.codegen.schema.json",
+  "title": "gemstone-rs Codegen Config Model",
+  "description": "Structured JSON model for gemstone-rs codegen configs. The CLI still reads the line-oriented gemstone-rs.codegen format; tools can use this schema for equivalent JSON views.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["output"],
+  "properties": {
+    "output": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/class"
+      },
+      "default": []
+    },
+    "mapped": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mapped"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dictionary": {
+          "type": "string",
+          "default": ""
+        },
+        "className": {
+          "type": "string"
+        },
+        "meta": {
+          "type": "boolean",
+          "default": false
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/method"
+          },
+          "default": []
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selector"],
+      "properties": {
+        "selector": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "return": {
+          "enum": ["Value", "Oop", "String", "SmallInt", "Bool"],
+          "default": "Value"
+        },
+        "doc": {
+          "type": "string"
+        }
+      }
+    },
+    "mapped": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "doc": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          },
+          "default": []
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "key"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "description": "Bridge field type such as String, SmallInt, Bool, Oop, Value, Mapped<CustomerDraft>, or Vec<String>."
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keyType": {
+          "enum": ["String", "Symbol"],
+          "default": "String"
+        },
+        "doc": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

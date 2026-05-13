@@ -1,0 +1,10 @@
+[package]
+name = "gemstone-rs-codegen-wrapper-check"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+gemstone-rs = { path = "../../crates/gemstone-rs" }

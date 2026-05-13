@@ -133,9 +133,11 @@ use the same diagnostic path. `GemStone RS: Verify Live Setup` runs
 available. `GemStone RS: Verify Strict Setup` runs `gemstone-rs doctor
 --strict` for CI-style validation of explicit stone and GCI library settings.
 All setup checks add the active checkout, CLI, explorer, codegen config, and
-profile paths, then offer result actions to copy the full report, copy a safe
-`GS_*` environment export script with a placeholder password, or open the
-extension settings.
+profile paths, plus whether the configured `gemstoneRs.envFile` exists. When
+that file exists, Workbench passes `--env-file` automatically to CLI commands
+and explorer startup. The checks offer result actions to copy the full report,
+copy a safe `GS_*` environment export script with a placeholder password, or
+open the extension settings.
 
 `GemStone RS: Show Environment Template`, `GemStone RS: Copy Environment
 Template`, and `GemStone RS: Write .env.gemstone-rs` call the CLI

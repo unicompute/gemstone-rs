@@ -21,12 +21,15 @@ cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Generated wrappers include a small `#[cfg(test)]` surface-name test stub.
 `codegen explain` summarizes the output path, that test stub, wrapper methods,
 return helpers, and mapped fields before you write files. Add `--json` when a
 tool such as the explorer or VS Code needs a structured summary.
+The wrapper-check crate imports the generated file and keeps the checked-in
+generated Rust compileable.
 
 The config format is intentionally line-oriented:
 
@@ -114,6 +117,8 @@ Schema and docs:
 
 ```text
 schemas/gemstone-rs.codegen-profiles.schema.json
+schemas/gemstone-rs.codegen.schema.json
+schemas/gemstone-rs.codegen-explain.schema.json
 docs/profile-schema.md
 ```
 

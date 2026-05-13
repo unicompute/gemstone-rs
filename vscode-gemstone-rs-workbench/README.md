@@ -110,10 +110,12 @@ Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
 are available. `Verify Strict Setup` runs `gemstone-rs doctor --strict` for
 CI-style validation of explicit stone and GCI library settings. All setup
 checks report the active checkout, CLI, explorer, codegen config, and profile
-paths. Their result actions can copy the setup report, copy a safe `GS_*`
-environment export script with a placeholder password, or open the extension
-settings. `Show Environment Template`, `Copy Environment Template`, and `Write
-.env.gemstone-rs` use the CLI
+paths, plus whether the configured `gemstoneRs.envFile` exists. When the env
+file exists, Workbench passes `--env-file` automatically to CLI commands and
+explorer startup. Their result actions can copy the setup report, copy a safe
+`GS_*` environment export script with a placeholder password, or open the
+extension settings. `Show Environment Template`, `Copy Environment Template`,
+and `Write .env.gemstone-rs` use the CLI
 `gemstone-rs env sample/write` commands so VS Code and terminal setup stay on
 the same safe template.
 

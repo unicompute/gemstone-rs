@@ -28,6 +28,9 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Vec<String>) -> Result<(), CliError> {
+    let (args, global_env_file) = extract_env_file_option(&args)?;
+    apply_env_file_option(global_env_file.as_deref())?;
+
     match parse_command(&args)? {
         Command::Help => {
             println!("{}", usage());
@@ -428,6 +431,33 @@ fn apply_env_file_option(path: Option<&Path>) -> Result<(), CliError> {
         apply_env_file(path)?;
     }
     Ok(())
+}
+
+fn extract_env_file_option(args: &[String]) -> Result<(Vec<String>, Option<PathBuf>), CliError> {
+    let mut cleaned = Vec::with_capacity(args.len());
+    let mut env_file = None;
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--env-file" => {
+                index += 1;
+                let value = args
+                    .get(index)
+                    .ok_or_else(|| CliError::usage("missing path after --env-file"))?;
+                env_file = Some(PathBuf::from(value));
+            }
+            option if option.starts_with("--env-file=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing path after --env-file="));
+                }
+                env_file = Some(PathBuf::from(value));
+            }
+            other => cleaned.push(other.to_string()),
+        }
+        index += 1;
+    }
+    Ok((cleaned, env_file))
 }
 
 fn apply_env_file(path: &Path) -> Result<usize, CliError> {
@@ -2328,16 +2358,17 @@ fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
 
 fn usage() -> &'static str {
     "usage:
+  gemstone-rs [--env-file <path>] <command>
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
   gemstone-rs eval [--env-file <path>] <smalltalk>
-  gemstone-rs browse dictionaries
-  gemstone-rs browse classes [dictionary]
-  gemstone-rs browse protocols <class> [dictionary] [--meta]
-  gemstone-rs browse methods <class> [protocol] [dictionary] [--meta]
-  gemstone-rs browse source <class> [selector] [dictionary] [--meta]
-  gemstone-rs inspect oop <raw-oop>
+  gemstone-rs browse dictionaries [--env-file <path>]
+  gemstone-rs browse classes [dictionary] [--env-file <path>]
+  gemstone-rs browse protocols <class> [dictionary] [--meta] [--env-file <path>]
+  gemstone-rs browse methods <class> [protocol] [dictionary] [--meta] [--env-file <path>]
+  gemstone-rs browse source <class> [selector] [dictionary] [--meta] [--env-file <path>]
+  gemstone-rs inspect oop <raw-oop> [--env-file <path>]
   gemstone-rs bridge root [--root <name>]
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
@@ -2353,14 +2384,14 @@ fn usage() -> &'static str {
   gemstone-rs profile resolve <name> [--json] [path]
   gemstone-rs profile check [--json] [path]
   gemstone-rs codegen init [config]
-  gemstone-rs codegen preview [config]
+  gemstone-rs codegen preview [config] [--env-file <path>]
   gemstone-rs codegen preview-profile <profile-name> [profile-file]
-  gemstone-rs codegen diff [config]
+  gemstone-rs codegen diff [config] [--env-file <path>]
   gemstone-rs codegen diff-profile <profile-name> [profile-file]
-  gemstone-rs codegen check [config]
+  gemstone-rs codegen check [config] [--env-file <path>]
   gemstone-rs codegen check-profile <profile-name> [profile-file]
   gemstone-rs codegen explain [--json] [config]
-  gemstone-rs codegen generate [config]
+  gemstone-rs codegen generate [config] [--env-file <path>]
   gemstone-rs codegen generate-profile <profile-name> [profile-file]
   gemstone-rs codegen discover [config] [class ...]
   gemstone-rs codegen discover-mapping [config] <mapped-name> <class>"
@@ -2657,6 +2688,36 @@ GEMSTONE=/opt/gemstone # product root
                 source: "-1 + 2".to_string(),
                 env_file: None,
             }
+        );
+    }
+
+    #[test]
+    fn extracts_global_env_file_option_for_any_command() {
+        assert_eq!(
+            extract_env_file_option(&args(&[
+                "--env-file",
+                ".env.gemstone-rs",
+                "browse",
+                "dictionaries"
+            ]))
+            .unwrap(),
+            (
+                args(&["browse", "dictionaries"]),
+                Some(PathBuf::from(".env.gemstone-rs"))
+            )
+        );
+        assert_eq!(
+            extract_env_file_option(&args(&[
+                "codegen",
+                "check",
+                "--env-file=.env.gemstone-rs",
+                "demo.codegen"
+            ]))
+            .unwrap(),
+            (
+                args(&["codegen", "check", "demo.codegen"]),
+                Some(PathBuf::from(".env.gemstone-rs"))
+            )
         );
     }
 

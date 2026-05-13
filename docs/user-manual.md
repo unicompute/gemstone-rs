@@ -177,13 +177,16 @@ gemstone-rs doctor --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
 gemstone-rs doctor --json
 gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
+gemstone-rs --env-file .env.gemstone-rs browse dictionaries
+gemstone-rs --env-file .env.gemstone-rs codegen check gemstone-rs.codegen
 ```
 
 `env sample` prints a safe shell export template with password placeholders,
 and `env write` saves it to `.env.gemstone-rs` without overwriting existing
-files unless `--force` is used. `--env-file` lets `doctor` and `eval` load that
-file for one command. The non-live doctor form validates environment and GCI
-library loading. The live form also logs in and checks that `3 + 4` returns
+files unless `--force` is used. `--env-file` is a global CLI option, so
+`doctor`, `eval`, `browse`, `inspect`, `bridge`, and `codegen` commands can
+load that file for one command. The non-live doctor form validates environment
+and GCI library loading. The live form also logs in and checks that `3 + 4` returns
 `7`. Human and JSON reports show which source selected `libgcirpc`:
 explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path
 or directory searched. `doctor --strict` fails when the stone or GCI source is

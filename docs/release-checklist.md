@@ -4,14 +4,16 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
 
 ## 0.2.1 / Workbench 0.3.1 Notes
 
-- CLI setup: `doctor --env-file`, `eval --env-file`, `doctor --strict`, and
-  safer `.env.gemstone-rs` template loading.
-- Codegen: `codegen explain --json` and a generated-wrapper compile smoke test.
+- CLI setup: global `--env-file`, `doctor --strict`, and safer
+  `.env.gemstone-rs` template loading across CLI and explorer startup.
+- Codegen: `codegen explain --json`, schema files, and a generated-wrapper
+  compile smoke test.
 - Mapping: missing keys, nested dictionaries, and array reads now report richer
   path context such as `booking.items[2]`.
-- Explorer: setup buttons for env sample/write and a structured Codegen
+- Explorer: setup assistant, env sample/write, and a structured Codegen
   Explain action.
-- VS Code: `GemStone RS: Verify Strict Setup`.
+- VS Code: `GemStone RS: Verify Strict Setup` and automatic env-file passing
+  when `gemstoneRs.envFile` exists.
 
 ## Before Release
 
@@ -30,6 +32,7 @@ cargo run -p gemstone-rs-cli -- profile resolve default --json examples/codegen/
 cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
+cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
 ```
 
@@ -123,6 +126,10 @@ Manual end-to-end publishing remains available through the release wrapper:
 ```bash
 PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.1
 ```
+
+The GitHub `Release` workflow now calls the same `scripts/release_all.sh`
+wrapper, so local and Actions releases share the same verification, packaging,
+checksum, publish, GitHub release, and post-publish verification path.
 
 Dry-run mode checks each crate's publish file list locally. The real publish
 path still uses `cargo publish` in dependency order so crates.io resolves each

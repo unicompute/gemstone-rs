@@ -8,14 +8,11 @@ const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.jso
 const extensionSource = fs.readFileSync(path.join(root, "src", "extension.js"), "utf8");
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 const repoRoot = path.resolve(root, "..");
-const rootSchema = fs.readFileSync(
-  path.join(repoRoot, "schemas/gemstone-rs.codegen-profiles.schema.json"),
-  "utf8"
-);
-const extensionSchema = fs.readFileSync(
-  path.join(root, "schemas/gemstone-rs.codegen-profiles.schema.json"),
-  "utf8"
-);
+const schemaNames = [
+  "gemstone-rs.codegen.schema.json",
+  "gemstone-rs.codegen-profiles.schema.json",
+  "gemstone-rs.codegen-explain.schema.json",
+];
 
 function includes(list, value) {
   return Array.isArray(list) && list.includes(value);
@@ -78,6 +75,8 @@ assert(extensionSource.includes("Copy Env Script"), "verify setup should offer e
 assert(extensionSource.includes("Open Settings"), "verify setup should offer settings shortcut");
 assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
 assert(extensionSource.includes('"doctor", "--strict"'), "verify strict setup should run doctor --strict");
+assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should pass --env-file when configured");
+assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
@@ -109,16 +108,30 @@ assert(
   extensionSource.includes("Open Profile File"),
   "profile checking should offer profile file open action"
 );
-assert.deepStrictEqual(
-  JSON.parse(extensionSchema),
-  JSON.parse(rootSchema),
-  "extension profile schema must match the repository schema"
+for (const schemaName of schemaNames) {
+  const rootSchema = fs.readFileSync(path.join(repoRoot, "schemas", schemaName), "utf8");
+  const extensionSchema = fs.readFileSync(path.join(root, "schemas", schemaName), "utf8");
+  assert.deepStrictEqual(
+    JSON.parse(extensionSchema),
+    JSON.parse(rootSchema),
+    `extension ${schemaName} must match the repository schema`
+  );
+}
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.codegen"))
+  ),
+  "package.json should contribute JSON validation for codegen config files"
 );
 assert(
   packageJson.contributes.jsonValidation.some((entry) =>
-    entry.fileMatch.includes("gemstone-rs.codegen-profiles.json")
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.codegen-profiles.json"))
   ),
   "package.json should contribute JSON validation for profile files"
+);
+assert(
+  packageJson.contributes.configuration.properties["gemstoneRs.envFile"],
+  "package.json should expose gemstoneRs.envFile"
 );
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

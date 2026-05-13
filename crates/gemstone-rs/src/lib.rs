@@ -1273,7 +1273,9 @@ mod tests {
             return Ok(());
         };
 
-        let mut session = Session::login(Config::from_env()?)?;
+        let Some(mut session) = live_session()? else {
+            return Ok(());
+        };
         assert_eq!(session.eval("3 + 4")?, Value::SmallInt(7));
         session.logout()?;
         Ok(())
@@ -1403,7 +1405,15 @@ mod tests {
         if env::var("GS_RUN_LIVE_RUST").as_deref() != Ok("1") {
             return Ok(None);
         }
-        Session::login(Config::from_env()?).map(Some)
+        let config = match Config::from_env() {
+            Ok(config) => config,
+            Err(Error::MissingEnvironment(name)) => {
+                eprintln!("skipping live GemStone test: {name} is not set");
+                return Ok(None);
+            }
+            Err(err) => return Err(err),
+        };
+        Session::login(config).map(Some)
     }
 
     fn live_test_guard() -> Option<MutexGuard<'static, ()>> {

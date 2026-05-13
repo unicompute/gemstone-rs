@@ -9,6 +9,7 @@ embedding richer tooling in VS Code or another frontend.
 ```bash
 cargo install gemstone-rs-explorer
 gemstone-rs-explorer --port 8787
+gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 ```
 
 From a checkout:
@@ -33,6 +34,8 @@ http://127.0.0.1:8787/
 The home page is a small browser UI over the same JSON endpoints. It can:
 
 - browse dictionaries, classes, protocols, methods, and source
+- run a setup assistant that checks the env file, live configuration, GCI
+  library, codegen config, and project profiles
 - run doctor/status checks
 - inspect BridgeRoot and list keys
 - run codegen sample/discover/preview/diff/check/generate from an editable
@@ -90,6 +93,7 @@ Run these from a second terminal:
 ```bash
 curl -s http://127.0.0.1:8787/health
 curl -s http://127.0.0.1:8787/api/config
+curl -s 'http://127.0.0.1:8787/api/setup/assistant?config=examples/codegen/gemstone-rs.codegen&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s http://127.0.0.1:8787/api/doctor
 curl -s 'http://127.0.0.1:8787/api/doctor?live=1'
 curl -s http://127.0.0.1:8787/api/status
@@ -136,6 +140,10 @@ Expected:
 The setup actions on the home page can show the same safe `GS_*` environment
 template as `gemstone-rs env sample`, or write `.env.gemstone-rs` when the
 explorer was started with `--allow-write`.
+Start the explorer with `--env-file .env.gemstone-rs` to use that file for all
+live browse, inspect, BridgeRoot, and codegen discovery actions.
+`Run Setup Assistant` checks the env file, GemStone configuration, GCI library,
+selected codegen config, and project profile file in one response.
 
 The home page includes a Codegen Workflow panel. Set `Config path`, optionally
 set `Config root`, or start the server with `--codegen-root`. `Refresh Configs`

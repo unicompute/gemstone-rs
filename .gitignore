@@ -1,5 +1,9 @@
 /target/
+examples/**/target/
+examples/**/Cargo.lock
 **/*.rs.bk
 node_modules/
 *.vsix
 .vscode-test/
+SHA256SUMS
+release-notes.md

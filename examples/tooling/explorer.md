@@ -9,6 +9,7 @@ From a source checkout:
 
 ```bash
 cargo run -p gemstone-rs-explorer -- --port 8787
+cargo run -p gemstone-rs-explorer -- --env-file .env.gemstone-rs --port 8787
 cargo run -p gemstone-rs-explorer -- --port 8787 --codegen-root /path/to/gemstone-rs
 ```
 
@@ -17,6 +18,7 @@ From installed tools:
 ```bash
 cargo install gemstone-rs-explorer
 gemstone-rs-explorer --port 8787
+gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 ```
 
 Open:
@@ -36,6 +38,7 @@ In a second terminal:
 ```bash
 curl -s http://127.0.0.1:8787/health
 curl -s http://127.0.0.1:8787/api/config
+curl -s 'http://127.0.0.1:8787/api/setup/assistant?config=examples/codegen/gemstone-rs.codegen&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s http://127.0.0.1:8787/api/status
 curl -s http://127.0.0.1:8787/api/browse/dictionaries
 curl -s 'http://127.0.0.1:8787/api/browse/protocols?class=Object'

@@ -117,14 +117,19 @@ gemstone-rs doctor --live
 gemstone-rs doctor --strict
 gemstone-rs doctor --json
 gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
+gemstone-rs --env-file .env.gemstone-rs browse dictionaries
+gemstone-rs --env-file .env.gemstone-rs codegen check gemstone-rs.codegen
+gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 ```
 
 `env sample` prints a copy-pasteable setup script with placeholders for
 passwords, so a new shell can be configured without accidentally dumping
 secrets into docs, tickets, or chat. `env write` saves the same template to
-`.env.gemstone-rs` and refuses to overwrite unless `--force` is used. `doctor
---env-file` and `eval --env-file` load that file for one command without
-requiring you to source it globally.
+`.env.gemstone-rs` and refuses to overwrite unless `--force` is used.
+`--env-file` is now a global CLI option, so doctor, eval, browse, inspect,
+BridgeRoot, and codegen commands can all use the same file without requiring
+you to source it globally. The explorer can also start with
+`--env-file .env.gemstone-rs`.
 
 The doctor report names the source used to select `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory
@@ -253,12 +258,16 @@ gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
+cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Generated wrapper files now include a small `#[cfg(test)]` surface-name test
 stub, and `codegen explain` reports that stub beside the classes, selectors,
 return helpers, and mapped fields that will be generated. Add `--json` for the
 explorer or VS Code when they need the same summary as structured data.
+The repository also commits schemas for the codegen model, project profiles,
+and `codegen explain --json` output, so editor panels and release checks can
+reason about the same structures.
 
 Generate a starter config from a live stone:
 
@@ -552,6 +561,11 @@ make verify
 DRY_RUN=1 scripts/release_all.sh 0.2.1
 scripts/publish_verify.sh 0.2.1
 ```
+
+The release wrapper is now the single path for local and GitHub Actions
+releases: it verifies Rust, codegen, docs PDFs, and VS Code packaging; builds
+checksums; optionally publishes crates and the VSIX; and can verify crates.io,
+Marketplace, and GitHub Release assets after publishing.
 
 ---
 

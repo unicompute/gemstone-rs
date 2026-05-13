@@ -9,6 +9,8 @@ checked-in codegen sample under the repository-level `examples/` directory.
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs doctor --env-file .env.gemstone-rs
+gemstone-rs --env-file .env.gemstone-rs browse dictionaries
+gemstone-rs --env-file .env.gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 export GS_LIB=/opt/gemstone/product/lib
 export GS_STONE=gs64stone
 export GS_STONE_NAME=gs64stone
@@ -42,6 +44,7 @@ cargo run -p gemstone-rs --example quickstart
 | Mapping discovery | `cargo run -p gemstone-rs --example codegen_discover_mapping` | Connects to a live stone and proposes a `BridgeMapped` config. |
 | Generated wrapper app | `cargo run -p gemstone-rs --example generated_wrapper_app` | Uses checked-in generated wrappers to call `Object>>printString`. |
 | Generated mapping app | `cargo run -p gemstone-rs --example generated_mapping_app` | Uses codegen-created `BridgeMapped` structs with `BridgeRoot`. |
+| Generated wrapper compile check | `cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml` | Imports the checked-in generated wrappers as a separate crate. |
 | Codegen files | `examples/codegen/` | Config, generated wrappers, check/diff/generate workflow. |
 | Explorer tooling | `examples/tooling/explorer.md` | Local explorer startup and endpoint checks. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
@@ -137,6 +140,7 @@ gemstone-rs bridge keys
 gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
+cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 ## Codegen Workflow

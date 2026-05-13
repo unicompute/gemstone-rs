@@ -291,6 +291,8 @@ function formatSetupReport(cfg, result, title) {
     `useCargo: ${cfg.useCargo}`,
     `cliPath: ${cfg.cliPath}`,
     `explorerPath: ${cfg.explorerPath}`,
+    `envFile: ${cfg.envFile}`,
+    `envFileExists: ${envFileExists(cfg)}`,
     `codegenConfig: ${cfg.codegenConfig}`,
     `codegenProfiles: ${cfg.codegenProfiles}`,
     `codegenConfigExists: ${fs.existsSync(resolvePath(cfg.codegenConfig, cfg.cwd))}`,
@@ -773,17 +775,19 @@ async function openMethodSource(method) {
 
 function launchExplorer() {
   const cfg = settings();
+  const envArgs = envFileArgs(cfg);
+  const envText = envArgs.length ? ` ${envArgs.map(shellQuote).join(" ")}` : "";
   const terminal = vscode.window.createTerminal({
     name: "gemstone-rs Explorer",
     cwd: cfg.cwd,
   });
   if (cfg.useCargo) {
     terminal.sendText(
-      `cargo run -p gemstone-rs-explorer -- --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
+      `cargo run -p gemstone-rs-explorer --${envText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
     );
   } else {
     terminal.sendText(
-      `${shellQuote(cfg.explorerPath)} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
+      `${shellQuote(cfg.explorerPath)}${envText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
     );
   }
   terminal.show();
@@ -1159,7 +1163,8 @@ async function runAndShow(args, options = {}) {
 function runCli(args, options = {}) {
   const cfg = settings();
   const command = cfg.useCargo ? "cargo" : cfg.cliPath;
-  const commandArgs = cfg.useCargo ? ["run", "-p", "gemstone-rs-cli", "--", ...args] : args;
+  const argsWithEnv = withEnvFileArgs(args, cfg);
+  const commandArgs = cfg.useCargo ? ["run", "-p", "gemstone-rs-cli", "--", ...argsWithEnv] : argsWithEnv;
 
   return new Promise((resolve, reject) => {
     const child = childProcess.spawn(command, commandArgs, {
@@ -1198,11 +1203,32 @@ function settings() {
     cliPath: cfg.get("cliPath", "gemstone-rs"),
     explorerPath: cfg.get("explorerPath", "gemstone-rs-explorer"),
     useCargo: cfg.get("useCargo", false),
+    envFile: cfg.get("envFile", ".env.gemstone-rs"),
     codegenConfig: cfg.get("codegenConfig", "gemstone-rs.codegen"),
     codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),
   };
+}
+
+function withEnvFileArgs(args, cfg = settings()) {
+  if (args.some((arg) => arg === "--env-file" || String(arg).startsWith("--env-file="))) {
+    return args;
+  }
+  return [...envFileArgs(cfg), ...args];
+}
+
+function envFileArgs(cfg = settings()) {
+  const envFile = String(cfg.envFile || "").trim();
+  if (!envFile || !envFileExists(cfg)) {
+    return [];
+  }
+  return ["--env-file", envFile];
+}
+
+function envFileExists(cfg = settings()) {
+  const envFile = String(cfg.envFile || "").trim();
+  return Boolean(envFile && fs.existsSync(resolvePath(envFile, cfg.cwd)));
 }
 
 function resolvePath(value, cwd) {

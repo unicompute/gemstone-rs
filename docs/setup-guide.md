@@ -66,6 +66,9 @@ Use the file directly without sourcing it:
 gemstone-rs doctor --env-file .env.gemstone-rs
 gemstone-rs doctor --env-file .env.gemstone-rs --live
 gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
+gemstone-rs --env-file .env.gemstone-rs browse dictionaries
+gemstone-rs --env-file .env.gemstone-rs codegen check gemstone-rs.codegen
+gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 ```
 
 Optional variables:
@@ -102,6 +105,7 @@ gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
+gemstone-rs --env-file .env.gemstone-rs codegen explain --json gemstone-rs.codegen
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```

@@ -12,6 +12,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VSIX_VERSION="$(node -p "require('$ROOT/vscode-gemstone-rs-workbench/package.json').version")"
 VSIX="$ROOT/vscode-gemstone-rs-workbench/gemstone-rs-workbench-${VSIX_VERSION}.vsix"
 CHECKSUMS="$ROOT/SHA256SUMS"
+RELEASE_NOTES="$ROOT/release-notes.md"
 
 cd "$ROOT"
 
@@ -55,9 +56,41 @@ fi
 
 if [[ "$CREATE_GITHUB_RELEASE" == "1" || "$CREATE_GITHUB_RELEASE" == "true" ]]; then
   echo "== GitHub release =="
+  cat > "$RELEASE_NOTES" <<NOTES
+gemstone-rs ${VERSION}
+
+Install:
+
+\`\`\`bash
+cargo add gemstone-rs
+cargo install gemstone-rs-cli
+cargo install gemstone-rs-explorer
+\`\`\`
+
+VS Code Workbench:
+
+- https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workbench
+
+Highlights:
+
+- \`--env-file .env.gemstone-rs\` support across CLI and explorer startup.
+- Workbench automatically passes the configured env file when it exists.
+- \`codegen explain --json\` for structured Codegen summaries.
+- Codegen schemas and generated-wrapper compile smoke checks.
+- Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
+- Clearer object-mapping path diagnostics for nested fields and arrays.
+
+Release assets:
+
+- VSIX package
+- PDF documentation
+- SHA256SUMS
+NOTES
+  git tag "v${VERSION}" || true
+  git push origin "v${VERSION}" || true
   gh release create "v${VERSION}" "$VSIX" "$CHECKSUMS" docs/pdf/*.pdf \
     --title "gemstone-rs v${VERSION}" \
-    --notes "gemstone-rs ${VERSION} release artifacts, VSIX, checksums, and generated PDFs."
+    --notes-file "$RELEASE_NOTES"
 else
   echo "skipping GitHub release; set CREATE_GITHUB_RELEASE=1"
 fi

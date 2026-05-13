@@ -15,9 +15,11 @@ codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample
 	cargo run -p gemstone-rs-cli -- env write /tmp/gemstone-rs.env --force
 	cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+	cargo run -p gemstone-rs-cli -- --env-file /tmp/gemstone-rs.env codegen check examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+	cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
 
 profile-check:
 	cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json

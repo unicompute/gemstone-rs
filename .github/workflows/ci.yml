@@ -24,9 +24,11 @@ jobs:
       - run: cargo run -p gemstone-rs-cli -- env sample
       - run: cargo run -p gemstone-rs-cli -- env write /tmp/gemstone-rs.env --force
       - run: cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+      - run: cargo run -p gemstone-rs-cli -- --env-file /tmp/gemstone-rs.env codegen check examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
+      - run: cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
       - run: cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile list --json examples/codegen/gemstone-rs.codegen-profiles.json

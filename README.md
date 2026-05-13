@@ -66,6 +66,9 @@ gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
 gemstone-rs doctor --json
 gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
+gemstone-rs --env-file .env.gemstone-rs browse dictionaries
+gemstone-rs --env-file .env.gemstone-rs codegen check gemstone-rs.codegen
+gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 gemstone-rs-explorer --help
 ```
 
@@ -206,9 +209,11 @@ or live stone connectivity. Add `--json` when release scripts or VS Code need
 structured output. `env sample` prints a safe shell export template for the
 same `GS_*` variables and replaces password values with placeholders.
 `env write` writes that template to `.env.gemstone-rs` or a chosen path and
-refuses to overwrite unless `--force` is passed. `doctor --env-file` and
-`eval --env-file` load that file without requiring the caller to source it in
-the shell. `doctor --strict` is intended for CI: it fails when the stone or GCI
+refuses to overwrite unless `--force` is passed. `--env-file` works as a global
+CLI option, so `doctor`, `eval`, `browse`, `inspect`, `bridge`, and `codegen`
+commands can load that file without requiring the caller to source it in the
+shell. `gemstone-rs-explorer --env-file .env.gemstone-rs` uses the same file
+for local browser workflows. `doctor --strict` is intended for CI: it fails when the stone or GCI
 library source is only coming from defaults. GCI diagnostics also report
 whether the selected `libgcirpc` exists, is a file, is readable, and whether
 the path appears to be arm64 or x86_64.
