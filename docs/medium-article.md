@@ -440,6 +440,17 @@ Run:
 gemstone-rs-explorer --port 8787
 ```
 
+For write-enabled local sessions, add a local token:
+
+```bash
+export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
+gemstone-rs-explorer --port 8787 --auth-token-env GEMSTONE_RS_EXPLORER_TOKEN
+```
+
+Then open `http://127.0.0.1:8787/?token=replace-with-a-local-random-token`.
+The VS Code workbench can generate and store that token with `GemStone RS:
+Generate Explorer Auth Token`.
+
 Open:
 
 ```text

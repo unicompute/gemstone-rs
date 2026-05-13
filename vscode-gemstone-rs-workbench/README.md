@@ -73,6 +73,8 @@ For a source checkout:
 - `GemStone RS: Show Project Profile`
 - `GemStone RS: Resolve Project Profile`
 - `GemStone RS: Check Project Profiles`
+- `GemStone RS: Generate Explorer Auth Token`
+- `GemStone RS: Clear Explorer Auth Token`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
@@ -119,8 +121,11 @@ BridgeRoot keys. Workbench buttons can hand off to native VS Code commands for
 previewing wrappers, opening diffs, generating with confirmation, checking
 project profiles, opening docs, and opening generated output files.
 If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
-`--auth-token` and all browser/webview URLs include the matching `token=`
-query parameter.
+`--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` and all browser/webview URLs
+include the matching `token=` query parameter. Use `Generate Explorer Auth
+Token` to create a local random token, store it in VS Code settings, and copy
+it to the clipboard. Use `Clear Explorer Auth Token` to return to the default
+loopback-only, no-token mode.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
 same masked environment and GCI-library checks as the terminal. `Verify Live
 Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
@@ -156,7 +161,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Key, and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Verify Strict
   Setup, Eval Smalltalk, Show/Copy/Write Environment Template, Launch Explorer,
-  and Open Explorer Webview.
+  Open Explorer Webview, Generate Explorer Auth Token, and Clear Explorer Auth
+  Token.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with

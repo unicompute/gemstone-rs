@@ -78,6 +78,8 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Verify Setup
 - Verify Live Setup
 - Eval Smalltalk
+- Generate Explorer Auth Token
+- Clear Explorer Auth Token
 - Launch Explorer
 - Open Explorer Webview
 
@@ -123,6 +125,8 @@ Commands:
 - `GemStone RS: Show Project Profile`
 - `GemStone RS: Resolve Project Profile`
 - `GemStone RS: Check Project Profiles`
+- `GemStone RS: Generate Explorer Auth Token`
+- `GemStone RS: Clear Explorer Auth Token`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
@@ -228,10 +232,12 @@ http://127.0.0.1:8787/
 ```
 
 If you set `gemstoneRs.explorerAuthToken`, `GemStone RS: Launch Explorer`
-starts the server with `--auth-token` and the browser/webview URLs include the
-matching `token=` query parameter. This is useful when you want an additional
-local guard around write-enabled explorer sessions without changing the core
-loopback-only deployment model.
+starts the server with `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` so the
+token is not printed in the terminal command. Browser and webview URLs include
+the matching `token=` query parameter. Use `GemStone RS: Generate Explorer Auth
+Token` to create a local random token, save it to VS Code settings, and copy it
+to the clipboard. Use `GemStone RS: Clear Explorer Auth Token` to return to the
+default loopback-only, no-token mode.
 
 It is still the same loopback-only explorer process. If the explorer is not
 running, the webview will show a connection error and the output panel will show

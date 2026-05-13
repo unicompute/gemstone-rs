@@ -12,6 +12,22 @@ Run it with:
 cargo run -p gemstone-rs-explorer -- --port 8787
 ```
 
+Add a local auth token when you want a second guard around the loopback app,
+especially before starting with `--allow-write`:
+
+```bash
+export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
+cargo run -p gemstone-rs-explorer -- --port 8787 --auth-token-env GEMSTONE_RS_EXPLORER_TOKEN
+```
+
+Then pass `token=` for browser links or use a header from scripts:
+
+```bash
+curl -s 'http://127.0.0.1:8787/api/config?token=replace-with-a-local-random-token'
+curl -s -H 'X-GemStone-RS-Token: replace-with-a-local-random-token' \
+  http://127.0.0.1:8787/api/status
+```
+
 Then open:
 
 ```text
@@ -86,3 +102,8 @@ Project profile saves are schema-validated through the shared
 write targets stay under the configured codegen root, `..` traversal is
 rejected after URL decoding, and absolute write targets require
 `--allow-absolute-write-paths`.
+
+The home-page UI asks for confirmation before BridgeRoot writes, env-file
+writes, profile saves, config saves, and codegen generate actions. The server
+still enforces the final write policy: write endpoints return `403` unless the
+process was started with `--allow-write`.

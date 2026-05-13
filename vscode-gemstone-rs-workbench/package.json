@@ -65,6 +65,8 @@
     "onCommand:gemstoneRs.resolveProjectProfile",
     "onCommand:gemstoneRs.checkProjectProfiles",
     "onCommand:gemstoneRs.launchExplorer",
+    "onCommand:gemstoneRs.generateExplorerAuthToken",
+    "onCommand:gemstoneRs.clearExplorerAuthToken",
     "onCommand:gemstoneRs.openExplorerWebview",
     "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs"
@@ -251,6 +253,14 @@
       {
         "command": "gemstoneRs.launchExplorer",
         "title": "GemStone RS: Launch Explorer"
+      },
+      {
+        "command": "gemstoneRs.generateExplorerAuthToken",
+        "title": "GemStone RS: Generate Explorer Auth Token"
+      },
+      {
+        "command": "gemstoneRs.clearExplorerAuthToken",
+        "title": "GemStone RS: Clear Explorer Auth Token"
       },
       {
         "command": "gemstoneRs.openExplorerWebview",

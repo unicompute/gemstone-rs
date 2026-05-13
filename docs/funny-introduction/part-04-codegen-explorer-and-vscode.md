@@ -64,6 +64,17 @@ The explorer is a local HTTP app that sits on top of the same Rust API:
 cargo run -p gemstone-rs-explorer -- --port 8787
 ```
 
+When you want an extra local guard, especially before enabling writes, run it
+with a token:
+
+```bash
+export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
+cargo run -p gemstone-rs-explorer -- --port 8787 --auth-token-env GEMSTONE_RS_EXPLORER_TOKEN
+```
+
+Then add `?token=replace-with-a-local-random-token` to browser URLs, or send
+`X-GemStone-RS-Token` from scripts.
+
 Open these endpoints while developing:
 
 ```text

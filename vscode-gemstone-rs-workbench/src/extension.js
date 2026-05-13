@@ -1,4 +1,5 @@
 const childProcess = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
@@ -57,6 +58,8 @@ function activate(context) {
   register(context, "gemstoneRs.resolveProjectProfile", resolveProjectProfile);
   register(context, "gemstoneRs.checkProjectProfiles", checkProjectProfiles);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
+  register(context, "gemstoneRs.generateExplorerAuthToken", generateExplorerAuthToken);
+  register(context, "gemstoneRs.clearExplorerAuthToken", clearExplorerAuthToken);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
@@ -196,6 +199,8 @@ class GemStoneTreeProvider {
         actionNode("Copy Environment Template", "gemstoneRs.copyEnvironmentTemplate"),
         actionNode("Write .env.gemstone-rs", "gemstoneRs.writeEnvironmentTemplate"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
+        actionNode("Generate Explorer Auth Token", "gemstoneRs.generateExplorerAuthToken"),
+        actionNode("Clear Explorer Auth Token", "gemstoneRs.clearExplorerAuthToken"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
         actionNode("Open Explorer Webview", "gemstoneRs.openExplorerWebview"),
       ];
@@ -990,6 +995,7 @@ function launchExplorer() {
   const terminal = vscode.window.createTerminal({
     name: "gemstone-rs Explorer",
     cwd: cfg.cwd,
+    env: explorerTerminalEnv(cfg),
   });
   if (cfg.useCargo) {
     terminal.sendText(
@@ -1002,6 +1008,62 @@ function launchExplorer() {
   }
   terminal.show();
   vscode.env.openExternal(vscode.Uri.parse(explorerUrl(cfg)));
+}
+
+async function generateExplorerAuthToken() {
+  const token = crypto.randomBytes(24).toString("base64url");
+  const target = vscode.workspace.workspaceFolders?.length
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+  await vscode.workspace.getConfiguration("gemstoneRs").update("explorerAuthToken", token, target);
+  await vscode.env.clipboard.writeText(token);
+  explorerProvider?.refresh();
+  output.clear();
+  output.appendLine("Generated gemstone-rs explorer auth token.");
+  output.appendLine(`scope: ${target === vscode.ConfigurationTarget.Workspace ? "workspace" : "global"}`);
+  output.appendLine("The token was copied to the clipboard and stored in gemstoneRs.explorerAuthToken.");
+  output.appendLine("Launch Explorer will pass it via GEMSTONE_RS_EXPLORER_TOKEN.");
+  output.show(true);
+  const action = await vscode.window.showInformationMessage(
+    "Generated gemstone-rs explorer auth token.",
+    "Launch Explorer",
+    "Open Settings",
+    "Copy Token"
+  );
+  if (action === "Launch Explorer") {
+    launchExplorer();
+  } else if (action === "Open Settings") {
+    await vscode.commands.executeCommand(
+      "workbench.action.openSettings",
+      "gemstoneRs.explorerAuthToken"
+    );
+  } else if (action === "Copy Token") {
+    await vscode.env.clipboard.writeText(token);
+  }
+}
+
+async function clearExplorerAuthToken() {
+  const cfg = settings();
+  if (!cfg.explorerAuthToken) {
+    vscode.window.showInformationMessage("No gemstone-rs explorer auth token is configured.");
+    return;
+  }
+  const choice = await vscode.window.showWarningMessage(
+    "Clear gemstoneRs.explorerAuthToken?",
+    { modal: true },
+    "Clear Token"
+  );
+  if (choice !== "Clear Token") {
+    return;
+  }
+  const target = vscode.workspace.workspaceFolders?.length
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+  await vscode.workspace.getConfiguration("gemstoneRs").update("explorerAuthToken", "", target);
+  explorerProvider?.refresh();
+  output.clear();
+  output.appendLine("Cleared gemstone-rs explorer auth token.");
+  output.show(true);
 }
 
 function openExplorerWebview() {
@@ -1707,7 +1769,11 @@ function explorerUrl(cfg = settings(), route = "/") {
 }
 
 function explorerAuthArgs(cfg = settings()) {
-  return cfg.explorerAuthToken ? ["--auth-token", cfg.explorerAuthToken] : [];
+  return cfg.explorerAuthToken ? ["--auth-token-env", "GEMSTONE_RS_EXPLORER_TOKEN"] : [];
+}
+
+function explorerTerminalEnv(cfg = settings()) {
+  return cfg.explorerAuthToken ? { GEMSTONE_RS_EXPLORER_TOKEN: cfg.explorerAuthToken } : {};
 }
 
 function withEnvFileArgs(args, cfg = settings()) {

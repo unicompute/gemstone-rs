@@ -18,25 +18,34 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
+    run_one_smoke(auth_token=None)
+    run_one_smoke(auth_token="smoke-token")
+    return 0
+
+
+def run_one_smoke(auth_token: str | None) -> None:
     try:
         port = free_port()
     except PermissionError as error:
         if os.environ.get("REQUIRE_EXPLORER_SMOKE") in {"1", "true", "TRUE", "yes"}:
             raise
         print(f"skipping explorer endpoint smoke: cannot bind loopback socket ({error})")
-        return 0
+        return
+    command = [
+        "cargo",
+        "run",
+        "-p",
+        "gemstone-rs-explorer",
+        "--",
+        "--port",
+        str(port),
+        "--codegen-root",
+        str(ROOT),
+    ]
+    if auth_token:
+        command.extend(["--auth-token", auth_token])
     process = subprocess.Popen(
-        [
-            "cargo",
-            "run",
-            "-p",
-            "gemstone-rs-explorer",
-            "--",
-            "--port",
-            str(port),
-            "--codegen-root",
-            str(ROOT),
-        ],
+        command,
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -46,13 +55,30 @@ def main() -> int:
         base = f"http://127.0.0.1:{port}"
         wait_for_health(base, process)
         assert_json(f"{base}/health", {"status": "ok"})
-        status_code, status = get_json_with_status(f"{base}/api/status")
+        if auth_token:
+            status_code, denied = get_json_with_status(f"{base}/api/config")
+            assert status_code == 401
+            assert "auth token" in denied["error"]
+            assert_json(f"{base}/api/config?token={auth_token}", {"authRequired": True})
+            assert_json(
+                f"{base}/api/config",
+                {"authRequired": True},
+                headers={"X-GemStone-RS-Token": auth_token},
+            )
+            suffix = f"?token={auth_token}"
+            separator = "&"
+        else:
+            assert_json(f"{base}/api/config", {"authRequired": False})
+            suffix = ""
+            separator = "?"
+
+        status_code, status = get_json_with_status(f"{base}/api/status{suffix}")
         assert status_code in {200, 500, 503}
         assert "connected" in status
 
         profiles = get_json(
             f"{base}/api/codegen/profiles/check"
-            "?profile_file=examples/codegen/gemstone-rs.codegen-profiles.json"
+            f"{suffix}{separator}profile_file=examples/codegen/gemstone-rs.codegen-profiles.json"
         )
         assert profiles["success"] is True
         assert profiles["ok"] is True
@@ -61,14 +87,14 @@ def main() -> int:
 
         preview = get_json(
             f"{base}/api/codegen/preview-profile"
-            "?profile=default"
+            f"{suffix}{separator}profile=default"
             "&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json"
         )
         assert preview["success"] is True
         assert "pub struct Object" in preview["source"]
 
-        print(f"explorer endpoint smoke checks passed on {base}")
-        return 0
+        mode = "auth" if auth_token else "open"
+        print(f"explorer endpoint smoke checks passed on {base} ({mode})")
     finally:
         process.terminate()
         try:
@@ -99,15 +125,18 @@ def wait_for_health(base: str, process: subprocess.Popen[str]) -> None:
     raise TimeoutError(f"explorer did not become ready: {last_error}")
 
 
-def get_json(url: str) -> dict:
-    status, value = get_json_with_status(url)
+def get_json(url: str, headers: dict[str, str] | None = None) -> dict:
+    status, value = get_json_with_status(url, headers=headers)
     assert 200 <= status < 300, f"{url}: expected 2xx, got {status}"
     return value
 
 
-def get_json_with_status(url: str) -> tuple[int, dict]:
+def get_json_with_status(
+    url: str, headers: dict[str, str] | None = None
+) -> tuple[int, dict]:
+    request = urllib.request.Request(url, headers=headers or {})
     try:
-        with urllib.request.urlopen(url, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=5) as response:
             status = response.status
             payload = response.read().decode("utf-8")
     except urllib.error.HTTPError as error:
@@ -118,8 +147,8 @@ def get_json_with_status(url: str) -> tuple[int, dict]:
     return status, value
 
 
-def assert_json(url: str, expected: dict) -> None:
-    actual = get_json(url)
+def assert_json(url: str, expected: dict, headers: dict[str, str] | None = None) -> None:
+    actual = get_json(url, headers=headers)
     for key, value in expected.items():
         assert actual.get(key) == value, f"{url}: expected {key}={value}, got {actual.get(key)}"
 

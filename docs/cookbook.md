@@ -242,7 +242,20 @@ http://127.0.0.1:8787/
 
 The explorer starts read-only and loopback-only.
 
-## Recipe 19: Enable Explorer Eval Explicitly
+## Recipe 21: Add a Local Explorer Auth Token
+
+```bash
+export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
+gemstone-rs-explorer --port 8787 --auth-token-env GEMSTONE_RS_EXPLORER_TOKEN
+curl -s 'http://127.0.0.1:8787/api/config?token=replace-with-a-local-random-token'
+```
+
+VS Code users can run `GemStone RS: Generate Explorer Auth Token`; the
+workbench stores the token in `gemstoneRs.explorerAuthToken`, launches the
+explorer with `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN`, and opens
+token-aware browser/webview URLs.
+
+## Recipe 22: Enable Explorer Eval Explicitly
 
 ```bash
 gemstone-rs-explorer --port 8787 --allow-eval
@@ -251,7 +264,7 @@ curl -s 'http://127.0.0.1:8787/api/eval?source=3%20%2B%204'
 
 Use this locally only.
 
-## Recipe 20: Use the VS Code Workbench With a Checkout
+## Recipe 23: Use the VS Code Workbench With a Checkout
 
 ```json
 {
@@ -264,7 +277,7 @@ Use this locally only.
 Then open the GemStone RS sidebar and use the Dictionaries, Codegen Config, and
 Explorer trees.
 
-## Recipe 21: Verify Published Artifacts
+## Recipe 24: Verify Published Artifacts
 
 ```bash
 scripts/publish_verify.sh 0.2.2

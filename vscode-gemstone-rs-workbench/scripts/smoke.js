@@ -51,6 +51,8 @@ const requiredCommands = [
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
+  "gemstoneRs.generateExplorerAuthToken",
+  "gemstoneRs.clearExplorerAuthToken",
 ];
 
 for (const command of requiredCommands) {
@@ -97,6 +99,14 @@ assert(extensionSource.includes('"doctor", "--strict"'), "verify strict setup sh
 assert(extensionSource.includes("setupAssistantUrl"), "Workbench should build a setup assistant URL");
 assert(extensionSource.includes("explorerUrl"), "Workbench should build token-aware explorer URLs");
 assert(extensionSource.includes("explorerAuthArgs"), "Workbench should pass explorer auth token arguments");
+assert(
+  extensionSource.includes("explorerTerminalEnv"),
+  "Workbench should pass explorer auth token through terminal environment"
+);
+assert(
+  extensionSource.includes("crypto.randomBytes"),
+  "Workbench should generate explorer auth tokens locally"
+);
 assert(extensionSource.includes("state.authToken"), "webview should preserve auth token on explorer API calls");
 assert(extensionSource.includes("/api/setup/assistant"), "Workbench should call the explorer setup assistant");
 assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should pass --env-file when configured");
@@ -105,6 +115,7 @@ assert(extensionSource.includes('"env", "sample"'), "environment template comman
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
+assert(readme.includes("Generate Explorer Auth Token"), "README should mention auth token generation");
 assert(readme.includes("Show Environment Template"), "README should mention environment template display");
 assert(readme.includes("Write .env.gemstone-rs"), "README should mention environment template writes");
 assert(readme.includes("Verify Live Setup"), "README should mention live setup verification");
