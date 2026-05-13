@@ -182,7 +182,7 @@ The script checks:
 - `gemstone-rs-explorer --help`
 - VS Code Marketplace version matches `package.json`
 - GitHub Release `v<version>` exists
-- GitHub Release assets include the VSIX and `SHA256SUMS`
+- GitHub Release assets include the VSIX, `SHA256SUMS`, and every generated PDF
 
 To skip the GitHub Release asset check during early testing:
 

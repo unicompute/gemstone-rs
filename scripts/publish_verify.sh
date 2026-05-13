@@ -47,6 +47,16 @@ check_marketplace_version() {
   printf 'ok (%s)\n' "$actual"
 }
 
+expected_github_release_assets() {
+  printf '%s\n' "gemstone-rs-workbench-${VSIX_VERSION}.vsix"
+  printf '%s\n' "SHA256SUMS"
+  find "$ROOT/docs/pdf" -maxdepth 1 -type f -name '*.pdf' -print \
+    | sort \
+    | while IFS= read -r pdf; do
+        basename "$pdf"
+      done
+}
+
 require cargo
 require curl
 require node
@@ -71,21 +81,24 @@ check_marketplace_version
 
 check_github_release_assets() {
   local tag="${GITHUB_RELEASE_TAG:-v${VERSION}}"
-  local vsix="gemstone-rs-workbench-${VSIX_VERSION}.vsix"
   printf 'checking GitHub release %s assets... ' "$tag"
   local assets
   assets="$(gh release view "$tag" --repo "$REPO" --json assets --jq '.assets[].name')"
-  if ! grep -Fxq "$vsix" <<<"$assets"; then
-    echo "missing asset $vsix" >&2
+  local missing=0
+  local expected_count=0
+  while IFS= read -r expected; do
+    expected_count=$((expected_count + 1))
+    if ! grep -Fxq "$expected" <<<"$assets"; then
+      echo "missing asset $expected" >&2
+      missing=1
+    fi
+  done < <(expected_github_release_assets)
+  if [[ "$missing" != "0" ]]; then
+    echo "release assets found:" >&2
     echo "$assets" >&2
     exit 1
   fi
-  if ! grep -Fxq "SHA256SUMS" <<<"$assets"; then
-    echo "missing asset SHA256SUMS" >&2
-    echo "$assets" >&2
-    exit 1
-  fi
-  printf 'ok\n'
+  printf 'ok (%s expected assets)\n' "$expected_count"
 }
 
 if [[ "$VERIFY_GITHUB_RELEASE" != "0" && "$VERIFY_GITHUB_RELEASE" != "false" ]]; then
