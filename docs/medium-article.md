@@ -405,7 +405,18 @@ alias for `BTreeMap<String, T>`.
 For one-off scripts, the typed BridgeRoot helpers avoid manual conversion:
 
 ```rust
-bridge_root.put_field("BookingLabels", &draft.labels)?;
+bridge_root.put_string("BookingStatus", "ready")?;
+bridge_root.put_smallint("BookingAmount", draft.amount)?;
+bridge_root.put_bool("BookingApproved", true)?;
+bridge_root.put_vec("BookingTags", &["priority".to_string(), "demo".to_string()])?;
+bridge_root.put_optional("BookingNote", &Some("front desk".to_string()))?;
+bridge_root.put_map("BookingLabels", &draft.labels)?;
+
+assert_eq!(bridge_root.get_string("BookingStatus")?, "ready");
+assert_eq!(bridge_root.get_smallint("BookingAmount")?, draft.amount);
+assert!(bridge_root.get_bool("BookingApproved")?);
+let tags: Vec<String> = bridge_root.get_vec("BookingTags")?;
+let note: Option<String> = bridge_root.get_optional("BookingNote")?;
 let labels: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
 ```
 
@@ -413,7 +424,7 @@ When a Smalltalk-facing dictionary should use symbols, use the matching
 key-policy variants:
 
 ```rust
-bridge_root.put_field_with_key_type("BookingLabels", BridgeKeyType::Symbol, &draft.labels)?;
+bridge_root.put_map_with_key_type("BookingLabels", BridgeKeyType::Symbol, &draft.labels)?;
 let labels: BTreeMap<String, String> =
     bridge_root.get_map_with_key_type("BookingLabels", BridgeKeyType::Symbol)?;
 ```

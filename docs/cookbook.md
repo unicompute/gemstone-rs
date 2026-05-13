@@ -176,11 +176,16 @@ bridge_root.put_mapped("CookbookBookingDraft", &draft)?;
 let loaded: BookingDraft = bridge_root.get_mapped("CookbookBookingDraft")?;
 assert_eq!(loaded.labels["source"], "cookbook");
 
-bridge_root.put_field("CookbookLabels", &draft.labels)?;
+bridge_root.put_string("CookbookStatus", "ready")?;
+bridge_root.put_vec("CookbookTags", &["priority".to_string(), "demo".to_string()])?;
+bridge_root.put_map("CookbookLabels", &draft.labels)?;
+assert_eq!(bridge_root.get_string("CookbookStatus")?, "ready");
+let tags: Vec<String> = bridge_root.get_vec("CookbookTags")?;
+assert_eq!(tags, vec!["priority".to_string(), "demo".to_string()]);
 let labels: BTreeMap<String, String> = bridge_root.get_map("CookbookLabels")?;
 assert_eq!(labels["source"], "cookbook");
 
-bridge_root.put_field_with_key_type("CookbookLabelsSymbol", BridgeKeyType::Symbol, &draft.labels)?;
+bridge_root.put_map_with_key_type("CookbookLabelsSymbol", BridgeKeyType::Symbol, &draft.labels)?;
 let symbol_labels: BTreeMap<String, String> =
     bridge_root.get_map_with_key_type("CookbookLabelsSymbol", BridgeKeyType::Symbol)?;
 assert_eq!(symbol_labels["source"], "cookbook");

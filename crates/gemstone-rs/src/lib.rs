@@ -1424,12 +1424,31 @@ mod tests {
         let payload_oop = bridge_root.put_mapped(&key, &payload)?;
         let stored = bridge_root.get_oop(&key)?;
         assert_eq!(payload_oop, stored);
+        let status_key = live_key("GemStoneRsBridgeStatus");
+        bridge_root.put_string(&status_key, "ready")?;
+        assert_eq!(bridge_root.get_string(&status_key)?, "ready");
+        let amount_key = live_key("GemStoneRsBridgeAmount");
+        bridge_root.put_smallint(&amount_key, payload.amount)?;
+        assert_eq!(bridge_root.get_smallint(&amount_key)?, payload.amount);
+        let approved_key = live_key("GemStoneRsBridgeApproved");
+        bridge_root.put_bool(&approved_key, true)?;
+        assert!(bridge_root.get_bool(&approved_key)?);
+        let tags_key = live_key("GemStoneRsBridgeTags");
+        let tags = vec!["priority".to_string(), "live-test".to_string()];
+        bridge_root.put_vec(&tags_key, &tags)?;
+        let loaded_tags: Vec<String> = bridge_root.get_vec(&tags_key)?;
+        assert_eq!(loaded_tags, tags);
+        let note_key = live_key("GemStoneRsBridgeNote");
+        let note = Some("front desk".to_string());
+        bridge_root.put_optional(&note_key, &note)?;
+        let loaded_note: Option<String> = bridge_root.get_optional(&note_key)?;
+        assert_eq!(loaded_note, note);
         let labels_key = live_key("GemStoneRsBridgeLabels");
-        bridge_root.put_field(&labels_key, &payload.labels)?;
+        bridge_root.put_map(&labels_key, &payload.labels)?;
         let labels: BTreeMap<String, String> = bridge_root.get_map(&labels_key)?;
         assert_eq!(labels, payload.labels);
         let symbol_labels_key = live_key("GemStoneRsBridgeLabelsSymbol");
-        bridge_root.put_field_with_key_type(
+        bridge_root.put_map_with_key_type(
             &symbol_labels_key,
             BridgeKeyType::Symbol,
             &payload.labels,
@@ -1443,6 +1462,11 @@ mod tests {
         assert_eq!(loaded, payload);
         bridge_root.remove(&key)?;
         bridge_root.remove(&labels_key)?;
+        bridge_root.remove(&status_key)?;
+        bridge_root.remove(&amount_key)?;
+        bridge_root.remove(&approved_key)?;
+        bridge_root.remove(&tags_key)?;
+        bridge_root.remove(&note_key)?;
         bridge_root.remove_with_key_type(&symbol_labels_key, BridgeKeyType::Symbol)?;
         bridge_root.commit()?;
         Ok(())

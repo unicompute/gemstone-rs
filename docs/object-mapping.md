@@ -18,6 +18,20 @@ The initial mapping layer supports:
 - `BridgeRoot::put_mapped_with_key_type`
 - `BridgeRoot::put_field`
 - `BridgeRoot::put_field_with_key_type`
+- `BridgeRoot::put_string`
+- `BridgeRoot::put_string_with_key_type`
+- `BridgeRoot::put_symbol`
+- `BridgeRoot::put_symbol_with_key_type`
+- `BridgeRoot::put_smallint`
+- `BridgeRoot::put_smallint_with_key_type`
+- `BridgeRoot::put_bool`
+- `BridgeRoot::put_bool_with_key_type`
+- `BridgeRoot::put_vec`
+- `BridgeRoot::put_vec_with_key_type`
+- `BridgeRoot::put_map`
+- `BridgeRoot::put_map_with_key_type`
+- `BridgeRoot::put_optional`
+- `BridgeRoot::put_optional_with_key_type`
 - `BridgeRoot::get_oop`
 - `BridgeRoot::get_value`
 - `BridgeRoot::get_field`
@@ -57,6 +71,13 @@ The initial mapping layer supports:
 - `BridgeDictionary::at_map`
 - `BridgeDictionary::at_optional`
 - `BridgeDictionary::put_field`
+- `BridgeDictionary::put_string`
+- `BridgeDictionary::put_symbol`
+- `BridgeDictionary::put_smallint`
+- `BridgeDictionary::put_bool`
+- `BridgeDictionary::put_vec`
+- `BridgeDictionary::put_map`
+- `BridgeDictionary::put_optional`
 - `BridgeDictionary::contains_key`
 - `BridgeDictionary::keys`
 - `BridgeKey`
@@ -172,11 +193,24 @@ fn main() -> gemstone_rs::Result<()> {
     let loaded: BookingDraft = bridge_root.get_mapped("MyTestDict")?;
     assert_eq!(loaded, draft);
 
-    bridge_root.put_field("MyTestLabels", &draft.labels)?;
+    bridge_root.put_string("MyTestStatus", "ready")?;
+    bridge_root.put_smallint("MyTestAmount", draft.amount)?;
+    bridge_root.put_bool("MyTestApproved", true)?;
+    bridge_root.put_vec("MyTestTags", &["priority".to_string(), "demo".to_string()])?;
+    bridge_root.put_optional("MyTestNote", &Some("front desk".to_string()))?;
+    bridge_root.put_map("MyTestLabels", &draft.labels)?;
+
+    assert_eq!(bridge_root.get_string("MyTestStatus")?, "ready");
+    assert_eq!(bridge_root.get_smallint("MyTestAmount")?, draft.amount);
+    assert!(bridge_root.get_bool("MyTestApproved")?);
+    let tags: Vec<String> = bridge_root.get_vec("MyTestTags")?;
+    assert_eq!(tags, vec!["priority".to_string(), "demo".to_string()]);
+    let note: Option<String> = bridge_root.get_optional("MyTestNote")?;
+    assert_eq!(note, Some("front desk".to_string()));
     let labels: BTreeMap<String, String> = bridge_root.get_map("MyTestLabels")?;
     assert_eq!(labels, draft.labels);
 
-    bridge_root.put_field_with_key_type(
+    bridge_root.put_map_with_key_type(
         "MyTestLabelsSymbol",
         BridgeKeyType::Symbol,
         &draft.labels,
@@ -202,6 +236,11 @@ Expected output includes:
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
+loaded status: ready
+loaded amount: 100
+loaded approved: true
+loaded tags: ["priority", "demo"]
+loaded note: Some("front desk")
 loaded labels: {"source": "manual"}
 loaded symbol labels: {"source": "manual"}
 ```

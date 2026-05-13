@@ -551,6 +551,125 @@ impl<'a> BridgeRoot<'a> {
         self.put_with_key_type(key, key_type, value.to_bridge_field_value())
     }
 
+    pub fn put_string(&mut self, key: &str, value: impl AsRef<str>) -> Result<Oop> {
+        self.put_string_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_string_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: impl AsRef<str>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::String(value.as_ref().to_string()),
+        )
+    }
+
+    pub fn put_symbol(&mut self, key: &str, value: impl AsRef<str>) -> Result<Oop> {
+        self.put_symbol_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_symbol_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: impl AsRef<str>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::Symbol(value.as_ref().to_string()),
+        )
+    }
+
+    pub fn put_smallint(&mut self, key: &str, value: i64) -> Result<Oop> {
+        self.put_smallint_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_smallint_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: i64,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, BridgeValue::SmallInt(value))
+    }
+
+    pub fn put_bool(&mut self, key: &str, value: bool) -> Result<Oop> {
+        self.put_bool_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_bool_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: bool,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, BridgeValue::Bool(value))
+    }
+
+    pub fn put_vec<T: BridgeFieldWrite>(&mut self, key: &str, values: &[T]) -> Result<Oop> {
+        self.put_vec_with_key_type(key, BridgeKeyType::String, values)
+    }
+
+    pub fn put_vec_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        values: &[T],
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::array(values.iter().map(BridgeFieldWrite::to_bridge_field_value)),
+        )
+    }
+
+    pub fn put_map<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        values: &BTreeMap<String, T>,
+    ) -> Result<Oop> {
+        self.put_map_with_key_type(key, BridgeKeyType::String, values)
+    }
+
+    pub fn put_map_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        values: &BTreeMap<String, T>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::dictionary(
+                values
+                    .iter()
+                    .map(|(entry_key, value)| (entry_key.clone(), value.to_bridge_field_value())),
+            ),
+        )
+    }
+
+    pub fn put_optional<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        value: &Option<T>,
+    ) -> Result<Oop> {
+        self.put_optional_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_optional_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &Option<T>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, value.to_bridge_field_value())
+    }
+
     pub fn get_oop(&mut self, key: &str) -> Result<Oop> {
         self.get_oop_with_key_type(key, BridgeKeyType::String)
     }
@@ -784,6 +903,125 @@ impl<'a> BridgeDictionary<'a> {
         key: &str,
         key_type: BridgeKeyType,
         value: &T,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, value.to_bridge_field_value())
+    }
+
+    pub fn put_string(&mut self, key: &str, value: impl AsRef<str>) -> Result<Oop> {
+        self.put_string_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_string_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: impl AsRef<str>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::String(value.as_ref().to_string()),
+        )
+    }
+
+    pub fn put_symbol(&mut self, key: &str, value: impl AsRef<str>) -> Result<Oop> {
+        self.put_symbol_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_symbol_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: impl AsRef<str>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::Symbol(value.as_ref().to_string()),
+        )
+    }
+
+    pub fn put_smallint(&mut self, key: &str, value: i64) -> Result<Oop> {
+        self.put_smallint_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_smallint_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: i64,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, BridgeValue::SmallInt(value))
+    }
+
+    pub fn put_bool(&mut self, key: &str, value: bool) -> Result<Oop> {
+        self.put_bool_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_bool_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: bool,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, BridgeValue::Bool(value))
+    }
+
+    pub fn put_vec<T: BridgeFieldWrite>(&mut self, key: &str, values: &[T]) -> Result<Oop> {
+        self.put_vec_with_key_type(key, BridgeKeyType::String, values)
+    }
+
+    pub fn put_vec_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        values: &[T],
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::array(values.iter().map(BridgeFieldWrite::to_bridge_field_value)),
+        )
+    }
+
+    pub fn put_map<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        values: &BTreeMap<String, T>,
+    ) -> Result<Oop> {
+        self.put_map_with_key_type(key, BridgeKeyType::String, values)
+    }
+
+    pub fn put_map_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        values: &BTreeMap<String, T>,
+    ) -> Result<Oop> {
+        self.put_with_key_type(
+            key,
+            key_type,
+            BridgeValue::dictionary(
+                values
+                    .iter()
+                    .map(|(entry_key, value)| (entry_key.clone(), value.to_bridge_field_value())),
+            ),
+        )
+    }
+
+    pub fn put_optional<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        value: &Option<T>,
+    ) -> Result<Oop> {
+        self.put_optional_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_optional_with_key_type<T: BridgeFieldWrite>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &Option<T>,
     ) -> Result<Oop> {
         self.put_with_key_type(key, key_type, value.to_bridge_field_value())
     }

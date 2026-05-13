@@ -112,6 +112,11 @@ $ cargo run -p gemstone-rs --example bridge_root_mapping
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
+loaded status: ready
+loaded amount: 100
+loaded approved: true
+loaded tags: ["priority", "demo"]
+loaded note: Some("front desk")
 loaded labels: {"source": "manual"}
 loaded symbol labels: {"source": "manual"}
 

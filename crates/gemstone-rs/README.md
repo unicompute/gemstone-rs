@@ -82,10 +82,23 @@ cargo run -p gemstone-rs --example quickstart
 cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example oop_values
+cargo run -p gemstone-rs --example bridge_root_mapping
+cargo run -p gemstone-rs --example derive_mapping
 cargo run -p gemstone-rs --example codegen_preview
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example generated_wrapper_app
 cargo run -p gemstone-rs --example codegen_discover
+```
+
+BridgeRoot helpers give scripts and generated examples a concise typed write
+path without manually constructing `BridgeValue` for common values:
+
+```rust
+let mut bridge_root = session.bridge_root()?;
+bridge_root.put_string("BookingStatus", "ready")?;
+bridge_root.put_smallint("BookingAmount", 100)?;
+bridge_root.put_bool("BookingApproved", true)?;
+bridge_root.put_vec("BookingTags", &["priority".to_string(), "demo".to_string()])?;
 ```
 
 The repository docs include setup, examples, user manual, cookbook,
