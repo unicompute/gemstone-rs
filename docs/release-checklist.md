@@ -72,6 +72,7 @@ make screenshots
 
 ```bash
 python3 scripts/version_check.py
+python3 scripts/crate_metadata_check.py
 make verify
 make vscode-package
 python3 docs/build_pdf_docs.py
@@ -83,14 +84,14 @@ Or use the dry-run release wrapper:
 DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
-`make verify` includes the version check and checks that PDF generation
-completes and produces non-empty PDF files. The release wrapper writes
-repository-relative SHA256 entries and verifies the expected VSIX plus every PDF
-with `scripts/verify_release_artifacts.py`. `make verify` also runs an offline
-release-asset verifier smoke test so checksum mismatches and missing downloaded
-assets stay covered without contacting GitHub. The release workflow rebuilds
-and attaches fresh PDFs for the target runner because WeasyPrint output can
-differ byte-for-byte across platforms. The VSIX filename uses
+`make verify` includes version and crate metadata checks, then checks that PDF
+generation completes and produces non-empty PDF files. The release wrapper
+writes repository-relative SHA256 entries and verifies the expected VSIX plus
+every PDF with `scripts/verify_release_artifacts.py`. `make verify` also runs
+an offline release-asset verifier smoke test so checksum mismatches and missing
+downloaded assets stay covered without contacting GitHub. The release workflow
+rebuilds and attaches fresh PDFs for the target runner because WeasyPrint output
+can differ byte-for-byte across platforms. The VSIX filename uses
 `vscode-gemstone-rs-workbench/package.json`; the crate release tag still uses
 the workflow `version` input.
 
