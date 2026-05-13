@@ -132,6 +132,51 @@ bridge_root.commit()?;
 
 The default root is `UserGlobals at: #GemStoneRsBridgeRoot`.
 
+## Recipe 10B: Round-Trip a Typed BridgeRoot Map Field
+
+```rust
+use gemstone_rs::{
+    BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session,
+};
+use std::collections::BTreeMap;
+
+#[derive(Debug, Eq, PartialEq)]
+struct BookingDraft {
+    name: String,
+    labels: BTreeMap<String, String>,
+}
+
+impl BridgeMapped for BookingDraft {
+    fn to_bridge_value(&self) -> BridgeValue {
+        BridgeValue::dictionary([
+            ("name".to_string(), BridgeValue::from(self.name.clone())),
+            ("labels".to_string(), BridgeFieldWrite::to_bridge_field_value(&self.labels)),
+        ])
+    }
+
+    fn from_bridge_dictionary(dictionary: &mut BridgeDictionary<'_>) -> gemstone_rs::Result<Self> {
+        Ok(Self {
+            name: dictionary.at_string("name")?,
+            labels: dictionary.at_map("labels")?,
+        })
+    }
+}
+
+let mut session = Session::login(Config::from_env()?)?;
+let draft = BookingDraft {
+    name: "Tariq".to_string(),
+    labels: BTreeMap::from([("source".to_string(), "cookbook".to_string())]),
+};
+
+let mut bridge_root = session.bridge_root()?;
+bridge_root.put_mapped("CookbookBookingDraft", &draft)?;
+let loaded: BookingDraft = bridge_root.get_mapped("CookbookBookingDraft")?;
+assert_eq!(loaded.labels["source"], "cookbook");
+```
+
+Use map fields for string-keyed metadata or lookup tables. Use nested
+`BridgeMapped` structs when the related value has a stable domain shape.
+
 ## Recipe 11: Browse Dictionaries
 
 ```rust

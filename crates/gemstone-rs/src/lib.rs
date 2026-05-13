@@ -1229,6 +1229,7 @@ mod tests {
         name: String,
         amount: i64,
         currency: String,
+        labels: BTreeMap<String, String>,
     }
 
     impl BridgeMapped for TestBookingDraft {
@@ -1240,6 +1241,10 @@ mod tests {
                     "currency".to_string(),
                     BridgeValue::from(self.currency.clone()),
                 ),
+                (
+                    "labels".to_string(),
+                    BridgeFieldWrite::to_bridge_field_value(&self.labels),
+                ),
             ])
         }
 
@@ -1248,6 +1253,7 @@ mod tests {
                 name: dictionary.at_string("name")?,
                 amount: dictionary.at_smallint("amount")?,
                 currency: dictionary.at_string("currency")?,
+                labels: dictionary.at_map("labels")?,
             })
         }
     }
@@ -1412,6 +1418,7 @@ mod tests {
             name: "Tariq".to_string(),
             amount: 100,
             currency: "GBP".to_string(),
+            labels: BTreeMap::from([("source".to_string(), "live-test".to_string())]),
         };
         let mut bridge_root = session.bridge_root()?;
         let payload_oop = bridge_root.put_mapped(&key, &payload)?;

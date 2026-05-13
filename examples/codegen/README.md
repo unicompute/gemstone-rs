@@ -71,7 +71,8 @@ field = BookingDraft.note | type=Option<String> | key=note
 
 `BTreeMap<String, T>` fields store string-keyed relationship metadata as
 GemStone dictionaries and read back through the same typed field conversion
-used by nested structs and vectors.
+used by nested structs and vectors. `Map<String, T>` is accepted as a shorter
+alias, and `Dictionary<T>` means `BTreeMap<String, T>`.
 
 Mapped fields support string keys, symbol keys, nested mapped structs, and
 vectors. Optional fields use `Option<T>`; missing keys and GemStone `nil` read

@@ -1593,6 +1593,22 @@ mod tests {
     }
 
     #[test]
+    fn parses_map_aliases_and_nested_map_values() {
+        assert_eq!(
+            FieldType::parse("Map<String, SmallInt>").unwrap(),
+            FieldType::Map(Box::new(FieldType::SmallInt))
+        );
+        assert_eq!(
+            FieldType::parse("Dictionary<String>").unwrap(),
+            FieldType::Map(Box::new(FieldType::String))
+        );
+        assert_eq!(
+            FieldType::parse("BTreeMap<String, Vec<String>>").unwrap(),
+            FieldType::Map(Box::new(FieldType::Vec(Box::new(FieldType::String))))
+        );
+    }
+
+    #[test]
     fn sample_mapping_config_uses_rust_type_name() {
         let source = sample_mapping_config("booking draft");
         assert!(source.contains("mapped = BookingDraft"));

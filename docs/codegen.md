@@ -118,9 +118,11 @@ field = BookingDraft.note | type=Option<String> | key=note | doc=Optional note.
 
 Supported field types are `String`, `SmallInt`, `Bool`, `Oop`,
 `Mapped<OtherStruct>`, `Vec<T>`, `BTreeMap<String, T>`, and `Option<T>`.
-`BTreeMap<String, T>` stores string-keyed relationship metadata as a GemStone
-`Dictionary`. Optional fields write `None` as GemStone `nil`; read-back returns
-`None` when the key is missing or when the stored value is `nil`.
+`Map<String, T>` is accepted as a shorter alias, and `Dictionary<T>` is an
+alias for `BTreeMap<String, T>`. Map fields store string-keyed relationship
+metadata as a GemStone `Dictionary`. Optional fields write `None` as GemStone
+`nil`; read-back returns `None` when the key is missing or when the stored value
+is `nil`.
 
 Field options:
 

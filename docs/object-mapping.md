@@ -103,13 +103,17 @@ keeps the mapping explicit and reviewable while removing repeated dictionary
 field reads from application code.
 
 ```rust
-use gemstone_rs::{BridgeDictionary, BridgeMapped, BridgeValue, Config, Session};
+use gemstone_rs::{
+    BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session,
+};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Eq, PartialEq)]
 struct BookingDraft {
     name: String,
     amount: i64,
     currency: String,
+    labels: BTreeMap<String, String>,
 }
 
 impl BridgeMapped for BookingDraft {
@@ -118,6 +122,7 @@ impl BridgeMapped for BookingDraft {
             ("name".to_string(), BridgeValue::from(self.name.clone())),
             ("amount".to_string(), BridgeValue::from(self.amount)),
             ("currency".to_string(), BridgeValue::from(self.currency.clone())),
+            ("labels".to_string(), BridgeFieldWrite::to_bridge_field_value(&self.labels)),
         ])
     }
 
@@ -126,6 +131,7 @@ impl BridgeMapped for BookingDraft {
             name: dictionary.at_string("name")?,
             amount: dictionary.at_smallint("amount")?,
             currency: dictionary.at_string("currency")?,
+            labels: dictionary.at_map("labels")?,
         })
     }
 }
@@ -138,6 +144,7 @@ fn main() -> gemstone_rs::Result<()> {
         name: "Tariq".to_string(),
         amount: 100,
         currency: "GBP".to_string(),
+        labels: BTreeMap::from([("source".to_string(), "manual".to_string())]),
     };
 
     bridge_root.put_mapped("MyTestDict", &draft)?;
@@ -160,7 +167,7 @@ Expected output includes:
 ```text
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
-loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP" }
+loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
 ```
 
 ## Derive-Based Mapping

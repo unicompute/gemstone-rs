@@ -396,6 +396,12 @@ field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels
 field = BookingDraft.note | type=Option<String> | key=note
 ```
 
+Map fields are intentionally string-keyed. Use `BTreeMap<String, T>` when the
+GemStone dictionary represents metadata or lookup values, and use a nested
+`BridgeMapped` struct when the related value has a stable domain shape. Codegen
+also accepts `Map<String, T>` as a shorter spelling and `Dictionary<T>` as an
+alias for `BTreeMap<String, T>`.
+
 Generate a mapping proposal from a live stone:
 
 ```bash

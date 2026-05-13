@@ -113,7 +113,7 @@
         },
         "type": {
           "type": "string",
-          "description": "Bridge field type such as String, SmallInt, Bool, Oop, Value, Mapped<CustomerDraft>, Vec<String>, Option<String>, or BTreeMap<String, String>."
+          "description": "Bridge field type such as String, SmallInt, Bool, Oop, Value, Mapped<CustomerDraft>, Vec<String>, Option<String>, BTreeMap<String, String>, Map<String, String>, or Dictionary<String>."
         },
         "key": {
           "type": "string",
