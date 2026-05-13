@@ -362,6 +362,7 @@ pub enum FieldType {
     Oop,
     Mapped(String),
     Vec(Box<FieldType>),
+    Map(Box<FieldType>),
     Option(Box<FieldType>),
 }
 
@@ -390,6 +391,24 @@ impl FieldType {
             .and_then(|text| text.strip_suffix('>'))
         {
             return Ok(Self::Vec(Box::new(Self::parse(inner.trim())?)));
+        }
+        if let Some(inner) = value
+            .strip_prefix("BTreeMap<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Self::parse_string_keyed_map(inner);
+        }
+        if let Some(inner) = value
+            .strip_prefix("Map<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Self::parse_string_keyed_map(inner);
+        }
+        if let Some(inner) = value
+            .strip_prefix("Dictionary<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Map(Box::new(Self::parse(inner.trim())?)));
         }
         if let Some(inner) = value
             .strip_prefix("Mapped<")
@@ -430,6 +449,7 @@ impl FieldType {
             Self::Oop => "Oop".to_string(),
             Self::Mapped(name) => name.clone(),
             Self::Vec(inner) => format!("Vec<{}>", inner.rust_type()),
+            Self::Map(inner) => format!("BTreeMap<String, {}>", inner.rust_type()),
             Self::Option(inner) => format!("Option<{}>", inner.rust_type()),
         }
     }
@@ -442,7 +462,28 @@ impl FieldType {
             Self::Oop => "Oop".to_string(),
             Self::Mapped(name) => format!("Mapped<{name}>"),
             Self::Vec(inner) => format!("Vec<{}>", inner.config_name()),
+            Self::Map(inner) => format!("BTreeMap<String, {}>", inner.config_name()),
             Self::Option(inner) => format!("Option<{}>", inner.config_name()),
+        }
+    }
+
+    fn parse_string_keyed_map(inner: &str) -> std::result::Result<Self, String> {
+        let (key_type, value_type) = inner.split_once(',').ok_or_else(|| {
+            "BTreeMap and Map field types must look like BTreeMap<String, T>".to_string()
+        })?;
+        match key_type.trim() {
+            "String" | "string" => Ok(Self::Map(Box::new(Self::parse(value_type.trim())?))),
+            other => Err(format!(
+                "BTreeMap and Map key type must be String, got {other}"
+            )),
+        }
+    }
+
+    fn uses_btreemap(&self) -> bool {
+        match self {
+            Self::Map(_) => true,
+            Self::Vec(inner) | Self::Option(inner) => inner.uses_btreemap(),
+            Self::String | Self::SmallInt | Self::Bool | Self::Oop | Self::Mapped(_) => false,
         }
     }
 }
@@ -933,6 +974,7 @@ pub fn sample_config() -> &'static str {
      field = BookingDraft.amount | type=SmallInt | key=amount\n\
      field = BookingDraft.currency | type=String | key=currency\n\
      field = BookingDraft.tags | type=Vec<String> | key=tags\n\
+     field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels\n\
      field = BookingDraft.note | type=Option<String> | key=note\n"
 }
 
@@ -943,6 +985,7 @@ pub fn sample_mapping_config(mapped: &str) -> String {
          field = {mapped}.name | type=String | key=name | key_type=String\n\
          field = {mapped}.amount | type=SmallInt | key=amount | key_type=String\n\
          field = {mapped}.tags | type=Vec<String> | key=tags | key_type=String\n\
+         field = {mapped}.labels | type=BTreeMap<String, String> | key=labels | key_type=String\n\
          field = {mapped}.note | type=Option<String> | key=note | key_type=String\n"
     )
 }
@@ -953,6 +996,9 @@ fn generate_source(config: &Config) -> String {
     source.push_str(
         "use gemstone_rs::{\n    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeyType, BridgeMapped,\n    BridgeValue, Error, Oop, Result, Session, Value,\n};\n\n",
     );
+    if config_uses_btreemap(config) {
+        source.push_str("use std::collections::BTreeMap;\n\n");
+    }
 
     for class in &config.classes {
         let struct_name = class.class_ref.struct_name();
@@ -998,6 +1044,15 @@ fn generate_source(config: &Config) -> String {
         source.pop();
     }
     source
+}
+
+fn config_uses_btreemap(config: &Config) -> bool {
+    config.mapped.iter().any(|mapped| {
+        mapped
+            .fields
+            .iter()
+            .any(|field| field.field_type.uses_btreemap())
+    })
 }
 
 fn test_stubs_source(config: &Config) -> String {
@@ -1500,7 +1555,7 @@ mod tests {
     #[test]
     fn parses_symbol_keys_and_nested_field_types() -> Result<()> {
         let config = Config::parse(
-            "mapped = BookingDraft\nfield = BookingDraft.customer | type=Mapped<Customer> | key=customer | key_type=Symbol\nfield = BookingDraft.tags | type=Vec<String> | key=tags\nfield = BookingDraft.note | type=Option<String> | key=note\n",
+            "mapped = BookingDraft\nfield = BookingDraft.customer | type=Mapped<Customer> | key=customer | key_type=Symbol\nfield = BookingDraft.tags | type=Vec<String> | key=tags\nfield = BookingDraft.labels | type=BTreeMap<String, String> | key=labels\nfield = BookingDraft.note | type=Option<String> | key=note\n",
             None,
         )?;
         let fields = &config.mapped[0].fields;
@@ -1515,13 +1570,26 @@ mod tests {
         );
         assert_eq!(
             fields[2].field_type,
+            FieldType::Map(Box::new(FieldType::String))
+        );
+        assert_eq!(
+            fields[3].field_type,
             FieldType::Option(Box::new(FieldType::String))
         );
         let generated = generate(&config);
         assert!(generated.source.contains("BridgeKeyType::Symbol"));
         assert!(generated.source.contains("pub tags: Vec<String>"));
+        assert!(generated
+            .source
+            .contains("pub labels: BTreeMap<String, String>"));
         assert!(generated.source.contains("pub note: Option<String>"));
         Ok(())
+    }
+
+    #[test]
+    fn rejects_non_string_map_keys() {
+        let err = FieldType::parse("BTreeMap<Symbol, String>").unwrap_err();
+        assert!(err.contains("key type must be String"));
     }
 
     #[test]
@@ -1529,6 +1597,7 @@ mod tests {
         let source = sample_mapping_config("booking draft");
         assert!(source.contains("mapped = BookingDraft"));
         assert!(source.contains("field = BookingDraft.tags | type=Vec<String>"));
+        assert!(source.contains("field = BookingDraft.labels | type=BTreeMap<String, String>"));
         assert!(source.contains("field = BookingDraft.note | type=Option<String>"));
     }
 

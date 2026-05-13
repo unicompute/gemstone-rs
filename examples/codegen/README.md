@@ -65,8 +65,13 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels
 field = BookingDraft.note | type=Option<String> | key=note
 ```
+
+`BTreeMap<String, T>` fields store string-keyed relationship metadata as
+GemStone dictionaries and read back through the same typed field conversion
+used by nested structs and vectors.
 
 Mapped fields support string keys, symbol keys, nested mapped structs, and
 vectors. Optional fields use `Option<T>`; missing keys and GemStone `nil` read

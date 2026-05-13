@@ -3,6 +3,7 @@
 mod gemstone_wrappers;
 
 use gemstone_wrappers::BookingDraft;
+use std::collections::BTreeMap;
 
 fn assert_bridge_mapped<T: gemstone_rs::BridgeMapped>() {}
 
@@ -15,6 +16,7 @@ fn checked_in_generated_wrappers_compile() {
         amount: 100,
         currency: "GBP".to_string(),
         tags: vec!["priority".to_string(), "demo".to_string()],
+        labels: BTreeMap::from([("source".to_string(), "compile-smoke".to_string())]),
         note: None,
     };
 
@@ -22,5 +24,9 @@ fn checked_in_generated_wrappers_compile() {
     assert_eq!(draft.amount, 100);
     assert_eq!(draft.currency, "GBP");
     assert_eq!(draft.tags, vec!["priority".to_string(), "demo".to_string()]);
+    assert_eq!(
+        draft.labels.get("source"),
+        Some(&"compile-smoke".to_string())
+    );
     assert_eq!(draft.note, None);
 }

@@ -2,10 +2,11 @@
 //
 // Expected output includes:
 //
-// derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], note: None }
+// derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], labels: {"source": "derive"}, note: None }
 // bridge root identity: <number>
 
 use gemstone_rs::{BridgeKeyType, BridgeMapped, Config, Session};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
 struct CustomerDraft {
@@ -19,6 +20,7 @@ struct BookingDraft {
     amount: i64,
     customer: CustomerDraft,
     tags: Vec<String>,
+    labels: BTreeMap<String, String>,
     note: Option<String>,
 }
 
@@ -32,6 +34,7 @@ fn main() -> gemstone_rs::Result<()> {
             name: "Tariq".to_string(),
         },
         tags: vec!["priority".to_string(), "demo".to_string()],
+        labels: BTreeMap::from([("source".to_string(), "derive".to_string())]),
         note: None,
     };
 

@@ -112,13 +112,15 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels | doc=String-keyed labels.
 field = BookingDraft.note | type=Option<String> | key=note | doc=Optional note.
 ```
 
 Supported field types are `String`, `SmallInt`, `Bool`, `Oop`,
-`Mapped<OtherStruct>`, `Vec<T>`, and `Option<T>`. Optional fields write
-`None` as GemStone `nil`; read-back returns `None` when the key is missing or
-when the stored value is `nil`.
+`Mapped<OtherStruct>`, `Vec<T>`, `BTreeMap<String, T>`, and `Option<T>`.
+`BTreeMap<String, T>` stores string-keyed relationship metadata as a GemStone
+`Dictionary`. Optional fields write `None` as GemStone `nil`; read-back returns
+`None` when the key is missing or when the stored value is `nil`.
 
 Field options:
 
@@ -308,7 +310,7 @@ cargo run -p gemstone-rs --example generated_mapping_app
 Expected output:
 
 ```text
-generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], note: Some("window seat") }
+generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }
 ```
 
 The config-driven mapping emits a struct like:
@@ -320,6 +322,8 @@ pub struct BookingDraft {
     pub amount: i64,
     pub currency: String,
     pub tags: Vec<String>,
+    /// String-keyed labels.
+    pub labels: BTreeMap<String, String>,
     /// Optional note.
     pub note: Option<String>,
 }

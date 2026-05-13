@@ -86,10 +86,12 @@
 //!     BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKeyType, BridgeMapped,
 //!     BridgeValue, Config, Session,
 //! };
+//! use std::collections::BTreeMap;
 //!
 //! struct BookingDraft {
 //!     name: String,
 //!     amount: i64,
+//!     labels: BTreeMap<String, String>,
 //!     note: Option<String>,
 //! }
 //!
@@ -98,6 +100,7 @@
 //!         BridgeValue::dictionary([
 //!             ("name".to_string(), BridgeValue::from(self.name.clone())),
 //!             ("amount".to_string(), BridgeValue::from(self.amount)),
+//!             ("labels".to_string(), BridgeFieldWrite::to_bridge_field_value(&self.labels)),
 //!             ("note".to_string(), BridgeFieldWrite::to_bridge_field_value(&self.note)),
 //!         ])
 //!     }
@@ -106,6 +109,7 @@
 //!         Ok(Self {
 //!             name: dictionary.at_string("name")?,
 //!             amount: dictionary.at_smallint("amount")?,
+//!             labels: dictionary.at_map("labels")?,
 //!             note: BridgeFieldRead::read_bridge_field(
 //!                 dictionary,
 //!                 "note",
@@ -118,7 +122,12 @@
 //! fn main() -> gemstone_rs::Result<()> {
 //!     let mut session = Session::login(Config::from_env()?)?;
 //!     let mut bridge_root = session.bridge_root()?;
-//!     let draft = BookingDraft { name: "Tariq".to_string(), amount: 100, note: None };
+//!     let draft = BookingDraft {
+//!         name: "Tariq".to_string(),
+//!         amount: 100,
+//!         labels: BTreeMap::from([("source".to_string(), "rustdoc".to_string())]),
+//!         note: None,
+//!     };
 //!     bridge_root.put_mapped("BookingDraft", &draft)?;
 //!     let loaded: BookingDraft = bridge_root.get_mapped("BookingDraft")?;
 //!     assert_eq!(loaded.amount, 100);
@@ -1255,6 +1264,7 @@ mod tests {
         amount: i64,
         customer: DeriveCustomerDraft,
         tags: Vec<String>,
+        labels: BTreeMap<String, String>,
         note: Option<String>,
     }
 
@@ -1266,6 +1276,7 @@ mod tests {
                 name: "Tariq".to_string(),
             },
             tags: vec!["priority".to_string(), "demo".to_string()],
+            labels: BTreeMap::from([("source".to_string(), "derive".to_string())]),
             note: None,
         }
         .to_bridge_value();
@@ -1277,7 +1288,8 @@ mod tests {
         assert_eq!(entries[0].0.key_type, BridgeKeyType::Symbol);
         assert!(matches!(entries[1].1, BridgeValue::KeyedDictionary(_)));
         assert!(matches!(entries[2].1, BridgeValue::Array(_)));
-        assert!(matches!(entries[3].1, BridgeValue::Nil));
+        assert!(matches!(entries[3].1, BridgeValue::Dictionary(_)));
+        assert!(matches!(entries[4].1, BridgeValue::Nil));
     }
 
     #[test]

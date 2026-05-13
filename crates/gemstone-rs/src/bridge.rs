@@ -237,6 +237,15 @@ impl<T: BridgeFieldWrite> BridgeFieldWrite for Vec<T> {
     }
 }
 
+impl<T: BridgeFieldWrite> BridgeFieldWrite for BTreeMap<String, T> {
+    fn to_bridge_field_value(&self) -> BridgeValue {
+        BridgeValue::dictionary(
+            self.iter()
+                .map(|(key, value)| (key.clone(), value.to_bridge_field_value())),
+        )
+    }
+}
+
 impl<T: BridgeFieldWrite> BridgeFieldWrite for Option<T> {
     fn to_bridge_field_value(&self) -> BridgeValue {
         self.as_ref()
@@ -369,6 +378,20 @@ impl<T: BridgeFieldRead> BridgeFieldRead for Vec<T> {
 
     fn expected_type() -> &'static str {
         "Array"
+    }
+}
+
+impl<T: BridgeFieldRead> BridgeFieldRead for BTreeMap<String, T> {
+    fn read_bridge_oop(
+        session: &mut Session,
+        oop: Oop,
+        context: &BridgeFieldContext,
+    ) -> Result<Self> {
+        dictionary_string_entries(session, oop, context)
+    }
+
+    fn expected_type() -> &'static str {
+        "Dictionary"
     }
 }
 
@@ -718,6 +741,18 @@ impl<'a> BridgeDictionary<'a> {
     ) -> Result<Vec<T>> {
         BridgeFieldRead::read_bridge_field(self, key, key_type)
     }
+
+    pub fn at_map<T: BridgeFieldRead>(&mut self, key: &str) -> Result<BTreeMap<String, T>> {
+        self.at_map_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn at_map_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<BTreeMap<String, T>> {
+        BridgeFieldRead::read_bridge_field(self, key, key_type)
+    }
 }
 
 pub trait BridgeMapped: Sized {
@@ -791,6 +826,30 @@ impl BridgeFieldContext {
             expected,
         }
     }
+
+    fn map_key(&self, key: &str, expected: &'static str) -> Self {
+        Self {
+            key: format!("{}[{}]", self.key, quoted_path_key(key)),
+            key_type: self.key_type,
+            expected,
+        }
+    }
+}
+
+fn quoted_path_key(key: &str) -> String {
+    let mut out = String::from("\"");
+    for ch in key.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            other => out.push(other),
+        }
+    }
+    out.push('"');
+    out
 }
 
 fn unexpected_field(key: &str, expected: &'static str, actual: Value) -> Error {
@@ -838,6 +897,31 @@ fn dictionary_keys(session: &mut Session, dictionary: Oop) -> Result<Vec<BridgeK
         });
     }
     Ok(summaries)
+}
+
+fn dictionary_string_entries<T: BridgeFieldRead>(
+    session: &mut Session,
+    dictionary: Oop,
+    context: &BridgeFieldContext,
+) -> Result<BTreeMap<String, T>> {
+    let keys = dictionary_keys(session, dictionary)
+        .map_err(|err| context.unexpected(format!("keys lookup failed: {err}")))?;
+    let mut entries = BTreeMap::new();
+    for summary in keys {
+        let key = session.fetch_string(summary.oop).map_err(|err| {
+            context.unexpected(format!(
+                "non-string dictionary key {} ({err})",
+                summary.print_string
+            ))
+        })?;
+        let value_oop = session
+            .perform_oop(dictionary, "at:", &[summary.oop])
+            .map_err(|err| context.map_key(&key, T::expected_type()).lookup_error(err))?;
+        let entry_context = context.map_key(&key, T::expected_type());
+        let value = T::read_bridge_oop(session, value_oop, &entry_context)?;
+        entries.insert(key, value);
+    }
+    Ok(entries)
 }
 
 #[cfg(test)]
@@ -913,5 +997,30 @@ mod tests {
             some.to_bridge_field_value(),
             BridgeValue::String("reference".to_string())
         );
+    }
+
+    #[test]
+    fn string_keyed_maps_write_dictionary_values() {
+        let mut labels = BTreeMap::new();
+        labels.insert("source".to_string(), "rust".to_string());
+        labels.insert("priority".to_string(), "high".to_string());
+
+        let BridgeValue::Dictionary(entries) = labels.to_bridge_field_value() else {
+            panic!("expected dictionary bridge value");
+        };
+        assert_eq!(entries["source"], BridgeValue::String("rust".to_string()));
+        assert_eq!(entries["priority"], BridgeValue::String("high".to_string()));
+    }
+
+    #[test]
+    fn map_context_reports_quoted_string_key() {
+        let context = BridgeFieldContext::new("labels", BridgeKeyType::String, "Dictionary");
+        let err = context
+            .map_key("source name", "String")
+            .unexpected("OOP 1234".to_string())
+            .to_string();
+
+        assert!(err.contains("labels[\"source name\"]"));
+        assert!(err.contains("String"));
     }
 }

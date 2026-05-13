@@ -95,9 +95,18 @@ fn parse_fields(stream: TokenStream) -> Result<Vec<Field>, String> {
 fn split_fields(stream: TokenStream) -> Vec<Vec<TokenTree>> {
     let mut fields = Vec::new();
     let mut current = Vec::new();
+    let mut angle_depth = 0usize;
     for token in stream {
         match &token {
-            TokenTree::Punct(punct) if punct.as_char() == ',' => {
+            TokenTree::Punct(punct) if punct.as_char() == '<' => {
+                angle_depth += 1;
+                current.push(token);
+            }
+            TokenTree::Punct(punct) if punct.as_char() == '>' && angle_depth > 0 => {
+                angle_depth -= 1;
+                current.push(token);
+            }
+            TokenTree::Punct(punct) if punct.as_char() == ',' && angle_depth == 0 => {
                 if !current.is_empty() {
                     fields.push(std::mem::take(&mut current));
                 }

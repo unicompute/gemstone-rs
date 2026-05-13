@@ -4,6 +4,8 @@ use gemstone_rs::{
     BridgeValue, Error, Oop, Result, Session, Value,
 };
 
+use std::collections::BTreeMap;
+
 pub struct Object<'a> {
     session: &'a mut Session,
     oop: Oop,
@@ -50,6 +52,8 @@ pub struct BookingDraft {
     pub amount: i64,
     pub currency: String,
     pub tags: Vec<String>,
+    /// String-keyed labels stored as a GemStone Dictionary.
+    pub labels: BTreeMap<String, String>,
     /// Optional note; missing or nil reads back as None.
     pub note: Option<String>,
 }
@@ -74,6 +78,10 @@ impl BridgeMapped for BookingDraft {
                 BridgeFieldWrite::to_bridge_field_value(&self.tags),
             ),
             (
+                BridgeKey::new("labels", BridgeKeyType::String),
+                BridgeFieldWrite::to_bridge_field_value(&self.labels),
+            ),
+            (
                 BridgeKey::new("note", BridgeKeyType::String),
                 BridgeFieldWrite::to_bridge_field_value(&self.note),
             ),
@@ -94,6 +102,11 @@ impl BridgeMapped for BookingDraft {
                 BridgeKeyType::String,
             )?,
             tags: BridgeFieldRead::read_bridge_field(dictionary, "tags", BridgeKeyType::String)?,
+            labels: BridgeFieldRead::read_bridge_field(
+                dictionary,
+                "labels",
+                BridgeKeyType::String,
+            )?,
             note: BridgeFieldRead::read_bridge_field(dictionary, "note", BridgeKeyType::String)?,
         })
     }

@@ -4,12 +4,15 @@ mod generated {
     include!("../../codegen/generated/gemstone_wrappers.rs");
 }
 
+use std::collections::BTreeMap;
+
 pub fn sample_booking() -> generated::BookingDraft {
     generated::BookingDraft {
         name: "example".to_string(),
         amount: 100,
         currency: "GBP".to_string(),
         tags: vec!["codegen".to_string(), "compile-smoke".to_string()],
+        labels: BTreeMap::from([("source".to_string(), "compile-smoke".to_string())]),
         note: None,
     }
 }

@@ -332,6 +332,7 @@ For typed Rust code, derive `BridgeMapped`:
 
 ```rust
 use gemstone_rs::{BridgeMapped, Config, Session};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
 struct CustomerDraft {
@@ -345,6 +346,7 @@ struct BookingDraft {
     amount: i64,
     customer: CustomerDraft,
     tags: Vec<String>,
+    labels: BTreeMap<String, String>,
     note: Option<String>,
 }
 
@@ -357,6 +359,7 @@ let draft = BookingDraft {
         name: "Tariq".to_string(),
     },
     tags: vec!["priority".to_string(), "demo".to_string()],
+    labels: BTreeMap::from([("source".to_string(), "article".to_string())]),
     note: None,
 };
 
@@ -377,8 +380,9 @@ That example shows the important mapping choices:
 | `key_type = "Symbol"` | Symbol-keyed dictionaries are explicit instead of accidental. |
 | nested structs | nested dictionaries can read back into nested Rust structs. |
 | `Vec<T>` | GemStone arrays can read back into Rust vectors. |
+| `BTreeMap<String, T>` | string-keyed dictionaries can read back into Rust maps. |
 | `Option<T>` | missing keys and GemStone `nil` can read back as `None`. |
-| mapping errors | nested failures report paths like `booking.customer.name` and `tags[2]`. |
+| mapping errors | nested failures report paths like `booking.customer.name`, `tags[2]`, and `labels["source"]`. |
 | `transaction` | BridgeRoot writes can commit on success and abort on error. |
 
 Codegen can create the same mapping structs from config:
@@ -388,6 +392,7 @@ mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.
 field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels
 field = BookingDraft.note | type=Option<String> | key=note
 ```
 

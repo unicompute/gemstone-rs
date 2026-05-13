@@ -38,7 +38,7 @@ file.
 | Transactions | `cargo run -p gemstone-rs --example transactions` | You want commit-on-success and abort-on-error behavior. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
-| Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, optional fields, and BridgeRoot transactions. |
+| Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
 | Codegen preview | `cargo run -p gemstone-rs --example codegen_preview` | You want offline wrapper generation without a live stone. |
 | Codegen workflow | `cargo run -p gemstone-rs --example codegen_workflow` | You want config, preview, diff, check, and generate in one offline run. |
 | Codegen discovery | `cargo run -p gemstone-rs --example codegen_discover` | You want a live-stone starter config for selected classes. |
@@ -114,10 +114,10 @@ MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP" }
 
 $ cargo run -p gemstone-rs --example derive_mapping
-derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], note: None }
+derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], labels: {"source": "derive"}, note: None }
 
 $ cargo run -p gemstone-rs --example generated_mapping_app
-generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], note: Some("window seat") }
+generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }
 ```
 
 Offline codegen examples are marked with `Does not require a live GemStone/S

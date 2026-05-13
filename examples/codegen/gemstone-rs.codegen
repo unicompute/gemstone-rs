@@ -10,6 +10,7 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels | doc=String-keyed labels stored as a GemStone Dictionary.
 field = BookingDraft.note | type=Option<String> | key=note | doc=Optional note; missing or nil reads back as None.
 
 # Use Dictionary:ClassName when a class must be resolved from a specific dictionary.

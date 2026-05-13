@@ -2,7 +2,7 @@
 //
 // Expected output includes:
 //
-// generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], note: Some("window seat") }
+// generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }
 
 #[allow(dead_code)]
 #[path = "../../../examples/codegen/generated/gemstone_wrappers.rs"]
@@ -10,6 +10,7 @@ mod gemstone_wrappers;
 
 use gemstone_rs::{Config, Session};
 use gemstone_wrappers::BookingDraft;
+use std::collections::BTreeMap;
 
 fn main() -> gemstone_rs::Result<()> {
     let mut session = Session::login(Config::from_env()?)?;
@@ -20,6 +21,7 @@ fn main() -> gemstone_rs::Result<()> {
         amount: 100,
         currency: "GBP".to_string(),
         tags: vec!["priority".to_string(), "demo".to_string()],
+        labels: BTreeMap::from([("source".to_string(), "generated".to_string())]),
         note: Some("window seat".to_string()),
     };
     bridge_root.put_mapped("GeneratedBookingDraft", &draft)?;

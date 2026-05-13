@@ -171,6 +171,7 @@ reads them back into Rust.
 
 ```rust
 use gemstone_rs::{BridgeMapped, Config, Session};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
 struct CustomerDraft {
@@ -184,6 +185,8 @@ struct BookingDraft {
     amount: i64,
     customer: CustomerDraft,
     tags: Vec<String>,
+    labels: BTreeMap<String, String>,
+    note: Option<String>,
 }
 
 fn main() -> gemstone_rs::Result<()> {
@@ -196,6 +199,7 @@ fn main() -> gemstone_rs::Result<()> {
             name: "Tariq".to_string(),
         },
         tags: vec!["priority".to_string(), "demo".to_string()],
+        labels: BTreeMap::from([("source".to_string(), "derive".to_string())]),
         note: None,
     };
 
@@ -217,7 +221,7 @@ cargo run -p gemstone-rs --example derive_mapping
 Expected output includes:
 
 ```text
-derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], note: None }
+derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], labels: {"source": "derive"}, note: None }
 bridge root identity: <number>
 ```
 
@@ -234,6 +238,7 @@ format:
 | `Oop` | raw object reference | `BridgeFieldRead` / `at_oop` |
 | another `BridgeMapped` struct | nested `Dictionary` | `BridgeDictionary::at_mapped` |
 | `Vec<T>` | `Array` | `BridgeDictionary::at_vec` |
+| `BTreeMap<String, T>` | string-keyed `Dictionary` | `BridgeDictionary::at_map` |
 | `Option<T>` | value, `nil`, or missing key | `BridgeFieldRead` |
 
 This lets a Rust payload keep normal nested shape:
@@ -243,6 +248,7 @@ This lets a Rust payload keep normal nested shape:
 struct BookingDraft {
     customer: CustomerDraft,
     tags: Vec<String>,
+    labels: BTreeMap<String, String>,
     note: Option<String>,
 }
 ```
@@ -259,6 +265,7 @@ When read-back fails, mapping errors include field context:
 field amount expected GemStone value type SmallInt, got Oop 1234
 field booking.customer.name expected GemStone value type String, got OOP 1234
 field tags[2] expected GemStone value type String, got OOP 1234
+field labels["source"] expected GemStone value type String, got OOP 1234
 ```
 
 Nested mapped read-back preserves the full field path, and array read-back
@@ -332,6 +339,7 @@ plain dictionary graph and keeps the Rust side strongly typed:
 
 ```rust
 use gemstone_rs::BridgeMapped;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
 struct CustomerDraft {
@@ -350,6 +358,7 @@ struct BookingDraft {
     customer: CustomerDraft,
     items: Vec<LineItemDraft>,
     tags: Vec<String>,
+    labels: BTreeMap<String, String>,
     note: Option<String>,
 }
 ```
@@ -402,6 +411,7 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels
 field = BookingDraft.note | type=Option<String> | key=note
 ```
 
