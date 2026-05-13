@@ -28,6 +28,9 @@
     "onCommand:gemstoneRs.verifySetup",
     "onCommand:gemstoneRs.verifyLiveSetup",
     "onCommand:gemstoneRs.doctor",
+    "onCommand:gemstoneRs.showEnvironmentTemplate",
+    "onCommand:gemstoneRs.copyEnvironmentTemplate",
+    "onCommand:gemstoneRs.writeEnvironmentTemplate",
     "onCommand:gemstoneRs.eval",
     "onCommand:gemstoneRs.browseDictionaries",
     "onCommand:gemstoneRs.browseClasses",
@@ -96,6 +99,18 @@
       {
         "command": "gemstoneRs.doctor",
         "title": "GemStone RS: Doctor"
+      },
+      {
+        "command": "gemstoneRs.showEnvironmentTemplate",
+        "title": "GemStone RS: Show Environment Template"
+      },
+      {
+        "command": "gemstoneRs.copyEnvironmentTemplate",
+        "title": "GemStone RS: Copy Environment Template"
+      },
+      {
+        "command": "gemstoneRs.writeEnvironmentTemplate",
+        "title": "GemStone RS: Write .env.gemstone-rs"
       },
       {
         "command": "gemstoneRs.eval",

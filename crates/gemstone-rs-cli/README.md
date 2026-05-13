@@ -7,8 +7,10 @@ The binary name is `gemstone-rs`:
 ```bash
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
+cargo run -p gemstone-rs-cli -- doctor --strict
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
+cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -25,6 +27,7 @@ cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
@@ -54,15 +57,18 @@ export GS_PASSWORD=swordfish
 
 Use `gemstone-rs env sample` to print a copy-pasteable shell export template.
 It reuses current non-secret values when they are set and always prints password
-placeholders instead of real secrets.
+placeholders instead of real secrets. Use `gemstone-rs env write` to write the
+same template to `.env.gemstone-rs`; pass a path to choose another file, and
+pass `--force` to overwrite an existing file.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`
 came from explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the
 path or directory searched. With `--live`, it logs in and asserts `3 + 4 == 7`.
 Failures include remediation hints for missing credentials, dynamic library
-loading, and stone connectivity. Add `--json` for scripts, CI, and editor
-integrations.
+loading, and stone connectivity. `--strict` is useful in CI because it fails
+when the stone name or GCI library source is only coming from defaults. Add
+`--json` for scripts, CI, and editor integrations.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

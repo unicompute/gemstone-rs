@@ -6,6 +6,8 @@ checked-in codegen sample under the repository-level `examples/` directory.
 ## Common Setup
 
 ```bash
+gemstone-rs env sample
+gemstone-rs env write
 export GS_LIB=/opt/gemstone/product/lib
 export GS_STONE=gs64stone
 export GS_STONE_NAME=gs64stone
@@ -120,6 +122,7 @@ The CLI gives you the same live checks without compiling examples:
 cargo install gemstone-rs-cli
 gemstone-rs doctor
 gemstone-rs doctor --live
+gemstone-rs doctor --strict
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 gemstone-rs browse dictionaries
@@ -131,6 +134,7 @@ gemstone-rs inspect oop 20
 gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge sample-config BookingDraft
+gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 ```
 
 ## Codegen Workflow

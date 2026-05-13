@@ -88,6 +88,9 @@ Commands:
 - `GemStone RS: Verify Setup`
 - `GemStone RS: Verify Live Setup`
 - `GemStone RS: Doctor`
+- `GemStone RS: Show Environment Template`
+- `GemStone RS: Copy Environment Template`
+- `GemStone RS: Write .env.gemstone-rs`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
@@ -130,6 +133,11 @@ available. Both setup checks add the active checkout, CLI, explorer, codegen
 config, and profile paths, then offer result actions to copy the full report,
 copy a safe `GS_*` environment export script with a placeholder password, or
 open the extension settings.
+
+`GemStone RS: Show Environment Template`, `GemStone RS: Copy Environment
+Template`, and `GemStone RS: Write .env.gemstone-rs` call the CLI
+`gemstone-rs env sample/write` commands. The template uses current non-secret
+values when available and keeps passwords as placeholders.
 
 ## Codegen Workflow
 

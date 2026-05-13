@@ -584,6 +584,50 @@ pub fn generate(config: &Config) -> GeneratedCode {
     }
 }
 
+pub fn explain(config: &Config) -> String {
+    let mut out = String::new();
+    out.push_str("gemstone-rs codegen explain\n");
+    out.push_str(&format!("output: {}\n", config.output.display()));
+    out.push_str("test_stubs: generated_surface_names_are_stable\n");
+    out.push_str(&format!("classes: {}\n", config.classes.len()));
+    for class in &config.classes {
+        out.push_str(&format!(
+            "  class: {} methods={}\n",
+            class.class_ref.display_name(),
+            class.methods.len()
+        ));
+        for method in &class.methods {
+            let args = method.arg_names();
+            out.push_str(&format!(
+                "    method: {}>>{} args=[{}] return={}\n",
+                method.class_ref.display_name(),
+                method.selector,
+                args.join(", "),
+                method.return_type.config_name()
+            ));
+        }
+    }
+    out.push_str(&format!("mapped: {}\n", config.mapped.len()));
+    for mapped in &config.mapped {
+        out.push_str(&format!(
+            "  mapped: {} fields={}\n",
+            mapped.name,
+            mapped.fields.len()
+        ));
+        for field in &mapped.fields {
+            out.push_str(&format!(
+                "    field: {}.{} key={} key_type={} type={}\n",
+                field.mapped_name,
+                field.rust_name,
+                field.key,
+                field.key_type.config_name(),
+                field.field_type.config_name()
+            ));
+        }
+    }
+    out
+}
+
 pub fn generate_to_file(config: &Config) -> Result<GeneratedCode> {
     let generated = generate(config);
     if let Some(parent) = generated.output.parent() {
@@ -865,10 +909,44 @@ fn generate_source(config: &Config) -> String {
         source.push_str(&mapped_source(mapped));
         source.push('\n');
     }
+    source.push_str(&test_stubs_source(config));
 
     while source.ends_with("\n\n") {
         source.pop();
     }
+    source
+}
+
+fn test_stubs_source(config: &Config) -> String {
+    let mut names = Vec::new();
+    for class in &config.classes {
+        let struct_name = class.class_ref.struct_name();
+        if class.methods.is_empty() {
+            names.push(struct_name);
+        } else {
+            for method in &class.methods {
+                names.push(format!("{struct_name}::{}", method.fn_name()));
+            }
+        }
+    }
+    names.extend(config.mapped.iter().map(|mapped| mapped.name.clone()));
+
+    let mut source = String::new();
+    source.push_str("#[cfg(test)]\n");
+    source.push_str("#[rustfmt::skip]\n");
+    source.push_str("mod generated_code_tests {\n");
+    source.push_str("    #[test]\n");
+    source.push_str("    fn generated_surface_names_are_stable() {\n");
+    source.push_str("        let names: &[&str] = &[\n");
+    for name in names {
+        source.push_str("            ");
+        source.push_str(&rust_string_literal(&name));
+        source.push_str(",\n");
+    }
+    source.push_str("        ];\n");
+    source.push_str("        assert!(names.iter().all(|name| !name.is_empty()));\n");
+    source.push_str("    }\n");
+    source.push_str("}\n");
     source
 }
 
@@ -1245,6 +1323,7 @@ mod tests {
         )?;
         let generated = generate(&config);
         assert!(generated.source.contains("pub struct Object<'a>"));
+        assert!(generated.source.contains("mod generated_code_tests"));
         assert!(generated.source.contains("/// Print the receiver."));
         assert!(generated
             .source
@@ -1255,6 +1334,24 @@ mod tests {
         assert!(generated
             .source
             .contains("self.session.perform(self.oop, \"at:put:\", &[key, value])"));
+        Ok(())
+    }
+
+    #[test]
+    fn explains_codegen_config() -> Result<()> {
+        let config = Config::parse(
+            "output = generated.rs\nclass = Object\nmethod = Object>>printString | return=String\nmapped = BookingDraft\nfield = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol\n",
+            None,
+        )?;
+        let explanation = explain(&config);
+
+        assert!(explanation.contains("output: ./generated.rs"));
+        assert!(explanation.contains("test_stubs: generated_surface_names_are_stable"));
+        assert!(explanation.contains("class: Object methods=1"));
+        assert!(explanation.contains("method: Object>>printString args=[] return=String"));
+        assert!(explanation.contains("mapped: BookingDraft fields=1"));
+        assert!(explanation
+            .contains("field: BookingDraft.amount key=amount key_type=Symbol type=SmallInt"));
         Ok(())
     }
 

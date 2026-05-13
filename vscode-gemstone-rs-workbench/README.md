@@ -36,6 +36,9 @@ For a source checkout:
 - `GemStone RS: Verify Setup`
 - `GemStone RS: Verify Live Setup`
 - `GemStone RS: Doctor`
+- `GemStone RS: Show Environment Template`
+- `GemStone RS: Copy Environment Template`
+- `GemStone RS: Write .env.gemstone-rs`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
@@ -106,7 +109,10 @@ Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
 are available. Both setup checks report the active checkout, CLI, explorer,
 codegen config, and profile paths. Their result actions can copy the setup
 report, copy a safe `GS_*` environment export script with a placeholder
-password, or open the extension settings.
+password, or open the extension settings. `Show Environment Template`, `Copy
+Environment Template`, and `Write .env.gemstone-rs` use the CLI
+`gemstone-rs env sample/write` commands so VS Code and terminal setup stay on
+the same safe template.
 
 ## Sidebar
 
@@ -123,7 +129,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
   Key, and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Eval Smalltalk,
-  Launch Explorer, and Open Explorer Webview.
+  Show/Copy/Write Environment Template, Launch Explorer, and Open Explorer
+  Webview.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with

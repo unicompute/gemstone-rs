@@ -15,6 +15,7 @@ From a checkout:
 
 ```bash
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
@@ -56,6 +57,16 @@ When `args` is omitted, codegen now infers useful argument names from selector
 keywords. For example `at:put:` becomes `at, put`, and
 `withCustomer:amount:` becomes `customer, amount`. Provide explicit `args=...`
 when the selector keywords are not good Rust argument names.
+
+Generated wrapper files include a small `#[cfg(test)]` surface-name test stub,
+so downstream crates can keep generated wrapper names visible to Rust test
+tooling. Use `codegen explain` before generating when you want a readable
+summary of the output file, test stub, wrapper classes, selectors, argument
+names, return helpers, mapped structs, and BridgeRoot field mappings:
+
+```bash
+gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
+```
 
 Supported return types:
 

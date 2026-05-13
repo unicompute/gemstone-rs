@@ -170,15 +170,20 @@ The CLI exposes the same checks through `doctor`:
 
 ```bash
 gemstone-rs env sample
+gemstone-rs env write
 gemstone-rs doctor
 gemstone-rs doctor --live
+gemstone-rs doctor --strict
 gemstone-rs doctor --json
 ```
 
-`env sample` prints a safe shell export template with password placeholders.
-The non-live doctor form validates environment and GCI library loading. The
-live form also logs in and checks that `3 + 4` returns `7`. Human and JSON
-reports show which source selected `libgcirpc`: explicit config, `GS_LIB_PATH`,
-`GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory searched. The JSON
-form is intended for automation and editor integrations, and includes the same
-remediation hints as the human report.
+`env sample` prints a safe shell export template with password placeholders,
+and `env write` saves it to `.env.gemstone-rs` without overwriting existing
+files unless `--force` is used. The non-live doctor form validates environment
+and GCI library loading. The live form also logs in and checks that `3 + 4`
+returns `7`. Human and JSON reports show which source selected `libgcirpc`:
+explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path
+or directory searched. `doctor --strict` fails when the stone or GCI source is
+only coming from defaults, which is better for CI. The JSON form is intended
+for automation and editor integrations, and includes the same remediation hints
+as the human report.

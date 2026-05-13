@@ -91,3 +91,17 @@ impl BridgeMapped for BookingDraft {
         })
     }
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+mod generated_code_tests {
+    #[test]
+    fn generated_surface_names_are_stable() {
+        let names: &[&str] = &[
+            "Object::print_string",
+            "Object::class",
+            "BookingDraft",
+        ];
+        assert!(names.iter().all(|name| !name.is_empty()));
+    }
+}

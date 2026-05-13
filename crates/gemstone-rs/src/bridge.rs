@@ -323,10 +323,10 @@ impl<T: BridgeMapped> BridgeFieldRead for T {
     fn read_bridge_oop(
         session: &mut Session,
         oop: Oop,
-        _context: &BridgeFieldContext,
+        context: &BridgeFieldContext,
     ) -> Result<Self> {
         let mut dictionary = BridgeDictionary::from_oop(session, oop);
-        T::from_bridge_dictionary(&mut dictionary)
+        T::from_bridge_dictionary(&mut dictionary).map_err(|err| context.nested_error(err))
     }
 
     fn expected_type() -> &'static str {
@@ -677,6 +677,33 @@ impl BridgeFieldContext {
         }
     }
 
+    fn nested_error(&self, err: Error) -> Error {
+        match err {
+            Error::Mapping {
+                field,
+                expected,
+                actual,
+            } => Error::Mapping {
+                field: self.child_field(&field),
+                expected,
+                actual,
+            },
+            other => other,
+        }
+    }
+
+    fn child_field(&self, field: &str) -> String {
+        let field = field
+            .split_once(" (")
+            .map(|(field, _)| field)
+            .unwrap_or(field);
+        if field.is_empty() {
+            self.key.clone()
+        } else {
+            format!("{}.{}", self.key, field)
+        }
+    }
+
     fn index(&self, index: i64, expected: &'static str) -> Self {
         Self {
             key: format!("{}[{index}]", self.key),
@@ -735,5 +762,21 @@ mod tests {
         assert!(err.contains("tags[2]"));
         assert!(err.contains("String"));
         assert!(err.contains("OOP 1234"));
+    }
+
+    #[test]
+    fn nested_mapping_context_reports_full_field_path() {
+        let context =
+            BridgeFieldContext::new("booking.customer", BridgeKeyType::String, "Dictionary");
+        let err = context.nested_error(Error::Mapping {
+            field: "name (Symbol)".to_string(),
+            expected: "String",
+            actual: "OOP 1234".to_string(),
+        });
+
+        assert_eq!(
+            err.to_string(),
+            "field booking.customer.name expected GemStone value type String, got OOP 1234"
+        );
     }
 }

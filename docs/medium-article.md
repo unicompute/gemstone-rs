@@ -110,20 +110,26 @@ Run the same check from the CLI:
 
 ```bash
 gemstone-rs env sample
+gemstone-rs env write
 gemstone-rs doctor
 gemstone-rs doctor --live
+gemstone-rs doctor --strict
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
 
 `env sample` prints a copy-pasteable setup script with placeholders for
 passwords, so a new shell can be configured without accidentally dumping
-secrets into docs, tickets, or chat.
+secrets into docs, tickets, or chat. `env write` saves the same template to
+`.env.gemstone-rs` and refuses to overwrite unless `--force` is used.
 
 The doctor report names the source used to select `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory
 searched. Failed checks now include remediation hints, so CLI, VS Code, and CI
-diagnostics are easier to compare and act on.
+diagnostics are easier to compare and act on. `doctor --strict` makes CI fail
+when the stone or GCI library source is only coming from defaults, and GCI
+diagnostics show whether the selected `libgcirpc` exists, is a file, is
+readable, and appears to match arm64 or x86_64.
 
 Expected output:
 
@@ -239,10 +245,15 @@ Commands:
 
 ```bash
 gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
 ```
+
+Generated wrapper files now include a small `#[cfg(test)]` surface-name test
+stub, and `codegen explain` reports that stub beside the classes, selectors,
+return helpers, and mapped fields that will be generated.
 
 Generate a starter config from a live stone:
 
@@ -346,6 +357,7 @@ That example shows the important mapping choices:
 | `key_type = "Symbol"` | Symbol-keyed dictionaries are explicit instead of accidental. |
 | nested structs | nested dictionaries can read back into nested Rust structs. |
 | `Vec<T>` | GemStone arrays can read back into Rust vectors. |
+| mapping errors | nested failures report paths like `booking.customer.name` and `tags[2]`. |
 | `transaction` | BridgeRoot writes can commit on success and abort on error. |
 
 Codegen can create the same mapping structs from config:

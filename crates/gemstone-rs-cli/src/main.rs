@@ -33,9 +33,18 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("{}", usage());
             Ok(())
         }
-        Command::Doctor { live, format } => run_doctor(live, format),
+        Command::Doctor {
+            live,
+            strict,
+            format,
+        } => run_doctor(live, strict, format),
         Command::EnvSample => {
             print!("{}", env_template_source());
+            Ok(())
+        }
+        Command::EnvWrite { path, force } => {
+            write_env_template(&path, force)?;
+            println!("wrote {}", path.display());
             Ok(())
         }
         Command::Eval { source } => {
@@ -314,6 +323,11 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             let config_path = config;
             run_codegen_check(&config_path)
         }
+        Command::CodegenExplain { config } => {
+            let config = codegen::Config::from_file(config)?;
+            print!("{}", codegen::explain(&config));
+            Ok(())
+        }
         Command::CodegenCheckProfile { name, profiles } => {
             let config_path = profile_codegen_config_path(&profiles, &name)?;
             run_codegen_check(&config_path)
@@ -383,6 +397,22 @@ fn login() -> Result<Session, CliError> {
 
 fn env_template_source() -> String {
     env_template_source_with(|name| env::var(name).ok())
+}
+
+fn write_env_template(path: &Path, force: bool) -> Result<(), CliError> {
+    if path.exists() && !force {
+        return Err(CliError::CodegenCheck(format!(
+            "{} already exists; pass --force to overwrite",
+            path.display()
+        )));
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    fs::write(path, env_template_source())?;
+    Ok(())
 }
 
 fn env_template_source_with(lookup: impl Fn(&str) -> Option<String>) -> String {
@@ -519,9 +549,9 @@ fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
 
-fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
+fn run_doctor(live: bool, strict: bool, format: OutputFormat) -> Result<(), CliError> {
     if format == OutputFormat::Json {
-        return run_doctor_json(live);
+        return run_doctor_json(live, strict);
     }
 
     let mut ok = true;
@@ -541,6 +571,30 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     print_env_value("GS_HOST_USERNAME", false);
     print_env_value("GS_HOST_PASSWORD", true);
     add_missing_credential_hints(&mut hints);
+    if strict {
+        println!("strict: enabled");
+        if env_var_missing_or_empty("GS_LIB_PATH")
+            && env_var_missing_or_empty("GS_LIB")
+            && env_var_missing_or_empty("GEMSTONE")
+        {
+            ok = false;
+            println!(
+                "strict: error: set GS_LIB_PATH, GS_LIB, or GEMSTONE for deterministic GCI loading"
+            );
+            add_hint(
+                &mut hints,
+                "Set GS_LIB_PATH to the full libgcirpc path, or set GS_LIB/GEMSTONE to the GemStone product location.",
+            );
+        }
+        if env_var_missing_or_empty("GS_STONE") && env_var_missing_or_empty("GS_STONE_NAME") {
+            ok = false;
+            println!("strict: error: set GS_STONE or GS_STONE_NAME explicitly");
+            add_hint(
+                &mut hints,
+                "Set GS_STONE or GS_STONE_NAME so CI does not depend on the default stone name.",
+            );
+        }
+    }
 
     let config = match Config::from_env() {
         Ok(config) => {
@@ -563,6 +617,8 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
                     println!("gci_library: ok: {}", path.display());
                     println!("  source: {}", resolution.source);
                     print_searched_paths(&resolution.searched);
+                    print_path_diagnostics("  ", &path);
+                    add_gci_architecture_hints(&mut hints, &path);
                 }
                 Err(err) => {
                     ok = false;
@@ -570,13 +626,16 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
                     println!("  source: {}", resolution.source);
                     println!("  path: {}", resolution.path.display());
                     print_searched_paths(&resolution.searched);
+                    print_path_diagnostics("  ", &resolution.path);
                     add_error_hints(&mut hints, &err);
+                    add_gci_architecture_hints(&mut hints, &resolution.path);
                 }
             },
             Err(err) => {
                 ok = false;
                 println!("gci_library: error: {err}");
                 add_error_hints(&mut hints, &err);
+                add_gs_lib_directory_hint(&mut hints);
             }
         }
 
@@ -615,7 +674,7 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
     }
 }
 
-fn run_doctor_json(live: bool) -> Result<(), CliError> {
+fn run_doctor_json(live: bool, strict: bool) -> Result<(), CliError> {
     let mut ok = true;
     let mut hints = Vec::new();
     add_missing_credential_hints(&mut hints);
@@ -625,6 +684,30 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
     } else {
         String::from(r#"{"ok":true,"checked":false}"#)
     };
+    let mut strict_errors = Vec::new();
+    if strict {
+        if env_var_missing_or_empty("GS_LIB_PATH")
+            && env_var_missing_or_empty("GS_LIB")
+            && env_var_missing_or_empty("GEMSTONE")
+        {
+            ok = false;
+            strict_errors.push(
+                "set GS_LIB_PATH, GS_LIB, or GEMSTONE for deterministic GCI loading".to_string(),
+            );
+            add_hint(
+                &mut hints,
+                "Set GS_LIB_PATH to the full libgcirpc path, or set GS_LIB/GEMSTONE to the GemStone product location.",
+            );
+        }
+        if env_var_missing_or_empty("GS_STONE") && env_var_missing_or_empty("GS_STONE_NAME") {
+            ok = false;
+            strict_errors.push("set GS_STONE or GS_STONE_NAME explicitly".to_string());
+            add_hint(
+                &mut hints,
+                "Set GS_STONE or GS_STONE_NAME so CI does not depend on the default stone name.",
+            );
+        }
+    }
 
     let (config_json, config) = match Config::from_env() {
         Ok(config) => {
@@ -656,21 +739,25 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
         match gci_library_resolution(&config) {
             Ok(resolution) => match gci_library_path(&config) {
                 Ok(path) => {
+                    add_gci_architecture_hints(&mut hints, &path);
                     gci_json = format!(
-                        r#"{{"ok":true,"checked":true,"source":"{}","path":"{}","searched":[{}]}}"#,
+                        r#"{{"ok":true,"checked":true,"source":"{}","path":"{}","searched":[{}],"pathDiagnostics":{}}}"#,
                         escape_json(resolution.source),
                         escape_json(&path.display().to_string()),
-                        json_path_array(&resolution.searched)
+                        json_path_array(&resolution.searched),
+                        path_diagnostics_json(&path)
                     );
                 }
                 Err(err) => {
                     ok = false;
                     add_error_hints(&mut hints, &err);
+                    add_gci_architecture_hints(&mut hints, &resolution.path);
                     gci_json = format!(
-                        r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","searched":[{}],"error":"{}"}}"#,
+                        r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","searched":[{}],"pathDiagnostics":{},"error":"{}"}}"#,
                         escape_json(resolution.source),
                         escape_json(&resolution.path.display().to_string()),
                         json_path_array(&resolution.searched),
+                        path_diagnostics_json(&resolution.path),
                         escape_json(&err.to_string())
                     );
                 }
@@ -678,6 +765,7 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
             Err(err) => {
                 ok = false;
                 add_error_hints(&mut hints, &err);
+                add_gs_lib_directory_hint(&mut hints);
                 gci_json = format!(
                     r#"{{"ok":false,"checked":true,"error":"{}"}}"#,
                     escape_json(&err.to_string())
@@ -714,9 +802,10 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
     }
 
     println!(
-        r#"{{"success":{},"environment":{},"config":{},"gciLibrary":{},"live":{},"hints":[{}]}}"#,
+        r#"{{"success":{},"environment":{},"strict":{},"config":{},"gciLibrary":{},"live":{},"hints":[{}]}}"#,
         ok,
         environment_json(),
+        strict_json(strict, &strict_errors),
         config_json,
         gci_json,
         live_json,
@@ -818,6 +907,26 @@ fn json_hint_array(values: &[&'static str]) -> String {
         .join(",")
 }
 
+fn strict_json(enabled: bool, errors: &[String]) -> String {
+    format!(
+        r#"{{"enabled":{},"ok":{},"errors":[{}]}}"#,
+        enabled,
+        errors.is_empty(),
+        json_string_array(errors)
+    )
+}
+
+fn path_diagnostics_json(path: &Path) -> String {
+    let diagnostics = path_diagnostics(path);
+    format!(
+        r#"{{"exists":{},"isFile":{},"readable":{},"architecture":"{}"}}"#,
+        diagnostics.exists,
+        diagnostics.is_file,
+        diagnostics.readable,
+        escape_json(diagnostics.architecture)
+    )
+}
+
 fn print_searched_paths(paths: &[PathBuf]) {
     if paths.is_empty() {
         return;
@@ -825,6 +934,46 @@ fn print_searched_paths(paths: &[PathBuf]) {
     println!("  searched:");
     for path in paths {
         println!("    {}", path.display());
+    }
+}
+
+fn print_path_diagnostics(prefix: &str, path: &Path) {
+    let diagnostics = path_diagnostics(path);
+    println!("{prefix}exists: {}", diagnostics.exists);
+    println!("{prefix}is_file: {}", diagnostics.is_file);
+    println!("{prefix}readable: {}", diagnostics.readable);
+    println!("{prefix}architecture: {}", diagnostics.architecture);
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PathDiagnostics {
+    exists: bool,
+    is_file: bool,
+    readable: bool,
+    architecture: &'static str,
+}
+
+fn path_diagnostics(path: &Path) -> PathDiagnostics {
+    let metadata = fs::metadata(path);
+    let exists = metadata.is_ok();
+    let is_file = metadata.as_ref().is_ok_and(|metadata| metadata.is_file());
+    let readable = fs::File::open(path).is_ok();
+    PathDiagnostics {
+        exists,
+        is_file,
+        readable,
+        architecture: architecture_hint(path),
+    }
+}
+
+fn architecture_hint(path: &Path) -> &'static str {
+    let lower = path.display().to_string().to_ascii_lowercase();
+    if lower.contains("arm64") || lower.contains("aarch64") {
+        "arm64"
+    } else if lower.contains("x86_64") || lower.contains("amd64") || lower.contains("x64") {
+        "x86_64"
+    } else {
+        "unknown"
     }
 }
 
@@ -867,6 +1016,31 @@ fn add_error_hints(hints: &mut Vec<&'static str>, err: &GemStoneError) {
             hints,
             "Set the missing GemStone environment variable or pass the value through Config::builder().",
         ),
+    }
+}
+
+fn add_gs_lib_directory_hint(hints: &mut Vec<&'static str>) {
+    if env_value(&|name| env::var(name).ok(), "GS_LIB").is_some() {
+        add_hint(
+            hints,
+            "If GS_LIB is set, it must point at the GemStone lib directory that contains libgcirpc. Use GS_LIB_PATH for one exact library file.",
+        );
+    }
+}
+
+fn add_gci_architecture_hints(hints: &mut Vec<&'static str>, path: &Path) {
+    let architecture = architecture_hint(path);
+    let current = env::consts::ARCH;
+    if architecture == "arm64" && current != "aarch64" {
+        add_hint(
+            hints,
+            "The selected libgcirpc path looks arm64, but this Rust process is not aarch64. Use a matching GemStone installation or Rust toolchain.",
+        );
+    } else if architecture == "x86_64" && current != "x86_64" {
+        add_hint(
+            hints,
+            "The selected libgcirpc path looks x86_64, but this Rust process is not x86_64. Use a matching GemStone installation or Rust toolchain.",
+        );
     }
 }
 
@@ -1185,9 +1359,14 @@ enum Command {
     Help,
     Doctor {
         live: bool,
+        strict: bool,
         format: OutputFormat,
     },
     EnvSample,
+    EnvWrite {
+        path: PathBuf,
+        force: bool,
+    },
     Eval {
         source: String,
     },
@@ -1291,6 +1470,9 @@ enum Command {
     CodegenCheck {
         config: PathBuf,
     },
+    CodegenExplain {
+        config: PathBuf,
+    },
     CodegenCheckProfile {
         name: String,
         profiles: PathBuf,
@@ -1364,6 +1546,9 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             Some("check") => Ok(Command::CodegenCheck {
                 config: optional_path(args.get(2)),
             }),
+            Some("explain") => Ok(Command::CodegenExplain {
+                config: optional_path(args.get(2)),
+            }),
             Some("check-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
                 Command::CodegenCheckProfile { name, profiles }
             }),
@@ -1391,7 +1576,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
                     .ok_or_else(|| CliError::usage("missing GemStone class"))?,
             }),
             _ => Err(CliError::usage(
-                "expected: codegen init|preview|preview-profile|diff|diff-profile|check|check-profile|generate|generate-profile|discover|discover-mapping",
+                "expected: codegen init|preview|preview-profile|diff|diff-profile|check|check-profile|explain|generate|generate-profile|discover|discover-mapping",
             )),
         },
         _ => Err(CliError::usage(format!("unknown command: {command}"))),
@@ -1406,11 +1591,38 @@ fn parse_env_command(args: &[String]) -> Result<Command, CliError> {
             }
             Ok(Command::EnvSample)
         }
+        Some("write") => parse_env_write_command(&args[1..]),
         Some("-h" | "--help") => Err(CliError::usage("expected: env sample")),
         Some(command) => Err(CliError::usage(format!(
-            "unknown env command: {command}; expected env sample"
+            "unknown env command: {command}; expected env sample|write"
         ))),
     }
+}
+
+fn parse_env_write_command(args: &[String]) -> Result<Command, CliError> {
+    let mut force = false;
+    let mut path = None;
+    for arg in args {
+        match arg.as_str() {
+            "--force" => force = true,
+            "-h" | "--help" => return Err(CliError::usage("expected: env write [path] [--force]")),
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown env write option: {option}"
+                )));
+            }
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected env write argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::EnvWrite {
+        path: path.unwrap_or_else(|| PathBuf::from(".env.gemstone-rs")),
+        force,
+    })
 }
 
 fn parse_profile_command(args: &[String]) -> Result<Command, CliError> {
@@ -1565,15 +1777,21 @@ fn parse_u64(value: &str) -> Result<u64, CliError> {
 
 fn parse_doctor_command(args: &[String]) -> Result<Command, CliError> {
     let mut live = false;
+    let mut strict = false;
     let mut format = OutputFormat::Human;
     for arg in args {
         match arg.as_str() {
             "--live" => live = true,
+            "--strict" => strict = true,
             "--json" => format = OutputFormat::Json,
             other => return Err(CliError::usage(format!("unknown doctor option: {other}"))),
         }
     }
-    Ok(Command::Doctor { live, format })
+    Ok(Command::Doctor {
+        live,
+        strict,
+        format,
+    })
 }
 
 fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
@@ -1896,8 +2114,9 @@ fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
 
 fn usage() -> &'static str {
     "usage:
-  gemstone-rs doctor [--live] [--json]
+  gemstone-rs doctor [--live] [--strict] [--json]
   gemstone-rs env sample
+  gemstone-rs env write [path] [--force]
   gemstone-rs eval <smalltalk>
   gemstone-rs browse dictionaries
   gemstone-rs browse classes [dictionary]
@@ -1926,6 +2145,7 @@ fn usage() -> &'static str {
   gemstone-rs codegen diff-profile <profile-name> [profile-file]
   gemstone-rs codegen check [config]
   gemstone-rs codegen check-profile <profile-name> [profile-file]
+  gemstone-rs codegen explain [config]
   gemstone-rs codegen generate [config]
   gemstone-rs codegen generate-profile <profile-name> [profile-file]
   gemstone-rs codegen discover [config] [class ...]
@@ -2020,6 +2240,7 @@ mod tests {
             parse_command(&args(&["doctor"])).unwrap(),
             Command::Doctor {
                 live: false,
+                strict: false,
                 format: OutputFormat::Human,
             }
         );
@@ -2027,13 +2248,15 @@ mod tests {
             parse_command(&args(&["doctor", "--live"])).unwrap(),
             Command::Doctor {
                 live: true,
+                strict: false,
                 format: OutputFormat::Human,
             }
         );
         assert_eq!(
-            parse_command(&args(&["doctor", "--json", "--live"])).unwrap(),
+            parse_command(&args(&["doctor", "--json", "--live", "--strict"])).unwrap(),
             Command::Doctor {
                 live: true,
+                strict: true,
                 format: OutputFormat::Json,
             }
         );
@@ -2045,6 +2268,20 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["env", "sample"])).unwrap(),
             Command::EnvSample
+        );
+        assert_eq!(
+            parse_command(&args(&["env", "write"])).unwrap(),
+            Command::EnvWrite {
+                path: PathBuf::from(".env.gemstone-rs"),
+                force: false,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["env", "write", "demo.env", "--force"])).unwrap(),
+            Command::EnvWrite {
+                path: PathBuf::from("demo.env"),
+                force: true,
+            }
         );
     }
 
@@ -2074,6 +2311,22 @@ mod tests {
         assert!(
             default_output.contains("# export GS_HOST_PASSWORD='<set-host-password-if-needed>'")
         );
+    }
+
+    #[test]
+    fn env_write_refuses_existing_file_without_force() {
+        let path = std::env::temp_dir().join(format!(
+            "gemstone-rs-env-write-test-{}.env",
+            std::process::id()
+        ));
+        fs::write(&path, "existing").unwrap();
+
+        let err = write_env_template(&path, false).unwrap_err().to_string();
+        assert!(err.contains("already exists"));
+        write_env_template(&path, true).unwrap();
+        let rewritten = fs::read_to_string(&path).unwrap();
+        assert!(rewritten.contains("export GS_PASSWORD='<set-your-password>'"));
+        let _ = fs::remove_file(&path);
     }
 
     #[test]
@@ -2293,6 +2546,12 @@ mod tests {
             parse_command(&args(&["codegen", "check"])).unwrap(),
             Command::CodegenCheck {
                 config: PathBuf::from(DEFAULT_CONFIG_PATH)
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "explain", "demo.codegen"])).unwrap(),
+            Command::CodegenExplain {
+                config: PathBuf::from("demo.codegen")
             }
         );
         assert_eq!(

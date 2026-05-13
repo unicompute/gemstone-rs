@@ -21,7 +21,9 @@ jobs:
       - run: cargo check --workspace
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo run -p gemstone-rs-cli -- env sample
       - run: cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+      - run: cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json

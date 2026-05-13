@@ -19,6 +19,9 @@ function activate(context) {
   register(context, "gemstoneRs.verifySetup", verifySetup);
   register(context, "gemstoneRs.verifyLiveSetup", verifyLiveSetup);
   register(context, "gemstoneRs.doctor", doctor);
+  register(context, "gemstoneRs.showEnvironmentTemplate", showEnvironmentTemplate);
+  register(context, "gemstoneRs.copyEnvironmentTemplate", copyEnvironmentTemplate);
+  register(context, "gemstoneRs.writeEnvironmentTemplate", writeEnvironmentTemplate);
   register(context, "gemstoneRs.eval", evalSmalltalk);
   register(context, "gemstoneRs.browseDictionaries", browseDictionaries);
   register(context, "gemstoneRs.browseClasses", browseClasses);
@@ -180,6 +183,9 @@ class GemStoneTreeProvider {
         actionNode("Doctor", "gemstoneRs.doctor"),
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
         actionNode("Verify Live Setup", "gemstoneRs.verifyLiveSetup"),
+        actionNode("Show Environment Template", "gemstoneRs.showEnvironmentTemplate"),
+        actionNode("Copy Environment Template", "gemstoneRs.copyEnvironmentTemplate"),
+        actionNode("Write .env.gemstone-rs", "gemstoneRs.writeEnvironmentTemplate"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
         actionNode("Open Explorer Webview", "gemstoneRs.openExplorerWebview"),
@@ -295,8 +301,7 @@ async function handleSetupAction(action, reportText) {
     await vscode.env.clipboard.writeText(reportText);
     vscode.window.showInformationMessage("Copied gemstone-rs setup report.");
   } else if (action === "Copy Env Script") {
-    await vscode.env.clipboard.writeText(setupEnvironmentExportScript());
-    vscode.window.showInformationMessage("Copied gemstone-rs environment export script.");
+    await copyEnvironmentTemplate();
   } else if (action === "Open Settings") {
     await vscode.commands.executeCommand(
       "workbench.action.openSettings",
@@ -305,26 +310,76 @@ async function handleSetupAction(action, reportText) {
   }
 }
 
-function setupEnvironmentExportScript() {
-  const stone = process.env.GS_STONE || process.env.GS_STONE_NAME || "gs64stone";
-  const lines = [
-    "# gemstone-rs environment",
-    `export GS_LIB=${shellExportValue(process.env.GS_LIB || "/opt/gemstone/product/lib")}`,
-    "# Optional when you want to point at one libgcirpc file:",
-    `# export GS_LIB_PATH=${shellExportValue(process.env.GS_LIB_PATH || "/full/path/to/libgcirpc.dylib")}`,
-    `export GS_STONE=${shellExportValue(stone)}`,
-    `export GS_STONE_NAME=${shellExportValue(stone)}`,
-    `export GS_USERNAME=${shellExportValue(process.env.GS_USERNAME || "DataCurator")}`,
-    "export GS_PASSWORD='change-me'",
-    `export GS_HOST=${shellExportValue(process.env.GS_HOST || "localhost")}`,
-    `export GS_NETLDI=${shellExportValue(process.env.GS_NETLDI || "50377")}`,
-    `export GS_GEM_SERVICE=${shellExportValue(process.env.GS_GEM_SERVICE || "gemnetobject")}`,
-  ];
-  return `${lines.join("\n")}\n`;
-}
-
 async function doctor() {
   await runAndShow(["doctor"], { allowFailure: true });
+}
+
+async function showEnvironmentTemplate() {
+  const result = await runCli(["env", "sample"], { allowFailure: true });
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stderr);
+  output.show(true);
+
+  if (result.code !== 0) {
+    vscode.window.showErrorMessage("gemstone-rs env sample failed. See GemStone RS output.");
+    return;
+  }
+
+  const document = await vscode.workspace.openTextDocument({
+    content: result.stdout,
+    language: "shellscript",
+  });
+  await vscode.window.showTextDocument(document, { preview: true });
+}
+
+async function copyEnvironmentTemplate() {
+  const result = await runCli(["env", "sample"], { allowFailure: true });
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stderr);
+  output.show(true);
+
+  if (result.code !== 0) {
+    vscode.window.showErrorMessage("gemstone-rs env sample failed. See GemStone RS output.");
+    return;
+  }
+
+  await vscode.env.clipboard.writeText(result.stdout);
+  vscode.window.showInformationMessage("Copied gemstone-rs environment template.");
+}
+
+async function writeEnvironmentTemplate() {
+  const target = await vscode.window.showInputBox({
+    title: "Write gemstone-rs Environment Template",
+    prompt: "Path for the safe GS_* shell template",
+    value: ".env.gemstone-rs",
+  });
+  if (!target) {
+    return;
+  }
+  let result = await runCli(["env", "write", target], { allowFailure: true });
+  if (result.code !== 0 && /already exists/.test(`${result.stdout}\n${result.stderr}`)) {
+    const choice = await vscode.window.showWarningMessage(
+      `${target} already exists. Overwrite it?`,
+      { modal: true },
+      "Overwrite"
+    );
+    if (choice === "Overwrite") {
+      result = await runCli(["env", "write", target, "--force"], { allowFailure: true });
+    }
+  }
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.append(result.stdout);
+  output.append(result.stderr);
+  output.show(true);
+  if (result.code === 0) {
+    vscode.window.showInformationMessage(`Wrote ${target}.`);
+    await openPathInEditor(target);
+  } else {
+    vscode.window.showErrorMessage("gemstone-rs env write failed. See GemStone RS output.");
+  }
 }
 
 async function evalSmalltalk() {
@@ -1164,10 +1219,6 @@ function shellQuote(value) {
     return String(value);
   }
   return `'${String(value).replace(/'/g, "'\\''")}'`;
-}
-
-function shellExportValue(value) {
-  return `'${String(value).replace(/'/g, "'\"'\"'")}'`;
 }
 
 function escapeHtml(value) {

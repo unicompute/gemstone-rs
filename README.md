@@ -60,8 +60,9 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 ```bash
 gemstone-rs --help
 gemstone-rs env sample
+gemstone-rs env write
 gemstone-rs doctor
-gemstone-rs doctor --live
+gemstone-rs doctor --live --strict
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 gemstone-rs-explorer --help
@@ -164,8 +165,10 @@ See [examples/README.md](examples/README.md) and
 ```bash
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
+cargo run -p gemstone-rs-cli -- doctor --strict
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
+cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- eval "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -185,6 +188,7 @@ cargo run -p gemstone-rs-cli -- codegen init
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check
+cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
@@ -198,13 +202,19 @@ When setup fails, it prints actionable hints for credentials, library loading,
 or live stone connectivity. Add `--json` when release scripts or VS Code need
 structured output. `env sample` prints a safe shell export template for the
 same `GS_*` variables and replaces password values with placeholders.
+`env write` writes that template to `.env.gemstone-rs` or a chosen path and
+refuses to overwrite unless `--force` is passed. `doctor --strict` is intended
+for CI: it fails when the stone or GCI library source is only coming from
+defaults. GCI diagnostics also report whether the selected `libgcirpc` exists,
+is a file, is readable, and whether the path appears to be arm64 or x86_64.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
-line-oriented config, preview generated Rust wrappers, diff/check stale output,
-generate configs from a live stone, and write generated files.
+line-oriented config, explain what will be generated, preview generated Rust
+wrappers, diff/check stale output, generate configs from a live stone, and
+write generated files.
 
 ## Codegen
 

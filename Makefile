@@ -12,7 +12,9 @@ rust-check:
 	cargo test --workspace
 
 codegen-check:
+	cargo run -p gemstone-rs-cli -- env sample
 	cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
+	cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 
 profile-check:

@@ -52,6 +52,15 @@ current non-secret values such as `GS_LIB` or `GS_STONE`, comments optional
 values when they are absent, and prints placeholders for `GS_PASSWORD` and
 `GS_HOST_PASSWORD` instead of copying secrets.
 
+Use `gemstone-rs env write` to save the same template:
+
+```bash
+gemstone-rs env write
+gemstone-rs env write .env.gemstone-rs --force
+```
+
+It refuses to overwrite an existing file unless `--force` is passed.
+
 Optional variables:
 
 ```bash
@@ -84,6 +93,7 @@ cargo install gemstone-rs-cli
 gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
+gemstone-rs doctor --strict
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
@@ -102,7 +112,11 @@ or directory searched. Add `--live` when the stone should be reachable; it logs
 in and asserts that `3 + 4` returns `7`. Add `--json` when a script, CI job, or
 editor integration needs a parseable report. Failed checks include hints for
 missing credentials, `libgcirpc` path/loading problems, and live stone
-connectivity.
+connectivity. `--strict` is useful for CI because it also fails when
+`GS_STONE`/`GS_STONE_NAME` or a deterministic GCI library source
+(`GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE`) is missing. The GCI section reports
+whether the selected `libgcirpc` path exists, is a file, is readable, and
+whether the path appears to reference arm64 or x86_64.
 
 From a source checkout:
 
