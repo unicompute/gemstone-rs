@@ -465,6 +465,8 @@ In VS Code, use:
 - `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Put BridgeRoot String`
 - `GemStone RS: Put BridgeRoot Symbol`
+- `GemStone RS: Put BridgeRoot SmallInt`
+- `GemStone RS: Put BridgeRoot Bool`
 - `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 

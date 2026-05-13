@@ -36,6 +36,8 @@ function activate(context) {
   register(context, "gemstoneRs.listBridgeRootKeys", listBridgeRootKeys);
   register(context, "gemstoneRs.putBridgeRootString", putBridgeRootString);
   register(context, "gemstoneRs.putBridgeRootSymbol", putBridgeRootSymbol);
+  register(context, "gemstoneRs.putBridgeRootSmallInt", putBridgeRootSmallInt);
+  register(context, "gemstoneRs.putBridgeRootBool", putBridgeRootBool);
   register(context, "gemstoneRs.removeBridgeRootKey", removeBridgeRootKey);
   register(context, "gemstoneRs.runGeneratedMappingExample", runGeneratedMappingExample);
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
@@ -164,6 +166,8 @@ class GemStoneTreeProvider {
         actionNode("List BridgeRoot Keys", "gemstoneRs.listBridgeRootKeys"),
         actionNode("Put BridgeRoot String", "gemstoneRs.putBridgeRootString"),
         actionNode("Put BridgeRoot Symbol", "gemstoneRs.putBridgeRootSymbol"),
+        actionNode("Put BridgeRoot SmallInt", "gemstoneRs.putBridgeRootSmallInt"),
+        actionNode("Put BridgeRoot Bool", "gemstoneRs.putBridgeRootBool"),
         actionNode("Remove BridgeRoot Key", "gemstoneRs.removeBridgeRootKey"),
         actionNode("Run Generated Mapping Example", "gemstoneRs.runGeneratedMappingExample"),
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
@@ -611,6 +615,26 @@ async function putBridgeRootSymbol() {
     defaultKey: "WorkbenchState",
     defaultValue: "ready",
     command: "put-symbol",
+  });
+}
+
+async function putBridgeRootSmallInt() {
+  await putBridgeRootScalar({
+    title: "Put BridgeRoot SmallInt",
+    prompt: "SmallInt value",
+    defaultKey: "WorkbenchCount",
+    defaultValue: "7",
+    command: "put-smallint",
+  });
+}
+
+async function putBridgeRootBool() {
+  await putBridgeRootScalar({
+    title: "Put BridgeRoot Bool",
+    prompt: "Bool value",
+    defaultKey: "WorkbenchReady",
+    defaultValue: "true",
+    command: "put-bool",
   });
 }
 

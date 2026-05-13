@@ -52,6 +52,8 @@ const requiredCommands = [
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
   "gemstoneRs.putBridgeRootSymbol",
+  "gemstoneRs.putBridgeRootSmallInt",
+  "gemstoneRs.putBridgeRootBool",
   "gemstoneRs.generateExplorerAuthToken",
   "gemstoneRs.clearExplorerAuthToken",
 ];
@@ -117,6 +119,8 @@ assert(extensionSource.includes('"env", "write"'), "environment write command sh
 assert(extensionSource.includes("put-string"), "BridgeRoot string command should use put-string");
 assert(extensionSource.includes('"bridge", command, key, value'), "BridgeRoot scalar commands should share the CLI command path");
 assert(extensionSource.includes("put-symbol"), "BridgeRoot symbol command should use put-symbol");
+assert(extensionSource.includes("put-smallint"), "BridgeRoot SmallInt command should use put-smallint");
+assert(extensionSource.includes("put-bool"), "BridgeRoot Bool command should use put-bool");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
 assert(readme.includes("Generate Explorer Auth Token"), "README should mention auth token generation");

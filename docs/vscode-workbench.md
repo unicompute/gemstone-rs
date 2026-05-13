@@ -55,6 +55,8 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - List BridgeRoot Keys
 - Put BridgeRoot String
 - Put BridgeRoot Symbol
+- Put BridgeRoot SmallInt
+- Put BridgeRoot Bool
 - Remove BridgeRoot Key
 - Run Generated Mapping Example
 - Preview Wrappers
@@ -105,6 +107,8 @@ Commands:
 - `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Put BridgeRoot String`
 - `GemStone RS: Put BridgeRoot Symbol`
+- `GemStone RS: Put BridgeRoot SmallInt`
+- `GemStone RS: Put BridgeRoot Bool`
 - `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
@@ -213,6 +217,14 @@ value should be a GemStone Symbol:
 
 ```bash
 gemstone-rs bridge put-symbol <key> <value>
+```
+
+Use `GemStone RS: Put BridgeRoot SmallInt` or `GemStone RS: Put BridgeRoot
+Bool` when the stored value should be a GemStone SmallInteger or Boolean:
+
+```bash
+gemstone-rs bridge put-smallint <key> <value>
+gemstone-rs bridge put-bool <key> <value>
 ```
 
 Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a

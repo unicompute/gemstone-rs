@@ -43,6 +43,8 @@
     "onCommand:gemstoneRs.listBridgeRootKeys",
     "onCommand:gemstoneRs.putBridgeRootString",
     "onCommand:gemstoneRs.putBridgeRootSymbol",
+    "onCommand:gemstoneRs.putBridgeRootSmallInt",
+    "onCommand:gemstoneRs.putBridgeRootBool",
     "onCommand:gemstoneRs.removeBridgeRootKey",
     "onCommand:gemstoneRs.runGeneratedMappingExample",
     "onCommand:gemstoneRs.codegenPreview",
@@ -166,6 +168,14 @@
       {
         "command": "gemstoneRs.putBridgeRootSymbol",
         "title": "GemStone RS: Put BridgeRoot Symbol"
+      },
+      {
+        "command": "gemstoneRs.putBridgeRootSmallInt",
+        "title": "GemStone RS: Put BridgeRoot SmallInt"
+      },
+      {
+        "command": "gemstoneRs.putBridgeRootBool",
+        "title": "GemStone RS: Put BridgeRoot Bool"
       },
       {
         "command": "gemstoneRs.removeBridgeRootKey",

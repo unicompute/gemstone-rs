@@ -212,11 +212,11 @@ Use the GemStone RS sidebar to browse dictionaries, classes, protocols, and
 methods. The same sidebar exposes Codegen Discover, Preview, Diff, Check,
 Generate, profile-driven codegen actions, Generate Mapping Config, Preview
 BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Put BridgeRoot Symbol,
-Remove BridgeRoot Key, Run Generated Mapping Example, Load Project Profiles,
-Save Project Profiles, Export Codegen Profile, Show Sample Project Profiles,
-Create Project Profiles, Validate Project Profiles, List Project Profiles, Show
-Project Profile, Resolve Project Profile, Check Project Profiles, and Open Docs
-actions.
+Put BridgeRoot SmallInt, Put BridgeRoot Bool, Remove BridgeRoot Key, Run
+Generated Mapping Example, Load Project Profiles, Save Project Profiles, Export
+Codegen Profile, Show Sample Project Profiles, Create Project Profiles,
+Validate Project Profiles, List Project Profiles, Show Project Profile, Resolve
+Project Profile, Check Project Profiles, and Open Docs actions.
 
 ## Later Examples
 
