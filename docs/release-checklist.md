@@ -71,6 +71,7 @@ make screenshots
 - Run local verification:
 
 ```bash
+python3 scripts/version_check.py
 make verify
 make vscode-package
 python3 docs/build_pdf_docs.py
@@ -82,11 +83,12 @@ Or use the dry-run release wrapper:
 DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
-`make verify` checks that PDF generation completes and produces non-empty PDF
-files. The release workflow rebuilds and attaches fresh PDFs for the target
-runner because WeasyPrint output can differ byte-for-byte across platforms.
-The VSIX filename uses `vscode-gemstone-rs-workbench/package.json`; the crate
-release tag still uses the workflow `version` input.
+`make verify` includes the version check and checks that PDF generation
+completes and produces non-empty PDF files. The release workflow rebuilds and
+attaches fresh PDFs for the target runner because WeasyPrint output can differ
+byte-for-byte across platforms. The VSIX filename uses
+`vscode-gemstone-rs-workbench/package.json`; the crate release tag still uses
+the workflow `version` input.
 
 ## Commit Review Pass
 

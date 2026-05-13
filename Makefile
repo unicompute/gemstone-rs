@@ -1,9 +1,12 @@
 VERSION ?= 0.2.2
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify rust-check codegen-check schema-check profile-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify version-check rust-check codegen-check schema-check profile-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: rust-check codegen-check schema-check profile-check explorer-smoke vscode-check docs-pdf-check
+verify: version-check rust-check codegen-check schema-check profile-check explorer-smoke vscode-check docs-pdf-check
+
+version-check:
+	python3 scripts/version_check.py
 
 rust-check:
 	cargo fmt --all --check
