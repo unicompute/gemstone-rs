@@ -53,9 +53,9 @@ export GS_PASSWORD=swordfish
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`
-came from explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`. With
-`--live`, it logs in and asserts `3 + 4 == 7`. Add `--json` for scripts, CI,
-and editor integrations.
+came from explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the
+path or directory searched. With `--live`, it logs in and asserts `3 + 4 == 7`.
+Add `--json` for scripts, CI, and editor integrations.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

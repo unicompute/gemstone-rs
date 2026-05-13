@@ -166,8 +166,9 @@ gemstone-rs doctor --json
 
 The first command checks environment and GCI loading, including whether
 `libgcirpc` came from explicit config, `GS_LIB_PATH`, `GS_LIB`, or
-`GEMSTONE/lib`. The second command logs in and verifies that `3 + 4` returns
-`7`. The JSON form is useful in CI or editor tooling.
+`GEMSTONE/lib`, plus the exact path or directory searched. The second command
+logs in and verifies that `3 + 4` returns `7`. The JSON form is useful in CI or
+editor tooling.
 
 ## Recipe 14: Inspect an OOP From the CLI
 

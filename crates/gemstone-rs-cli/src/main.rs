@@ -417,12 +417,14 @@ fn run_doctor(live: bool, format: OutputFormat) -> Result<(), CliError> {
                 Ok(path) => {
                     println!("gci_library: ok: {}", path.display());
                     println!("  source: {}", resolution.source);
+                    print_searched_paths(&resolution.searched);
                 }
                 Err(err) => {
                     ok = false;
                     println!("gci_library: error: {err}");
                     println!("  source: {}", resolution.source);
                     println!("  path: {}", resolution.path.display());
+                    print_searched_paths(&resolution.searched);
                 }
             },
             Err(err) => {
@@ -498,17 +500,19 @@ fn run_doctor_json(live: bool) -> Result<(), CliError> {
             Ok(resolution) => match gci_library_path(&config) {
                 Ok(path) => {
                     gci_json = format!(
-                        r#"{{"ok":true,"checked":true,"source":"{}","path":"{}"}}"#,
+                        r#"{{"ok":true,"checked":true,"source":"{}","path":"{}","searched":[{}]}}"#,
                         escape_json(resolution.source),
-                        escape_json(&path.display().to_string())
+                        escape_json(&path.display().to_string()),
+                        json_path_array(&resolution.searched)
                     );
                 }
                 Err(err) => {
                     ok = false;
                     gci_json = format!(
-                        r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","error":"{}"}}"#,
+                        r#"{{"ok":false,"checked":true,"source":"{}","path":"{}","searched":[{}],"error":"{}"}}"#,
                         escape_json(resolution.source),
                         escape_json(&resolution.path.display().to_string()),
+                        json_path_array(&resolution.searched),
                         escape_json(&err.to_string())
                     );
                 }
@@ -631,6 +635,24 @@ fn json_string_array(values: &[String]) -> String {
         .map(|value| format!(r#""{}""#, escape_json(value)))
         .collect::<Vec<_>>()
         .join(",")
+}
+
+fn json_path_array(values: &[PathBuf]) -> String {
+    values
+        .iter()
+        .map(|value| format!(r#""{}""#, escape_json(&value.display().to_string())))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn print_searched_paths(paths: &[PathBuf]) {
+    if paths.is_empty() {
+        return;
+    }
+    println!("  searched:");
+    for path in paths {
+        println!("    {}", path.display());
+    }
 }
 
 fn project_profiles_json(path: &Path, project: &profiles::ProjectProfiles) -> String {

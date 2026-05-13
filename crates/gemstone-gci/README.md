@@ -15,7 +15,7 @@ export GEMSTONE=/path/to/gemstone
 
 Use `resolve_library_path_with_source` when diagnostics need to show whether
 `libgcirpc` came from an explicit path, `GS_LIB_PATH`, `GS_LIB`, or
-`GEMSTONE/lib`.
+`GEMSTONE/lib`, and which path or directory was searched.
 
 Most applications should use the safe `gemstone` crate instead of calling this
 crate directly.

@@ -16,7 +16,8 @@ export GEMSTONE=/path/to/GemStone64Bit
 
 The loader already reports which source selected `libgcirpc` in
 `gemstone-rs doctor`: explicit config, `GS_LIB_PATH`, `GS_LIB`, or
-`GEMSTONE/lib`. It should keep improving in these directions:
+`GEMSTONE/lib`, plus the exact path or directory searched. It should keep
+improving in these directions:
 
 - detect architecture mismatches early
 - avoid requiring GemStone headers at Rust build time

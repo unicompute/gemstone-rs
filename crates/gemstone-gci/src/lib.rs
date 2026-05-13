@@ -221,6 +221,7 @@ pub struct GciLibrary {
 pub struct GciLibraryPathResolution {
     pub source: &'static str,
     pub path: PathBuf,
+    pub searched: Vec<PathBuf>,
 }
 
 impl GciLibrary {
@@ -738,23 +739,28 @@ pub fn resolve_library_path_with_source(
     if let Some(path) = lib_path {
         return Ok(GciLibraryPathResolution {
             source: "explicit",
-            path,
+            path: path.clone(),
+            searched: vec![path],
         });
     }
     if let Ok(path) = env::var("GS_LIB_PATH") {
         if !path.is_empty() {
+            let path = PathBuf::from(path);
             return Ok(GciLibraryPathResolution {
                 source: "GS_LIB_PATH",
-                path: PathBuf::from(path),
+                path: path.clone(),
+                searched: vec![path],
             });
         }
     }
     if let Ok(dir) = env::var("GS_LIB") {
         if !dir.is_empty() {
-            if let Some(path) = find_gcirpc_in_dir(Path::new(&dir))? {
+            let dir = PathBuf::from(dir);
+            if let Some(path) = find_gcirpc_in_dir(&dir)? {
                 return Ok(GciLibraryPathResolution {
                     source: "GS_LIB",
                     path,
+                    searched: vec![dir],
                 });
             }
         }
@@ -766,6 +772,7 @@ pub fn resolve_library_path_with_source(
                 return Ok(GciLibraryPathResolution {
                     source: "GEMSTONE/lib",
                     path,
+                    searched: vec![lib_dir],
                 });
             }
         }
@@ -848,6 +855,7 @@ mod tests {
 
         assert_eq!(resolution.source, "explicit");
         assert_eq!(resolution.path, path);
+        assert_eq!(resolution.searched, vec![path.clone()]);
         assert_eq!(resolve_library_path(Some(path.clone())).unwrap(), path);
     }
 

@@ -90,10 +90,10 @@ Expected output:
 `gemstone-rs doctor` prints the relevant `GS_*` values with secrets masked,
 loads the configured `libgcirpc`, and reports setup problems without exposing
 passwords. The GCI section reports the source that selected the library:
-explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`. Add `--live` when
-the stone should be reachable; it logs in and asserts that `3 + 4` returns `7`.
-Add `--json` when a script, CI job, or editor integration needs a parseable
-report.
+explicit config, `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path
+or directory searched. Add `--live` when the stone should be reachable; it logs
+in and asserts that `3 + 4` returns `7`. Add `--json` when a script, CI job, or
+editor integration needs a parseable report.
 
 From a source checkout:
 

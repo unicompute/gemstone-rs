@@ -407,6 +407,7 @@ pub fn gci_library_path(config: &Config) -> Result<PathBuf> {
 pub struct GciLibraryResolution {
     pub source: &'static str,
     pub path: PathBuf,
+    pub searched: Vec<PathBuf>,
 }
 
 pub fn gci_library_resolution(config: &Config) -> Result<GciLibraryResolution> {
@@ -419,18 +420,22 @@ pub fn gci_library_resolution(config: &Config) -> Result<GciLibraryResolution> {
             return Ok(GciLibraryResolution {
                 source: "GS_LIB_PATH",
                 path: path.clone(),
+                searched: vec![path.clone()],
             });
         }
         return Ok(GciLibraryResolution {
             source: "config.lib_path",
             path: path.clone(),
+            searched: vec![path.clone()],
         });
     }
     if let Ok(path) = env::var("GS_LIB_PATH") {
         if !path.is_empty() {
+            let path = PathBuf::from(path);
             return Ok(GciLibraryResolution {
                 source: "GS_LIB_PATH",
-                path: PathBuf::from(path),
+                path: path.clone(),
+                searched: vec![path],
             });
         }
     }
@@ -438,6 +443,7 @@ pub fn gci_library_resolution(config: &Config) -> Result<GciLibraryResolution> {
     Ok(GciLibraryResolution {
         source: resolution.source,
         path: resolution.path,
+        searched: resolution.searched,
     })
 }
 
@@ -1140,6 +1146,10 @@ mod tests {
 
         assert_eq!(resolution.source, "config.lib_path");
         assert_eq!(resolution.path, PathBuf::from("/tmp/libgcirpc-test.dylib"));
+        assert_eq!(
+            resolution.searched,
+            vec![PathBuf::from("/tmp/libgcirpc-test.dylib")]
+        );
         Ok(())
     }
 
