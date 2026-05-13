@@ -175,6 +175,8 @@ type and GemStone class, then use:
 - `Discover Mapping` to ask a live stone for a mapping config proposal
 - `Explain` to render a structured codegen summary, including output path,
   generated test stubs, wrappers, return helpers, and mapped fields
+- `Explain Profile` to render the same structured summary after resolving a
+  named profile from the project profile file
 - `Preview` to inspect generated Rust wrappers without writing files
 - `Diff` to compare generated output with the committed file; the detail pane
   shows both the exact unified diff and a side-by-side view for review
@@ -190,6 +192,7 @@ curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
 curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'

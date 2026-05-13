@@ -285,6 +285,8 @@ http://127.0.0.1:8787/api/codegen/configs?root=.
 http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object
+http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen
+http://127.0.0.1:8787/api/codegen/explain-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json
 http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen
 http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen
@@ -305,9 +307,10 @@ codegen config file through a POST body when write mode is enabled, lists known
 `.codegen` files through a project-aware picker, keeps a local recent-config
 history, saves named local codegen profiles, exports/imports profile JSON,
 loads/saves project profile files with schema validation, renders
-generated source, generated config, unified diff, and side-by-side diff output
-in a dedicated detail pane, remembers the current fields locally, and keeps the
-JSON endpoints stable for curl, VS Code, and automation.
+generated source, generated config, profile-aware explain summaries, unified
+diff, and side-by-side diff output in a dedicated detail pane, remembers the
+current fields locally, and keeps the JSON endpoints stable for curl, VS Code,
+and automation.
 
 Generate endpoints are write-gated:
 
