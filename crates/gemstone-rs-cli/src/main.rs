@@ -732,6 +732,27 @@ impl ProfileCheckEntry {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ProfileCheckCounts {
+    profile_count: usize,
+    ok_count: usize,
+    stale_count: usize,
+    error_count: usize,
+}
+
+fn profile_check_counts(entries: &[ProfileCheckEntry]) -> ProfileCheckCounts {
+    let profile_count = entries.len();
+    let ok_count = entries.iter().filter(|entry| entry.ok()).count();
+    let error_count = entries.iter().filter(|entry| entry.error.is_some()).count();
+    let stale_count = profile_count.saturating_sub(ok_count + error_count);
+    ProfileCheckCounts {
+        profile_count,
+        ok_count,
+        stale_count,
+        error_count,
+    }
+}
+
 fn run_profile_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
     let project = profiles::load_file(path)?;
     let entries = project
@@ -790,10 +811,15 @@ fn check_project_profile(profile: &profiles::CodegenProfile) -> ProfileCheckEntr
 }
 
 fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
+    let counts = profile_check_counts(entries);
     println!(
         "profile check: {} ({} profiles)",
         path.display(),
-        entries.len()
+        counts.profile_count
+    );
+    println!(
+        "summary: {} ok, {} stale, {} errors, {} total",
+        counts.ok_count, counts.stale_count, counts.error_count, counts.profile_count
     );
     for entry in entries {
         let status = if entry.ok() {
@@ -803,22 +829,23 @@ fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
         } else {
             "stale"
         };
-        println!(
-            "{}\t{}\tconfig={}\toutput={}\t{}",
+        let mut line = format!(
+            "{}\t{}\tconfig={}\toutput={}",
             status,
             entry.name,
             path_field(entry.config.as_deref()),
-            path_field(entry.output.as_deref()),
-            entry.error.as_deref().unwrap_or("")
+            path_field(entry.output.as_deref())
         );
+        if let Some(error) = &entry.error {
+            line.push_str("\terror=");
+            line.push_str(error);
+        }
+        println!("{line}");
     }
 }
 
 fn profile_check_json(path: &Path, entries: &[ProfileCheckEntry], ok: bool) -> String {
-    let profile_count = entries.len();
-    let ok_count = entries.iter().filter(|entry| entry.ok()).count();
-    let error_count = entries.iter().filter(|entry| entry.error.is_some()).count();
-    let stale_count = profile_count.saturating_sub(ok_count + error_count);
+    let counts = profile_check_counts(entries);
     let entries = entries
         .iter()
         .map(profile_check_entry_json)
@@ -828,10 +855,10 @@ fn profile_check_json(path: &Path, entries: &[ProfileCheckEntry], ok: bool) -> S
         r#"{{"ok":{},"path":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
         ok,
         escape_json(&path.display().to_string()),
-        profile_count,
-        ok_count,
-        stale_count,
-        error_count,
+        counts.profile_count,
+        counts.ok_count,
+        counts.stale_count,
+        counts.error_count,
         entries
     )
 }
@@ -2091,5 +2118,42 @@ mod tests {
         assert!(json.contains(r#""errorCount":1"#));
         assert!(json.contains(r#""name":"broken""#));
         assert!(json.contains(r#""error":"missing config""#));
+    }
+
+    #[test]
+    fn profile_check_counts_separate_stale_and_errors() {
+        let entries = vec![
+            ProfileCheckEntry {
+                name: "fresh".to_string(),
+                config: None,
+                output: None,
+                up_to_date: true,
+                error: None,
+            },
+            ProfileCheckEntry {
+                name: "stale".to_string(),
+                config: None,
+                output: None,
+                up_to_date: false,
+                error: None,
+            },
+            ProfileCheckEntry {
+                name: "broken".to_string(),
+                config: None,
+                output: None,
+                up_to_date: false,
+                error: Some("missing config".to_string()),
+            },
+        ];
+
+        assert_eq!(
+            profile_check_counts(&entries),
+            ProfileCheckCounts {
+                profile_count: 3,
+                ok_count: 1,
+                stale_count: 1,
+                error_count: 1,
+            }
+        );
     }
 }

@@ -85,6 +85,14 @@ assert(
   extensionSource.includes("Project profile freshness"),
   "profile checking should render a readable summary"
 );
+assert(
+  extensionSource.includes("Copy Report"),
+  "profile checking should offer report copy action"
+);
+assert(
+  extensionSource.includes("Open Profile File"),
+  "profile checking should offer profile file open action"
+);
 assert.deepStrictEqual(
   JSON.parse(extensionSchema),
   JSON.parse(rootSchema),

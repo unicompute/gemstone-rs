@@ -54,6 +54,7 @@ Expected output:
 ```text
 profile ok: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles: default, object-wrapper, bridge-mapping)
 profile check: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles)
+summary: 3 ok, 0 stale, 0 errors, 3 total
 ok	default	config=examples/codegen/gemstone-rs.codegen	output=examples/codegen/generated/gemstone_wrappers.rs
 ```
 

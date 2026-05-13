@@ -773,18 +773,24 @@ async function checkProjectProfiles() {
   if (!report) {
     return;
   }
-  showProfileCheckReport(result, report);
+  const reportText = showProfileCheckReport(result, report);
   const stale = Number(report.staleCount || 0);
   const errors = Number(report.errorCount || 0);
+  let action;
   if (result.code === 0 && report.ok) {
-    vscode.window.showInformationMessage(
-      `Project profiles are fresh: ${Number(report.okCount || 0)} ok.`
+    action = await vscode.window.showInformationMessage(
+      `Project profiles are fresh: ${Number(report.okCount || 0)} ok.`,
+      "Copy Report",
+      "Open Profile File"
     );
   } else {
-    vscode.window.showErrorMessage(
-      `Project profile check failed: ${stale} stale, ${errors} errors.`
+    action = await vscode.window.showErrorMessage(
+      `Project profile check failed: ${stale} stale, ${errors} errors.`,
+      "Copy Report",
+      "Open Profile File"
     );
   }
+  await handleProfileCheckAction(action, profilePath, reportText);
 }
 
 function parseJsonCommandResult(result, errorMessage) {
@@ -803,33 +809,51 @@ function parseJsonCommandResult(result, errorMessage) {
 }
 
 function showProfileCheckReport(result, report) {
-  const profiles = Array.isArray(report.profiles) ? report.profiles : [];
+  const reportText = formatProfileCheckReport(result, report);
   output.clear();
-  output.appendLine(commandLine(result));
-  output.appendLine("Project profile freshness");
-  output.appendLine(`path: ${report.path || "-"}`);
+  output.append(reportText);
+  output.show(true);
+  return reportText;
+}
+
+function formatProfileCheckReport(result, report) {
+  const profiles = Array.isArray(report.profiles) ? report.profiles : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "Project profile freshness",
+    `path: ${report.path || "-"}`,
+  ];
   const okCount = Number(report.okCount || 0);
   const staleCount = Number(report.staleCount || 0);
   const errorCount = Number(report.errorCount || 0);
   const profileCount = Number(report.profileCount || profiles.length);
-  output.appendLine(
+  lines.push(
     `summary: ${okCount} ok, ${staleCount} stale, ${errorCount} errors, ${profileCount} total`
   );
-  output.appendLine("");
+  lines.push("");
   for (const profile of profiles) {
     const status = profileCheckStatus(profile);
-    output.appendLine(`${status}\t${profile.name || "(unnamed)"}`);
-    output.appendLine(`  config: ${profile.config || "-"}`);
-    output.appendLine(`  output: ${profile.output || "-"}`);
+    lines.push(`${status}\t${profile.name || "(unnamed)"}`);
+    lines.push(`  config: ${profile.config || "-"}`);
+    lines.push(`  output: ${profile.output || "-"}`);
     if (profile.error) {
-      output.appendLine(`  error: ${profile.error}`);
+      lines.push(`  error: ${profile.error}`);
     }
   }
   if (result.stderr.trim()) {
-    output.appendLine("");
-    output.append(result.stderr);
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
   }
-  output.show(true);
+  return `${lines.join("\n")}\n`;
+}
+
+async function handleProfileCheckAction(action, profilePath, reportText) {
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied project profile check report.");
+  } else if (action === "Open Profile File") {
+    await openPathInEditor(profilePath);
+  }
 }
 
 function profileCheckStatus(profile) {
@@ -840,6 +864,16 @@ function profileCheckStatus(profile) {
     return "error";
   }
   return "stale";
+}
+
+async function openPathInEditor(filePath) {
+  const fullPath = resolvePath(filePath, settings().cwd);
+  try {
+    const document = await vscode.workspace.openTextDocument(fullPath);
+    await vscode.window.showTextDocument(document, { preview: true });
+  } catch (error) {
+    vscode.window.showErrorMessage(`Could not open ${fullPath}: ${error.message}`);
+  }
 }
 
 function openExplorerProfileWorkflow(title, instruction) {

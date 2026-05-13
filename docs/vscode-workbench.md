@@ -234,8 +234,9 @@ Resolve Project Profile` runs `gemstone-rs profile resolve` and shows the
 config path that profile-driven codegen will use. `GemStone RS: Check Project
 Profiles` runs `gemstone-rs profile check --json` across every profile and
 renders an aggregate summary with ok, stale, and error counts before you
-commit. Profile-specific commands use a QuickPick populated from the project
-profile file. The extension also contributes JSON validation for files named
+commit. The result message can copy the report or open the profile file for
+quick repair. Profile-specific commands use a QuickPick populated from the
+project profile file. The extension also contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`.
 
 ## Develop the Extension
