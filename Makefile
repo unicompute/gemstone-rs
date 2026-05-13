@@ -1,9 +1,9 @@
 VERSION ?= 0.2.2
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify version-check crate-metadata-check rust-check codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify version-check crate-metadata-check rust-check examples-check codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: version-check crate-metadata-check rust-check codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check docs-pdf-check
+verify: version-check crate-metadata-check rust-check examples-check codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check docs-pdf-check
 
 version-check:
 	python3 scripts/version_check.py
@@ -16,6 +16,12 @@ rust-check:
 	cargo check --workspace
 	cargo clippy --workspace --all-targets -- -D warnings
 	cargo test --workspace
+
+examples-check:
+	cargo run -p gemstone-rs-cli -- examples list
+	cargo run -p gemstone-rs-cli -- examples list --json
+	cargo run -p gemstone-rs-cli -- examples show quickstart
+	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample

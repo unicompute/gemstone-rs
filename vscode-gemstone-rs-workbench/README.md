@@ -47,6 +47,7 @@ For a source checkout:
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
+- `GemStone RS: Show Example Commands`
 - `GemStone RS: Codegen Init`
 - `GemStone RS: Codegen Discover`
 - `GemStone RS: Generate Mapping Config`
@@ -92,6 +93,10 @@ before writing, then opens the generated file after a successful write. The
 classes, selectors, return types, mapped fields, and generated test stubs. The
 profile variants run the same preview/diff/check/explain/generate loop from a
 named project profile in `gemstone-rs.codegen-profiles.json`.
+`Show Example Commands` uses `gemstone-rs examples list --json` to show the
+same curated example map that the CLI exposes, then lets you run a selected
+example in a terminal, copy its command, or open the examples guide. This is
+the Rust workbench equivalent of the gemstone-py examples launcher.
 `Load Project Profiles`, `Save Project Profiles`, and `Export Codegen Profile`
 open the local explorer workflow where project profile JSON can be loaded,
 schema-validated, summarized, and saved under `--allow-write`. `Show Sample
@@ -170,9 +175,9 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Symbol, Put BridgeRoot SmallInt, Put BridgeRoot Bool, Remove BridgeRoot Key,
   and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Verify Strict
-  Setup, Eval Smalltalk, Show/Copy/Write Environment Template, Launch Explorer,
-  Open Explorer Webview, Generate Explorer Auth Token, and Clear Explorer Auth
-  Token.
+  Setup, Eval Smalltalk, Show Example Commands, Show/Copy/Write Environment
+  Template, Launch Explorer, Open Explorer Webview, Generate Explorer Auth
+  Token, and Clear Explorer Auth Token.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with

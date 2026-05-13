@@ -61,6 +61,8 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 gemstone-rs --help
 gemstone-rs env sample
 gemstone-rs env write
+gemstone-rs examples list
+gemstone-rs examples show quickstart
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
@@ -174,6 +176,8 @@ cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
+cargo run -p gemstone-rs-cli -- examples list
+cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -218,6 +222,9 @@ for local browser workflows. `doctor --strict` is intended for CI: it fails when
 library source is only coming from defaults. GCI diagnostics also report
 whether the selected `libgcirpc` exists, is a file, is readable, and whether
 the path appears to be arm64 or x86_64.
+`examples list` and `examples show <name>` provide an installed-CLI example
+index similar to `gemstone-examples list` in gemstone-py; the JSON form is used
+by the VS Code workbench to show and launch example commands.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.

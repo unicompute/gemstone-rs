@@ -12,6 +12,8 @@ cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
+cargo run -p gemstone-rs-cli -- examples list
+cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -77,6 +79,18 @@ Failures include remediation hints for missing credentials, dynamic library
 loading, and stone connectivity. `--strict` is useful in CI because it fails
 when the stone name or GCI library source is only coming from defaults. Add
 `--json` for scripts, CI, and editor integrations.
+
+The `examples` commands provide a gemstone-py-style curated example index from
+the installed CLI:
+
+```bash
+gemstone-rs examples list
+gemstone-rs examples list --json
+gemstone-rs examples show quickstart
+```
+
+This is intentionally metadata-only: it tells you which Cargo example to run,
+whether it needs a live stone, and what API surface it proves.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

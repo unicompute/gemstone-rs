@@ -17,6 +17,7 @@ talk to GemStone/S directly without keeping Python in the process.
 | Application library | `python -m pip install gemstone-py` | `cargo add gemstone-rs` |
 | Native acceleration | `python -m pip install "gemstone-py[fast]"` | Built into the Rust GCI path once `libgcirpc` is available |
 | Examples from source | `python -m pip install -e ".[examples]"` | `cargo run -p gemstone-rs --example quickstart` |
+| Example discovery | `gemstone-examples list` | `gemstone-rs examples list` |
 | CLI tooling | Python modules and examples | `cargo install gemstone-rs-cli` |
 | Local explorer | `python-gemstone-database-explorer` | `cargo install gemstone-rs-explorer` |
 | VS Code | `gemstone-py Workbench` | `gemstone-rs Workbench` |
@@ -42,6 +43,7 @@ file.
 | Python scripts and notebooks | gemstone-py | Lower friction for Python teams. |
 | Rust service or worker | gemstone-rs | Native Rust API, Rust errors, Rust ownership, Cargo distribution. |
 | Rust CLI tooling | gemstone-rs | CLI and explorer can run without Python. |
+| Example-driven onboarding | gemstone-py today, gemstone-rs catching up | gemstone-py has broader runnable examples; gemstone-rs now has an installed CLI example index. |
 | VS Code database/codegen workflow | gemstone-py today, gemstone-rs later | gemstone-py has the more mature explorer; gemstone-rs has the cleaner Rust backend direction. |
 | Shared low-level bridge | gemstone-rs | The Rust API is the right place to isolate GCI safety and ownership. |
 
@@ -60,7 +62,7 @@ file.
 | VS Code extension | More complete product flow | Thin command/workbench layer over Rust CLI and explorer |
 | Live tests | Broader coverage | Growing smoke suite for login/eval/perform/globals/transactions/codegen |
 | Release automation | More complete | Added crates/VSIX/GitHub verification path |
-| Docs | Broader and polished | Catching up with guide, cookbook, article, comparison, PDFs |
+| Docs | Broader and polished | Catching up with guide, cookbook, article, comparison, example index, PDFs |
 
 ## Feature Matrix
 
@@ -80,8 +82,26 @@ file.
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
 | Axum/Actix demo | Not applicable | Axum sketch documented; full app example still planned |
+| Installed examples index | `gemstone-examples list` | `gemstone-rs examples list` plus JSON for VS Code |
 | Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
 | VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
+
+## Current Gap Analysis
+
+`gemstone-py` remains better when the user wants a batteries-included Python
+product surface: package extras, web adapters, async examples, a mature
+database explorer, and an examples command that can launch common workflows.
+
+The most useful gemstone-rs catch-up work is to keep copying the product shape,
+not the implementation language:
+
+- Installed discoverability: `gemstone-rs examples list` now mirrors the
+  gemstone-py example map and gives VS Code structured JSON.
+- Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
+  the Rust workbench and can run selected Cargo examples in a terminal.
+- Remaining gap: gemstone-rs still needs fuller Rust web examples, richer
+  explorer screens, and more generated wrapper demos before its onboarding
+  feels as complete as gemstone-py.
 
 ## How They Should Work Together
 

@@ -25,6 +25,15 @@ cd /path/to/gemstone-rs
 cargo run -p gemstone-rs --example quickstart
 ```
 
+After installing the CLI, discover the same curated map without opening the
+repository docs:
+
+```bash
+gemstone-rs examples list
+gemstone-rs examples show quickstart
+gemstone-rs examples list --json
+```
+
 ## Example Map
 
 | Feature | Command or path | What it demonstrates |

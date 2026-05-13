@@ -36,6 +36,7 @@
     "onCommand:gemstoneRs.eval",
     "onCommand:gemstoneRs.browseDictionaries",
     "onCommand:gemstoneRs.browseClasses",
+    "onCommand:gemstoneRs.showExampleCommands",
     "onCommand:gemstoneRs.codegenInit",
     "onCommand:gemstoneRs.codegenDiscover",
     "onCommand:gemstoneRs.generateMappingConfig",
@@ -140,6 +141,10 @@
       {
         "command": "gemstoneRs.browseClasses",
         "title": "GemStone RS: Browse Classes"
+      },
+      {
+        "command": "gemstoneRs.showExampleCommands",
+        "title": "GemStone RS: Show Example Commands"
       },
       {
         "command": "gemstoneRs.codegenInit",

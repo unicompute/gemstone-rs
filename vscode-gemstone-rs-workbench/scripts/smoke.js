@@ -28,6 +28,7 @@ const requiredCommands = [
   "gemstoneRs.showEnvironmentTemplate",
   "gemstoneRs.copyEnvironmentTemplate",
   "gemstoneRs.writeEnvironmentTemplate",
+  "gemstoneRs.showExampleCommands",
   "gemstoneRs.codegenPreview",
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
@@ -116,6 +117,9 @@ assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should p
 assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
+assert(extensionSource.includes('"examples", "list", "--json"'), "Workbench should read the CLI examples index");
+assert(extensionSource.includes("formatExamplesReport"), "Workbench should render the examples index");
+assert(readme.includes("Show Example Commands"), "README should mention examples discovery");
 assert(extensionSource.includes("put-string"), "BridgeRoot string command should use put-string");
 assert(extensionSource.includes('"bridge", command, key, value'), "BridgeRoot scalar commands should share the CLI command path");
 assert(extensionSource.includes("pickBridgeKeyType"), "BridgeRoot commands should prompt for String or Symbol key type");

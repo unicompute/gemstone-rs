@@ -84,6 +84,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Verify Setup
 - Verify Live Setup
 - Eval Smalltalk
+- Show Example Commands
 - Generate Explorer Auth Token
 - Clear Explorer Auth Token
 - Launch Explorer
@@ -103,6 +104,7 @@ Commands:
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
 - `GemStone RS: Browse Classes`
+- `GemStone RS: Show Example Commands`
 - `GemStone RS: Codegen Init`
 - `GemStone RS: Codegen Discover`
 - `GemStone RS: Generate Mapping Config`
@@ -164,6 +166,12 @@ output panel. Start the explorer first with `GemStone RS: Launch Explorer`.
 Template`, and `GemStone RS: Write .env.gemstone-rs` call the CLI
 `gemstone-rs env sample/write` commands. The template uses current non-secret
 values when available and keeps passwords as placeholders.
+
+`GemStone RS: Show Example Commands` calls `gemstone-rs examples list --json`,
+renders the installed CLI example index, and lets you run a selected Cargo
+example in a terminal, copy its command, or open the examples guide. This
+closes one gemstone-py parity gap: gemstone-rs now has a CLI and editor
+example launcher instead of only Markdown tables.
 
 ## Codegen Workflow
 

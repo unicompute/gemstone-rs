@@ -54,6 +54,19 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("wrote {}", path.display());
             Ok(())
         }
+        Command::ExamplesList { format } => {
+            print_examples_list(format);
+            Ok(())
+        }
+        Command::ExamplesShow { name, format } => {
+            let example = find_example(&name).ok_or_else(|| {
+                CliError::CodegenCheck(format!(
+                    "example {name} not found; run `gemstone-rs examples list`"
+                ))
+            })?;
+            print_example_details(example, format);
+            Ok(())
+        }
         Command::Eval { source, env_file } => {
             apply_env_file_option(env_file.as_deref())?;
             let mut session = login()?;
@@ -1318,6 +1331,196 @@ fn print_lines(values: impl IntoIterator<Item = String>) {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ExampleInfo {
+    name: &'static str,
+    title: &'static str,
+    command: &'static str,
+    category: &'static str,
+    requires_live: bool,
+    description: &'static str,
+}
+
+const EXAMPLES: &[ExampleInfo] = &[
+    ExampleInfo {
+        name: "hello_gemstone",
+        title: "Hello GemStone",
+        command: "cargo run -p gemstone-rs --example hello_gemstone",
+        category: "quickstart",
+        requires_live: true,
+        description: "Verify environment loading, login, session id, and a tiny eval.",
+    },
+    ExampleInfo {
+        name: "quickstart",
+        title: "Quickstart",
+        command: "cargo run -p gemstone-rs --example quickstart",
+        category: "quickstart",
+        requires_live: true,
+        description: "Smallest live eval plus UserGlobals write/read round trip.",
+    },
+    ExampleInfo {
+        name: "eval",
+        title: "Eval",
+        command: "cargo run -p gemstone-rs --example eval",
+        category: "quickstart",
+        requires_live: true,
+        description: "Minimal Session::eval(\"3 + 4\") shape.",
+    },
+    ExampleInfo {
+        name: "browser",
+        title: "Browser",
+        command: "cargo run -p gemstone-rs --example browser",
+        category: "browser",
+        requires_live: true,
+        description: "Dictionaries, protocols, methods, and method source.",
+    },
+    ExampleInfo {
+        name: "live_smoke_cookbook",
+        title: "Live smoke cookbook",
+        command: "cargo run -p gemstone-rs --example live_smoke_cookbook",
+        category: "smoke",
+        requires_live: true,
+        description: "Login, eval, global round-trip, perform, and transaction checks.",
+    },
+    ExampleInfo {
+        name: "transactions",
+        title: "Transactions",
+        command: "cargo run -p gemstone-rs --example transactions",
+        category: "transactions",
+        requires_live: true,
+        description: "Commit-on-success and abort-on-error behavior.",
+    },
+    ExampleInfo {
+        name: "oop_values",
+        title: "OOP values",
+        command: "cargo run -p gemstone-rs --example oop_values",
+        category: "values",
+        requires_live: true,
+        description: "Explicit OOP/value conversion and export-set retention.",
+    },
+    ExampleInfo {
+        name: "bridge_root_mapping",
+        title: "BridgeRoot mapping",
+        command: "cargo run -p gemstone-rs --example bridge_root_mapping",
+        category: "mapping",
+        requires_live: true,
+        description: "MagLev-style bridge-root storage with explicit Rust value mapping.",
+    },
+    ExampleInfo {
+        name: "derive_mapping",
+        title: "Derive mapping",
+        command: "cargo run -p gemstone-rs --example derive_mapping",
+        category: "mapping",
+        requires_live: true,
+        description: "#[derive(BridgeMapped)] with nested structs, vectors, maps, optionals, and symbol keys.",
+    },
+    ExampleInfo {
+        name: "codegen_preview",
+        title: "Codegen preview",
+        command: "cargo run -p gemstone-rs --example codegen_preview",
+        category: "codegen",
+        requires_live: false,
+        description: "Offline wrapper generation preview without writing files.",
+    },
+    ExampleInfo {
+        name: "codegen_workflow",
+        title: "Codegen workflow",
+        command: "cargo run -p gemstone-rs --example codegen_workflow",
+        category: "codegen",
+        requires_live: false,
+        description: "Config, preview, diff, check, and generate in one offline run.",
+    },
+    ExampleInfo {
+        name: "codegen_discover",
+        title: "Codegen discovery",
+        command: "cargo run -p gemstone-rs --example codegen_discover",
+        category: "codegen",
+        requires_live: true,
+        description: "Discover a starter wrapper config from live GemStone classes.",
+    },
+    ExampleInfo {
+        name: "codegen_discover_mapping",
+        title: "Mapping discovery",
+        command: "cargo run -p gemstone-rs --example codegen_discover_mapping",
+        category: "codegen",
+        requires_live: true,
+        description: "Discover a starter BridgeRoot mapping config from a live class.",
+    },
+    ExampleInfo {
+        name: "generated_wrapper_app",
+        title: "Generated wrapper app",
+        command: "cargo run -p gemstone-rs --example generated_wrapper_app",
+        category: "codegen",
+        requires_live: true,
+        description: "Call Object>>printString through checked-in generated Rust code.",
+    },
+    ExampleInfo {
+        name: "generated_mapping_app",
+        title: "Generated mapping app",
+        command: "cargo run -p gemstone-rs --example generated_mapping_app",
+        category: "mapping",
+        requires_live: true,
+        description: "Use generated BridgeMapped structs stored under BridgeRoot.",
+    },
+];
+
+fn find_example(name: &str) -> Option<&'static ExampleInfo> {
+    EXAMPLES.iter().find(|example| {
+        example.name.eq_ignore_ascii_case(name) || example.title.eq_ignore_ascii_case(name)
+    })
+}
+
+fn print_examples_list(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-rs examples");
+            println!("Use `gemstone-rs examples show <name>` for one command and details.");
+            println!();
+            for example in EXAMPLES {
+                println!(
+                    "{}\t{}\tlive={}\t{}",
+                    example.name, example.category, example.requires_live, example.command
+                );
+                println!("  {}", example.description);
+            }
+        }
+        OutputFormat::Json => {
+            let examples = EXAMPLES
+                .iter()
+                .map(example_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(r#"{{"examples":[{}]}}"#, examples);
+        }
+    }
+}
+
+fn print_example_details(example: &ExampleInfo, format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("example: {}", example.name);
+            println!("title: {}", example.title);
+            println!("category: {}", example.category);
+            println!("requires_live: {}", example.requires_live);
+            println!("command: {}", example.command);
+            println!("description: {}", example.description);
+        }
+        OutputFormat::Json => println!("{}", example_json(example)),
+    }
+}
+
+fn example_json(example: &ExampleInfo) -> String {
+    format!(
+        r#"{{"name":"{}","title":"{}","command":"{}","category":"{}","requiresLive":{},"description":"{}"}}"#,
+        escape_json(example.name),
+        escape_json(example.title),
+        escape_json(example.command),
+        escape_json(example.category),
+        example.requires_live,
+        escape_json(example.description)
+    )
+}
+
 fn print_profile_list(path: &Path, project: &profiles::ProjectProfiles) {
     println!("profiles: {} ({})", path.display(), project.profiles.len());
     for profile in &project.profiles {
@@ -1423,6 +1626,13 @@ enum Command {
     EnvWrite {
         path: PathBuf,
         force: bool,
+    },
+    ExamplesList {
+        format: OutputFormat,
+    },
+    ExamplesShow {
+        name: String,
+        format: OutputFormat,
     },
     Eval {
         source: String,
@@ -1574,6 +1784,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
         "-h" | "--help" | "help" => Ok(Command::Help),
         "doctor" => parse_doctor_command(&args[1..]),
         "env" => parse_env_command(&args[1..]),
+        "examples" | "example" => parse_examples_command(&args[1..]),
         "eval" => parse_eval_command(&args[1..]),
         "browse" => parse_browse_command(&args[1..]),
         "bridge" => parse_bridge_command(&args[1..]),
@@ -1678,6 +1889,86 @@ fn parse_env_write_command(args: &[String]) -> Result<Command, CliError> {
     Ok(Command::EnvWrite {
         path: path.unwrap_or_else(|| PathBuf::from(".env.gemstone-rs")),
         force,
+    })
+}
+
+fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
+    let Some(command) = args.first().map(String::as_str) else {
+        return Ok(Command::ExamplesList {
+            format: OutputFormat::Human,
+        });
+    };
+    match command {
+        "list" => parse_examples_list_command(&args[1..]),
+        "show" => parse_examples_show_command(&args[1..]),
+        "--json" => Ok(Command::ExamplesList {
+            format: OutputFormat::Json,
+        }),
+        "-h" | "--help" => Err(CliError::usage(
+            "expected: examples [list [--json] | show <name> [--json]]",
+        )),
+        name => {
+            if args.len() > 2 {
+                return Err(CliError::usage(
+                    "expected: examples [list [--json] | show <name> [--json]]",
+                ));
+            }
+            let format = if args.get(1).is_some_and(|arg| arg == "--json") {
+                OutputFormat::Json
+            } else if args.len() == 1 {
+                OutputFormat::Human
+            } else {
+                return Err(CliError::usage(format!(
+                    "unexpected examples argument: {}",
+                    args[1]
+                )));
+            };
+            Ok(Command::ExamplesShow {
+                name: name.to_string(),
+                format,
+            })
+        }
+    }
+}
+
+fn parse_examples_list_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage("expected: examples list [--json]"));
+            }
+            other => {
+                return Err(CliError::usage(format!(
+                    "unexpected examples argument: {other}"
+                )))
+            }
+        }
+    }
+    Ok(Command::ExamplesList { format })
+}
+
+fn parse_examples_show_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut name = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage("expected: examples show <name> [--json]"));
+            }
+            value if name.is_none() => name = Some(value.to_string()),
+            other => {
+                return Err(CliError::usage(format!(
+                    "unexpected examples argument: {other}"
+                )))
+            }
+        }
+    }
+    Ok(Command::ExamplesShow {
+        name: name.ok_or_else(|| CliError::usage("missing example name"))?,
+        format,
     })
 }
 
@@ -2350,6 +2641,8 @@ fn usage() -> &'static str {
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
+  gemstone-rs examples list [--json]
+  gemstone-rs examples show <name> [--json]
   gemstone-rs eval [--env-file <path>] <smalltalk>
   gemstone-rs browse dictionaries [--env-file <path>]
   gemstone-rs browse classes [dictionary] [--env-file <path>]
@@ -2534,6 +2827,47 @@ mod tests {
                 force: true,
             }
         );
+    }
+
+    #[test]
+    fn parses_examples_commands() {
+        assert_eq!(
+            parse_command(&args(&["examples"])).unwrap(),
+            Command::ExamplesList {
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["examples", "list", "--json"])).unwrap(),
+            Command::ExamplesList {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["examples", "show", "quickstart"])).unwrap(),
+            Command::ExamplesShow {
+                name: "quickstart".to_string(),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["examples", "quickstart", "--json"])).unwrap(),
+            Command::ExamplesShow {
+                name: "quickstart".to_string(),
+                format: OutputFormat::Json,
+            }
+        );
+    }
+
+    #[test]
+    fn examples_index_contains_quickstart_and_codegen_workflow() {
+        let quickstart = find_example("quickstart").unwrap();
+        assert!(quickstart.requires_live);
+        assert!(quickstart.command.contains("--example quickstart"));
+
+        let workflow = find_example("codegen workflow").unwrap();
+        assert!(!workflow.requires_live);
+        assert!(example_json(workflow).contains(r#""requiresLive":false"#));
     }
 
     #[test]

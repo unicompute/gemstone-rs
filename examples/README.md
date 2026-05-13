@@ -28,6 +28,15 @@ file.
 
 ## Example Map
 
+The installed CLI also carries this curated map, so users do not need a source
+checkout open to discover examples:
+
+```bash
+gemstone-rs examples list
+gemstone-rs examples show quickstart
+gemstone-rs examples list --json
+```
+
 | Role | Command | Use it when |
 | --- | --- | --- |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |

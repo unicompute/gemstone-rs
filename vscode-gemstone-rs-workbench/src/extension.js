@@ -29,6 +29,7 @@ function activate(context) {
   register(context, "gemstoneRs.eval", evalSmalltalk);
   register(context, "gemstoneRs.browseDictionaries", browseDictionaries);
   register(context, "gemstoneRs.browseClasses", browseClasses);
+  register(context, "gemstoneRs.showExampleCommands", showExampleCommands);
   register(context, "gemstoneRs.codegenInit", codegenInit);
   register(context, "gemstoneRs.codegenDiscover", codegenDiscover);
   register(context, "gemstoneRs.generateMappingConfig", generateMappingConfig);
@@ -207,6 +208,7 @@ class GemStoneTreeProvider {
         actionNode("Copy Environment Template", "gemstoneRs.copyEnvironmentTemplate"),
         actionNode("Write .env.gemstone-rs", "gemstoneRs.writeEnvironmentTemplate"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
+        actionNode("Show Example Commands", "gemstoneRs.showExampleCommands"),
         actionNode("Generate Explorer Auth Token", "gemstoneRs.generateExplorerAuthToken"),
         actionNode("Clear Explorer Auth Token", "gemstoneRs.clearExplorerAuthToken"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
@@ -531,6 +533,75 @@ async function browseClasses() {
     return;
   }
   await runAndShow(["browse", "classes", dictionary]);
+}
+
+async function showExampleCommands() {
+  const result = await runCli(["examples", "list", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs examples list returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const examples = Array.isArray(report.examples) ? report.examples : [];
+  const reportText = formatExamplesReport(result, examples);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  if (examples.length === 0) {
+    vscode.window.showWarningMessage("No gemstone-rs examples were reported by the CLI.");
+    return;
+  }
+  const item = await vscode.window.showQuickPick(examples.map(exampleQuickPickItem), {
+    title: "gemstone-rs Examples",
+    placeHolder: "Select an example command",
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
+  if (!item) {
+    return;
+  }
+  const action = await vscode.window.showInformationMessage(
+    item.example.requiresLive
+      ? `${item.example.name} requires a live GemStone/S stone.`
+      : `${item.example.name} can run without a live stone.`,
+    "Run in Terminal",
+    "Copy Command",
+    "Open Examples Guide"
+  );
+  if (action === "Run in Terminal") {
+    const terminal = vscode.window.createTerminal({
+      name: `gemstone-rs ${item.example.name}`,
+      cwd: settings().cwd,
+    });
+    terminal.sendText(item.example.command);
+    terminal.show();
+  } else if (action === "Copy Command") {
+    await vscode.env.clipboard.writeText(item.example.command);
+  } else if (action === "Open Examples Guide") {
+    await openExamplesGuide();
+  }
+}
+
+function formatExamplesReport(result, examples) {
+  const lines = [commandLine(result).trimEnd(), "gemstone-rs examples", ""];
+  for (const example of examples) {
+    lines.push(`${example.name}\t${example.category || "-"}\tlive=${Boolean(example.requiresLive)}`);
+    lines.push(`  ${example.command || "-"}`);
+    lines.push(`  ${example.description || "-"}`);
+  }
+  if (result.stderr.trim()) {
+    lines.push("", result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function exampleQuickPickItem(example) {
+  return {
+    label: example.name || "(unnamed)",
+    description: `${example.category || "-"} live=${Boolean(example.requiresLive)}`,
+    detail: `${example.command || "-"} - ${example.description || ""}`,
+    example,
+  };
 }
 
 async function codegenInit() {
@@ -1663,6 +1734,17 @@ async function openCodegenDocs() {
     await vscode.window.showTextDocument(document, { preview: true });
   } else {
     vscode.env.openExternal(vscode.Uri.parse("https://github.com/unicompute/gemstone-rs/tree/main/examples/codegen"));
+  }
+}
+
+async function openExamplesGuide() {
+  const cfg = settings();
+  const docsPath = resolvePath("examples/README.md", cfg.cwd);
+  if (fs.existsSync(docsPath)) {
+    const document = await vscode.workspace.openTextDocument(docsPath);
+    await vscode.window.showTextDocument(document, { preview: true });
+  } else {
+    vscode.env.openExternal(vscode.Uri.parse("https://github.com/unicompute/gemstone-rs/tree/main/examples"));
   }
 }
 
