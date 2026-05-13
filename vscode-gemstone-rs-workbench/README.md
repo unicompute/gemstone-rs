@@ -114,7 +114,8 @@ config. `Preview BridgeRoot` opens the explorer BridgeRoot endpoint.
 root keys in the output panel.
 `Put BridgeRoot String`, `Put BridgeRoot Symbol`, `Put BridgeRoot SmallInt`,
 `Put BridgeRoot Bool`, and `Remove BridgeRoot Key` run explicit committed
-BridgeRoot writes through the CLI after prompting for a key and value.
+BridgeRoot writes through the CLI after prompting for a key, String/Symbol key
+type, and value.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.

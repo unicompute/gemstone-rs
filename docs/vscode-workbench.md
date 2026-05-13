@@ -206,32 +206,33 @@ opening a browser; it runs `gemstone-rs bridge keys` and writes the key OOPs,
 class OOPs, `printString` values, and identity ids to the output panel.
 
 Use `GemStone RS: Put BridgeRoot String` when you want a quick live-write smoke
-test from VS Code. It asks for a key and string value, then runs:
+test from VS Code. It asks for a key, whether that key is a String or Symbol,
+and a string value, then runs:
 
 ```bash
-gemstone-rs bridge put-string <key> <value>
+gemstone-rs bridge put-string <key> <value> --key-type String
 ```
 
 Use `GemStone RS: Put BridgeRoot Symbol` for the same workflow when the stored
 value should be a GemStone Symbol:
 
 ```bash
-gemstone-rs bridge put-symbol <key> <value>
+gemstone-rs bridge put-symbol <key> <value> --key-type String
 ```
 
 Use `GemStone RS: Put BridgeRoot SmallInt` or `GemStone RS: Put BridgeRoot
 Bool` when the stored value should be a GemStone SmallInteger or Boolean:
 
 ```bash
-gemstone-rs bridge put-smallint <key> <value>
-gemstone-rs bridge put-bool <key> <value>
+gemstone-rs bridge put-smallint <key> <value> --key-type String
+gemstone-rs bridge put-bool <key> <value> --key-type String
 ```
 
 Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a
-confirmation prompt:
+String/Symbol key-type prompt and confirmation prompt:
 
 ```bash
-gemstone-rs bridge remove <key>
+gemstone-rs bridge remove <key> --key-type String
 ```
 
 Use `GemStone RS: Run Generated Mapping Example` to run:

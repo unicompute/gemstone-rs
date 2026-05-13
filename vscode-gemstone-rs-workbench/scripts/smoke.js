@@ -118,6 +118,8 @@ assert(extensionSource.includes('"env", "sample"'), "environment template comman
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
 assert(extensionSource.includes("put-string"), "BridgeRoot string command should use put-string");
 assert(extensionSource.includes('"bridge", command, key, value'), "BridgeRoot scalar commands should share the CLI command path");
+assert(extensionSource.includes("pickBridgeKeyType"), "BridgeRoot commands should prompt for String or Symbol key type");
+assert(extensionSource.includes('"--key-type", keyType'), "BridgeRoot commands should pass --key-type to the CLI");
 assert(extensionSource.includes("put-symbol"), "BridgeRoot symbol command should use put-symbol");
 assert(extensionSource.includes("put-smallint"), "BridgeRoot SmallInt command should use put-smallint");
 assert(extensionSource.includes("put-bool"), "BridgeRoot Bool command should use put-bool");

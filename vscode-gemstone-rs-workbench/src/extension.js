@@ -647,6 +647,10 @@ async function putBridgeRootScalar({ title, prompt, defaultKey, defaultValue, co
   if (!key) {
     return;
   }
+  const keyType = await pickBridgeKeyType(title);
+  if (!keyType) {
+    return;
+  }
   const value = await vscode.window.showInputBox({
     title,
     prompt: `${prompt} for ${key}`,
@@ -655,7 +659,9 @@ async function putBridgeRootScalar({ title, prompt, defaultKey, defaultValue, co
   if (value === undefined) {
     return;
   }
-  const result = await runAndShow(["bridge", command, key, value], { allowFailure: true });
+  const result = await runAndShow(["bridge", command, key, value, "--key-type", keyType], {
+    allowFailure: true,
+  });
   if (result.code === 0) {
     explorerProvider?.refresh();
   }
@@ -670,18 +676,32 @@ async function removeBridgeRootKey() {
   if (!key) {
     return;
   }
+  const keyType = await pickBridgeKeyType("Remove BridgeRoot Key");
+  if (!keyType) {
+    return;
+  }
   const choice = await vscode.window.showWarningMessage(
-    `Remove ${key} from GemStoneRsBridgeRoot?`,
+    `Remove ${key} (${keyType} key) from GemStoneRsBridgeRoot?`,
     { modal: true },
     "Remove"
   );
   if (choice !== "Remove") {
     return;
   }
-  const result = await runAndShow(["bridge", "remove", key], { allowFailure: true });
+  const result = await runAndShow(["bridge", "remove", key, "--key-type", keyType], {
+    allowFailure: true,
+  });
   if (result.code === 0) {
     explorerProvider?.refresh();
   }
+}
+
+async function pickBridgeKeyType(title) {
+  const choice = await vscode.window.showQuickPick(["String", "Symbol"], {
+    title,
+    placeHolder: "BridgeRoot key type",
+  });
+  return choice;
 }
 
 async function runGeneratedMappingExample() {
