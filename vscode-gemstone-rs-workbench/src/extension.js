@@ -325,7 +325,7 @@ async function runSetupAssistant() {
 }
 
 function setupAssistantUrl(cfg) {
-  const url = new URL(`http://${cfg.explorerHost}:${cfg.explorerPort}/api/setup/assistant`);
+  const url = new URL(explorerUrl(cfg, "/api/setup/assistant"));
   url.searchParams.set("env_file", cfg.envFile || ".env.gemstone-rs");
   url.searchParams.set("config", cfg.codegenConfig);
   url.searchParams.set("profile_file", cfg.codegenProfiles);
@@ -575,7 +575,7 @@ async function generateMappingConfig() {
 
 async function previewBridgeRoot() {
   const cfg = settings();
-  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/api/bridge/root`;
+  const url = explorerUrl(cfg, "/api/bridge/root");
   vscode.env.openExternal(vscode.Uri.parse(url));
   output.clear();
   output.appendLine(`Opened ${url}`);
@@ -985,26 +985,28 @@ function launchExplorer() {
   const cfg = settings();
   const envArgs = envFileArgs(cfg);
   const envText = envArgs.length ? ` ${envArgs.map(shellQuote).join(" ")}` : "";
+  const authArgs = explorerAuthArgs(cfg);
+  const authText = authArgs.length ? ` ${authArgs.map(shellQuote).join(" ")}` : "";
   const terminal = vscode.window.createTerminal({
     name: "gemstone-rs Explorer",
     cwd: cfg.cwd,
   });
   if (cfg.useCargo) {
     terminal.sendText(
-      `cargo run -p gemstone-rs-explorer --${envText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
+      `cargo run -p gemstone-rs-explorer --${envText}${authText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
     );
   } else {
     terminal.sendText(
-      `${shellQuote(cfg.explorerPath)}${envText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
+      `${shellQuote(cfg.explorerPath)}${envText}${authText} --host ${shellQuote(cfg.explorerHost)} --port ${cfg.explorerPort}`
     );
   }
   terminal.show();
-  vscode.env.openExternal(vscode.Uri.parse(`http://${cfg.explorerHost}:${cfg.explorerPort}/`));
+  vscode.env.openExternal(vscode.Uri.parse(explorerUrl(cfg)));
 }
 
 function openExplorerWebview() {
   const cfg = settings();
-  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/`;
+  const url = explorerUrl(cfg);
   const panel = vscode.window.createWebviewPanel(
     "gemstoneRsExplorerWebview",
     "gemstone-rs Explorer",
@@ -1286,7 +1288,7 @@ async function openPathInEditor(filePath) {
 
 function openExplorerProfileWorkflow(title, instruction) {
   const cfg = settings();
-  const url = `http://${cfg.explorerHost}:${cfg.explorerPort}/`;
+  const url = explorerUrl(cfg);
   openExplorerWebview();
   output.appendLine("");
   output.appendLine(`Profile workflow: ${title}`);
@@ -1298,10 +1300,12 @@ function openExplorerProfileWorkflow(title, instruction) {
 
 function explorerWebviewHtml(url, cfg = settings()) {
   const escaped = escapeHtml(url);
-  const baseUrl = url.replace(/\/+$/, "");
+  const parsedUrl = new URL(url);
+  const baseUrl = parsedUrl.origin;
   const state = {
     baseUrl,
     homeUrl: url,
+    authToken: cfg.explorerAuthToken,
     codegenConfig: cfg.codegenConfig,
     codegenProfiles: cfg.codegenProfiles,
   };
@@ -1420,6 +1424,9 @@ function configValue(id) {
 
 function apiUrl(path) {
   const url = new URL(path, state.baseUrl + '/');
+  if (state.authToken && !url.searchParams.has('token')) {
+    url.searchParams.set('token', state.authToken);
+  }
   const config = configValue('codegenConfig') || state.codegenConfig;
   const profiles = configValue('codegenProfiles') || state.codegenProfiles;
   if (path.includes('/api/codegen/') && !url.searchParams.has('config')) {
@@ -1465,7 +1472,11 @@ async function probe(path) {
 }
 
 function navigate(path) {
-  frame.src = new URL(path, state.baseUrl + '/').href;
+  const url = new URL(path, state.baseUrl + '/');
+  if (state.authToken && !url.searchParams.has('token')) {
+    url.searchParams.set('token', state.authToken);
+  }
+  frame.src = url.href;
 }
 
 document.querySelectorAll('[data-command]').forEach(button => {
@@ -1683,7 +1694,20 @@ function settings() {
     codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),
+    explorerAuthToken: cfg.get("explorerAuthToken", "").trim(),
   };
+}
+
+function explorerUrl(cfg = settings(), route = "/") {
+  const url = new URL(route, `http://${cfg.explorerHost}:${cfg.explorerPort}/`);
+  if (cfg.explorerAuthToken) {
+    url.searchParams.set("token", cfg.explorerAuthToken);
+  }
+  return url.toString();
+}
+
+function explorerAuthArgs(cfg = settings()) {
+  return cfg.explorerAuthToken ? ["--auth-token", cfg.explorerAuthToken] : [];
 }
 
 function withEnvFileArgs(args, cfg = settings()) {

@@ -95,6 +95,9 @@ assert(extensionSource.includes("Open Settings"), "verify setup should offer set
 assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
 assert(extensionSource.includes('"doctor", "--strict"'), "verify strict setup should run doctor --strict");
 assert(extensionSource.includes("setupAssistantUrl"), "Workbench should build a setup assistant URL");
+assert(extensionSource.includes("explorerUrl"), "Workbench should build token-aware explorer URLs");
+assert(extensionSource.includes("explorerAuthArgs"), "Workbench should pass explorer auth token arguments");
+assert(extensionSource.includes("state.authToken"), "webview should preserve auth token on explorer API calls");
 assert(extensionSource.includes("/api/setup/assistant"), "Workbench should call the explorer setup assistant");
 assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should pass --env-file when configured");
 assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
@@ -178,6 +181,10 @@ assert(
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],
   "package.json should expose gemstoneRs.envFile"
+);
+assert(
+  packageJson.contributes.configuration.properties["gemstoneRs.explorerAuthToken"],
+  "package.json should expose gemstoneRs.explorerAuthToken"
 );
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

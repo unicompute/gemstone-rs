@@ -227,6 +227,12 @@ The webview points at:
 http://127.0.0.1:8787/
 ```
 
+If you set `gemstoneRs.explorerAuthToken`, `GemStone RS: Launch Explorer`
+starts the server with `--auth-token` and the browser/webview URLs include the
+matching `token=` query parameter. This is useful when you want an additional
+local guard around write-enabled explorer sessions without changing the core
+loopback-only deployment model.
+
 It is still the same loopback-only explorer process. If the explorer is not
 running, the webview will show a connection error and the output panel will show
 the URL to start.

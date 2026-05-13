@@ -82,9 +82,38 @@ The explorer:
 - starts read-only
 - requires `--allow-eval` before workspace evaluation
 - requires `--allow-write` before codegen writes
+- supports an optional local auth token with `--auth-token` or
+  `--auth-token-env`
 - reads GemStone credentials from the same `GS_*` environment as the CLI
 
-Do not expose it publicly without adding authentication and transport security.
+Do not expose it publicly. The token option is for local defense in depth on a
+loopback machine; it is not a substitute for TLS, user accounts, or a
+production auth layer.
+
+To require a token for all explorer pages and APIs except `/health`:
+
+```bash
+export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
+gemstone-rs-explorer --auth-token-env GEMSTONE_RS_EXPLORER_TOKEN
+```
+
+Then use either a query token for browser workflows:
+
+```bash
+open 'http://127.0.0.1:8787/?token=replace-with-a-local-random-token'
+curl -s 'http://127.0.0.1:8787/api/config?token=replace-with-a-local-random-token'
+```
+
+Or a header for scripts:
+
+```bash
+curl -s \
+  -H 'X-GemStone-RS-Token: replace-with-a-local-random-token' \
+  http://127.0.0.1:8787/api/config
+curl -s \
+  -H 'Authorization: Bearer replace-with-a-local-random-token' \
+  http://127.0.0.1:8787/api/status
+```
 
 ## Browse Endpoints
 
@@ -281,6 +310,11 @@ For write endpoints, relative `config=` and `profile_file=` paths are resolved
 inside the codegen root. Paths containing `..` are rejected after URL decoding,
 `root=...` traversal is rejected as well, and absolute write paths require
 starting the explorer with `--allow-absolute-write-paths`.
+
+The browser UI also asks for confirmation before BridgeRoot writes, env-file
+writes, profile saves, config saves, and codegen generate actions. Server-side
+guards still decide the real access policy: write endpoints return `403` unless
+the explorer was started with `--allow-write`.
 
 Project profile saves validate the JSON before writing. The top-level object
 must contain only `kind`, `version`, and `profiles`; profile names are required

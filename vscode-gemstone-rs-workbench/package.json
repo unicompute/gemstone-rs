@@ -363,6 +363,11 @@
           "type": "number",
           "default": 8787,
           "description": "Port for the local gemstone-rs explorer."
+        },
+        "gemstoneRs.explorerAuthToken": {
+          "type": "string",
+          "default": "",
+          "description": "Optional local auth token for gemstone-rs-explorer. When set, Workbench launches the explorer with --auth-token and appends token= to explorer URLs."
         }
       }
     }

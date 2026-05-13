@@ -17,6 +17,7 @@ For an installed CLI:
 {
   "gemstoneRs.cliPath": "gemstone-rs",
   "gemstoneRs.explorerPath": "gemstone-rs-explorer",
+  "gemstoneRs.explorerAuthToken": "",
   "gemstoneRs.codegenConfig": "gemstone-rs.codegen"
 }
 ```
@@ -117,6 +118,9 @@ checks, project profile freshness, Codegen preview/diff/check JSON, and
 BridgeRoot keys. Workbench buttons can hand off to native VS Code commands for
 previewing wrappers, opening diffs, generating with confirmation, checking
 project profiles, opening docs, and opening generated output files.
+If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
+`--auth-token` and all browser/webview URLs include the matching `token=`
+query parameter.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
 same masked environment and GCI-library checks as the terminal. `Verify Live
 Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone

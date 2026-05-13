@@ -43,8 +43,10 @@ fn run(args: Vec<String>) -> Result<(), ExplorerError> {
         config.addr()
     );
     eprintln!(
-        "read_only={}, allow_eval={}",
-        config.read_only, config.allow_eval
+        "read_only={}, allow_eval={}, auth_required={}",
+        config.read_only,
+        config.allow_eval,
+        config.auth_token.is_some()
     );
 
     for stream in listener.incoming() {
@@ -105,8 +107,16 @@ fn read_http_request(stream: &mut TcpStream) -> Result<Option<HttpRequest>, Expl
     let Some(request_line) = headers.lines().next() else {
         return Ok(None);
     };
+    let parsed_headers = headers
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            Some((name.trim().to_string(), value.trim().to_string()))
+        })
+        .collect();
     let body = String::from_utf8_lossy(&bytes[body_start..body_start + content_length]).to_string();
-    Ok(HttpRequest::from_request_line(request_line, body))
+    Ok(HttpRequest::from_parts(request_line, parsed_headers, body))
 }
 
 fn header_body_offset(bytes: &[u8]) -> Option<usize> {
@@ -144,6 +154,13 @@ fn handle_request(request_line: &str, config: &ExplorerConfig) -> Response {
 
 fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Response {
     let route = Route::parse(&request.target);
+    if !request_is_authorized(request, &route, config) {
+        return Response::json(
+            401,
+            r#"{"error":"missing or invalid explorer auth token"}"#.to_string(),
+        );
+    }
+
     if request.method != "GET"
         && !(request.method == "POST" && route.path == "/api/codegen/config/save")
         && !(request.method == "POST" && route.path == "/api/codegen/profiles/save")
@@ -1757,6 +1774,7 @@ struct ExplorerConfig {
     codegen_root: PathBuf,
     allow_absolute_write_paths: bool,
     env_file: Option<PathBuf>,
+    auth_token: Option<String>,
 }
 
 impl ExplorerConfig {
@@ -1804,6 +1822,37 @@ impl ExplorerConfig {
                     }
                     config.env_file = Some(PathBuf::from(value));
                 }
+                "--auth-token" => {
+                    index += 1;
+                    let value = args
+                        .get(index)
+                        .ok_or_else(|| ExplorerError::usage("missing value for --auth-token"))?;
+                    config.auth_token = Some(non_empty_auth_token(value)?);
+                }
+                option if option.starts_with("--auth-token=") => {
+                    let (_, value) = option.split_once('=').unwrap_or_default();
+                    config.auth_token = Some(non_empty_auth_token(value)?);
+                }
+                "--auth-token-env" => {
+                    index += 1;
+                    let name = args.get(index).ok_or_else(|| {
+                        ExplorerError::usage("missing value for --auth-token-env")
+                    })?;
+                    let value = env::var(name).map_err(|_| {
+                        ExplorerError::usage(format!("environment variable {name} is not set"))
+                    })?;
+                    config.auth_token = Some(non_empty_auth_token(&value)?);
+                }
+                option if option.starts_with("--auth-token-env=") => {
+                    let (_, name) = option.split_once('=').unwrap_or_default();
+                    if name.is_empty() {
+                        return Err(ExplorerError::usage("missing value for --auth-token-env="));
+                    }
+                    let value = env::var(name).map_err(|_| {
+                        ExplorerError::usage(format!("environment variable {name} is not set"))
+                    })?;
+                    config.auth_token = Some(non_empty_auth_token(&value)?);
+                }
                 "--allow-eval" => config.allow_eval = true,
                 "--allow-write" => config.read_only = false,
                 "--allow-absolute-write-paths" => config.allow_absolute_write_paths = true,
@@ -1834,27 +1883,56 @@ impl Default for ExplorerConfig {
             codegen_root: PathBuf::from("."),
             allow_absolute_write_paths: false,
             env_file: None,
+            auth_token: None,
         }
     }
+}
+
+fn non_empty_auth_token(value: &str) -> Result<String, ExplorerError> {
+    let token = value.trim();
+    if token.is_empty() {
+        return Err(ExplorerError::usage(
+            "explorer auth token must not be empty",
+        ));
+    }
+    Ok(token.to_string())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct HttpRequest {
     method: String,
     target: String,
+    headers: Vec<(String, String)>,
     body: String,
 }
 
 impl HttpRequest {
+    #[cfg(test)]
     fn from_request_line(request_line: &str, body: String) -> Option<Self> {
+        Self::from_parts(request_line, Vec::new(), body)
+    }
+
+    fn from_parts(
+        request_line: &str,
+        headers: Vec<(String, String)>,
+        body: String,
+    ) -> Option<Self> {
         let mut parts = request_line.split_whitespace();
         let method = parts.next()?.to_string();
         let target = parts.next()?.to_string();
         Some(Self {
             method,
             target,
+            headers,
             body,
         })
+    }
+
+    fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(key, _)| key.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
     }
 }
 
@@ -1940,6 +2018,11 @@ fn landing_html(config: &ExplorerConfig) -> String {
     } else {
         "Eval disabled. Restart with --allow-eval for workspace eval."
     };
+    let auth_note = if config.auth_token.is_some() {
+        "Auth token required."
+    } else {
+        "Auth token disabled."
+    };
     let mut html = String::from(
         r#"<!doctype html>
 <html>
@@ -1998,8 +2081,13 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 "#,
     );
     html.push_str(&format!(
-        r#"<span class="pill">read_only={}</span><span class="pill">allow_eval={}</span><span class="pill">{}</span><span class="pill">{}</span>"#,
-        config.read_only, config.allow_eval, write_note, eval_note
+        r#"<span class="pill">read_only={}</span><span class="pill">allow_eval={}</span><span class="pill">auth_required={}</span><span class="pill">{}</span><span class="pill">{}</span><span class="pill">{}</span>"#,
+        config.read_only,
+        config.allow_eval,
+        config.auth_token.is_some(),
+        write_note,
+        eval_note,
+        auth_note
     ));
     html.push_str(
         r#"
@@ -2108,7 +2196,12 @@ const items = document.getElementById('items');
 const importSummary = document.getElementById('importSummary');
 const recentConfigsKey = 'gemstone-rs-explorer:recentCodegenConfigs';
 const profilesKey = 'gemstone-rs-explorer:codegenProfiles';
+const authToken = new URLSearchParams(window.location.search).get('token') || '';
 function q(id) { return encodeURIComponent(document.getElementById(id).value); }
+function apiPath(path) {
+  if (!authToken) return path;
+  return path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(authToken);
+}
 function bridgeQuery() { return 'key=' + q('bridgeKey') + '&key_type=' + q('bridgeKeyType'); }
 function codegenRootQuery() {
   const root = document.getElementById('codegenRoot').value.trim();
@@ -2121,7 +2214,7 @@ async function callApi(path, options = {}) {
   out.textContent = method + ' ' + path + '\n';
   detail.className = 'detail';
   detail.textContent = '';
-  const response = await fetch(path, options);
+  const response = await fetch(apiPath(path), options);
   const text = await response.text();
   try {
     const data = JSON.parse(text);
@@ -2314,7 +2407,7 @@ function button(label, onClick) {
   return element;
 }
 async function list(path, key, onPick) {
-  const response = await fetch(path);
+  const response = await fetch(apiPath(path));
   const data = await response.json();
   items.innerHTML = '';
   out.textContent = JSON.stringify(data, null, 2);
@@ -2348,7 +2441,7 @@ function loadSource() {
   callApi('/api/browse/source?class=' + q('className') + '&dictionary=' + q('dictionary') + '&selector=' + q('selector'));
 }
 async function loadBridgeKeys() {
-  const response = await fetch('/api/bridge/keys');
+  const response = await fetch(apiPath('/api/bridge/keys'));
   const data = await response.json();
   items.innerHTML = '';
   out.textContent = JSON.stringify(data, null, 2);
@@ -2361,13 +2454,18 @@ async function loadBridgeKeys() {
 }
 function getBridgeValue() { callApi('/api/bridge/get?' + bridgeQuery()); }
 function putBridgeValue() {
+  if (!confirmWrite('Put this value into BridgeRoot?')) return;
   callApi('/api/bridge/put?' + bridgeQuery() + '&value=' + q('bridgeValue') + '&value_type=' + q('bridgeValueType'));
 }
-function removeBridgeValue() { callApi('/api/bridge/remove?' + bridgeQuery()); }
+function removeBridgeValue() {
+  if (!confirmWrite('Remove this key from BridgeRoot?')) return;
+  callApi('/api/bridge/remove?' + bridgeQuery());
+}
 async function showEnvTemplate() {
   await callApi('/api/env/sample');
 }
 async function writeEnvTemplate() {
+  if (!confirmWrite('Write the environment template file?')) return;
   const query = 'path=' + q('envFilePath') + codegenRootQuery();
   await callApi('/api/env/write?' + query, { method: 'POST' });
 }
@@ -2612,6 +2710,7 @@ function checkProjectProfiles() {
   callApi('/api/codegen/profiles/check?' + profileFileQuery());
 }
 async function saveProjectProfiles() {
+  if (!confirmWrite('Write project profiles to disk?')) return;
   const profiles = readCodegenProfiles();
   const source = JSON.stringify(profilesExportPayload(profiles), null, 2);
   document.getElementById('profileJson').value = source;
@@ -2659,6 +2758,7 @@ function pickRecentCodegenConfig() {
   loadCodegenConfig();
 }
 async function saveCodegenConfig() {
+  if (!confirmWrite('Write this codegen config to disk?')) return;
   const source = document.getElementById('configEditor').value;
   const data = await callApi('/api/codegen/config/save?' + codegenQuery(), {
     method: 'POST',
@@ -2683,8 +2783,19 @@ function codegenDiff() { rememberCodegenConfig(); callApi('/api/codegen/diff?' +
 function codegenDiffProfile() { rememberCodegenConfig(); callApi('/api/codegen/diff-profile?' + profileCodegenQuery()); }
 function codegenCheck() { rememberCodegenConfig(); callApi('/api/codegen/check?' + codegenQuery()); }
 function codegenCheckProfile() { rememberCodegenConfig(); callApi('/api/codegen/check-profile?' + profileCodegenQuery()); }
-function codegenGenerate() { rememberCodegenConfig(); callApi('/api/codegen/generate?' + codegenQuery()); }
-function codegenGenerateProfile() { rememberCodegenConfig(); callApi('/api/codegen/generate-profile?' + profileCodegenQuery()); }
+function codegenGenerate() {
+  if (!confirmWrite('Generate wrappers and overwrite the configured output file?')) return;
+  rememberCodegenConfig();
+  callApi('/api/codegen/generate?' + codegenQuery());
+}
+function codegenGenerateProfile() {
+  if (!confirmWrite('Generate wrappers for this profile and overwrite its output file?')) return;
+  rememberCodegenConfig();
+  callApi('/api/codegen/generate-profile?' + profileCodegenQuery());
+}
+function confirmWrite(message) {
+  return window.confirm(message + '\n\nThis only works when the explorer was started with --allow-write.');
+}
 persistFields();
 loadRecentCodegenConfigs();
 loadCodegenProfiles();
@@ -2698,7 +2809,7 @@ loadCodegenConfigs();
 
 fn config_json(config: &ExplorerConfig) -> String {
     format!(
-        r#"{{"host":"{}","port":{},"readOnly":{},"allowEval":{},"codegenRoot":"{}","allowAbsoluteWritePaths":{},"envFile":{},"loopbackOnly":true}}"#,
+        r#"{{"host":"{}","port":{},"readOnly":{},"allowEval":{},"codegenRoot":"{}","allowAbsoluteWritePaths":{},"envFile":{},"loopbackOnly":true,"authRequired":{}}}"#,
         config.host,
         config.port,
         config.read_only,
@@ -2711,8 +2822,43 @@ fn config_json(config: &ExplorerConfig) -> String {
                 .as_deref()
                 .map(|path| path.display().to_string())
                 .as_deref()
-        )
+        ),
+        config.auth_token.is_some()
     )
+}
+
+fn request_is_authorized(request: &HttpRequest, route: &Route, config: &ExplorerConfig) -> bool {
+    let Some(expected) = config.auth_token.as_deref() else {
+        return true;
+    };
+    if route.path == "/health" {
+        return true;
+    }
+
+    route
+        .query("token")
+        .as_deref()
+        .is_some_and(|token| token_eq(token, expected))
+        || request
+            .header("x-gemstone-rs-token")
+            .is_some_and(|token| token_eq(token, expected))
+        || request
+            .header("authorization")
+            .and_then(|value| value.strip_prefix("Bearer "))
+            .is_some_and(|token| token_eq(token, expected))
+}
+
+fn token_eq(candidate: &str, expected: &str) -> bool {
+    let candidate = candidate.as_bytes();
+    let expected = expected.as_bytes();
+    if candidate.len() != expected.len() {
+        return false;
+    }
+    let mut diff = 0_u8;
+    for (left, right) in candidate.iter().zip(expected.iter()) {
+        diff |= left ^ right;
+    }
+    diff == 0
 }
 
 fn parse_oop(value: &str) -> Result<Oop, ExplorerError> {
@@ -2770,6 +2916,7 @@ fn escape_json(value: &str) -> String {
 fn reason_phrase(status: u16) -> &'static str {
     match status {
         200 => "OK",
+        401 => "Unauthorized",
         400 => "Bad Request",
         403 => "Forbidden",
         404 => "Not Found",
@@ -2782,7 +2929,7 @@ fn reason_phrase(status: u16) -> &'static str {
 }
 
 fn usage() -> &'static str {
-    "usage: gemstone-rs-explorer [--env-file .env.gemstone-rs] [--host 127.0.0.1] [--port 8787] [--codegen-root .] [--allow-eval] [--allow-write] [--allow-absolute-write-paths]"
+    "usage: gemstone-rs-explorer [--env-file .env.gemstone-rs] [--auth-token TOKEN|--auth-token-env NAME] [--host 127.0.0.1] [--port 8787] [--codegen-root .] [--allow-eval] [--allow-write] [--allow-absolute-write-paths]"
 }
 
 #[derive(Debug)]
@@ -2837,6 +2984,7 @@ mod tests {
         assert!(!config.allow_eval);
         assert_eq!(config.codegen_root, PathBuf::from("."));
         assert_eq!(config.env_file, None);
+        assert_eq!(config.auth_token, None);
     }
 
     #[test]
@@ -2860,6 +3008,15 @@ mod tests {
         assert!(config.allow_eval);
         assert_eq!(config.codegen_root, PathBuf::from("examples"));
         assert_eq!(config.env_file, Some(PathBuf::from(".env.gemstone-rs")));
+    }
+
+    #[test]
+    fn config_accepts_auth_token() {
+        let config = ExplorerConfig::parse(&args(&["--auth-token", "secret"])).unwrap();
+        assert_eq!(config.auth_token.as_deref(), Some("secret"));
+
+        let err = ExplorerConfig::parse(&args(&["--auth-token="])).unwrap_err();
+        assert!(err.to_string().contains("must not be empty"));
     }
 
     #[test]
@@ -2909,6 +3066,30 @@ mod tests {
         assert!(response.body.contains(r#""readOnly":true"#));
         assert!(response.body.contains(r#""codegenRoot":".""#));
         assert!(response.body.contains(r#""envFile":null"#));
+        assert!(response.body.contains(r#""authRequired":false"#));
+    }
+
+    #[test]
+    fn auth_token_protects_explorer_routes_when_configured() {
+        let config = ExplorerConfig {
+            auth_token: Some("secret".to_string()),
+            ..ExplorerConfig::default()
+        };
+
+        let missing = handle_request("GET /api/config HTTP/1.1", &config);
+        assert_eq!(missing.status, 401);
+
+        let query = handle_request("GET /api/config?token=secret HTTP/1.1", &config);
+        assert_eq!(query.status, 200);
+
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            target: "/api/config".to_string(),
+            headers: vec![("X-GemStone-RS-Token".to_string(), "secret".to_string())],
+            body: String::new(),
+        };
+        let header = handle_http_request(&request, &config);
+        assert_eq!(header.status, 200);
     }
 
     #[test]
@@ -2978,6 +3159,9 @@ mod tests {
         assert!(response.body.contains("localStorage"));
         assert!(response.body.contains("read_only=true"));
         assert!(response.body.contains("allow_eval=false"));
+        assert!(response.body.contains("auth_required=false"));
+        assert!(response.body.contains("apiPath(path)"));
+        assert!(response.body.contains("confirmWrite"));
         assert!(response.body.contains("/api/doctor"));
         assert!(response.body.contains("/api/setup/assistant"));
         assert!(response.body.contains("/api/env/sample"));
@@ -3358,6 +3542,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: "/api/env/write?path=.env.gemstone-rs".to_string(),
+            headers: Vec::new(),
             body: String::new(),
         };
 
@@ -3388,6 +3573,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: "/api/codegen/profiles/save?profile_file=profiles.json".to_string(),
+            headers: Vec::new(),
             body: source.to_string(),
         };
 
@@ -3482,6 +3668,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: format!("/api/codegen/config/save?config={}", path.display()),
+            headers: Vec::new(),
             body: source.to_string(),
         };
 
@@ -3502,6 +3689,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: format!("/api/codegen/profiles/save?profile_file={}", path.display()),
+            headers: Vec::new(),
             body: r#"{"kind":"gemstone-rs-explorer-codegen-profiles","version":1,"profiles":[]}"#
                 .to_string(),
         };
@@ -3525,6 +3713,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: "/api/codegen/profiles/save?profile_file=invalid-profiles.json".to_string(),
+            headers: Vec::new(),
             body: "not json".to_string(),
         };
 
@@ -3622,6 +3811,7 @@ mod tests {
         let request = HttpRequest {
             method: "POST".to_string(),
             target: "/api/codegen/config/save?config=post-save.codegen".to_string(),
+            headers: Vec::new(),
             body: source.to_string(),
         };
 
