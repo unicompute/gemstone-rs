@@ -78,9 +78,10 @@ From the `Explorer` tree:
 1. Run `Verify Setup`.
 2. Run `Verify Live Setup` when credentials and a reachable stone are ready.
 3. Run `Verify Strict Setup` before release or CI validation.
-4. Run `Eval Smalltalk` with `3 + 4`.
-5. Run `Launch Explorer`.
-6. Run `Open Explorer Webview`.
+4. Run `Launch Explorer`.
+5. Run `Run Setup Assistant`.
+6. Run `Eval Smalltalk` with `3 + 4`.
+7. Run `Open Explorer Webview`.
 
 `Verify Setup` shows the active checkout, CLI, explorer, env file, codegen
 config, and project profile paths beside the `gemstone-rs doctor` output. If
@@ -89,6 +90,9 @@ automatically to CLI commands and explorer startup. Use the result actions to
 copy the report, copy a safe `GS_*` environment export script with a placeholder
 password, or jump straight to the workbench settings. `Verify Live Setup` uses
 the same report format but calls `gemstone-rs doctor --live`.
+`Run Setup Assistant` reads the running explorer's `/api/setup/assistant`
+endpoint and renders the env-file, GemStone configuration, GCI library, codegen
+config, and project profile checks in the output panel.
 
 `Launch Explorer` starts `gemstone-rs-explorer` in a VS Code terminal and opens
 the loopback URL. `Open Explorer Webview` embeds the running local explorer in a

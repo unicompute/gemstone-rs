@@ -1,9 +1,9 @@
 VERSION ?= 0.2.1
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify rust-check codegen-check profile-check vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify rust-check codegen-check schema-check profile-check vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: rust-check codegen-check profile-check vscode-check docs-pdf-check
+verify: rust-check codegen-check schema-check profile-check vscode-check docs-pdf-check
 
 rust-check:
 	cargo fmt --all --check
@@ -19,7 +19,10 @@ codegen-check:
 	cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 	cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
-	cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
+	cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
+
+schema-check:
+	node scripts/validate_codegen_schemas.js
 
 profile-check:
 	cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json

@@ -21,7 +21,7 @@ cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
-cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
+cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Generated wrappers include a small `#[cfg(test)]` surface-name test stub.

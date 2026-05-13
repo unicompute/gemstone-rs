@@ -78,6 +78,7 @@ Highlights:
 - \`codegen explain --json\` for structured Codegen summaries.
 - Codegen schemas and generated-wrapper compile smoke checks.
 - Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
+- VS Code command for rendering the explorer setup assistant report.
 - Clearer object-mapping path diagnostics for nested fields and arrays.
 
 Release assets:

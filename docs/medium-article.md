@@ -258,7 +258,7 @@ gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
-cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
+cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Generated wrapper files now include a small `#[cfg(test)]` surface-name test

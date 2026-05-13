@@ -15,6 +15,14 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
 - VS Code: `GemStone RS: Verify Strict Setup` and automatic env-file passing
   when `gemstoneRs.envFile` exists.
 
+## Workbench 0.3.2 Notes
+
+- VS Code: `GemStone RS: Run Setup Assistant` renders the explorer
+  `/api/setup/assistant` checks in the output panel.
+- CI: schema copies and `codegen explain --json` output are validated by
+  `scripts/validate_codegen_schemas.js`.
+- Examples: the generated-wrapper smoke crate now runs `cargo test`.
+
 ## Before Release
 
 - Update crate versions in `Cargo.toml` files.
@@ -32,7 +40,7 @@ cargo run -p gemstone-rs-cli -- profile resolve default --json examples/codegen/
 cargo run -p gemstone-rs-cli -- profile check examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
-cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
+cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
 ```
 

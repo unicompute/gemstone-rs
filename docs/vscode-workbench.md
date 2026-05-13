@@ -139,6 +139,11 @@ and explorer startup. The checks offer result actions to copy the full report,
 copy a safe `GS_*` environment export script with a placeholder password, or
 open the extension settings.
 
+`GemStone RS: Run Setup Assistant` calls the running local explorer at
+`/api/setup/assistant` and renders the structured env-file, GemStone
+configuration, GCI library, codegen config, and project profile checks in the
+output panel. Start the explorer first with `GemStone RS: Launch Explorer`.
+
 `GemStone RS: Show Environment Template`, `GemStone RS: Copy Environment
 Template`, and `GemStone RS: Write .env.gemstone-rs` call the CLI
 `gemstone-rs env sample/write` commands. The template uses current non-secret

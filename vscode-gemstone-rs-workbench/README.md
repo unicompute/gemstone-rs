@@ -36,6 +36,7 @@ For a source checkout:
 - `GemStone RS: Verify Setup`
 - `GemStone RS: Verify Live Setup`
 - `GemStone RS: Verify Strict Setup`
+- `GemStone RS: Run Setup Assistant`
 - `GemStone RS: Doctor`
 - `GemStone RS: Show Environment Template`
 - `GemStone RS: Copy Environment Template`
@@ -118,6 +119,10 @@ extension settings. `Show Environment Template`, `Copy Environment Template`,
 and `Write .env.gemstone-rs` use the CLI
 `gemstone-rs env sample/write` commands so VS Code and terminal setup stay on
 the same safe template.
+`Run Setup Assistant` calls the local explorer endpoint `/api/setup/assistant`
+and renders the env-file, GemStone configuration, GCI library, codegen config,
+and project profile checks in the GemStone RS output panel. Start the explorer
+first with `GemStone RS: Launch Explorer`.
 
 ## Sidebar
 

@@ -1,5 +1,6 @@
 const childProcess = require("child_process");
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const vscode = require("vscode");
 
@@ -19,6 +20,7 @@ function activate(context) {
   register(context, "gemstoneRs.verifySetup", verifySetup);
   register(context, "gemstoneRs.verifyLiveSetup", verifyLiveSetup);
   register(context, "gemstoneRs.verifyStrictSetup", verifyStrictSetup);
+  register(context, "gemstoneRs.runSetupAssistant", runSetupAssistant);
   register(context, "gemstoneRs.doctor", doctor);
   register(context, "gemstoneRs.showEnvironmentTemplate", showEnvironmentTemplate);
   register(context, "gemstoneRs.copyEnvironmentTemplate", copyEnvironmentTemplate);
@@ -185,6 +187,7 @@ class GemStoneTreeProvider {
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
         actionNode("Verify Live Setup", "gemstoneRs.verifyLiveSetup"),
         actionNode("Verify Strict Setup", "gemstoneRs.verifyStrictSetup"),
+        actionNode("Run Setup Assistant", "gemstoneRs.runSetupAssistant"),
         actionNode("Show Environment Template", "gemstoneRs.showEnvironmentTemplate"),
         actionNode("Copy Environment Template", "gemstoneRs.copyEnvironmentTemplate"),
         actionNode("Write .env.gemstone-rs", "gemstoneRs.writeEnvironmentTemplate"),
@@ -255,6 +258,95 @@ async function verifyStrictSetup() {
     success: "gemstone-rs strict setup check passed.",
     failure: "gemstone-rs strict setup check found issues. See GemStone RS output.",
   });
+}
+
+async function runSetupAssistant() {
+  const cfg = settings();
+  const url = setupAssistantUrl(cfg);
+  let data;
+  try {
+    data = await httpGetJson(url);
+  } catch (error) {
+    const report = [
+      "gemstone-rs Explorer setup assistant",
+      `url: ${url}`,
+      "",
+      `error: ${error.message}`,
+      "",
+      "Start the explorer with GemStone RS: Launch Explorer, then run this command again.",
+      "",
+    ].join("\n");
+    output.clear();
+    output.append(report);
+    output.show(true);
+    const action = await vscode.window.showWarningMessage(
+      "Setup Assistant could not reach the local explorer.",
+      "Launch Explorer",
+      "Open Settings",
+      "Copy Report"
+    );
+    if (action === "Launch Explorer") {
+      launchExplorer();
+    } else if (action === "Open Settings") {
+      await vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "@ext:unicompute.gemstone-rs-workbench"
+      );
+    } else if (action === "Copy Report") {
+      await vscode.env.clipboard.writeText(report);
+    }
+    return;
+  }
+
+  const report = formatSetupAssistantReport(url, data);
+  output.clear();
+  output.append(report);
+  output.show(true);
+  const action = await vscode.window.showInformationMessage(
+    data.success ? "Setup Assistant checks passed." : "Setup Assistant found issues.",
+    "Copy Report",
+    "Open Explorer Webview",
+    "Open Settings"
+  );
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(report);
+  } else if (action === "Open Explorer Webview") {
+    openExplorerWebview();
+  } else if (action === "Open Settings") {
+    await vscode.commands.executeCommand(
+      "workbench.action.openSettings",
+      "@ext:unicompute.gemstone-rs-workbench"
+    );
+  }
+}
+
+function setupAssistantUrl(cfg) {
+  const url = new URL(`http://${cfg.explorerHost}:${cfg.explorerPort}/api/setup/assistant`);
+  url.searchParams.set("env_file", cfg.envFile || ".env.gemstone-rs");
+  url.searchParams.set("config", cfg.codegenConfig);
+  url.searchParams.set("profile_file", cfg.codegenProfiles);
+  return url.toString();
+}
+
+function formatSetupAssistantReport(url, data) {
+  const lines = [
+    "gemstone-rs Explorer setup assistant",
+    `url: ${url}`,
+    `success: ${Boolean(data.success)}`,
+    "",
+  ];
+  for (const step of data.steps || []) {
+    lines.push(`${step.ok ? "OK" : "Needs attention"}: ${step.name || "(unnamed step)"}`);
+    lines.push(`  ${step.detail || "-"}`);
+    if (step.action) {
+      lines.push(`  Action: ${step.action}`);
+    }
+    lines.push("");
+  }
+  if (!Array.isArray(data.steps)) {
+    lines.push(JSON.stringify(data, null, 2), "");
+  }
+  return lines.join("\n");
 }
 
 async function runSetupCheck({ args, title, success, failure }) {
@@ -1190,6 +1282,36 @@ function runCli(args, options = {}) {
     child.on("close", (code) => {
       resolve({ command, args: commandArgs, code, stdout, stderr });
     });
+  });
+}
+
+function httpGetJson(url) {
+  return new Promise((resolve, reject) => {
+    const request = http.get(url, (response) => {
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        body += chunk;
+      });
+      response.on("end", () => {
+        let data;
+        try {
+          data = JSON.parse(body);
+        } catch (error) {
+          reject(new Error(`Invalid JSON from ${url}: ${error.message}`));
+          return;
+        }
+        if (response.statusCode >= 400 && !Array.isArray(data.steps)) {
+          reject(new Error(data.error || `HTTP ${response.statusCode}`));
+          return;
+        }
+        resolve(data);
+      });
+    });
+    request.setTimeout(3000, () => {
+      request.destroy(new Error(`Timed out connecting to ${url}`));
+    });
+    request.on("error", reject);
   });
 }
 

@@ -23,6 +23,7 @@ const requiredCommands = [
   "gemstoneRs.launchExplorer",
   "gemstoneRs.verifyLiveSetup",
   "gemstoneRs.verifyStrictSetup",
+  "gemstoneRs.runSetupAssistant",
   "gemstoneRs.showEnvironmentTemplate",
   "gemstoneRs.copyEnvironmentTemplate",
   "gemstoneRs.writeEnvironmentTemplate",
@@ -75,6 +76,8 @@ assert(extensionSource.includes("Copy Env Script"), "verify setup should offer e
 assert(extensionSource.includes("Open Settings"), "verify setup should offer settings shortcut");
 assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
 assert(extensionSource.includes('"doctor", "--strict"'), "verify strict setup should run doctor --strict");
+assert(extensionSource.includes("setupAssistantUrl"), "Workbench should build a setup assistant URL");
+assert(extensionSource.includes("/api/setup/assistant"), "Workbench should call the explorer setup assistant");
 assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should pass --env-file when configured");
 assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
@@ -85,6 +88,7 @@ assert(readme.includes("Show Environment Template"), "README should mention envi
 assert(readme.includes("Write .env.gemstone-rs"), "README should mention environment template writes");
 assert(readme.includes("Verify Live Setup"), "README should mention live setup verification");
 assert(readme.includes("Verify Strict Setup"), "README should mention strict setup verification");
+assert(readme.includes("Run Setup Assistant"), "README should mention setup assistant");
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");

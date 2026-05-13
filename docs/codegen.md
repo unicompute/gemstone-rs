@@ -161,7 +161,7 @@ Check freshness in CI:
 
 ```bash
 gemstone-rs codegen check gemstone-rs.codegen
-cargo check --manifest-path examples/codegen-wrapper-check/Cargo.toml
+cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
 Write generated wrappers:
