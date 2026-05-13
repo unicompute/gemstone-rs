@@ -248,6 +248,7 @@ gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
+gemstone-rs bridge put-symbol WorkbenchState ready
 gemstone-rs bridge put-smallint WorkbenchCount 7
 gemstone-rs bridge put-bool WorkbenchReady true
 gemstone-rs bridge remove WorkbenchDraft

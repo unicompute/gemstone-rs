@@ -2015,7 +2015,7 @@ fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|put|put-string|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         ));
     };
     match command {
@@ -2057,6 +2057,11 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
             "bridge put-string",
             Some(BridgeValueType::String),
         ),
+        "put-symbol" => parse_bridge_put_command(
+            &args[1..],
+            "bridge put-symbol",
+            Some(BridgeValueType::Symbol),
+        ),
         "put-smallint" => parse_bridge_put_command(
             &args[1..],
             "bridge put-smallint",
@@ -2084,7 +2089,7 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .unwrap_or_else(|| "BookingDraft".to_string()),
         }),
         _ => Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|put|put-string|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         )),
     }
 }
@@ -2196,6 +2201,7 @@ fn parse_bridge_key_type(value: &str) -> Result<BridgeKeyType, CliError> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BridgeValueType {
     String,
+    Symbol,
     SmallInt,
     Bool,
 }
@@ -2204,6 +2210,7 @@ impl BridgeValueType {
     fn parse_value(self, value: &str) -> Result<BridgeValue, CliError> {
         match self {
             Self::String => Ok(BridgeValue::from(value.to_string())),
+            Self::Symbol => Ok(BridgeValue::Symbol(value.to_string())),
             Self::SmallInt => value
                 .parse::<i64>()
                 .map(BridgeValue::from)
@@ -2216,10 +2223,11 @@ impl BridgeValueType {
 fn parse_bridge_value_type(value: &str) -> Result<BridgeValueType, CliError> {
     match value.trim().to_ascii_lowercase().as_str() {
         "string" | "str" => Ok(BridgeValueType::String),
+        "symbol" | "sym" => Ok(BridgeValueType::Symbol),
         "smallint" | "small_int" | "int" | "integer" => Ok(BridgeValueType::SmallInt),
         "bool" | "boolean" => Ok(BridgeValueType::Bool),
         _ => Err(CliError::usage(format!(
-            "expected bridge value type String, SmallInt, or Bool, got {value}"
+            "expected bridge value type String, Symbol, SmallInt, or Bool, got {value}"
         ))),
     }
 }
@@ -2332,8 +2340,9 @@ fn usage() -> &'static str {
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge inspect <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
-  gemstone-rs bridge put <key> <value> [--type String|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge put <key> <value> [--type String|Symbol|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put-string <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge put-symbol <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put-smallint <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put-bool <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge remove <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
@@ -2811,6 +2820,46 @@ GEMSTONE=/opt/gemstone # product root
                 value: BridgeCliValue {
                     raw: "ready".to_string(),
                     value_type: BridgeValueType::String,
+                },
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "put-symbol",
+                "BookingState",
+                "confirmed",
+                "--key-type",
+                "Symbol"
+            ]))
+            .unwrap(),
+            Command::BridgePut {
+                root: DEFAULT_BRIDGE_ROOT.to_string(),
+                key: "BookingState".to_string(),
+                key_type: BridgeKeyType::Symbol,
+                value: BridgeCliValue {
+                    raw: "confirmed".to_string(),
+                    value_type: BridgeValueType::Symbol,
+                },
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "put",
+                "BookingState",
+                "confirmed",
+                "--type",
+                "Symbol"
+            ]))
+            .unwrap(),
+            Command::BridgePut {
+                root: DEFAULT_BRIDGE_ROOT.to_string(),
+                key: "BookingState".to_string(),
+                key_type: BridgeKeyType::String,
+                value: BridgeCliValue {
+                    raw: "confirmed".to_string(),
+                    value_type: BridgeValueType::Symbol,
                 },
             }
         );

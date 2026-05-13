@@ -145,6 +145,7 @@ gemstone-rs inspect oop 20
 gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
+gemstone-rs bridge put-symbol WorkbenchState ready
 gemstone-rs bridge put-smallint WorkbenchCount 7
 gemstone-rs bridge put-bool WorkbenchReady true
 gemstone-rs bridge remove WorkbenchDraft
@@ -210,11 +211,12 @@ https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workb
 Use the GemStone RS sidebar to browse dictionaries, classes, protocols, and
 methods. The same sidebar exposes Codegen Discover, Preview, Diff, Check,
 Generate, profile-driven codegen actions, Generate Mapping Config, Preview
-BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot Key,
-Run Generated Mapping Example, Load Project Profiles, Save Project Profiles,
-Export Codegen Profile, Show Sample Project Profiles, Create Project Profiles,
-Validate Project Profiles, List Project Profiles, Show Project Profile, and
-Resolve Project Profile, Check Project Profiles, and Open Docs actions.
+BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Put BridgeRoot Symbol,
+Remove BridgeRoot Key, Run Generated Mapping Example, Load Project Profiles,
+Save Project Profiles, Export Codegen Profile, Show Sample Project Profiles,
+Create Project Profiles, Validate Project Profiles, List Project Profiles, Show
+Project Profile, Resolve Project Profile, Check Project Profiles, and Open Docs
+actions.
 
 ## Later Examples
 

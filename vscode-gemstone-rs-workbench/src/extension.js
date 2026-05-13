@@ -35,6 +35,7 @@ function activate(context) {
   register(context, "gemstoneRs.previewBridgeRoot", previewBridgeRoot);
   register(context, "gemstoneRs.listBridgeRootKeys", listBridgeRootKeys);
   register(context, "gemstoneRs.putBridgeRootString", putBridgeRootString);
+  register(context, "gemstoneRs.putBridgeRootSymbol", putBridgeRootSymbol);
   register(context, "gemstoneRs.removeBridgeRootKey", removeBridgeRootKey);
   register(context, "gemstoneRs.runGeneratedMappingExample", runGeneratedMappingExample);
   register(context, "gemstoneRs.codegenPreview", codegenPreview);
@@ -162,6 +163,7 @@ class GemStoneTreeProvider {
         actionNode("Preview BridgeRoot", "gemstoneRs.previewBridgeRoot"),
         actionNode("List BridgeRoot Keys", "gemstoneRs.listBridgeRootKeys"),
         actionNode("Put BridgeRoot String", "gemstoneRs.putBridgeRootString"),
+        actionNode("Put BridgeRoot Symbol", "gemstoneRs.putBridgeRootSymbol"),
         actionNode("Remove BridgeRoot Key", "gemstoneRs.removeBridgeRootKey"),
         actionNode("Run Generated Mapping Example", "gemstoneRs.runGeneratedMappingExample"),
         actionNode("Preview Wrappers", "gemstoneRs.codegenPreview"),
@@ -593,25 +595,43 @@ async function listBridgeRootKeys() {
 }
 
 async function putBridgeRootString() {
-  const key = await vscode.window.showInputBox({
+  await putBridgeRootScalar({
     title: "Put BridgeRoot String",
+    prompt: "String value",
+    defaultKey: "WorkbenchDraft",
+    defaultValue: "hello from VS Code",
+    command: "put-string",
+  });
+}
+
+async function putBridgeRootSymbol() {
+  await putBridgeRootScalar({
+    title: "Put BridgeRoot Symbol",
+    prompt: "Symbol value",
+    defaultKey: "WorkbenchState",
+    defaultValue: "ready",
+    command: "put-symbol",
+  });
+}
+
+async function putBridgeRootScalar({ title, prompt, defaultKey, defaultValue, command }) {
+  const key = await vscode.window.showInputBox({
+    title,
     prompt: "BridgeRoot key to write",
-    value: "WorkbenchDraft",
+    value: defaultKey,
   });
   if (!key) {
     return;
   }
   const value = await vscode.window.showInputBox({
-    title: "Put BridgeRoot String",
-    prompt: `String value for ${key}`,
-    value: "hello from VS Code",
+    title,
+    prompt: `${prompt} for ${key}`,
+    value: defaultValue,
   });
   if (value === undefined) {
     return;
   }
-  const result = await runAndShow(["bridge", "put-string", key, value], {
-    allowFailure: true,
-  });
+  const result = await runAndShow(["bridge", command, key, value], { allowFailure: true });
   if (result.code === 0) {
     explorerProvider?.refresh();
   }

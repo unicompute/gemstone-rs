@@ -335,8 +335,9 @@ curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
 
 The browser UI exposes `Bridge key type` and `Bridge value type` controls so
-you can explicitly test string-key, symbol-key, string-value, small-int-value,
-and bool-value mappings before encoding them in a reusable config file. It
+you can explicitly test string-key, symbol-key, string-value, symbol-value,
+small-int-value, and bool-value mappings before encoding them in a reusable
+config file. It
 persists the selected key, value, class, selector, config, and mapping fields in
 browser local storage; use `Clear Saved Fields` to reset the page back to the
 documented defaults.
@@ -346,6 +347,7 @@ Writes are disabled unless the explorer is started with `--allow-write`:
 ```bash
 gemstone-rs-explorer --allow-write
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchState&value=ready&value_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchCount&value=7&value_type=SmallInt'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchApproved&value=true&value_type=Bool'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'

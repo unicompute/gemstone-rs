@@ -126,6 +126,7 @@ The same write opt-in enables BridgeRoot edit endpoints:
 
 ```bash
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=ExplorerDraft&value=hello'
+curl -s 'http://127.0.0.1:8787/api/bridge/put?key=ExplorerState&value=ready&value_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=ExplorerCount&value=7&value_type=SmallInt'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=ExplorerDraft'
 ```

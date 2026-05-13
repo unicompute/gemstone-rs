@@ -51,6 +51,7 @@ For a source checkout:
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Put BridgeRoot Symbol`
 - `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
@@ -109,8 +110,9 @@ contributes JSON validation for files named
 config. `Preview BridgeRoot` opens the explorer BridgeRoot endpoint.
 `List BridgeRoot Keys` runs `gemstone-rs bridge keys` and shows the current
 root keys in the output panel.
-`Put BridgeRoot String` and `Remove BridgeRoot Key` run explicit committed
-BridgeRoot writes through the CLI after prompting for a key and value.
+`Put BridgeRoot String`, `Put BridgeRoot Symbol`, and `Remove BridgeRoot Key`
+run explicit committed BridgeRoot writes through the CLI after prompting for a
+key and value.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
@@ -157,8 +159,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Export Codegen Profile, Show Sample Project Profiles, Create Project
   Profiles, Validate Project Profiles, List Project Profiles, Show Project
   Profile, Resolve Project Profile, Check Project Profiles, Generate Mapping Config, Preview
-  BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
-  Key, and Run Generated Mapping Example.
+  BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Put BridgeRoot
+  Symbol, Remove BridgeRoot Key, and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Verify Strict
   Setup, Eval Smalltalk, Show/Copy/Write Environment Template, Launch Explorer,
   Open Explorer Webview, Generate Explorer Auth Token, and Clear Explorer Auth

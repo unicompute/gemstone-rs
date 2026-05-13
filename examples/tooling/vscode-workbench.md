@@ -121,7 +121,7 @@ check for every profile so stale generated wrappers are visible before commit.
 Profile-specific commands use a QuickPick loaded from the project profile file.
 Imports summarize new, replaced, and unchanged profiles. Use the
 BridgeRoot key/value type selectors to test string keys, symbol keys, strings,
-small integers, and bools before saving those choices in codegen config. The
+symbols, small integers, and bools before saving those choices in codegen config. The
 detail pane shows generated source, generated mapping config, unified diff
 output, or side-by-side diff output, and the page remembers the current fields
 locally across reloads. Config saves use a POST body, so the editor can handle

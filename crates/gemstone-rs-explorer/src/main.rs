@@ -1668,6 +1668,7 @@ fn bridge_key_type_query(value: Option<&str>) -> BridgeKeyType {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BridgeValueType {
     String,
+    Symbol,
     SmallInt,
     Bool,
 }
@@ -1676,6 +1677,7 @@ impl BridgeValueType {
     fn name(self) -> &'static str {
         match self {
             Self::String => "String",
+            Self::Symbol => "Symbol",
             Self::SmallInt => "SmallInt",
             Self::Bool => "Bool",
         }
@@ -1684,6 +1686,7 @@ impl BridgeValueType {
     fn parse_value(self, value: &str) -> Result<BridgeValue, String> {
         match self {
             Self::String => Ok(BridgeValue::from(value.to_string())),
+            Self::Symbol => Ok(BridgeValue::Symbol(value.to_string())),
             Self::SmallInt => value
                 .parse::<i64>()
                 .map(BridgeValue::from)
@@ -1695,6 +1698,7 @@ impl BridgeValueType {
 
 fn bridge_value_type_query(value: Option<&str>) -> BridgeValueType {
     match value.map(str::trim).map(str::to_ascii_lowercase).as_deref() {
+        Some("symbol" | "sym") => BridgeValueType::Symbol,
         Some("smallint" | "small_int" | "int" | "integer") => BridgeValueType::SmallInt,
         Some("bool" | "boolean") => BridgeValueType::Bool,
         _ => BridgeValueType::String,
@@ -2127,7 +2131,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 </div>
 <div class="row">
 <label>Bridge key type<select id="bridgeKeyType"><option>String</option><option>Symbol</option></select></label>
-<label>Bridge value type<select id="bridgeValueType"><option>String</option><option>SmallInt</option><option>Bool</option></select></label>
+<label>Bridge value type<select id="bridgeValueType"><option>String</option><option>Symbol</option><option>SmallInt</option><option>Bool</option></select></label>
 </div>
 <div class="actions">
 <button class="secondary" onclick="getBridgeValue()">Get</button>
@@ -3221,6 +3225,10 @@ mod tests {
         assert_eq!(
             bridge_value_type_query(Some("SmallInt")),
             BridgeValueType::SmallInt
+        );
+        assert_eq!(
+            bridge_value_type_query(Some("Symbol")),
+            BridgeValueType::Symbol
         );
         assert_eq!(bridge_value_type_query(Some("bool")), BridgeValueType::Bool);
     }

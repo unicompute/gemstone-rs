@@ -54,6 +54,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Preview BridgeRoot
 - List BridgeRoot Keys
 - Put BridgeRoot String
+- Put BridgeRoot Symbol
 - Remove BridgeRoot Key
 - Run Generated Mapping Example
 - Preview Wrappers
@@ -103,6 +104,7 @@ Commands:
 - `GemStone RS: Preview BridgeRoot`
 - `GemStone RS: List BridgeRoot Keys`
 - `GemStone RS: Put BridgeRoot String`
+- `GemStone RS: Put BridgeRoot Symbol`
 - `GemStone RS: Remove BridgeRoot Key`
 - `GemStone RS: Run Generated Mapping Example`
 - `GemStone RS: Codegen Preview`
@@ -204,6 +206,13 @@ test from VS Code. It asks for a key and string value, then runs:
 
 ```bash
 gemstone-rs bridge put-string <key> <value>
+```
+
+Use `GemStone RS: Put BridgeRoot Symbol` for the same workflow when the stored
+value should be a GemStone Symbol:
+
+```bash
+gemstone-rs bridge put-symbol <key> <value>
 ```
 
 Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a

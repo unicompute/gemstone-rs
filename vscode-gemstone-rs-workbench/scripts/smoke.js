@@ -51,6 +51,7 @@ const requiredCommands = [
   "gemstoneRs.generateMappingConfig",
   "gemstoneRs.previewBridgeRoot",
   "gemstoneRs.runGeneratedMappingExample",
+  "gemstoneRs.putBridgeRootSymbol",
   "gemstoneRs.generateExplorerAuthToken",
   "gemstoneRs.clearExplorerAuthToken",
 ];
@@ -113,7 +114,9 @@ assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should p
 assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
-assert(extensionSource.includes('"bridge", "put-string"'), "BridgeRoot string command should use put-string");
+assert(extensionSource.includes("put-string"), "BridgeRoot string command should use put-string");
+assert(extensionSource.includes('"bridge", command, key, value'), "BridgeRoot scalar commands should share the CLI command path");
+assert(extensionSource.includes("put-symbol"), "BridgeRoot symbol command should use put-symbol");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
 assert(readme.includes("Generate Explorer Auth Token"), "README should mention auth token generation");

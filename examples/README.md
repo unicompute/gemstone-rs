@@ -159,4 +159,5 @@ The examples intentionally stay close to the public Rust API:
 The local web explorer and VS Code extension use the same CLI/API surfaces, so
 these examples are also useful when debugging higher-level tooling. For a quick
 write-side tool smoke test, use `gemstone-rs bridge put-string WorkbenchDraft
-"hello"`, then `gemstone-rs bridge remove WorkbenchDraft`.
+"hello"` or `gemstone-rs bridge put-symbol WorkbenchState ready`, then remove
+the key with `gemstone-rs bridge remove <key>`.

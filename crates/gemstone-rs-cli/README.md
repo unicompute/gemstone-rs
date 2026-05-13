@@ -24,6 +24,7 @@ cargo run -p gemstone-rs-cli -- bridge keys
 cargo run -p gemstone-rs-cli -- bridge get BookingDraft --symbol
 cargo run -p gemstone-rs-cli -- bridge inspect BookingDraft --symbol
 cargo run -p gemstone-rs-cli -- bridge put-string WorkbenchDraft "hello from Rust"
+cargo run -p gemstone-rs-cli -- bridge put-symbol WorkbenchState ready
 cargo run -p gemstone-rs-cli -- bridge put-smallint WorkbenchCount 7
 cargo run -p gemstone-rs-cli -- bridge put-bool WorkbenchReady true
 cargo run -p gemstone-rs-cli -- bridge sample-config BookingDraft
@@ -85,17 +86,18 @@ gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
+gemstone-rs bridge put-symbol WorkbenchState ready
 gemstone-rs bridge put-smallint WorkbenchCount 7
 gemstone-rs bridge put-bool WorkbenchReady true
 gemstone-rs bridge remove WorkbenchDraft
 gemstone-rs bridge sample-config BookingDraft
 ```
 
-`bridge put-string`, `bridge put-smallint`, and `bridge put-bool` commit common
-scalar values without spelling out `--type`. The generic `bridge put` remains
-available when scripts prefer `--type String|SmallInt|Bool`. Use `--symbol` or
-`--key-type Symbol` when the BridgeRoot key is a GemStone Symbol instead of a
-String.
+`bridge put-string`, `bridge put-symbol`, `bridge put-smallint`, and
+`bridge put-bool` commit common scalar values without spelling out `--type`.
+The generic `bridge put` remains available when scripts prefer
+`--type String|Symbol|SmallInt|Bool`. Use `--symbol` or `--key-type Symbol`
+when the BridgeRoot key is a GemStone Symbol instead of a String.
 
 `codegen diff` previews generated changes before writing. `codegen check` is
 suitable for CI. In this repository it verifies:
