@@ -768,7 +768,78 @@ async function checkProjectProfiles() {
   if (!profilePath) {
     return;
   }
-  await runAndShow(["profile", "check", profilePath], { allowFailure: true });
+  const result = await runCli(["profile", "check", "--json", profilePath], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs profile check returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  showProfileCheckReport(result, report);
+  const stale = Number(report.staleCount || 0);
+  const errors = Number(report.errorCount || 0);
+  if (result.code === 0 && report.ok) {
+    vscode.window.showInformationMessage(
+      `Project profiles are fresh: ${Number(report.okCount || 0)} ok.`
+    );
+  } else {
+    vscode.window.showErrorMessage(
+      `Project profile check failed: ${stale} stale, ${errors} errors.`
+    );
+  }
+}
+
+function parseJsonCommandResult(result, errorMessage) {
+  try {
+    return JSON.parse(result.stdout);
+  } catch (error) {
+    output.clear();
+    output.appendLine(commandLine(result));
+    output.append(result.stdout);
+    output.append(result.stderr);
+    output.appendLine(`JSON parse error: ${error.message}`);
+    output.show(true);
+    vscode.window.showErrorMessage(errorMessage);
+    return undefined;
+  }
+}
+
+function showProfileCheckReport(result, report) {
+  const profiles = Array.isArray(report.profiles) ? report.profiles : [];
+  output.clear();
+  output.appendLine(commandLine(result));
+  output.appendLine("Project profile freshness");
+  output.appendLine(`path: ${report.path || "-"}`);
+  const okCount = Number(report.okCount || 0);
+  const staleCount = Number(report.staleCount || 0);
+  const errorCount = Number(report.errorCount || 0);
+  const profileCount = Number(report.profileCount || profiles.length);
+  output.appendLine(
+    `summary: ${okCount} ok, ${staleCount} stale, ${errorCount} errors, ${profileCount} total`
+  );
+  output.appendLine("");
+  for (const profile of profiles) {
+    const status = profileCheckStatus(profile);
+    output.appendLine(`${status}\t${profile.name || "(unnamed)"}`);
+    output.appendLine(`  config: ${profile.config || "-"}`);
+    output.appendLine(`  output: ${profile.output || "-"}`);
+    if (profile.error) {
+      output.appendLine(`  error: ${profile.error}`);
+    }
+  }
+  if (result.stderr.trim()) {
+    output.appendLine("");
+    output.append(result.stderr);
+  }
+  output.show(true);
+}
+
+function profileCheckStatus(profile) {
+  if (profile.ok) {
+    return "ok";
+  }
+  if (profile.error) {
+    return "error";
+  }
+  return "stale";
 }
 
 function openExplorerProfileWorkflow(title, instruction) {

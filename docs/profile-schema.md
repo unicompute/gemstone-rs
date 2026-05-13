@@ -57,6 +57,13 @@ profile check: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles)
 ok	default	config=examples/codegen/gemstone-rs.codegen	output=examples/codegen/generated/gemstone_wrappers.rs
 ```
 
+The JSON form includes aggregate fields so CI and editor integrations can fail
+with a concise summary:
+
+```json
+{"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
+```
+
 ## Shape
 
 ```json

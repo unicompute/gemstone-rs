@@ -84,9 +84,10 @@ untitled JSON editor, `Create Project Profiles` writes that sample with
 output panel. `List Project Profiles`, `Show Project Profile`, and `Resolve
 Project Profile` render parsed profile details and resolved config paths
 through `gemstone-rs profile list/show/resolve`. `Check Project Profiles` runs
-`gemstone-rs profile check` across every profile and reports stale or invalid
-generated wrapper outputs before a commit. Profile commands use a QuickPick
-populated from the project profile file. The extension also
+`gemstone-rs profile check --json` across every profile and renders an
+aggregate summary with ok, stale, and error counts before a commit. Profile
+commands use a QuickPick populated from the project profile file. The extension
+also
 contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`.
 `Generate Mapping Config` asks the live stone for a starter `BridgeMapped`

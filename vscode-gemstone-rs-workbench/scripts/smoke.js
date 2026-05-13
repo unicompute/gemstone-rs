@@ -77,6 +77,14 @@ assert(readme.includes("List Project Profiles"), "README should mention profile 
 assert(readme.includes("Check Project Profiles"), "README should mention profile checking");
 assert(readme.includes("Resolve Project Profile"), "README should mention profile resolution");
 assert(extensionSource.includes("showQuickPick"), "profile commands should offer a QuickPick");
+assert(
+  extensionSource.includes('"profile", "check", "--json"'),
+  "profile checking should use JSON output"
+);
+assert(
+  extensionSource.includes("Project profile freshness"),
+  "profile checking should render a readable summary"
+);
 assert.deepStrictEqual(
   JSON.parse(extensionSchema),
   JSON.parse(rootSchema),

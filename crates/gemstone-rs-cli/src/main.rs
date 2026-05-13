@@ -815,15 +815,23 @@ fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
 }
 
 fn profile_check_json(path: &Path, entries: &[ProfileCheckEntry], ok: bool) -> String {
+    let profile_count = entries.len();
+    let ok_count = entries.iter().filter(|entry| entry.ok()).count();
+    let error_count = entries.iter().filter(|entry| entry.error.is_some()).count();
+    let stale_count = profile_count.saturating_sub(ok_count + error_count);
     let entries = entries
         .iter()
         .map(profile_check_entry_json)
         .collect::<Vec<_>>()
         .join(",");
     format!(
-        r#"{{"ok":{},"path":"{}","profiles":[{}]}}"#,
+        r#"{{"ok":{},"path":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
         ok,
         escape_json(&path.display().to_string()),
+        profile_count,
+        ok_count,
+        stale_count,
+        error_count,
         entries
     )
 }
@@ -2047,5 +2055,41 @@ mod tests {
                 format: OutputFormat::Json
             }
         );
+    }
+
+    #[test]
+    fn profile_check_json_includes_summary_counts() {
+        let entries = vec![
+            ProfileCheckEntry {
+                name: "fresh".to_string(),
+                config: Some(PathBuf::from("fresh.codegen")),
+                output: Some(PathBuf::from("fresh.rs")),
+                up_to_date: true,
+                error: None,
+            },
+            ProfileCheckEntry {
+                name: "stale".to_string(),
+                config: Some(PathBuf::from("stale.codegen")),
+                output: Some(PathBuf::from("stale.rs")),
+                up_to_date: false,
+                error: None,
+            },
+            ProfileCheckEntry {
+                name: "broken".to_string(),
+                config: None,
+                output: None,
+                up_to_date: false,
+                error: Some("missing config".to_string()),
+            },
+        ];
+
+        let json = profile_check_json(Path::new("profiles.json"), &entries, false);
+
+        assert!(json.contains(r#""profileCount":3"#));
+        assert!(json.contains(r#""okCount":1"#));
+        assert!(json.contains(r#""staleCount":1"#));
+        assert!(json.contains(r#""errorCount":1"#));
+        assert!(json.contains(r#""name":"broken""#));
+        assert!(json.contains(r#""error":"missing config""#));
     }
 }
