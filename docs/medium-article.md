@@ -484,7 +484,8 @@ preview, diff, check, explain, and generate endpoints let the browser, VS Code,
 and CI all resolve the same named project profile before operating on generated
 wrappers. A project-level profile check endpoint summarizes all profiles at
 once, including ok, stale, and error counts, so release tooling can fail before
-generated wrappers drift.
+generated wrappers drift. In the browser, that report renders as a status table
+with direct Preview, Diff, Check, and Generate buttons for each profile.
 
 The same schema is available from the CLI, so profile files can be checked in
 CI:
@@ -574,8 +575,8 @@ For CI and release confidence:
 
 ```bash
 make verify
-DRY_RUN=1 scripts/release_all.sh 0.2.1
-scripts/publish_verify.sh 0.2.1
+DRY_RUN=1 scripts/release_all.sh 0.2.2
+scripts/publish_verify.sh 0.2.2
 ```
 
 The release wrapper is now the single path for local and GitHub Actions

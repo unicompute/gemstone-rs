@@ -64,7 +64,14 @@ The JSON form includes aggregate fields so CI and editor integrations can fail
 with a concise summary:
 
 ```json
-{"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
+{"success":true,"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
+```
+
+The profile check JSON shape is shared by the CLI, explorer, and VS Code
+Workbench. Its schema lives at:
+
+```text
+schemas/gemstone-rs.profile-check.schema.json
 ```
 
 ## Shape

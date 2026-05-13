@@ -30,6 +30,16 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
 - VS Code: `GemStone RS: Codegen Explain` and `GemStone RS: Codegen Explain
   Profile` render structured classes, selectors, mappings, and test stubs.
 
+## 0.2.2 / Workbench 0.3.4 Notes
+
+- Core: project profile check reports now live in `gemstone-rs` and are shared
+  by CLI, explorer, and VS Code.
+- Explorer: `/api/codegen/profiles/check` returns the shared JSON report and
+  the browser renders a profile status table with Preview, Diff, Check, and
+  Generate actions.
+- Tooling: `schemas/gemstone-rs.profile-check.schema.json` documents the
+  shared report shape, and CI runs a real explorer HTTP endpoint smoke test.
+
 ## Before Release
 
 - Update crate versions in `Cargo.toml` files.
@@ -69,7 +79,7 @@ python3 docs/build_pdf_docs.py
 Or use the dry-run release wrapper:
 
 ```bash
-DRY_RUN=1 scripts/release_all.sh 0.2.1
+DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
 `make verify` checks that PDF generation completes and produces non-empty PDF
@@ -107,7 +117,7 @@ Run the release workflow:
 ```bash
 gh workflow run release.yml \
   --ref main \
-  -f version=0.2.1 \
+  -f version=0.2.2 \
   -f publish-crates=true \
   -f publish-vsix=true \
   -f create-github-release=true \
@@ -140,7 +150,7 @@ DRY_RUN=1 scripts/publish_crates.sh
 Manual end-to-end publishing remains available through the release wrapper:
 
 ```bash
-PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.1
+PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.2
 ```
 
 The GitHub `Release` workflow now calls the same `scripts/release_all.sh`
@@ -156,7 +166,7 @@ crates continue.
 ## Post-Release Verification
 
 ```bash
-scripts/publish_verify.sh 0.2.1
+scripts/publish_verify.sh 0.2.2
 ```
 
 The script checks:
@@ -173,7 +183,7 @@ The script checks:
 To skip the GitHub Release asset check during early testing:
 
 ```bash
-VERIFY_GITHUB_RELEASE=0 scripts/publish_verify.sh 0.2.1
+VERIFY_GITHUB_RELEASE=0 scripts/publish_verify.sh 0.2.2
 ```
 
 ## Optional Live Smoke

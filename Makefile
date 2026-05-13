@@ -1,9 +1,9 @@
-VERSION ?= 0.2.1
+VERSION ?= 0.2.2
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify rust-check codegen-check schema-check profile-check vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify rust-check codegen-check schema-check profile-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: rust-check codegen-check schema-check profile-check vscode-check docs-pdf-check
+verify: rust-check codegen-check schema-check profile-check explorer-smoke vscode-check docs-pdf-check
 
 rust-check:
 	cargo fmt --all --check
@@ -36,6 +36,9 @@ profile-check:
 	cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
 	diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
 	node scripts/profile_import_summary_test.js
+
+explorer-smoke:
+	python3 scripts/explorer_endpoint_smoke.py
 
 vscode-check:
 	cd vscode-gemstone-rs-workbench && npm run check

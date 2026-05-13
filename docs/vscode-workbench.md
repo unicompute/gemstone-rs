@@ -270,7 +270,8 @@ renders an aggregate summary with ok, stale, and error counts before you
 commit. The result message can copy the report or open the profile file for
 quick repair. Profile-specific commands use a QuickPick populated from the
 project profile file. The extension also contributes JSON validation for files named
-`gemstone-rs.codegen-profiles.json`.
+`gemstone-rs.codegen-profiles.json` and profile check reports named
+`gemstone-rs.profile-check.json`.
 
 ## Develop the Extension
 
@@ -279,7 +280,7 @@ cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
 npm run test:smoke
-npm run package -- --out gemstone-rs-workbench-0.3.1.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.4.vsix
 ```
 
 From the repository root:

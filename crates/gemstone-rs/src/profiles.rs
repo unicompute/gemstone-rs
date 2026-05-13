@@ -1,3 +1,4 @@
+use crate::codegen;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fs;
@@ -97,6 +98,171 @@ impl CodegenProfile {
             Ok(PathBuf::from(root).join(config_path))
         }
     }
+
+    pub fn resolved_config_path_with_base_root(&self, base_root: Option<&Path>) -> Result<PathBuf> {
+        let path = self.resolved_config_path()?;
+        if path.is_absolute() {
+            Ok(path)
+        } else if let Some(base_root) = base_root {
+            Ok(base_root.join(path))
+        } else {
+            Ok(path)
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProfileCheckEntry {
+    pub name: String,
+    pub config: Option<PathBuf>,
+    pub output: Option<PathBuf>,
+    pub exists: bool,
+    pub up_to_date: bool,
+    pub error: Option<String>,
+}
+
+impl ProfileCheckEntry {
+    pub fn ok(&self) -> bool {
+        self.error.is_none() && self.up_to_date
+    }
+
+    pub fn status(&self) -> &'static str {
+        if self.ok() {
+            "ok"
+        } else if self.error.is_some() {
+            "error"
+        } else {
+            "stale"
+        }
+    }
+
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","ok":{},"config":{},"output":{},"exists":{},"upToDate":{},"error":{}}}"#,
+            escape_json(&self.name),
+            self.ok(),
+            optional_json_path(self.config.as_deref()),
+            optional_json_path(self.output.as_deref()),
+            self.exists,
+            self.up_to_date,
+            optional_json_string(self.error.as_deref())
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ProfileCheckCounts {
+    pub profile_count: usize,
+    pub ok_count: usize,
+    pub stale_count: usize,
+    pub error_count: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProfileCheckReport {
+    pub path: PathBuf,
+    pub entries: Vec<ProfileCheckEntry>,
+}
+
+impl ProfileCheckReport {
+    pub fn counts(&self) -> ProfileCheckCounts {
+        let profile_count = self.entries.len();
+        let ok_count = self.entries.iter().filter(|entry| entry.ok()).count();
+        let error_count = self
+            .entries
+            .iter()
+            .filter(|entry| entry.error.is_some())
+            .count();
+        let stale_count = profile_count.saturating_sub(ok_count + error_count);
+        ProfileCheckCounts {
+            profile_count,
+            ok_count,
+            stale_count,
+            error_count,
+        }
+    }
+
+    pub fn ok(&self) -> bool {
+        self.entries.iter().all(ProfileCheckEntry::ok)
+    }
+
+    pub fn to_json(&self) -> String {
+        let counts = self.counts();
+        let profiles = self
+            .entries
+            .iter()
+            .map(ProfileCheckEntry::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"success":true,"ok":{},"path":"{}","profileFile":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
+            self.ok(),
+            escape_json(&self.path.display().to_string()),
+            escape_json(&self.path.display().to_string()),
+            counts.profile_count,
+            counts.ok_count,
+            counts.stale_count,
+            counts.error_count,
+            profiles
+        )
+    }
+}
+
+pub fn check_file(path: impl AsRef<Path>, base_root: Option<&Path>) -> Result<ProfileCheckReport> {
+    let path = path.as_ref();
+    let project = load_file(path)?;
+    Ok(check_project(path, &project, base_root))
+}
+
+pub fn check_project(
+    path: impl AsRef<Path>,
+    project: &ProjectProfiles,
+    base_root: Option<&Path>,
+) -> ProfileCheckReport {
+    let entries = project
+        .profiles
+        .iter()
+        .map(|profile| check_profile(profile, base_root))
+        .collect();
+    ProfileCheckReport {
+        path: path.as_ref().to_path_buf(),
+        entries,
+    }
+}
+
+pub fn check_profile(profile: &CodegenProfile, base_root: Option<&Path>) -> ProfileCheckEntry {
+    let mut entry = ProfileCheckEntry {
+        name: profile.name.clone(),
+        config: None,
+        output: None,
+        exists: false,
+        up_to_date: false,
+        error: None,
+    };
+    let config_path = match profile.resolved_config_path_with_base_root(base_root) {
+        Ok(path) => path,
+        Err(err) => {
+            entry.error = Some(err.to_string());
+            return entry;
+        }
+    };
+    entry.config = Some(config_path.clone());
+    let config = match codegen::Config::from_file(&config_path) {
+        Ok(config) => config,
+        Err(err) => {
+            entry.error = Some(err.to_string());
+            return entry;
+        }
+    };
+    match codegen::check(&config) {
+        Ok(report) => {
+            entry.output = Some(report.output);
+            entry.exists = report.exists;
+            entry.up_to_date = report.up_to_date;
+        }
+        Err(err) => entry.error = Some(err.to_string()),
+    }
+    entry
 }
 
 #[derive(Debug)]
@@ -214,6 +380,33 @@ pub fn parse_source(source: &str) -> Result<ProjectProfiles> {
         version,
         profiles: parsed_profiles,
     })
+}
+
+fn optional_json_path(value: Option<&Path>) -> String {
+    optional_json_string(value.map(|path| path.display().to_string()).as_deref())
+}
+
+fn optional_json_string(value: Option<&str>) -> String {
+    match value {
+        Some(value) => format!(r#""{}""#, escape_json(value)),
+        None => "null".to_string(),
+    }
+}
+
+fn escape_json(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            ch if ch.is_control() => escaped.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => escaped.push(ch),
+        }
+    }
+    escaped
 }
 
 impl CodegenProfile {
@@ -550,6 +743,69 @@ mod tests {
             profile.resolved_config_path().unwrap(),
             PathBuf::from("/tmp/gemstone-rs.codegen")
         );
+
+        let profile = CodegenProfile {
+            name: "default".to_string(),
+            config: Some("examples/codegen/gemstone-rs.codegen".to_string()),
+            root: Some("workspace".to_string()),
+            mapped: None,
+            class_name: None,
+        };
+        assert_eq!(
+            profile
+                .resolved_config_path_with_base_root(Some(Path::new("/repo")))
+                .unwrap(),
+            PathBuf::from("/repo/workspace/examples/codegen/gemstone-rs.codegen")
+        );
+    }
+
+    #[test]
+    fn profile_check_report_counts_and_json_are_shared() {
+        let report = ProfileCheckReport {
+            path: PathBuf::from("profiles.json"),
+            entries: vec![
+                ProfileCheckEntry {
+                    name: "fresh".to_string(),
+                    config: Some(PathBuf::from("fresh.codegen")),
+                    output: Some(PathBuf::from("fresh.rs")),
+                    exists: true,
+                    up_to_date: true,
+                    error: None,
+                },
+                ProfileCheckEntry {
+                    name: "stale".to_string(),
+                    config: Some(PathBuf::from("stale.codegen")),
+                    output: Some(PathBuf::from("stale.rs")),
+                    exists: true,
+                    up_to_date: false,
+                    error: None,
+                },
+                ProfileCheckEntry {
+                    name: "broken".to_string(),
+                    config: None,
+                    output: None,
+                    exists: false,
+                    up_to_date: false,
+                    error: Some("missing config".to_string()),
+                },
+            ],
+        };
+        assert_eq!(
+            report.counts(),
+            ProfileCheckCounts {
+                profile_count: 3,
+                ok_count: 1,
+                stale_count: 1,
+                error_count: 1
+            }
+        );
+        let json = report.to_json();
+        assert!(json.contains(r#""success":true"#));
+        assert!(json.contains(r#""ok":false"#));
+        assert!(json.contains(r#""profileFile":"profiles.json""#));
+        assert!(json.contains(r#""exists":true"#));
+        assert!(json.contains(r#""upToDate":false"#));
+        assert!(json.contains(r#""error":"missing config""#));
     }
 
     #[test]

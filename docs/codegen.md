@@ -82,11 +82,14 @@ Machine-readable schema files are committed for tooling:
 schemas/gemstone-rs.codegen.schema.json
 schemas/gemstone-rs.codegen-explain.schema.json
 schemas/gemstone-rs.codegen-profiles.schema.json
+schemas/gemstone-rs.profile-check.schema.json
 ```
 
 `gemstone-rs.codegen` remains the line-oriented CLI format. The config schema
 describes an equivalent structured JSON model for editor panels and generated
-summaries, while the explain schema matches `codegen explain --json`.
+summaries, while the explain schema matches `codegen explain --json`. The
+profile check schema matches `profile check --json` and the explorer
+`/api/codegen/profiles/check` endpoint.
 
 Supported return types:
 

@@ -18,7 +18,7 @@ keywords = ["gemstone", "smalltalk", "database", "gci"]
 categories = ["api-bindings", "database"]
 
 [workspace.dependencies]
-gemstone-rs = { version = "0.2.1", path = "crates/gemstone-rs" }
-gemstone-gci = { version = "0.2.1", path = "crates/gemstone-gci" }
-gemstone-rs-macros = { version = "0.2.1", path = "crates/gemstone-rs-macros" }
+gemstone-rs = { version = "0.2.2", path = "crates/gemstone-rs" }
+gemstone-gci = { version = "0.2.2", path = "crates/gemstone-gci" }
+gemstone-rs-macros = { version = "0.2.2", path = "crates/gemstone-rs-macros" }
 libloading = "0.8"

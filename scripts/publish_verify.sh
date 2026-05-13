@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${1:-0.2.1}"
+VERSION="${1:-0.2.2}"
 PUBLISHER="${VSCODE_PUBLISHER:-unicompute}"
 EXTENSION="${VSCODE_EXTENSION:-gemstone-rs-workbench}"
 REPO="${GITHUB_REPOSITORY:-unicompute/gemstone-rs}"

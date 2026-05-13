@@ -1354,33 +1354,6 @@ struct CodegenProfileTarget {
     config_path: PathBuf,
 }
 
-struct CodegenProfileStatus {
-    name: String,
-    config_path: Option<PathBuf>,
-    output_path: Option<PathBuf>,
-    exists: bool,
-    up_to_date: bool,
-    error: Option<String>,
-}
-
-impl CodegenProfileStatus {
-    fn ok(&self) -> bool {
-        self.error.is_none() && self.up_to_date
-    }
-}
-
-fn resolve_profile_config_path(
-    route: &Route,
-    config: &ExplorerConfig,
-    profile: &profiles::CodegenProfile,
-) -> Result<PathBuf, String> {
-    match profile.resolved_config_path() {
-        Ok(path) if path.is_absolute() => Ok(path),
-        Ok(path) => Ok(codegen_root_path(route, config).join(path)),
-        Err(err) => Err(err.to_string()),
-    }
-}
-
 fn codegen_profile_target(
     route: &Route,
     config: &ExplorerConfig,
@@ -1409,7 +1382,8 @@ fn codegen_profile_target(
             ),
         ));
     };
-    let config_path = match resolve_profile_config_path(route, config, profile) {
+    let base_root = codegen_root_path(route, config);
+    let config_path = match profile.resolved_config_path_with_base_root(Some(&base_root)) {
         Ok(path) => path,
         Err(err) => {
             return Err(Response::json(
@@ -1433,112 +1407,18 @@ fn codegen_profile_target(
 
 fn codegen_profiles_check_response(route: &Route, config: &ExplorerConfig) -> Response {
     let profile_file = codegen_profile_path(route, config);
-    let project = match profiles::load_file(&profile_file) {
-        Ok(project) => project,
-        Err(err) => {
-            return Response::json(
-                if profile_file.exists() { 400 } else { 404 },
-                format!(
-                    r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
-                    escape_json(&profile_file.display().to_string()),
-                    escape_json(&err.to_string())
-                ),
-            )
-        }
-    };
-
-    let statuses = project
-        .profiles
-        .iter()
-        .map(|profile| codegen_profile_status(route, config, profile))
-        .collect::<Vec<_>>();
-    let profile_count = statuses.len();
-    let ok_count = statuses.iter().filter(|status| status.ok()).count();
-    let error_count = statuses
-        .iter()
-        .filter(|status| status.error.is_some())
-        .count();
-    let stale_count = profile_count.saturating_sub(ok_count + error_count);
-    let ok = ok_count == profile_count;
-    let profiles_json = statuses
-        .iter()
-        .map(codegen_profile_status_json)
-        .collect::<Vec<_>>()
-        .join(",");
-
-    Response::json(
-        200,
-        format!(
-            r#"{{"success":true,"ok":{},"profileFile":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
-            ok,
-            escape_json(&profile_file.display().to_string()),
-            profile_count,
-            ok_count,
-            stale_count,
-            error_count,
-            profiles_json
+    let base_root = codegen_root_path(route, config);
+    match profiles::check_file(&profile_file, Some(&base_root)) {
+        Ok(report) => Response::json(200, report.to_json()),
+        Err(err) => Response::json(
+            if profile_file.exists() { 400 } else { 404 },
+            format!(
+                r#"{{"success":false,"profileFile":"{}","error":"{}"}}"#,
+                escape_json(&profile_file.display().to_string()),
+                escape_json(&err.to_string())
+            ),
         ),
-    )
-}
-
-fn codegen_profile_status(
-    route: &Route,
-    config: &ExplorerConfig,
-    profile: &profiles::CodegenProfile,
-) -> CodegenProfileStatus {
-    let mut status = CodegenProfileStatus {
-        name: profile.name.clone(),
-        config_path: None,
-        output_path: None,
-        exists: false,
-        up_to_date: false,
-        error: None,
-    };
-    let config_path = match resolve_profile_config_path(route, config, profile) {
-        Ok(path) => path,
-        Err(err) => {
-            status.error = Some(err);
-            return status;
-        }
-    };
-    status.config_path = Some(config_path.clone());
-    let codegen_config = match codegen::Config::from_file(&config_path) {
-        Ok(config) => config,
-        Err(err) => {
-            status.error = Some(err.to_string());
-            return status;
-        }
-    };
-    match codegen::check(&codegen_config) {
-        Ok(report) => {
-            status.output_path = Some(report.output);
-            status.exists = report.exists;
-            status.up_to_date = report.up_to_date;
-        }
-        Err(err) => status.error = Some(err.to_string()),
     }
-    status
-}
-
-fn codegen_profile_status_json(status: &CodegenProfileStatus) -> String {
-    let config = status
-        .config_path
-        .as_ref()
-        .map(|path| path.display().to_string());
-    let output = status
-        .output_path
-        .as_ref()
-        .map(|path| path.display().to_string());
-    format!(
-        r#"{{"name":"{}","ok":{},"config":{},"output":{},"exists":{},"upToDate":{},"error":{}}}"#,
-        escape_json(&status.name),
-        status.ok(),
-        optional_json_string(config.as_deref()),
-        optional_json_string(output.as_deref()),
-        status.exists,
-        status.up_to_date,
-        optional_json_string(status.error.as_deref())
-    )
 }
 
 fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response {
@@ -2101,6 +1981,13 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 .side-old { color: #ffb3ad; }
 .side-new { color: #b7f7c8; }
 .side-meta { grid-column: 1 / -1; color: #79c0ff; background: #161b22; border-radius: 6px; padding: 6px 8px; }
+.profile-check { white-space: normal; }
+.profile-table { width: 100%; border-collapse: collapse; color: #e6edf3; }
+.profile-table th, .profile-table td { border-bottom: 1px solid #30363d; padding: 6px; text-align: left; vertical-align: top; }
+.profile-table button { padding: 4px 6px; margin: 0 4px 4px 0; }
+.profile-ok { color: #7ee787; }
+.profile-stale { color: #ffa657; }
+.profile-error { color: #ff7b72; }
 @media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -2252,7 +2139,7 @@ function renderDetail(data) {
   if (typeof data.diff === 'string') {
     renderDiff(data.diff || 'No generated output changes.');
   } else if (Array.isArray(data.profiles) && typeof data.profileCount === 'number') {
-    detail.textContent = renderProfileCheck(data);
+    renderProfileCheck(data);
   } else if (Array.isArray(data.steps)) {
     detail.textContent = renderSetupAssistant(data.steps);
   } else if (data.explain && typeof data.explain === 'object') {
@@ -2275,8 +2162,44 @@ function renderSetupAssistant(steps) {
   }).join('\n\n');
 }
 function renderProfileCheck(data) {
+  detail.className = 'detail profile-check';
+  const profiles = data.profiles || [];
+  const rows = profiles.map(profile => {
+    const status = profile.ok ? 'ok' : (profile.error ? 'error' : 'stale');
+    const statusClass = profile.ok ? 'profile-ok' : (profile.error ? 'profile-error' : 'profile-stale');
+    return '<tr>' +
+      '<td><strong>' + escapeHtml(profile.name || '(unnamed)') + '</strong></td>' +
+      '<td class="' + statusClass + '">' + status + '</td>' +
+      '<td>' + escapeHtml(profile.config || '-') + '</td>' +
+      '<td>' + escapeHtml(profile.output || '-') + '</td>' +
+      '<td>' + escapeHtml('exists=' + profile.exists + ' upToDate=' + profile.upToDate) + (profile.error ? '<br><span class="profile-error">' + escapeHtml(profile.error) + '</span>' : '') + '</td>' +
+      '<td>' +
+        '<button class="secondary" data-profile-action="preview" data-profile="' + escapeHtml(profile.name || '') + '">Preview</button>' +
+        '<button class="secondary" data-profile-action="diff" data-profile="' + escapeHtml(profile.name || '') + '">Diff</button>' +
+        '<button class="secondary" data-profile-action="check" data-profile="' + escapeHtml(profile.name || '') + '">Check</button>' +
+        '<button class="secondary" data-profile-action="generate" data-profile="' + escapeHtml(profile.name || '') + '">Generate</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+  detail.innerHTML =
+    '<div class="pane-title">Project Profile Check</div>' +
+    '<p>Project profiles: ' + escapeHtml(data.profileFile || data.path || '-') + '</p>' +
+    '<p>Summary: ' + Number(data.okCount || 0) + ' ok, ' + Number(data.staleCount || 0) + ' stale, ' + Number(data.errorCount || 0) + ' errors, ' + Number(data.profileCount || profiles.length) + ' total</p>' +
+    '<table class="profile-table"><thead><tr><th>Profile</th><th>Status</th><th>Config</th><th>Output</th><th>Freshness</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  detail.querySelectorAll('button[data-profile-action]').forEach(button => {
+    button.addEventListener('click', () => runProfileAction(button.dataset.profile, button.dataset.profileAction));
+  });
+}
+function runProfileAction(profile, action) {
+  if (profile) document.getElementById('profileName').value = profile;
+  if (action === 'preview') codegenPreviewProfile();
+  else if (action === 'diff') codegenDiffProfile();
+  else if (action === 'check') codegenCheckProfile();
+  else if (action === 'generate') codegenGenerateProfile();
+}
+function renderProfileCheckText(data) {
   const lines = [
-    'Project profiles: ' + (data.profileFile || '-'),
+    'Project profiles: ' + (data.profileFile || data.path || '-'),
     'Summary: ' + data.okCount + ' ok, ' + data.staleCount + ' stale, ' + data.errorCount + ' errors, ' + data.profileCount + ' total',
     ''
   ];

@@ -1178,7 +1178,7 @@ function formatProfileCheckReport(result, report) {
   const lines = [
     commandLine(result).trimEnd(),
     "Project profile freshness",
-    `path: ${report.path || "-"}`,
+    `path: ${report.profileFile || report.path || "-"}`,
   ];
   const okCount = Number(report.okCount || 0);
   const staleCount = Number(report.staleCount || 0);
@@ -1193,6 +1193,7 @@ function formatProfileCheckReport(result, report) {
     lines.push(`${status}\t${profile.name || "(unnamed)"}`);
     lines.push(`  config: ${profile.config || "-"}`);
     lines.push(`  output: ${profile.output || "-"}`);
+    lines.push(`  exists: ${Boolean(profile.exists)} upToDate: ${Boolean(profile.upToDate)}`);
     if (profile.error) {
       lines.push(`  error: ${profile.error}`);
     }

@@ -170,5 +170,5 @@ make vscode-package
 Verify already-published artifacts:
 
 ```bash
-scripts/publish_verify.sh 0.2.1
+scripts/publish_verify.sh 0.2.2
 ```

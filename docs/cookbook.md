@@ -267,7 +267,7 @@ Explorer trees.
 ## Recipe 21: Verify Published Artifacts
 
 ```bash
-scripts/publish_verify.sh 0.2.1
+scripts/publish_verify.sh 0.2.2
 ```
 
 The script checks crates.io versions, installs the CLI and explorer, runs

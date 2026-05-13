@@ -92,7 +92,9 @@ untitled JSON editor, `Create Project Profiles` writes that sample with
 `gemstone-rs profile init`, and `Validate Project Profiles` runs
 `gemstone-rs profile validate` directly and shows the result in the GemStone RS
 output panel. `List Project Profiles`, `Show Project Profile`, and `Resolve
-Project Profile` render parsed profile details and resolved config paths
+Project Profile` render parsed profile details and resolved config paths.
+`Check Project Profiles` renders the shared `profile check --json` report with
+per-profile freshness, output paths, and errors.
 through `gemstone-rs profile list/show/resolve`. `Check Project Profiles` runs
 `gemstone-rs profile check --json` across every profile and renders an
 aggregate summary with ok, stale, and error counts before a commit. The result

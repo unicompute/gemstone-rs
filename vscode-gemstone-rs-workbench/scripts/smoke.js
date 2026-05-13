@@ -12,6 +12,7 @@ const schemaNames = [
   "gemstone-rs.codegen.schema.json",
   "gemstone-rs.codegen-profiles.schema.json",
   "gemstone-rs.codegen-explain.schema.json",
+  "gemstone-rs.profile-check.schema.json",
 ];
 
 function includes(list, value) {
@@ -121,6 +122,10 @@ assert(
   "profile checking should render a readable summary"
 );
 assert(
+  extensionSource.includes("upToDate"),
+  "profile checking should render freshness details"
+);
+assert(
   extensionSource.includes("Copy Report"),
   "profile checking should offer report copy action"
 );
@@ -148,6 +153,12 @@ assert(
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.codegen-profiles.json"))
   ),
   "package.json should contribute JSON validation for profile files"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.profile-check"))
+  ),
+  "package.json should contribute JSON validation for profile check reports"
 );
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],

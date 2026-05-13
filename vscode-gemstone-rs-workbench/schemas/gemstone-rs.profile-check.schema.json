@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.profile-check.schema.json",
+  "title": "gemstone-rs Profile Check Output",
+  "description": "Machine-readable output from gemstone-rs profile check --json and the explorer project profile check endpoint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "success",
+    "ok",
+    "path",
+    "profileFile",
+    "profileCount",
+    "okCount",
+    "staleCount",
+    "errorCount",
+    "profiles"
+  ],
+  "properties": {
+    "success": {
+      "type": "boolean"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "path": {
+      "type": "string"
+    },
+    "profileFile": {
+      "type": "string"
+    },
+    "profileCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "okCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "staleCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "errorCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "ok",
+          "config",
+          "output",
+          "exists",
+          "upToDate",
+          "error"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "config": {
+            "type": ["string", "null"]
+          },
+          "output": {
+            "type": ["string", "null"]
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "upToDate": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1361,55 +1361,13 @@ fn profile_field(value: Option<&str>) -> String {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ProfileCheckEntry {
-    name: String,
-    config: Option<PathBuf>,
-    output: Option<PathBuf>,
-    up_to_date: bool,
-    error: Option<String>,
-}
-
-impl ProfileCheckEntry {
-    fn ok(&self) -> bool {
-        self.error.is_none() && self.up_to_date
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct ProfileCheckCounts {
-    profile_count: usize,
-    ok_count: usize,
-    stale_count: usize,
-    error_count: usize,
-}
-
-fn profile_check_counts(entries: &[ProfileCheckEntry]) -> ProfileCheckCounts {
-    let profile_count = entries.len();
-    let ok_count = entries.iter().filter(|entry| entry.ok()).count();
-    let error_count = entries.iter().filter(|entry| entry.error.is_some()).count();
-    let stale_count = profile_count.saturating_sub(ok_count + error_count);
-    ProfileCheckCounts {
-        profile_count,
-        ok_count,
-        stale_count,
-        error_count,
-    }
-}
-
 fn run_profile_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
-    let project = profiles::load_file(path)?;
-    let entries = project
-        .profiles
-        .iter()
-        .map(check_project_profile)
-        .collect::<Vec<_>>();
-    let ok = entries.iter().all(ProfileCheckEntry::ok);
+    let report = profiles::check_file(path, None)?;
     match format {
-        OutputFormat::Human => print_profile_check(path, &entries),
-        OutputFormat::Json => println!("{}", profile_check_json(path, &entries, ok)),
+        OutputFormat::Human => print_profile_check(&report),
+        OutputFormat::Json => println!("{}", report.to_json()),
     }
-    if ok {
+    if report.ok() {
         Ok(())
     } else {
         Err(CliError::CodegenCheck(format!(
@@ -1419,63 +1377,21 @@ fn run_profile_check(path: &Path, format: OutputFormat) -> Result<(), CliError> 
     }
 }
 
-fn check_project_profile(profile: &profiles::CodegenProfile) -> ProfileCheckEntry {
-    let mut entry = ProfileCheckEntry {
-        name: profile.name.clone(),
-        config: None,
-        output: None,
-        up_to_date: false,
-        error: None,
-    };
-    let config_path = match profile.resolved_config_path() {
-        Ok(path) => path,
-        Err(err) => {
-            entry.error = Some(err.to_string());
-            return entry;
-        }
-    };
-    entry.config = Some(config_path.clone());
-    let config = match codegen::Config::from_file(&config_path) {
-        Ok(config) => config,
-        Err(err) => {
-            entry.error = Some(err.to_string());
-            return entry;
-        }
-    };
-    let report = match codegen::check(&config) {
-        Ok(report) => report,
-        Err(err) => {
-            entry.error = Some(err.to_string());
-            return entry;
-        }
-    };
-    entry.output = Some(report.output);
-    entry.up_to_date = report.up_to_date;
-    entry
-}
-
-fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
-    let counts = profile_check_counts(entries);
+fn print_profile_check(report: &profiles::ProfileCheckReport) {
+    let counts = report.counts();
     println!(
         "profile check: {} ({} profiles)",
-        path.display(),
+        report.path.display(),
         counts.profile_count
     );
     println!(
         "summary: {} ok, {} stale, {} errors, {} total",
         counts.ok_count, counts.stale_count, counts.error_count, counts.profile_count
     );
-    for entry in entries {
-        let status = if entry.ok() {
-            "ok"
-        } else if entry.error.is_some() {
-            "error"
-        } else {
-            "stale"
-        };
+    for entry in &report.entries {
         let mut line = format!(
             "{}\t{}\tconfig={}\toutput={}",
-            status,
+            entry.status(),
             entry.name,
             path_field(entry.config.as_deref()),
             path_field(entry.output.as_deref())
@@ -1486,41 +1402,6 @@ fn print_profile_check(path: &Path, entries: &[ProfileCheckEntry]) {
         }
         println!("{line}");
     }
-}
-
-fn profile_check_json(path: &Path, entries: &[ProfileCheckEntry], ok: bool) -> String {
-    let counts = profile_check_counts(entries);
-    let entries = entries
-        .iter()
-        .map(profile_check_entry_json)
-        .collect::<Vec<_>>()
-        .join(",");
-    format!(
-        r#"{{"ok":{},"path":"{}","profileCount":{},"okCount":{},"staleCount":{},"errorCount":{},"profiles":[{}]}}"#,
-        ok,
-        escape_json(&path.display().to_string()),
-        counts.profile_count,
-        counts.ok_count,
-        counts.stale_count,
-        counts.error_count,
-        entries
-    )
-}
-
-fn profile_check_entry_json(entry: &ProfileCheckEntry) -> String {
-    format!(
-        r#"{{"name":"{}","ok":{},"config":{},"output":{},"upToDate":{},"error":{}}}"#,
-        escape_json(&entry.name),
-        entry.ok(),
-        optional_json_path(entry.config.as_deref()),
-        optional_json_path(entry.output.as_deref()),
-        entry.up_to_date,
-        optional_json_string(entry.error.as_deref())
-    )
-}
-
-fn optional_json_path(value: Option<&Path>) -> String {
-    optional_json_string(value.map(|path| path.display().to_string()).as_deref())
 }
 
 fn path_field(value: Option<&Path>) -> String {
@@ -3161,31 +3042,40 @@ GEMSTONE=/opt/gemstone # product root
     #[test]
     fn profile_check_json_includes_summary_counts() {
         let entries = vec![
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "fresh".to_string(),
                 config: Some(PathBuf::from("fresh.codegen")),
                 output: Some(PathBuf::from("fresh.rs")),
+                exists: true,
                 up_to_date: true,
                 error: None,
             },
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "stale".to_string(),
                 config: Some(PathBuf::from("stale.codegen")),
                 output: Some(PathBuf::from("stale.rs")),
+                exists: true,
                 up_to_date: false,
                 error: None,
             },
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "broken".to_string(),
                 config: None,
                 output: None,
+                exists: false,
                 up_to_date: false,
                 error: Some("missing config".to_string()),
             },
         ];
 
-        let json = profile_check_json(Path::new("profiles.json"), &entries, false);
+        let json = profiles::ProfileCheckReport {
+            path: PathBuf::from("profiles.json"),
+            entries,
+        }
+        .to_json();
 
+        assert!(json.contains(r#""success":true"#));
+        assert!(json.contains(r#""ok":false"#));
         assert!(json.contains(r#""profileCount":3"#));
         assert!(json.contains(r#""okCount":1"#));
         assert!(json.contains(r#""staleCount":1"#));
@@ -3197,32 +3087,39 @@ GEMSTONE=/opt/gemstone # product root
     #[test]
     fn profile_check_counts_separate_stale_and_errors() {
         let entries = vec![
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "fresh".to_string(),
                 config: None,
                 output: None,
+                exists: true,
                 up_to_date: true,
                 error: None,
             },
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "stale".to_string(),
                 config: None,
                 output: None,
+                exists: true,
                 up_to_date: false,
                 error: None,
             },
-            ProfileCheckEntry {
+            profiles::ProfileCheckEntry {
                 name: "broken".to_string(),
                 config: None,
                 output: None,
+                exists: false,
                 up_to_date: false,
                 error: Some("missing config".to_string()),
             },
         ];
 
+        let report = profiles::ProfileCheckReport {
+            path: PathBuf::from("profiles.json"),
+            entries,
+        };
         assert_eq!(
-            profile_check_counts(&entries),
-            ProfileCheckCounts {
+            report.counts(),
+            profiles::ProfileCheckCounts {
                 profile_count: 3,
                 ok_count: 1,
                 stale_count: 1,

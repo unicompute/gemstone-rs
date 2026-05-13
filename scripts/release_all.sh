@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${1:-0.2.1}"
+VERSION="${1:-0.2.2}"
 DRY_RUN="${DRY_RUN:-1}"
 PUBLISH_CRATES="${PUBLISH_CRATES:-0}"
 PUBLISH_VSIX="${PUBLISH_VSIX:-0}"
@@ -76,8 +76,10 @@ Highlights:
 - \`--env-file .env.gemstone-rs\` support across CLI and explorer startup.
 - Workbench automatically passes the configured env file when it exists.
 - \`codegen explain --json\` and \`codegen explain-profile --json\` for structured Codegen summaries.
-- Codegen schemas and generated-wrapper compile smoke checks.
+- Shared \`profile check --json\` report model for CLI, explorer, and VS Code.
+- Codegen/profile-check schemas and generated-wrapper compile smoke checks.
 - Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
+- Explorer project profile status table with Preview/Diff/Check/Generate actions.
 - VS Code commands for rendering setup assistant and Codegen explain reports.
 - Clearer object-mapping path diagnostics for nested fields and arrays.
 

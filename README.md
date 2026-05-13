@@ -427,13 +427,13 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.1.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.4.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:
 
 ```bash
-scripts/publish_verify.sh 0.2.1
+scripts/publish_verify.sh 0.2.2
 ```
 
 The verification script checks crates.io package versions, installs

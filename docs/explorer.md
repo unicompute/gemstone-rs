@@ -169,7 +169,9 @@ type and GemStone class, then use:
   project-level profile file; the server rejects invalid profile schemas and
   the browser reports which profiles are new, replaced, or unchanged
 - `Check Project Profiles` to verify every profile in the project profile file
-  and show ok/stale/error counts in one report
+  and show ok/stale/error counts in one report; the detail pane renders a
+  table with profile name, config path, output file, freshness, and per-profile
+  Preview, Diff, Check, and Generate actions
 - `Load Config` to read the selected config file into the editor
 - `Save Config` to POST the editor contents, validate them, and write the file
   when the explorer was started with `--allow-write`

@@ -9,6 +9,7 @@ const schemaNames = [
   "gemstone-rs.codegen.schema.json",
   "gemstone-rs.codegen-explain.schema.json",
   "gemstone-rs.codegen-profiles.schema.json",
+  "gemstone-rs.profile-check.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -64,6 +65,25 @@ const profileExplainOutput = childProcess.execFileSync(
   }
 );
 assertExplain(JSON.parse(lastJsonLine(profileExplainOutput)));
+const profileCheckOutput = childProcess.execFileSync(
+  "cargo",
+  [
+    "run",
+    "-p",
+    "gemstone-rs-cli",
+    "--",
+    "profile",
+    "check",
+    "--json",
+    "examples/codegen/gemstone-rs.codegen-profiles.json",
+  ],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+assertProfileCheck(JSON.parse(lastJsonLine(profileCheckOutput)));
 assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 
 console.log("gemstone-rs codegen schema checks passed");
@@ -126,5 +146,36 @@ function assertProfiles(value) {
         assert.strictEqual(typeof profile[key], "string", `profiles[${index}].${key}`);
       }
     }
+  }
+}
+
+function assertProfileCheck(value) {
+  assert.strictEqual(value.success, true);
+  assert.strictEqual(typeof value.ok, "boolean");
+  assert.strictEqual(typeof value.path, "string");
+  assert.strictEqual(typeof value.profileFile, "string");
+  assert.strictEqual(typeof value.profileCount, "number");
+  assert.strictEqual(typeof value.okCount, "number");
+  assert.strictEqual(typeof value.staleCount, "number");
+  assert.strictEqual(typeof value.errorCount, "number");
+  assert(Array.isArray(value.profiles));
+  assert.strictEqual(value.profileCount, value.profiles.length);
+  for (const [index, profile] of value.profiles.entries()) {
+    assert.strictEqual(typeof profile.name, "string", `profiles[${index}].name`);
+    assert.strictEqual(typeof profile.ok, "boolean", `profiles[${index}].ok`);
+    assert(
+      profile.config === null || typeof profile.config === "string",
+      `profiles[${index}].config`
+    );
+    assert(
+      profile.output === null || typeof profile.output === "string",
+      `profiles[${index}].output`
+    );
+    assert.strictEqual(typeof profile.exists, "boolean", `profiles[${index}].exists`);
+    assert.strictEqual(typeof profile.upToDate, "boolean", `profiles[${index}].upToDate`);
+    assert(
+      profile.error === null || typeof profile.error === "string",
+      `profiles[${index}].error`
+    );
   }
 }
