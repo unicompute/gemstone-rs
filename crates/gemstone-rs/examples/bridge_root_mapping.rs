@@ -5,6 +5,7 @@
 // bridge root: GemStoneRsBridgeRoot
 // MyTestDict OOP: <number>
 // loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
+// loaded labels: {"source": "manual"}
 
 use gemstone_rs::{BridgeDictionary, BridgeFieldWrite, BridgeMapped, BridgeValue, Config, Session};
 use std::collections::BTreeMap;
@@ -61,11 +62,17 @@ fn main() -> gemstone_rs::Result<()> {
     let loaded: BookingDraft = bridge_root.get_mapped("MyTestDict")?;
     assert_eq!(loaded, payload);
 
+    bridge_root.put_field("MyTestLabels", &payload.labels)?;
+    let loaded_labels: BTreeMap<String, String> = bridge_root.get_map("MyTestLabels")?;
+    assert_eq!(loaded_labels, payload.labels);
+
     println!("bridge root: {}", bridge_root.name());
     println!("bridge root OOP: {}", bridge_root.oop().raw());
     println!("MyTestDict OOP: {}", stored.raw());
     println!("loaded payload: {loaded:?}");
+    println!("loaded labels: {loaded_labels:?}");
 
+    bridge_root.remove("MyTestLabels")?;
     bridge_root.commit()?;
     Ok(())
 }

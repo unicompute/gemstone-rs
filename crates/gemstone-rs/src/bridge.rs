@@ -179,6 +179,24 @@ impl From<Value> for BridgeValue {
     }
 }
 
+impl<T: BridgeFieldWrite> From<Vec<T>> for BridgeValue {
+    fn from(value: Vec<T>) -> Self {
+        value.to_bridge_field_value()
+    }
+}
+
+impl<T: BridgeFieldWrite> From<BTreeMap<String, T>> for BridgeValue {
+    fn from(value: BTreeMap<String, T>) -> Self {
+        value.to_bridge_field_value()
+    }
+}
+
+impl<T: BridgeFieldWrite> From<Option<T>> for BridgeValue {
+    fn from(value: Option<T>) -> Self {
+        value.to_bridge_field_value()
+    }
+}
+
 pub trait BridgeFieldWrite {
     fn to_bridge_field_value(&self) -> BridgeValue;
 }
@@ -204,6 +222,12 @@ impl BridgeFieldWrite for i32 {
 impl BridgeFieldWrite for String {
     fn to_bridge_field_value(&self) -> BridgeValue {
         BridgeValue::String(self.clone())
+    }
+}
+
+impl BridgeFieldWrite for str {
+    fn to_bridge_field_value(&self) -> BridgeValue {
+        BridgeValue::String(self.to_string())
     }
 }
 
@@ -505,6 +529,19 @@ impl<'a> BridgeRoot<'a> {
         self.put(key, value.to_bridge_value())
     }
 
+    pub fn put_field<T: BridgeFieldWrite + ?Sized>(&mut self, key: &str, value: &T) -> Result<Oop> {
+        self.put_field_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_field_with_key_type<T: BridgeFieldWrite + ?Sized>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &T,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, value.to_bridge_field_value())
+    }
+
     pub fn get_oop(&mut self, key: &str) -> Result<Oop> {
         self.get_oop_with_key_type(key, BridgeKeyType::String)
     }
@@ -549,14 +586,33 @@ impl<'a> BridgeRoot<'a> {
         Ok(BridgeDictionary::from_oop(self.session, oop))
     }
 
+    pub fn get_field<T: BridgeFieldRead>(&mut self, key: &str) -> Result<T> {
+        self.get_field_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_field_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<T> {
+        let mut dictionary = BridgeDictionary::from_oop(self.session, self.oop);
+        BridgeFieldRead::read_bridge_field(&mut dictionary, key, key_type)
+    }
+
     pub fn get_mapped<T: BridgeMapped>(&mut self, key: &str) -> Result<T> {
-        let context = BridgeFieldContext::new(
-            key,
-            BridgeKeyType::String,
-            <T as BridgeFieldRead>::expected_type(),
-        );
-        let oop = self.get_oop(key)?;
-        T::read_bridge_oop(self.session, oop, &context)
+        self.get_field(key)
+    }
+
+    pub fn get_vec<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Vec<T>> {
+        self.get_field(key)
+    }
+
+    pub fn get_map<T: BridgeFieldRead>(&mut self, key: &str) -> Result<BTreeMap<String, T>> {
+        self.get_field(key)
+    }
+
+    pub fn get_optional<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Option<T>> {
+        self.get_field(key)
     }
 
     pub fn remove(&mut self, key: &str) -> Result<Oop> {
@@ -650,6 +706,19 @@ impl<'a> BridgeDictionary<'a> {
         Ok(value)
     }
 
+    pub fn put_field<T: BridgeFieldWrite + ?Sized>(&mut self, key: &str, value: &T) -> Result<Oop> {
+        self.put_field_with_key_type(key, BridgeKeyType::String, value)
+    }
+
+    pub fn put_field_with_key_type<T: BridgeFieldWrite + ?Sized>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &T,
+    ) -> Result<Oop> {
+        self.put_with_key_type(key, key_type, value.to_bridge_field_value())
+    }
+
     pub fn at_oop(&mut self, key: &str) -> Result<Oop> {
         self.at_oop_with_key_type(key, BridgeKeyType::String)
     }
@@ -727,7 +796,7 @@ impl<'a> BridgeDictionary<'a> {
         key: &str,
         key_type: BridgeKeyType,
     ) -> Result<T> {
-        BridgeFieldRead::read_bridge_field(self, key, key_type)
+        self.at_field_with_key_type(key, key_type)
     }
 
     pub fn at_vec<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Vec<T>> {
@@ -739,7 +808,7 @@ impl<'a> BridgeDictionary<'a> {
         key: &str,
         key_type: BridgeKeyType,
     ) -> Result<Vec<T>> {
-        BridgeFieldRead::read_bridge_field(self, key, key_type)
+        self.at_field_with_key_type(key, key_type)
     }
 
     pub fn at_map<T: BridgeFieldRead>(&mut self, key: &str) -> Result<BTreeMap<String, T>> {
@@ -751,6 +820,30 @@ impl<'a> BridgeDictionary<'a> {
         key: &str,
         key_type: BridgeKeyType,
     ) -> Result<BTreeMap<String, T>> {
+        self.at_field_with_key_type(key, key_type)
+    }
+
+    pub fn at_optional<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Option<T>> {
+        self.at_optional_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn at_optional_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<Option<T>> {
+        self.at_field_with_key_type(key, key_type)
+    }
+
+    pub fn at_field<T: BridgeFieldRead>(&mut self, key: &str) -> Result<T> {
+        self.at_field_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn at_field_with_key_type<T: BridgeFieldRead>(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<T> {
         BridgeFieldRead::read_bridge_field(self, key, key_type)
     }
 }
@@ -996,6 +1089,33 @@ mod tests {
         assert_eq!(
             some.to_bridge_field_value(),
             BridgeValue::String("reference".to_string())
+        );
+    }
+
+    #[test]
+    fn bridge_value_from_collections_uses_field_conversions() {
+        let values = BridgeValue::from(vec!["priority".to_string(), "demo".to_string()]);
+        let BridgeValue::Array(values) = values else {
+            panic!("expected array bridge value");
+        };
+        assert_eq!(values[0], BridgeValue::String("priority".to_string()));
+        assert_eq!(values[1], BridgeValue::String("demo".to_string()));
+
+        let labels = BTreeMap::from([("source".to_string(), "rust".to_string())]);
+        let BridgeValue::Dictionary(entries) = BridgeValue::from(labels) else {
+            panic!("expected dictionary bridge value");
+        };
+        assert_eq!(entries["source"], BridgeValue::String("rust".to_string()));
+
+        let none: BridgeValue = Option::<String>::None.into();
+        assert_eq!(none, BridgeValue::Nil);
+    }
+
+    #[test]
+    fn string_slices_write_string_fields() {
+        assert_eq!(
+            "hello".to_bridge_field_value(),
+            BridgeValue::String("hello".to_string())
         );
     }
 

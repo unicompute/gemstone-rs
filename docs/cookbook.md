@@ -117,12 +117,15 @@ The handle releases automatically on drop if `release()` is not called.
 
 ```rust
 use gemstone_rs::{BridgeValue, Config, Session};
+use std::collections::BTreeMap;
 
 let mut session = Session::login(Config::from_env()?)?;
+let labels = BTreeMap::from([("source".to_string(), "cookbook".to_string())]);
 let payload = BridgeValue::dictionary([
     ("name".to_string(), BridgeValue::from("Tariq")),
     ("amount".to_string(), BridgeValue::from(100_i64)),
     ("currency".to_string(), BridgeValue::from("GBP")),
+    ("labels".to_string(), BridgeValue::from(labels)),
 ]);
 
 let mut bridge_root = session.bridge_root()?;
@@ -172,6 +175,10 @@ let mut bridge_root = session.bridge_root()?;
 bridge_root.put_mapped("CookbookBookingDraft", &draft)?;
 let loaded: BookingDraft = bridge_root.get_mapped("CookbookBookingDraft")?;
 assert_eq!(loaded.labels["source"], "cookbook");
+
+bridge_root.put_field("CookbookLabels", &draft.labels)?;
+let labels: BTreeMap<String, String> = bridge_root.get_map("CookbookLabels")?;
+assert_eq!(labels["source"], "cookbook");
 ```
 
 Use map fields for string-keyed metadata or lookup tables. Use nested

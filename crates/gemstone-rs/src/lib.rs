@@ -1424,11 +1424,16 @@ mod tests {
         let payload_oop = bridge_root.put_mapped(&key, &payload)?;
         let stored = bridge_root.get_oop(&key)?;
         assert_eq!(payload_oop, stored);
+        let labels_key = live_key("GemStoneRsBridgeLabels");
+        bridge_root.put_field(&labels_key, &payload.labels)?;
+        let labels: BTreeMap<String, String> = bridge_root.get_map(&labels_key)?;
+        assert_eq!(labels, payload.labels);
         let keys = bridge_root.keys()?;
         assert!(keys.iter().any(|entry| entry.print_string.contains(&key)));
         let loaded: TestBookingDraft = bridge_root.get_mapped(&key)?;
         assert_eq!(loaded, payload);
         bridge_root.remove(&key)?;
+        bridge_root.remove(&labels_key)?;
         bridge_root.commit()?;
         Ok(())
     }

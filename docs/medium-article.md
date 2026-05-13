@@ -402,6 +402,13 @@ GemStone dictionary represents metadata or lookup values, and use a nested
 also accepts `Map<String, T>` as a shorter spelling and `Dictionary<T>` as an
 alias for `BTreeMap<String, T>`.
 
+For one-off scripts, the typed BridgeRoot helpers avoid manual conversion:
+
+```rust
+bridge_root.put_field("BookingLabels", &draft.labels)?;
+let labels: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
+```
+
 Generate a mapping proposal from a live stone:
 
 ```bash

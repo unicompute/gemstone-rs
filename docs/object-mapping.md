@@ -15,8 +15,13 @@ The initial mapping layer supports:
 - `Session::bridge_root_named(name)`
 - `BridgeRoot::put`
 - `BridgeRoot::put_mapped`
+- `BridgeRoot::put_field`
 - `BridgeRoot::get_oop`
 - `BridgeRoot::get_value`
+- `BridgeRoot::get_field`
+- `BridgeRoot::get_vec`
+- `BridgeRoot::get_map`
+- `BridgeRoot::get_optional`
 - `BridgeRoot::get_string`
 - `BridgeRoot::get_smallint`
 - `BridgeRoot::get_bool`
@@ -34,8 +39,12 @@ The initial mapping layer supports:
 - `BridgeDictionary::at_smallint`
 - `BridgeDictionary::at_bool`
 - `BridgeDictionary::at_dictionary`
+- `BridgeDictionary::at_field`
 - `BridgeDictionary::at_mapped`
 - `BridgeDictionary::at_vec`
+- `BridgeDictionary::at_map`
+- `BridgeDictionary::at_optional`
+- `BridgeDictionary::put_field`
 - `BridgeDictionary::contains_key`
 - `BridgeDictionary::keys`
 - `BridgeKey`
@@ -151,6 +160,10 @@ fn main() -> gemstone_rs::Result<()> {
     let loaded: BookingDraft = bridge_root.get_mapped("MyTestDict")?;
     assert_eq!(loaded, draft);
 
+    bridge_root.put_field("MyTestLabels", &draft.labels)?;
+    let labels: BTreeMap<String, String> = bridge_root.get_map("MyTestLabels")?;
+    assert_eq!(labels, draft.labels);
+
     bridge_root.commit()?;
     Ok(())
 }
@@ -168,6 +181,7 @@ Expected output includes:
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
 loaded payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", labels: {"source": "manual"} }
+loaded labels: {"source": "manual"}
 ```
 
 ## Derive-Based Mapping
