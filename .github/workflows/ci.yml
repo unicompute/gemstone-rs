@@ -47,6 +47,7 @@ jobs:
       - run: cargo run -p gemstone-rs-cli -- profile check --json examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
       - run: diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
+      - run: python3 scripts/release_asset_checks_test.py
       - run: REQUIRE_EXPLORER_SMOKE=1 python3 scripts/explorer_endpoint_smoke.py
       - run: cargo package -p gemstone-gci --no-verify
 
