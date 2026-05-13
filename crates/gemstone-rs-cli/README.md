@@ -8,10 +8,11 @@ The binary name is `gemstone-rs`:
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --strict
+cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
-cargo run -p gemstone-rs-cli -- eval "3 + 4"
+cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
 cargo run -p gemstone-rs-cli -- browse protocols Object
@@ -28,6 +29,7 @@ cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
@@ -59,7 +61,9 @@ Use `gemstone-rs env sample` to print a copy-pasteable shell export template.
 It reuses current non-secret values when they are set and always prints password
 placeholders instead of real secrets. Use `gemstone-rs env write` to write the
 same template to `.env.gemstone-rs`; pass a path to choose another file, and
-pass `--force` to overwrite an existing file.
+pass `--force` to overwrite an existing file. `doctor --env-file` and
+`eval --env-file` load that file for one command, which is useful in CI and in
+shells where you do not want to source the file globally.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`

@@ -143,6 +143,7 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
     if request.method != "GET"
         && !(request.method == "POST" && route.path == "/api/codegen/config/save")
         && !(request.method == "POST" && route.path == "/api/codegen/profiles/save")
+        && !(request.method == "POST" && route.path == "/api/env/write")
     {
         return Response::json(405, r#"{"error":"method not allowed"}"#.to_string());
     }
@@ -152,6 +153,14 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
         "/health" => Response::json(200, r#"{"status":"ok"}"#.to_string()),
         "/api/config" => Response::json(200, config_json(config)),
         "/api/doctor" => doctor_response(bool_query(route.query("live").as_deref())),
+        "/api/env/sample" => env_sample_response(),
+        "/api/env/write" => {
+            if config.read_only {
+                Response::json(403, r#"{"error":"writes disabled"}"#.to_string())
+            } else {
+                env_write_response(&route, config)
+            }
+        }
         "/api/status" => live_json(|session| {
             let needs_commit = session.needs_commit()?;
             let in_transaction = session.in_transaction()?;
@@ -299,6 +308,7 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
         }
         "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route, config),
         "/api/codegen/preview" => codegen_preview_response(&route, config),
+        "/api/codegen/explain" => codegen_explain_response(&route, config),
         "/api/codegen/diff" => codegen_diff_response(&route, config),
         "/api/codegen/check" => codegen_check_response(&route, config),
         "/api/codegen/generate" => {
@@ -527,6 +537,53 @@ fn doctor_response(live: bool) -> Response {
     )
 }
 
+fn env_sample_response() -> Response {
+    Response::json(
+        200,
+        format!(
+            r#"{{"success":true,"source":"{}"}}"#,
+            escape_json(&env_template_source())
+        ),
+    )
+}
+
+fn env_write_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = match codegen_write_path(route, config, "path", ".env.gemstone-rs") {
+        Ok(path) => path,
+        Err(err) => return Response::json(400, format!(r#"{{"error":"{}"}}"#, escape_json(&err))),
+    };
+    if let Some(parent) = path.parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            return Response::json(
+                500,
+                format!(
+                    r#"{{"success":false,"path":"{}","error":"{}"}}"#,
+                    escape_json(&path.display().to_string()),
+                    escape_json(&err.to_string())
+                ),
+            );
+        }
+    }
+    let source = env_template_source();
+    match fs::write(&path, source) {
+        Ok(()) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"path":"{}"}}"#,
+                escape_json(&path.display().to_string())
+            ),
+        ),
+        Err(err) => Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"path":"{}","error":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
 fn live_json(body: impl FnOnce(&mut Session) -> gemstone_rs::Result<String>) -> Response {
     match Session::login(match Config::from_env() {
         Ok(config) => config,
@@ -632,6 +689,72 @@ fn bool_query(value: Option<&str>) -> bool {
         value.map(str::trim).map(str::to_ascii_lowercase).as_deref(),
         Some("1" | "true" | "yes" | "on")
     )
+}
+
+fn env_template_source() -> String {
+    let stone = env::var("GS_STONE")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            env::var("GS_STONE_NAME")
+                .ok()
+                .filter(|value| !value.is_empty())
+        })
+        .unwrap_or_else(|| "gs64stone".to_string());
+    let stone_alias = env::var("GS_STONE_NAME")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| stone.clone());
+    let mut output = String::new();
+    output.push_str("# gemstone-rs GemStone/S environment template\n");
+    output.push_str(
+        "# Password values are placeholders and are never copied from the current environment.\n\n",
+    );
+    append_env_export(
+        &mut output,
+        "GS_LIB",
+        &env::var("GS_LIB").unwrap_or_else(|_| "/opt/gemstone/product/lib".to_string()),
+    );
+    output.push_str("# export GS_LIB_PATH='/full/path/to/libgcirpc.dylib'\n");
+    append_env_export(&mut output, "GS_STONE", &stone);
+    append_env_export(&mut output, "GS_STONE_NAME", &stone_alias);
+    append_env_export(
+        &mut output,
+        "GS_HOST",
+        &env::var("GS_HOST").unwrap_or_else(|_| "localhost".to_string()),
+    );
+    append_env_export(
+        &mut output,
+        "GS_NETLDI",
+        &env::var("GS_NETLDI").unwrap_or_else(|_| "netldi".to_string()),
+    );
+    append_env_export(
+        &mut output,
+        "GS_GEM_SERVICE",
+        &env::var("GS_GEM_SERVICE").unwrap_or_else(|_| "gemnetobject".to_string()),
+    );
+    append_env_export(
+        &mut output,
+        "GS_USERNAME",
+        &env::var("GS_USERNAME").unwrap_or_else(|_| "DataCurator".to_string()),
+    );
+    append_env_export(&mut output, "GS_PASSWORD", "<set-your-password>");
+    output.push_str("# export GS_HOST_USERNAME='host-user-if-needed'\n");
+    output.push_str("# export GS_HOST_PASSWORD='<set-host-password-if-needed>'\n");
+    output.push_str("\n# Verify after editing:\n# gemstone-rs doctor --env-file .env.gemstone-rs\n# gemstone-rs doctor --env-file .env.gemstone-rs --live\n");
+    output
+}
+
+fn append_env_export(output: &mut String, name: &str, value: &str) {
+    output.push_str("export ");
+    output.push_str(name);
+    output.push('=');
+    output.push_str(&shell_quote(value));
+    output.push('\n');
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
 
 fn codegen_root_path(route: &Route, config: &ExplorerConfig) -> PathBuf {
@@ -985,6 +1108,21 @@ fn codegen_preview_response(route: &Route, config: &ExplorerConfig) -> Response 
                 escape_json(&path.display().to_string()),
                 escape_json(&generated.output.display().to_string()),
                 escape_json(&generated.source)
+            ),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_explain_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
+    match codegen::Config::from_file(&path) {
+        Ok(config) => Response::json(
+            200,
+            format!(
+                r#"{{"success":true,"config":"{}","explain":{}}}"#,
+                escape_json(&path.display().to_string()),
+                codegen::explain_json(&config)
             ),
         ),
         Err(err) => codegen_error_response(err),
@@ -1424,10 +1562,13 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <h2>BridgeRoot and Codegen</h2>
 <div class="actions">
 <button onclick="callApi('/api/doctor?live=1')">Doctor Live</button>
+<button class="secondary" onclick="showEnvTemplate()">Show Env Template</button>
+<button class="secondary" onclick="writeEnvTemplate()">Write .env.gemstone-rs</button>
 <button onclick="callApi('/api/status')">Status</button>
 <button onclick="callApi('/api/bridge/root')">BridgeRoot</button>
 <button onclick="loadBridgeKeys()">Keys</button>
 </div>
+<label>Env file path<input id="envFilePath" value=".env.gemstone-rs"></label>
 <div class="row">
 <label>Bridge key<input id="bridgeKey" value="WorkbenchDraft"></label>
 <label>Bridge value<input id="bridgeValue" value="hello"></label>
@@ -1465,6 +1606,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="saveCodegenConfig()">Save Config</button>
 <button class="secondary" onclick="codegenSample()">Sample Config</button>
 <button class="secondary" onclick="discoverMappingConfig()">Discover Mapping</button>
+<button class="secondary" onclick="codegenExplain()">Explain</button>
 <button class="secondary" onclick="codegenPreview()">Preview</button>
 <button class="secondary" onclick="codegenDiff()">Diff</button>
 <button class="secondary" onclick="codegenCheck()">Check</button>
@@ -1526,6 +1668,8 @@ async function callApi(path, options = {}) {
 function renderDetail(data) {
   if (typeof data.diff === 'string') {
     renderDiff(data.diff || 'No generated output changes.');
+  } else if (data.explain && typeof data.explain === 'object') {
+    detail.textContent = renderCodegenExplain(data.explain);
   } else if (typeof data.source === 'string') {
     detail.textContent = data.source;
   } else if (typeof data.config === 'string') {
@@ -1535,6 +1679,28 @@ function renderDetail(data) {
   } else {
     detail.textContent = 'No generated source, config, or diff in this response.';
   }
+}
+function renderCodegenExplain(explain) {
+  const lines = [
+    'Output: ' + (explain.output || '-'),
+    'Test stubs: ' + ((explain.testStubs || []).join(', ') || '-'),
+    '',
+    'Classes:'
+  ];
+  for (const cls of explain.classes || []) {
+    lines.push('  ' + cls.name + ' methods=' + ((cls.methods || []).length));
+    for (const method of cls.methods || []) {
+      lines.push('    ' + method.selector + '(' + (method.args || []).join(', ') + ') -> ' + method.return);
+    }
+  }
+  lines.push('', 'Mapped:');
+  for (const mapped of explain.mapped || []) {
+    lines.push('  ' + mapped.name + ' fields=' + ((mapped.fields || []).length));
+    for (const field of mapped.fields || []) {
+      lines.push('    ' + field.name + ' key=' + field.key + ' keyType=' + field.keyType + ' type=' + field.type);
+    }
+  }
+  return lines.join('\n');
 }
 function renderDiff(diff) {
   detail.className = 'detail diff';
@@ -1583,7 +1749,7 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;');
 }
 function persistFields() {
-  const ids = ['dictionary', 'className', 'protocol', 'selector', 'bridgeKey', 'bridgeValue', 'bridgeKeyType', 'bridgeValueType', 'codegenConfig', 'codegenRoot', 'configEditor', 'mappedName', 'mappingClass', 'profileName', 'profileFile'];
+  const ids = ['dictionary', 'className', 'protocol', 'selector', 'envFilePath', 'bridgeKey', 'bridgeValue', 'bridgeKeyType', 'bridgeValueType', 'codegenConfig', 'codegenRoot', 'configEditor', 'mappedName', 'mappingClass', 'profileName', 'profileFile'];
   for (const id of ids) {
     const element = document.getElementById(id);
     const key = 'gemstone-rs-explorer:' + id;
@@ -1665,6 +1831,13 @@ function putBridgeValue() {
   callApi('/api/bridge/put?' + bridgeQuery() + '&value=' + q('bridgeValue') + '&value_type=' + q('bridgeValueType'));
 }
 function removeBridgeValue() { callApi('/api/bridge/remove?' + bridgeQuery()); }
+async function showEnvTemplate() {
+  await callApi('/api/env/sample');
+}
+async function writeEnvTemplate() {
+  const query = 'path=' + q('envFilePath') + codegenRootQuery();
+  await callApi('/api/env/write?' + query, { method: 'POST' });
+}
 function setConfigEditor(source) {
   const editor = document.getElementById('configEditor');
   editor.value = source;
@@ -1957,6 +2130,7 @@ async function discoverMappingConfig() {
   if (typeof data.config === 'string') setConfigEditor(data.config);
 }
 function codegenPreview() { rememberCodegenConfig(); callApi('/api/codegen/preview?' + codegenQuery()); }
+function codegenExplain() { rememberCodegenConfig(); callApi('/api/codegen/explain?' + codegenQuery()); }
 function codegenDiff() { rememberCodegenConfig(); callApi('/api/codegen/diff?' + codegenQuery()); }
 function codegenCheck() { rememberCodegenConfig(); callApi('/api/codegen/check?' + codegenQuery()); }
 function codegenGenerate() { rememberCodegenConfig(); callApi('/api/codegen/generate?' + codegenQuery()); }
@@ -2186,6 +2360,9 @@ mod tests {
         assert!(response.body.contains("profileFile"));
         assert!(response.body.contains("importSummary"));
         assert!(response.body.contains("configEditor"));
+        assert!(response.body.contains("envFilePath"));
+        assert!(response.body.contains("showEnvTemplate()"));
+        assert!(response.body.contains("writeEnvTemplate()"));
         assert!(response.body.contains("loadCodegenConfigs()"));
         assert!(response.body.contains("pickCodegenConfig()"));
         assert!(response.body.contains("loadRecentCodegenConfigs()"));
@@ -2207,6 +2384,7 @@ mod tests {
         assert!(response.body.contains("saveCodegenConfig()"));
         assert!(response.body.contains("method: 'POST'"));
         assert!(response.body.contains("discoverMappingConfig()"));
+        assert!(response.body.contains("codegenExplain()"));
         assert!(response.body.contains("bridgeKeyType"));
         assert!(response.body.contains("bridgeValueType"));
         assert!(response.body.contains("Generated Source / Config / Diff"));
@@ -2217,9 +2395,12 @@ mod tests {
         assert!(response.body.contains("read_only=true"));
         assert!(response.body.contains("allow_eval=false"));
         assert!(response.body.contains("/api/doctor"));
+        assert!(response.body.contains("/api/env/sample"));
+        assert!(response.body.contains("/api/env/write"));
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
         assert!(response.body.contains("/api/codegen/configs"));
+        assert!(response.body.contains("/api/codegen/explain"));
         assert!(response.body.contains("/api/codegen/check"));
     }
 
@@ -2333,6 +2514,22 @@ mod tests {
     }
 
     #[test]
+    fn env_sample_endpoint_returns_safe_template() {
+        let response = handle_request("GET /api/env/sample HTTP/1.1", &ExplorerConfig::default());
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(
+            response
+                .body
+                .contains("export GS_PASSWORD='&lt;set-your-password&gt;'")
+                || response
+                    .body
+                    .contains("export GS_PASSWORD='<set-your-password>'")
+        );
+        assert!(!response.body.contains("change-me"));
+    }
+
+    #[test]
     fn codegen_config_endpoint_reads_config_text() {
         let config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../examples/codegen/gemstone-rs.codegen");
@@ -2345,6 +2542,26 @@ mod tests {
         assert!(response.body.contains(r#""success":true"#));
         assert!(response.body.contains("gemstone-rs codegen config"));
         assert!(response.body.contains("generated/gemstone_wrappers.rs"));
+    }
+
+    #[test]
+    fn codegen_explain_endpoint_reports_structured_summary() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+        let response = handle_request(
+            "GET /api/codegen/explain?config=examples/codegen/gemstone-rs.codegen HTTP/1.1",
+            &config,
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(response.body.contains(r#""explain":"#));
+        assert!(response
+            .body
+            .contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
+        assert!(response.body.contains(r#""selector":"printString""#));
     }
 
     #[test]
@@ -2396,6 +2613,41 @@ mod tests {
         );
         assert_eq!(response.status, 403);
         assert!(response.body.contains("allow-write"));
+    }
+
+    #[test]
+    fn env_write_is_disabled_by_default() {
+        let response = handle_request(
+            "POST /api/env/write?path=.env.gemstone-rs HTTP/1.1\r\ncontent-length: 0\r\n\r\n",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 403);
+        assert!(response.body.contains("writes disabled"));
+    }
+
+    #[test]
+    fn env_write_writes_template_when_enabled() {
+        let root = env::temp_dir().join(format!("gemstone-rs-explorer-env-{}", std::process::id()));
+        let path = root.join(".env.gemstone-rs");
+        let _ = fs::remove_dir_all(&root);
+        let config = ExplorerConfig {
+            read_only: false,
+            codegen_root: root.clone(),
+            ..ExplorerConfig::default()
+        };
+        let request = HttpRequest {
+            method: "POST".to_string(),
+            target: "/api/env/write?path=.env.gemstone-rs".to_string(),
+            body: String::new(),
+        };
+
+        let response = handle_http_request(&request, &config);
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""success":true"#));
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .contains("export GS_PASSWORD='<set-your-password>'"));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

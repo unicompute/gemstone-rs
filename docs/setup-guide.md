@@ -60,6 +60,13 @@ gemstone-rs env write .env.gemstone-rs --force
 ```
 
 It refuses to overwrite an existing file unless `--force` is passed.
+Use the file directly without sourcing it:
+
+```bash
+gemstone-rs doctor --env-file .env.gemstone-rs
+gemstone-rs doctor --env-file .env.gemstone-rs --live
+gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
+```
 
 Optional variables:
 
@@ -94,6 +101,7 @@ gemstone-rs env sample
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --strict
+gemstone-rs doctor --env-file .env.gemstone-rs --live
 gemstone-rs doctor --json
 gemstone-rs eval "3 + 4"
 ```
@@ -158,5 +166,5 @@ make vscode-package
 Verify already-published artifacts:
 
 ```bash
-scripts/publish_verify.sh 0.2.0
+scripts/publish_verify.sh 0.2.1
 ```

@@ -22,8 +22,10 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
       - run: cargo run -p gemstone-rs-cli -- env sample
+      - run: cargo run -p gemstone-rs-cli -- env write /tmp/gemstone-rs.env --force
       - run: cargo run -p gemstone-rs-cli -- codegen check examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
+      - run: cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
       - run: cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile validate examples/codegen/gemstone-rs.codegen-profiles.json
       - run: cargo run -p gemstone-rs-cli -- profile validate --json examples/codegen/gemstone-rs.codegen-profiles.json
@@ -82,7 +84,7 @@ jobs:
         run: python -m pip install weasyprint
       - run: npm ci
         working-directory: vscode-gemstone-rs-workbench
-      - run: DRY_RUN=1 scripts/release_all.sh 0.2.0
+      - run: DRY_RUN=1 scripts/release_all.sh 0.2.1
 
   live:
     name: Live GemStone

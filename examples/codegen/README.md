@@ -19,12 +19,14 @@ Preview without writing:
 ```bash
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 Generated wrappers include a small `#[cfg(test)]` surface-name test stub.
 `codegen explain` summarizes the output path, that test stub, wrapper methods,
-return helpers, and mapped fields before you write files.
+return helpers, and mapped fields before you write files. Add `--json` when a
+tool such as the explorer or VS Code needs a structured summary.
 
 The config format is intentionally line-oriented:
 

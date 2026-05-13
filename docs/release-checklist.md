@@ -2,6 +2,17 @@
 
 Use this checklist for coordinated crate, VSIX, and GitHub releases.
 
+## 0.2.1 / Workbench 0.3.1 Notes
+
+- CLI setup: `doctor --env-file`, `eval --env-file`, `doctor --strict`, and
+  safer `.env.gemstone-rs` template loading.
+- Codegen: `codegen explain --json` and a generated-wrapper compile smoke test.
+- Mapping: missing keys, nested dictionaries, and array reads now report richer
+  path context such as `booking.items[2]`.
+- Explorer: setup buttons for env sample/write and a structured Codegen
+  Explain action.
+- VS Code: `GemStone RS: Verify Strict Setup`.
+
 ## Before Release
 
 - Update crate versions in `Cargo.toml` files.
@@ -39,7 +50,7 @@ python3 docs/build_pdf_docs.py
 Or use the dry-run release wrapper:
 
 ```bash
-DRY_RUN=1 scripts/release_all.sh 0.2.0
+DRY_RUN=1 scripts/release_all.sh 0.2.1
 ```
 
 `make verify` checks that PDF generation completes and produces non-empty PDF
@@ -77,7 +88,7 @@ Run the release workflow:
 ```bash
 gh workflow run release.yml \
   --ref main \
-  -f version=0.2.0 \
+  -f version=0.2.1 \
   -f publish-crates=true \
   -f publish-vsix=true \
   -f create-github-release=true \
@@ -110,7 +121,7 @@ DRY_RUN=1 scripts/publish_crates.sh
 Manual end-to-end publishing remains available through the release wrapper:
 
 ```bash
-PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.0
+PUBLISH_CRATES=1 PUBLISH_VSIX=1 CREATE_GITHUB_RELEASE=1 VERIFY_PUBLIC=1 DRY_RUN=0 scripts/release_all.sh 0.2.1
 ```
 
 Dry-run mode checks each crate's publish file list locally. The real publish
@@ -122,7 +133,7 @@ crates continue.
 ## Post-Release Verification
 
 ```bash
-scripts/publish_verify.sh 0.2.0
+scripts/publish_verify.sh 0.2.1
 ```
 
 The script checks:
@@ -139,7 +150,7 @@ The script checks:
 To skip the GitHub Release asset check during early testing:
 
 ```bash
-VERIFY_GITHUB_RELEASE=0 scripts/publish_verify.sh 0.2.0
+VERIFY_GITHUB_RELEASE=0 scripts/publish_verify.sh 0.2.1
 ```
 
 ## Optional Live Smoke

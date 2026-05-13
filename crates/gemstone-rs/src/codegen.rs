@@ -628,6 +628,72 @@ pub fn explain(config: &Config) -> String {
     out
 }
 
+pub fn explain_json(config: &Config) -> String {
+    let classes = config
+        .classes
+        .iter()
+        .map(|class| {
+            let methods = class
+                .methods
+                .iter()
+                .map(|method| {
+                    format!(
+                        r#"{{"selector":"{}","args":[{}],"return":"{}","doc":{}}}"#,
+                        json_escape(&method.selector),
+                        json_string_array(&method.arg_names()),
+                        method.return_type.config_name(),
+                        optional_json_string(method.doc.as_deref())
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                r#"{{"name":"{}","dictionary":"{}","className":"{}","meta":{},"methods":[{}]}}"#,
+                json_escape(&class.class_ref.display_name()),
+                json_escape(&class.class_ref.dictionary),
+                json_escape(&class.class_ref.class_name),
+                class.class_ref.meta,
+                methods
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let mapped = config
+        .mapped
+        .iter()
+        .map(|mapped| {
+            let fields = mapped
+                .fields
+                .iter()
+                .map(|field| {
+                    format!(
+                        r#"{{"name":"{}","key":"{}","keyType":"{}","type":"{}","doc":{}}}"#,
+                        json_escape(&field.rust_name),
+                        json_escape(&field.key),
+                        field.key_type.config_name(),
+                        field.field_type.config_name(),
+                        optional_json_string(field.doc.as_deref())
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                r#"{{"name":"{}","doc":{},"fields":[{}]}}"#,
+                json_escape(&mapped.name),
+                optional_json_string(mapped.doc.as_deref()),
+                fields
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        r#"{{"output":"{}","testStubs":["generated_surface_names_are_stable"],"classes":[{}],"mapped":[{}]}}"#,
+        json_escape(&config.output.display().to_string()),
+        classes,
+        mapped
+    )
+}
+
 pub fn generate_to_file(config: &Config) -> Result<GeneratedCode> {
     let generated = generate(config);
     if let Some(parent) = generated.output.parent() {
@@ -1218,6 +1284,36 @@ fn rust_string_literal(value: &str) -> String {
     result
 }
 
+fn json_escape(value: &str) -> String {
+    let mut result = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '"' => result.push_str("\\\""),
+            '\\' => result.push_str("\\\\"),
+            '\n' => result.push_str("\\n"),
+            '\r' => result.push_str("\\r"),
+            '\t' => result.push_str("\\t"),
+            ch if ch.is_control() => result.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => result.push(ch),
+        }
+    }
+    result
+}
+
+fn json_string_array(values: &[String]) -> String {
+    values
+        .iter()
+        .map(|value| format!(r#""{}""#, json_escape(value)))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn optional_json_string(value: Option<&str>) -> String {
+    value
+        .map(|value| format!(r#""{}""#, json_escape(value)))
+        .unwrap_or_else(|| "null".to_string())
+}
+
 fn is_rust_keyword(value: &str) -> bool {
     matches!(
         value,
@@ -1352,6 +1448,11 @@ mod tests {
         assert!(explanation.contains("mapped: BookingDraft fields=1"));
         assert!(explanation
             .contains("field: BookingDraft.amount key=amount key_type=Symbol type=SmallInt"));
+        let json = explain_json(&config);
+        assert!(json.contains(r#""output":"./generated.rs""#));
+        assert!(json.contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
+        assert!(json.contains(r#""selector":"printString""#));
+        assert!(json.contains(r#""keyType":"Symbol""#));
         Ok(())
     }
 

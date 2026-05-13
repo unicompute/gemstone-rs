@@ -253,6 +253,9 @@ field tags[2] expected GemStone value type String, got OOP 1234
 Nested mapped read-back preserves the full field path, and array read-back
 reports the failing element index. Both are important when generated mappings
 read back nested payloads from a live stone.
+Lookup failures are also wrapped with the current path, so missing keys and
+invalid nested arrays point at `booking.items` or `booking.items[2]` instead of
+only returning a generic GemStone lookup error.
 
 ## Key Policy
 

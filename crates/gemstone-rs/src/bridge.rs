@@ -243,12 +243,11 @@ pub trait BridgeFieldRead: Sized {
         key: &str,
         key_type: BridgeKeyType,
     ) -> Result<Self> {
-        let oop = dictionary.at_oop_with_key_type(key, key_type)?;
-        Self::read_bridge_oop(
-            dictionary.session,
-            oop,
-            &BridgeFieldContext::new(key, key_type, Self::expected_type()),
-        )
+        let context = BridgeFieldContext::new(key, key_type, Self::expected_type());
+        let oop = dictionary
+            .at_oop_with_key_type(key, key_type)
+            .map_err(|err| context.lookup_error(err))?;
+        Self::read_bridge_oop(dictionary.session, oop, &context)
     }
 
     fn read_bridge_oop(
@@ -264,9 +263,11 @@ impl BridgeFieldRead for String {
     fn read_bridge_oop(
         session: &mut Session,
         oop: Oop,
-        _context: &BridgeFieldContext,
+        context: &BridgeFieldContext,
     ) -> Result<Self> {
-        session.fetch_string(oop)
+        session
+            .fetch_string(oop)
+            .map_err(|err| context.unexpected(format!("OOP {} ({err})", oop.raw())))
     }
 
     fn expected_type() -> &'static str {
@@ -340,19 +341,20 @@ impl<T: BridgeFieldRead> BridgeFieldRead for Vec<T> {
         oop: Oop,
         context: &BridgeFieldContext,
     ) -> Result<Self> {
-        let size = session.fetch_size(oop)?;
+        let size = session
+            .fetch_size(oop)
+            .map_err(|err| context.unexpected(format!("OOP {} ({err})", oop.raw())))?;
         if size < 0 {
-            return Err(Error::NegativeSize(size));
+            return Err(context.unexpected(format!("negative array size {size}")));
         }
         let mut values = Vec::with_capacity(size as usize);
         for index in 1..=size {
             let index_oop = session.smallint_oop(index);
-            let value_oop = session.perform_oop(oop, "at:", &[index_oop])?;
-            values.push(T::read_bridge_oop(
-                session,
-                value_oop,
-                &context.index(index, T::expected_type()),
-            )?);
+            let index_context = context.index(index, T::expected_type());
+            let value_oop = session
+                .perform_oop(oop, "at:", &[index_oop])
+                .map_err(|err| index_context.lookup_error(err))?;
+            values.push(T::read_bridge_oop(session, value_oop, &index_context)?);
         }
         Ok(values)
     }
@@ -470,8 +472,13 @@ impl<'a> BridgeRoot<'a> {
     }
 
     pub fn get_mapped<T: BridgeMapped>(&mut self, key: &str) -> Result<T> {
-        let mut dictionary = self.get_dictionary(key)?;
-        T::from_bridge_dictionary(&mut dictionary)
+        let context = BridgeFieldContext::new(
+            key,
+            BridgeKeyType::String,
+            <T as BridgeFieldRead>::expected_type(),
+        );
+        let oop = self.get_oop(key)?;
+        T::read_bridge_oop(self.session, oop, &context)
     }
 
     pub fn remove(&mut self, key: &str) -> Result<Oop> {
@@ -630,8 +637,7 @@ impl<'a> BridgeDictionary<'a> {
         key: &str,
         key_type: BridgeKeyType,
     ) -> Result<T> {
-        let mut dictionary = self.at_dictionary_with_key_type(key, key_type)?;
-        T::from_bridge_dictionary(&mut dictionary)
+        BridgeFieldRead::read_bridge_field(self, key, key_type)
     }
 
     pub fn at_vec<T: BridgeFieldRead>(&mut self, key: &str) -> Result<Vec<T>> {
@@ -674,6 +680,13 @@ impl BridgeFieldContext {
             field: format!("{} ({})", self.key, self.key_type.config_name()),
             expected: self.expected,
             actual,
+        }
+    }
+
+    fn lookup_error(&self, err: Error) -> Error {
+        match err {
+            Error::Mapping { .. } => self.nested_error(err),
+            other => self.unexpected(format!("lookup failed: {other}")),
         }
     }
 
@@ -777,6 +790,36 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "field booking.customer.name expected GemStone value type String, got OOP 1234"
+        );
+    }
+
+    #[test]
+    fn lookup_context_reports_missing_key_path() {
+        let context = BridgeFieldContext::new("booking.items", BridgeKeyType::String, "Array");
+        let err = context.lookup_error(Error::GemStone {
+            number: 2010,
+            fatal: false,
+            message: "key not found".to_string(),
+        });
+
+        assert_eq!(
+            err.to_string(),
+            "field booking.items (String) expected GemStone value type Array, got lookup failed: GemStone error #2010 fatal=false: key not found"
+        );
+    }
+
+    #[test]
+    fn nested_array_lookup_reports_index_path() {
+        let context = BridgeFieldContext::new("booking.items", BridgeKeyType::String, "Array");
+        let err = context.index(2, "Customer").lookup_error(Error::GemStone {
+            number: 2011,
+            fatal: false,
+            message: "index out of bounds".to_string(),
+        });
+
+        assert_eq!(
+            err.to_string(),
+            "field booking.items[2] (String) expected GemStone value type Customer, got lookup failed: GemStone error #2011 fatal=false: index out of bounds"
         );
     }
 }

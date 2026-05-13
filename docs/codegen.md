@@ -16,6 +16,7 @@ From a checkout:
 ```bash
 cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
@@ -66,7 +67,12 @@ names, return helpers, mapped structs, and BridgeRoot field mappings:
 
 ```bash
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 ```
+
+The JSON form is intended for editor and explorer integrations that want to
+render the output path, generated test stubs, class wrappers, selector
+arguments, return helpers, and mapped fields as structured data.
 
 Supported return types:
 

@@ -8,6 +8,7 @@ checked-in codegen sample under the repository-level `examples/` directory.
 ```bash
 gemstone-rs env sample
 gemstone-rs env write
+gemstone-rs doctor --env-file .env.gemstone-rs
 export GS_LIB=/opt/gemstone/product/lib
 export GS_STONE=gs64stone
 export GS_STONE_NAME=gs64stone
@@ -124,7 +125,7 @@ gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --strict
 gemstone-rs doctor --json
-gemstone-rs eval "3 + 4"
+gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
 gemstone-rs browse dictionaries
 gemstone-rs browse classes UserGlobals
 gemstone-rs browse protocols Object
@@ -135,6 +136,7 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 ```
 
 ## Codegen Workflow

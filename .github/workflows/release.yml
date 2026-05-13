@@ -6,7 +6,7 @@ on:
       version:
         description: "Version to release, without leading v"
         required: true
-        default: "0.2.0"
+        default: "0.2.1"
       publish-crates:
         description: "Publish crates.io packages"
         required: true

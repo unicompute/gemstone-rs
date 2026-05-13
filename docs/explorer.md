@@ -133,6 +133,10 @@ Expected:
 
 ## Codegen Endpoints
 
+The setup actions on the home page can show the same safe `GS_*` environment
+template as `gemstone-rs env sample`, or write `.env.gemstone-rs` when the
+explorer was started with `--allow-write`.
+
 The home page includes a Codegen Workflow panel. Set `Config path`, optionally
 set `Config root`, or start the server with `--codegen-root`. `Refresh Configs`
 and the `Known configs` picker choose an existing `.codegen` file relative to
@@ -161,6 +165,8 @@ type and GemStone class, then use:
   when the explorer was started with `--allow-write`
 - `Sample Config` to view the starter config format
 - `Discover Mapping` to ask a live stone for a mapping config proposal
+- `Explain` to render a structured codegen summary, including output path,
+  generated test stubs, wrappers, return helpers, and mapped fields
 - `Preview` to inspect generated Rust wrappers without writing files
 - `Diff` to compare generated output with the committed file; the detail pane
   shows both the exact unified diff and a side-by-side view for review
@@ -175,6 +181,7 @@ curl -s http://127.0.0.1:8787/api/codegen/sample
 curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
 curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/config?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/explain?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'
@@ -203,6 +210,8 @@ gemstone-rs-explorer --allow-write
 
 ```bash
 curl -s 'http://127.0.0.1:8787/api/codegen/generate?config=examples/codegen/gemstone-rs.codegen'
+curl -s -X POST \
+  'http://127.0.0.1:8787/api/env/write?path=.env.gemstone-rs'
 curl -s -X POST \
   --data-binary @gemstone-rs.codegen-profiles.json \
   'http://127.0.0.1:8787/api/codegen/profiles/save?profile_file=gemstone-rs.codegen-profiles.json'

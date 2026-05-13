@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${1:-0.2.0}"
+VERSION="${1:-0.2.1}"
 DRY_RUN="${DRY_RUN:-1}"
 PUBLISH_CRATES="${PUBLISH_CRATES:-0}"
 PUBLISH_VSIX="${PUBLISH_VSIX:-0}"

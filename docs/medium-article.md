@@ -111,17 +111,20 @@ Run the same check from the CLI:
 ```bash
 gemstone-rs env sample
 gemstone-rs env write
+gemstone-rs doctor --env-file .env.gemstone-rs
 gemstone-rs doctor
 gemstone-rs doctor --live
 gemstone-rs doctor --strict
 gemstone-rs doctor --json
-gemstone-rs eval "3 + 4"
+gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
 ```
 
 `env sample` prints a copy-pasteable setup script with placeholders for
 passwords, so a new shell can be configured without accidentally dumping
 secrets into docs, tickets, or chat. `env write` saves the same template to
-`.env.gemstone-rs` and refuses to overwrite unless `--force` is used.
+`.env.gemstone-rs` and refuses to overwrite unless `--force` is used. `doctor
+--env-file` and `eval --env-file` load that file for one command without
+requiring you to source it globally.
 
 The doctor report names the source used to select `libgcirpc`: explicit config,
 `GS_LIB_PATH`, `GS_LIB`, or `GEMSTONE/lib`, plus the exact path or directory
@@ -246,6 +249,7 @@ Commands:
 ```bash
 gemstone-rs codegen preview examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
+gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen diff examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
@@ -253,7 +257,8 @@ gemstone-rs codegen generate examples/codegen/gemstone-rs.codegen
 
 Generated wrapper files now include a small `#[cfg(test)]` surface-name test
 stub, and `codegen explain` reports that stub beside the classes, selectors,
-return helpers, and mapped fields that will be generated.
+return helpers, and mapped fields that will be generated. Add `--json` for the
+explorer or VS Code when they need the same summary as structured data.
 
 Generate a starter config from a live stone:
 
@@ -544,8 +549,8 @@ For CI and release confidence:
 
 ```bash
 make verify
-DRY_RUN=1 scripts/release_all.sh 0.2.0
-scripts/publish_verify.sh 0.2.0
+DRY_RUN=1 scripts/release_all.sh 0.2.1
+scripts/publish_verify.sh 0.2.1
 ```
 
 ---

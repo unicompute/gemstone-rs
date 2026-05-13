@@ -63,8 +63,9 @@ gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
+gemstone-rs doctor --env-file .env.gemstone-rs --live
 gemstone-rs doctor --json
-gemstone-rs eval "3 + 4"
+gemstone-rs eval --env-file .env.gemstone-rs "3 + 4"
 gemstone-rs-explorer --help
 ```
 
@@ -166,10 +167,11 @@ See [examples/README.md](examples/README.md) and
 cargo run -p gemstone-rs-cli -- doctor
 cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --strict
+cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
-cargo run -p gemstone-rs-cli -- eval "3 + 4"
+cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
 cargo run -p gemstone-rs-cli -- browse protocols Object
@@ -189,6 +191,7 @@ cargo run -p gemstone-rs-cli -- codegen preview examples/codegen/gemstone-rs.cod
 cargo run -p gemstone-rs-cli -- codegen diff examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check
 cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen
+cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen generate examples/codegen/gemstone-rs.codegen
 cargo run -p gemstone-rs-cli -- codegen check-profile default examples/codegen/gemstone-rs.codegen-profiles.json
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
@@ -203,10 +206,12 @@ or live stone connectivity. Add `--json` when release scripts or VS Code need
 structured output. `env sample` prints a safe shell export template for the
 same `GS_*` variables and replaces password values with placeholders.
 `env write` writes that template to `.env.gemstone-rs` or a chosen path and
-refuses to overwrite unless `--force` is passed. `doctor --strict` is intended
-for CI: it fails when the stone or GCI library source is only coming from
-defaults. GCI diagnostics also report whether the selected `libgcirpc` exists,
-is a file, is readable, and whether the path appears to be arm64 or x86_64.
+refuses to overwrite unless `--force` is passed. `doctor --env-file` and
+`eval --env-file` load that file without requiring the caller to source it in
+the shell. `doctor --strict` is intended for CI: it fails when the stone or GCI
+library source is only coming from defaults. GCI diagnostics also report
+whether the selected `libgcirpc` exists, is a file, is readable, and whether
+the path appears to be arm64 or x86_64.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.
@@ -405,13 +410,13 @@ Package the VS Code extension locally with:
 make vscode-package
 ```
 
-That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.0.vsix`.
+That writes `vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.1.vsix`.
 The generated `.vsix` and `node_modules/` are intentionally ignored.
 
 Verify published artifacts with:
 
 ```bash
-scripts/publish_verify.sh 0.2.0
+scripts/publish_verify.sh 0.2.1
 ```
 
 The verification script checks crates.io package versions, installs

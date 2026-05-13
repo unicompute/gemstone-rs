@@ -18,6 +18,7 @@ function activate(context) {
   register(context, "gemstoneRs.refreshExplorer", () => explorerProvider.refresh());
   register(context, "gemstoneRs.verifySetup", verifySetup);
   register(context, "gemstoneRs.verifyLiveSetup", verifyLiveSetup);
+  register(context, "gemstoneRs.verifyStrictSetup", verifyStrictSetup);
   register(context, "gemstoneRs.doctor", doctor);
   register(context, "gemstoneRs.showEnvironmentTemplate", showEnvironmentTemplate);
   register(context, "gemstoneRs.copyEnvironmentTemplate", copyEnvironmentTemplate);
@@ -183,6 +184,7 @@ class GemStoneTreeProvider {
         actionNode("Doctor", "gemstoneRs.doctor"),
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
         actionNode("Verify Live Setup", "gemstoneRs.verifyLiveSetup"),
+        actionNode("Verify Strict Setup", "gemstoneRs.verifyStrictSetup"),
         actionNode("Show Environment Template", "gemstoneRs.showEnvironmentTemplate"),
         actionNode("Copy Environment Template", "gemstoneRs.copyEnvironmentTemplate"),
         actionNode("Write .env.gemstone-rs", "gemstoneRs.writeEnvironmentTemplate"),
@@ -243,6 +245,15 @@ async function verifyLiveSetup() {
     title: "gemstone-rs Workbench live setup",
     success: "gemstone-rs live setup check passed.",
     failure: "gemstone-rs live setup check found issues. See GemStone RS output.",
+  });
+}
+
+async function verifyStrictSetup() {
+  await runSetupCheck({
+    args: ["doctor", "--strict"],
+    title: "gemstone-rs Workbench strict setup",
+    success: "gemstone-rs strict setup check passed.",
+    failure: "gemstone-rs strict setup check found issues. See GemStone RS output.",
   });
 }
 

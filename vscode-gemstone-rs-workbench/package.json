@@ -2,7 +2,7 @@
   "name": "gemstone-rs-workbench",
   "displayName": "gemstone-rs Workbench",
   "description": "VS Code commands for gemstone-rs CLI, codegen, and local explorer workflows.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "unicompute",
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -27,6 +27,7 @@
     "onCommand:gemstoneRs.refreshExplorer",
     "onCommand:gemstoneRs.verifySetup",
     "onCommand:gemstoneRs.verifyLiveSetup",
+    "onCommand:gemstoneRs.verifyStrictSetup",
     "onCommand:gemstoneRs.doctor",
     "onCommand:gemstoneRs.showEnvironmentTemplate",
     "onCommand:gemstoneRs.copyEnvironmentTemplate",
@@ -95,6 +96,10 @@
       {
         "command": "gemstoneRs.verifyLiveSetup",
         "title": "GemStone RS: Verify Live Setup"
+      },
+      {
+        "command": "gemstoneRs.verifyStrictSetup",
+        "title": "GemStone RS: Verify Strict Setup"
       },
       {
         "command": "gemstoneRs.doctor",

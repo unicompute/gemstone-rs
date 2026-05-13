@@ -14,7 +14,7 @@ code --install-extension unicompute.gemstone-rs-workbench
 From a local VSIX:
 
 ```bash
-code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.0.vsix --force
+code --install-extension vscode-gemstone-rs-workbench/gemstone-rs-workbench-0.3.1.vsix --force
 ```
 
 ## Source Checkout Settings
@@ -77,9 +77,10 @@ From the `Explorer` tree:
 
 1. Run `Verify Setup`.
 2. Run `Verify Live Setup` when credentials and a reachable stone are ready.
-3. Run `Eval Smalltalk` with `3 + 4`.
-4. Run `Launch Explorer`.
-5. Run `Open Explorer Webview`.
+3. Run `Verify Strict Setup` before release or CI validation.
+4. Run `Eval Smalltalk` with `3 + 4`.
+5. Run `Launch Explorer`.
+6. Run `Open Explorer Webview`.
 
 `Verify Setup` shows the active checkout, CLI, explorer, codegen config, and
 project profile paths beside the `gemstone-rs doctor` output. Use the result

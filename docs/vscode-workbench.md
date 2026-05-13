@@ -87,6 +87,7 @@ Commands:
 
 - `GemStone RS: Verify Setup`
 - `GemStone RS: Verify Live Setup`
+- `GemStone RS: Verify Strict Setup`
 - `GemStone RS: Doctor`
 - `GemStone RS: Show Environment Template`
 - `GemStone RS: Copy Environment Template`
@@ -129,10 +130,12 @@ Commands:
 `gemstone-rs doctor` report, so the workbench setup view and terminal setup
 use the same diagnostic path. `GemStone RS: Verify Live Setup` runs
 `gemstone-rs doctor --live` when credentials and a reachable stone are
-available. Both setup checks add the active checkout, CLI, explorer, codegen
-config, and profile paths, then offer result actions to copy the full report,
-copy a safe `GS_*` environment export script with a placeholder password, or
-open the extension settings.
+available. `GemStone RS: Verify Strict Setup` runs `gemstone-rs doctor
+--strict` for CI-style validation of explicit stone and GCI library settings.
+All setup checks add the active checkout, CLI, explorer, codegen config, and
+profile paths, then offer result actions to copy the full report, copy a safe
+`GS_*` environment export script with a placeholder password, or open the
+extension settings.
 
 `GemStone RS: Show Environment Template`, `GemStone RS: Copy Environment
 Template`, and `GemStone RS: Write .env.gemstone-rs` call the CLI
@@ -261,7 +264,7 @@ cd vscode-gemstone-rs-workbench
 npm ci
 npm run check
 npm run test:smoke
-npm run package -- --out gemstone-rs-workbench-0.3.0.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.1.vsix
 ```
 
 From the repository root:

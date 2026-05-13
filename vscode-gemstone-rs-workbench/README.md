@@ -35,6 +35,7 @@ For a source checkout:
 
 - `GemStone RS: Verify Setup`
 - `GemStone RS: Verify Live Setup`
+- `GemStone RS: Verify Strict Setup`
 - `GemStone RS: Doctor`
 - `GemStone RS: Show Environment Template`
 - `GemStone RS: Copy Environment Template`
@@ -106,11 +107,13 @@ terminal.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
 same masked environment and GCI-library checks as the terminal. `Verify Live
 Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
-are available. Both setup checks report the active checkout, CLI, explorer,
-codegen config, and profile paths. Their result actions can copy the setup
-report, copy a safe `GS_*` environment export script with a placeholder
-password, or open the extension settings. `Show Environment Template`, `Copy
-Environment Template`, and `Write .env.gemstone-rs` use the CLI
+are available. `Verify Strict Setup` runs `gemstone-rs doctor --strict` for
+CI-style validation of explicit stone and GCI library settings. All setup
+checks report the active checkout, CLI, explorer, codegen config, and profile
+paths. Their result actions can copy the setup report, copy a safe `GS_*`
+environment export script with a placeholder password, or open the extension
+settings. `Show Environment Template`, `Copy Environment Template`, and `Write
+.env.gemstone-rs` use the CLI
 `gemstone-rs env sample/write` commands so VS Code and terminal setup stay on
 the same safe template.
 
@@ -128,9 +131,9 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Profile, Resolve Project Profile, Check Project Profiles, Generate Mapping Config, Preview
   BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
   Key, and Run Generated Mapping Example.
-- `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Eval Smalltalk,
-  Show/Copy/Write Environment Template, Launch Explorer, and Open Explorer
-  Webview.
+- `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Verify Strict
+  Setup, Eval Smalltalk, Show/Copy/Write Environment Template, Launch Explorer,
+  and Open Explorer Webview.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with
@@ -150,5 +153,5 @@ Or from this directory:
 npm ci
 npm run check
 npm run test:smoke
-npm run package -- --out gemstone-rs-workbench-0.3.0.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.1.vsix
 ```

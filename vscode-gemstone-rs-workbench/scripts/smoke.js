@@ -25,6 +25,7 @@ const requiredCommands = [
   "gemstoneRs.openExplorerWebview",
   "gemstoneRs.launchExplorer",
   "gemstoneRs.verifyLiveSetup",
+  "gemstoneRs.verifyStrictSetup",
   "gemstoneRs.showEnvironmentTemplate",
   "gemstoneRs.copyEnvironmentTemplate",
   "gemstoneRs.writeEnvironmentTemplate",
@@ -76,6 +77,7 @@ assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview 
 assert(extensionSource.includes("Copy Env Script"), "verify setup should offer environment script copy");
 assert(extensionSource.includes("Open Settings"), "verify setup should offer settings shortcut");
 assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
+assert(extensionSource.includes('"doctor", "--strict"'), "verify strict setup should run doctor --strict");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
@@ -83,6 +85,7 @@ assert(readme.includes("Open Explorer Webview"), "README should mention the webv
 assert(readme.includes("Show Environment Template"), "README should mention environment template display");
 assert(readme.includes("Write .env.gemstone-rs"), "README should mention environment template writes");
 assert(readme.includes("Verify Live Setup"), "README should mention live setup verification");
+assert(readme.includes("Verify Strict Setup"), "README should mention strict setup verification");
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");

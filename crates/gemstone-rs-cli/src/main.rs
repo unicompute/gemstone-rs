@@ -36,8 +36,12 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         Command::Doctor {
             live,
             strict,
+            env_file,
             format,
-        } => run_doctor(live, strict, format),
+        } => {
+            apply_env_file_option(env_file.as_deref())?;
+            run_doctor(live, strict, format)
+        }
         Command::EnvSample => {
             print!("{}", env_template_source());
             Ok(())
@@ -47,7 +51,8 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("wrote {}", path.display());
             Ok(())
         }
-        Command::Eval { source } => {
+        Command::Eval { source, env_file } => {
+            apply_env_file_option(env_file.as_deref())?;
             let mut session = login()?;
             let value = session.eval(&source)?;
             print_value(&mut session, value)?;
@@ -323,9 +328,12 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             let config_path = config;
             run_codegen_check(&config_path)
         }
-        Command::CodegenExplain { config } => {
+        Command::CodegenExplain { config, format } => {
             let config = codegen::Config::from_file(config)?;
-            print!("{}", codegen::explain(&config));
+            match format {
+                OutputFormat::Human => print!("{}", codegen::explain(&config)),
+                OutputFormat::Json => println!("{}", codegen::explain_json(&config)),
+            }
             Ok(())
         }
         Command::CodegenCheckProfile { name, profiles } => {
@@ -413,6 +421,130 @@ fn write_env_template(path: &Path, force: bool) -> Result<(), CliError> {
     }
     fs::write(path, env_template_source())?;
     Ok(())
+}
+
+fn apply_env_file_option(path: Option<&Path>) -> Result<(), CliError> {
+    if let Some(path) = path {
+        apply_env_file(path)?;
+    }
+    Ok(())
+}
+
+fn apply_env_file(path: &Path) -> Result<usize, CliError> {
+    let source = fs::read_to_string(path)?;
+    let values = parse_env_file_source(&source, path)?;
+    let count = values.len();
+    for (name, value) in values {
+        env::set_var(name, value);
+    }
+    Ok(count)
+}
+
+fn parse_env_file_source(source: &str, path: &Path) -> Result<Vec<(String, String)>, CliError> {
+    let mut values = Vec::new();
+    for (index, raw_line) in source.lines().enumerate() {
+        if let Some((name, value)) = parse_env_file_line(raw_line, path, index + 1)? {
+            values.push((name, value));
+        }
+    }
+    Ok(values)
+}
+
+fn parse_env_file_line(
+    raw_line: &str,
+    path: &Path,
+    line_no: usize,
+) -> Result<Option<(String, String)>, CliError> {
+    let mut line = raw_line.trim();
+    if line.is_empty() || line.starts_with('#') {
+        return Ok(None);
+    }
+    if let Some(rest) = line.strip_prefix("export ") {
+        line = rest.trim_start();
+    }
+    let Some((name, raw_value)) = line.split_once('=') else {
+        return Err(env_file_error(path, line_no, "expected NAME=value"));
+    };
+    let name = name.trim();
+    validate_env_file_name(name).map_err(|message| env_file_error(path, line_no, message))?;
+    let value = parse_env_file_value(raw_value)
+        .map_err(|message| env_file_error(path, line_no, message))?;
+    if is_placeholder_env_value(name, &value) {
+        return Ok(None);
+    }
+    Ok(Some((name.to_string(), value)))
+}
+
+fn validate_env_file_name(name: &str) -> Result<(), &'static str> {
+    if name != "GEMSTONE" && !name.starts_with("GS_") {
+        return Err("only GEMSTONE and GS_* variables are allowed in --env-file");
+    }
+    if name.is_empty()
+        || !name
+            .chars()
+            .all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == '_')
+    {
+        return Err("invalid environment variable name");
+    }
+    Ok(())
+}
+
+fn parse_env_file_value(raw_value: &str) -> Result<String, &'static str> {
+    let mut value = String::new();
+    let mut chars = raw_value.trim_start().chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\'' => loop {
+                match chars.next() {
+                    Some('\'') => break,
+                    Some(ch) => value.push(ch),
+                    None => return Err("unterminated single-quoted value"),
+                }
+            },
+            '"' => loop {
+                match chars.next() {
+                    Some('"') => break,
+                    Some('\\') => {
+                        if let Some(ch) = chars.next() {
+                            value.push(ch);
+                        }
+                    }
+                    Some(ch) => value.push(ch),
+                    None => return Err("unterminated double-quoted value"),
+                }
+            },
+            '\\' => {
+                if let Some(ch) = chars.next() {
+                    value.push(ch);
+                }
+            }
+            '#' if value.chars().last().is_none_or(char::is_whitespace) => break,
+            ch if ch.is_whitespace() => {
+                while matches!(chars.peek(), Some(next) if next.is_whitespace()) {
+                    chars.next();
+                }
+                if matches!(chars.peek(), Some('#')) {
+                    break;
+                }
+                value.push(ch);
+            }
+            ch => value.push(ch),
+        }
+    }
+    Ok(value.trim_end().to_string())
+}
+
+fn is_placeholder_env_value(name: &str, value: &str) -> bool {
+    matches!(
+        (name, value),
+        ("GS_PASSWORD", "<set-your-password>")
+            | ("GS_HOST_PASSWORD", "<set-host-password-if-needed>")
+            | ("GS_LIB_PATH", "/full/path/to/libgcirpc.dylib")
+    )
+}
+
+fn env_file_error(path: &Path, line_no: usize, message: impl Into<String>) -> CliError {
+    CliError::EnvFile(format!("{}:{line_no}: {}", path.display(), message.into()))
 }
 
 fn env_template_source_with(lookup: impl Fn(&str) -> Option<String>) -> String {
@@ -1360,6 +1492,7 @@ enum Command {
     Doctor {
         live: bool,
         strict: bool,
+        env_file: Option<PathBuf>,
         format: OutputFormat,
     },
     EnvSample,
@@ -1369,6 +1502,7 @@ enum Command {
     },
     Eval {
         source: String,
+        env_file: Option<PathBuf>,
     },
     BrowseDictionaries,
     BrowseClasses {
@@ -1472,6 +1606,7 @@ enum Command {
     },
     CodegenExplain {
         config: PathBuf,
+        format: OutputFormat,
     },
     CodegenCheckProfile {
         name: String,
@@ -1510,14 +1645,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
         "-h" | "--help" | "help" => Ok(Command::Help),
         "doctor" => parse_doctor_command(&args[1..]),
         "env" => parse_env_command(&args[1..]),
-        "eval" => {
-            let source = args
-                .get(1)
-                .ok_or_else(|| CliError::usage("missing Smalltalk source for eval"))?;
-            Ok(Command::Eval {
-                source: source.clone(),
-            })
-        }
+        "eval" => parse_eval_command(&args[1..]),
         "browse" => parse_browse_command(&args[1..]),
         "bridge" => parse_bridge_command(&args[1..]),
         "profile" => parse_profile_command(&args[1..]),
@@ -1546,9 +1674,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
             Some("check") => Ok(Command::CodegenCheck {
                 config: optional_path(args.get(2)),
             }),
-            Some("explain") => Ok(Command::CodegenExplain {
-                config: optional_path(args.get(2)),
-            }),
+            Some("explain") => parse_codegen_explain_command(&args[2..]),
             Some("check-profile") => parse_codegen_profile_command(&args[2..], |name, profiles| {
                 Command::CodegenCheckProfile { name, profiles }
             }),
@@ -1622,6 +1748,46 @@ fn parse_env_write_command(args: &[String]) -> Result<Command, CliError> {
     Ok(Command::EnvWrite {
         path: path.unwrap_or_else(|| PathBuf::from(".env.gemstone-rs")),
         force,
+    })
+}
+
+fn parse_eval_command(args: &[String]) -> Result<Command, CliError> {
+    let mut source = None;
+    let mut env_file = None;
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--env-file" => {
+                index += 1;
+                let value = args
+                    .get(index)
+                    .ok_or_else(|| CliError::usage("missing path after --env-file"))?;
+                env_file = Some(PathBuf::from(value));
+            }
+            option if option.starts_with("--env-file=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing path after --env-file="));
+                }
+                env_file = Some(PathBuf::from(value));
+            }
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: eval [--env-file <path>] <smalltalk>",
+                ));
+            }
+            value if source.is_none() => source = Some(value.to_string()),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected eval argument: {value}"
+                )))
+            }
+        }
+        index += 1;
+    }
+    Ok(Command::Eval {
+        source: source.ok_or_else(|| CliError::usage("missing Smalltalk source for eval"))?,
+        env_file,
     })
 }
 
@@ -1763,6 +1929,36 @@ fn parse_codegen_profile_command(
     Ok(build(name, profiles))
 }
 
+fn parse_codegen_explain_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut config = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: codegen explain [--json] [config]",
+                ));
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown codegen explain option: {option}"
+                )));
+            }
+            value if config.is_none() => config = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected codegen explain argument: {value}"
+                )));
+            }
+        }
+    }
+    Ok(Command::CodegenExplain {
+        config: config.unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH)),
+        format,
+    })
+}
+
 fn parse_u64(value: &str) -> Result<u64, CliError> {
     if let Some(hex) = value
         .strip_prefix("0x")
@@ -1778,18 +1974,36 @@ fn parse_u64(value: &str) -> Result<u64, CliError> {
 fn parse_doctor_command(args: &[String]) -> Result<Command, CliError> {
     let mut live = false;
     let mut strict = false;
+    let mut env_file = None;
     let mut format = OutputFormat::Human;
-    for arg in args {
-        match arg.as_str() {
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
             "--live" => live = true,
             "--strict" => strict = true,
+            "--env-file" => {
+                index += 1;
+                let value = args
+                    .get(index)
+                    .ok_or_else(|| CliError::usage("missing path after --env-file"))?;
+                env_file = Some(PathBuf::from(value));
+            }
+            option if option.starts_with("--env-file=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing path after --env-file="));
+                }
+                env_file = Some(PathBuf::from(value));
+            }
             "--json" => format = OutputFormat::Json,
             other => return Err(CliError::usage(format!("unknown doctor option: {other}"))),
         }
+        index += 1;
     }
     Ok(Command::Doctor {
         live,
         strict,
+        env_file,
         format,
     })
 }
@@ -2114,10 +2328,10 @@ fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
 
 fn usage() -> &'static str {
     "usage:
-  gemstone-rs doctor [--live] [--strict] [--json]
+  gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
-  gemstone-rs eval <smalltalk>
+  gemstone-rs eval [--env-file <path>] <smalltalk>
   gemstone-rs browse dictionaries
   gemstone-rs browse classes [dictionary]
   gemstone-rs browse protocols <class> [dictionary] [--meta]
@@ -2145,7 +2359,7 @@ fn usage() -> &'static str {
   gemstone-rs codegen diff-profile <profile-name> [profile-file]
   gemstone-rs codegen check [config]
   gemstone-rs codegen check-profile <profile-name> [profile-file]
-  gemstone-rs codegen explain [config]
+  gemstone-rs codegen explain [--json] [config]
   gemstone-rs codegen generate [config]
   gemstone-rs codegen generate-profile <profile-name> [profile-file]
   gemstone-rs codegen discover [config] [class ...]
@@ -2160,6 +2374,7 @@ enum CliError {
     Profiles(profiles::Error),
     CodegenCheck(String),
     Doctor(String),
+    EnvFile(String),
     Io(std::io::Error),
 }
 
@@ -2178,6 +2393,7 @@ impl fmt::Display for CliError {
             Self::Profiles(err) => write!(f, "{err}"),
             Self::CodegenCheck(message) => write!(f, "{message}"),
             Self::Doctor(message) => write!(f, "{message}"),
+            Self::EnvFile(message) => write!(f, "{message}"),
             Self::Io(err) => write!(f, "{err}"),
         }
     }
@@ -2190,7 +2406,7 @@ impl StdError for CliError {
             Self::GemStone(err) => Some(err),
             Self::Codegen(err) => Some(err),
             Self::Profiles(err) => Some(err),
-            Self::CodegenCheck(_) | Self::Doctor(_) => None,
+            Self::CodegenCheck(_) | Self::Doctor(_) | Self::EnvFile(_) => None,
             Self::Io(err) => Some(err),
         }
     }
@@ -2241,6 +2457,7 @@ mod tests {
             Command::Doctor {
                 live: false,
                 strict: false,
+                env_file: None,
                 format: OutputFormat::Human,
             }
         );
@@ -2249,14 +2466,24 @@ mod tests {
             Command::Doctor {
                 live: true,
                 strict: false,
+                env_file: None,
                 format: OutputFormat::Human,
             }
         );
         assert_eq!(
-            parse_command(&args(&["doctor", "--json", "--live", "--strict"])).unwrap(),
+            parse_command(&args(&[
+                "doctor",
+                "--json",
+                "--live",
+                "--strict",
+                "--env-file",
+                ".env.gemstone-rs"
+            ]))
+            .unwrap(),
             Command::Doctor {
                 live: true,
                 strict: true,
+                env_file: Some(PathBuf::from(".env.gemstone-rs")),
                 format: OutputFormat::Json,
             }
         );
@@ -2330,6 +2557,37 @@ mod tests {
     }
 
     #[test]
+    fn env_file_parser_reads_safe_template_values() {
+        let path = Path::new(".env.gemstone-rs");
+        let values = parse_env_file_source(
+            r#"
+# comment
+export GS_USERNAME='Data'"'"'Curator'
+export GS_PASSWORD='<set-your-password>'
+GS_STONE_NAME="demoStone"
+GEMSTONE=/opt/gemstone # product root
+"#,
+            path,
+        )
+        .unwrap();
+
+        assert_eq!(
+            values,
+            vec![
+                ("GS_USERNAME".to_string(), "Data'Curator".to_string()),
+                ("GS_STONE_NAME".to_string(), "demoStone".to_string()),
+                ("GEMSTONE".to_string(), "/opt/gemstone".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn env_file_parser_rejects_non_gs_variables() {
+        let err = parse_env_file_source("PATH=/tmp\n", Path::new(".env.gemstone-rs")).unwrap_err();
+        assert!(err.to_string().contains("only GEMSTONE and GS_*"));
+    }
+
+    #[test]
     fn shell_quote_handles_single_quotes() {
         assert_eq!(shell_quote("Data'Curator"), r#"'Data'"'"'Curator'"#);
     }
@@ -2382,7 +2640,22 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["eval", "3 + 4"])).unwrap(),
             Command::Eval {
-                source: "3 + 4".to_string()
+                source: "3 + 4".to_string(),
+                env_file: None,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["eval", "--env-file=.env.gemstone-rs", "3 + 4"])).unwrap(),
+            Command::Eval {
+                source: "3 + 4".to_string(),
+                env_file: Some(PathBuf::from(".env.gemstone-rs")),
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["eval", "-1 + 2"])).unwrap(),
+            Command::Eval {
+                source: "-1 + 2".to_string(),
+                env_file: None,
             }
         );
     }
@@ -2551,7 +2824,15 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["codegen", "explain", "demo.codegen"])).unwrap(),
             Command::CodegenExplain {
-                config: PathBuf::from("demo.codegen")
+                config: PathBuf::from("demo.codegen"),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["codegen", "explain", "--json", "demo.codegen"])).unwrap(),
+            Command::CodegenExplain {
+                config: PathBuf::from("demo.codegen"),
+                format: OutputFormat::Json,
             }
         );
         assert_eq!(
