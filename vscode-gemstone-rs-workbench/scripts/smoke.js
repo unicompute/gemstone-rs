@@ -113,6 +113,7 @@ assert(extensionSource.includes("withEnvFileArgs"), "Workbench commands should p
 assert(extensionSource.includes("envFileExists"), "Workbench should report the env-file setting");
 assert(extensionSource.includes('"env", "sample"'), "environment template commands should call env sample");
 assert(extensionSource.includes('"env", "write"'), "environment write command should call env write");
+assert(extensionSource.includes('"bridge", "put-string"'), "BridgeRoot string command should use put-string");
 assert(!extensionSource.includes("GS_PASSWORD='change-me'"), "extension should not hard-code env secrets");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
 assert(readme.includes("Generate Explorer Auth Token"), "README should mention auth token generation");

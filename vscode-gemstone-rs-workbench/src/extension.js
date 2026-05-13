@@ -609,7 +609,7 @@ async function putBridgeRootString() {
   if (value === undefined) {
     return;
   }
-  const result = await runAndShow(["bridge", "put", key, value, "--type", "String"], {
+  const result = await runAndShow(["bridge", "put-string", key, value], {
     allowFailure: true,
   });
   if (result.code === 0) {

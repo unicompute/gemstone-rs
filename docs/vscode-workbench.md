@@ -203,7 +203,7 @@ Use `GemStone RS: Put BridgeRoot String` when you want a quick live-write smoke
 test from VS Code. It asks for a key and string value, then runs:
 
 ```bash
-gemstone-rs bridge put <key> <value> --type String
+gemstone-rs bridge put-string <key> <value>
 ```
 
 Use `GemStone RS: Remove BridgeRoot Key` to remove one BridgeRoot key after a

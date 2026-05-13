@@ -144,6 +144,10 @@ gemstone-rs browse source Object printString
 gemstone-rs inspect oop 20
 gemstone-rs bridge root
 gemstone-rs bridge keys
+gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
+gemstone-rs bridge put-smallint WorkbenchCount 7
+gemstone-rs bridge put-bool WorkbenchReady true
+gemstone-rs bridge remove WorkbenchDraft
 gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen

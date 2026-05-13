@@ -518,12 +518,17 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge inspect BookingDraft --symbol
+gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
+gemstone-rs bridge put-smallint WorkbenchCount 7
+gemstone-rs bridge put-bool WorkbenchReady true
+gemstone-rs bridge remove WorkbenchDraft
 gemstone-rs bridge sample-config BookingDraft
 ```
 
 Use `--root OtherBridgeRoot` when you intentionally use a non-default root
 dictionary, and `--key-type String|Symbol` when you want the key policy to be
-spelled out in scripts.
+spelled out in scripts. The generic `bridge put --type String|SmallInt|Bool`
+form is still available when the value type comes from script data.
 
 `bridge keys` lists each root key with its key OOP, class OOP, `printString`,
 and session-local identity id.
