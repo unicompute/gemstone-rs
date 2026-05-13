@@ -73,6 +73,21 @@ assert.strictEqual(
 
 assert(extensionSource.includes("function explorerWebviewHtml"), "webview HTML helper is missing");
 assert(extensionSource.includes("<iframe"), "webview should embed the explorer in an iframe");
+assert(extensionSource.includes("gemstone-rs Explorer Workbench"), "webview should have a workbench wrapper");
+assert(extensionSource.includes("Live Inspector"), "webview should include a live inspector");
+assert(
+  extensionSource.includes("data-probe=\"/api/codegen/profiles/check\""),
+  "webview should expose profile status"
+);
+assert(
+  extensionSource.includes("data-probe=\"/api/bridge/root\""),
+  "webview should expose BridgeRoot inspection"
+);
+assert(
+  extensionSource.includes("data-command=\"gemstoneRs.codegenGenerate\""),
+  "webview should expose generated-file actions"
+);
+assert(extensionSource.includes("handleExplorerWebviewMessage"), "webview should handle VS Code command messages");
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
 assert(extensionSource.includes("Copy Env Script"), "verify setup should offer environment script copy");

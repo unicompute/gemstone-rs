@@ -1014,11 +1014,61 @@ function openExplorerWebview() {
       retainContextWhenHidden: true,
     }
   );
-  panel.webview.html = explorerWebviewHtml(url);
+  panel.webview.onDidReceiveMessage((message) => handleExplorerWebviewMessage(message, url));
+  panel.webview.html = explorerWebviewHtml(url, cfg);
   output.clear();
   output.appendLine(`Opened gemstone-rs Explorer webview for ${url}`);
   output.appendLine("Run GemStone RS: Launch Explorer first if the webview cannot connect.");
   output.show(true);
+}
+
+async function handleExplorerWebviewMessage(message, url) {
+  if (!message || typeof message !== "object") {
+    return;
+  }
+  if (message.command === "openExternal") {
+    await vscode.env.openExternal(vscode.Uri.parse(String(message.url || url)));
+    return;
+  }
+  if (message.command === "openPath") {
+    const filePath = String(message.path || "").trim();
+    if (filePath) {
+      await openPathInEditor(filePath);
+    }
+    return;
+  }
+  if (message.command === "runWorkbenchCommand") {
+    await runWorkbenchCommand(String(message.id || ""));
+  }
+}
+
+async function runWorkbenchCommand(commandId) {
+  const allowed = new Set([
+    "gemstoneRs.launchExplorer",
+    "gemstoneRs.verifySetup",
+    "gemstoneRs.verifyLiveSetup",
+    "gemstoneRs.verifyStrictSetup",
+    "gemstoneRs.runSetupAssistant",
+    "gemstoneRs.checkProjectProfiles",
+    "gemstoneRs.codegenPreview",
+    "gemstoneRs.codegenDiff",
+    "gemstoneRs.codegenCheck",
+    "gemstoneRs.codegenExplain",
+    "gemstoneRs.codegenGenerate",
+    "gemstoneRs.codegenPreviewProfile",
+    "gemstoneRs.codegenDiffProfile",
+    "gemstoneRs.codegenCheckProfile",
+    "gemstoneRs.codegenExplainProfile",
+    "gemstoneRs.codegenGenerateProfile",
+    "gemstoneRs.previewBridgeRoot",
+    "gemstoneRs.listBridgeRootKeys",
+    "gemstoneRs.openCodegenDocs",
+  ]);
+  if (!allowed.has(commandId)) {
+    vscode.window.showWarningMessage(`Unsupported gemstone-rs webview command: ${commandId}`);
+    return;
+  }
+  await vscode.commands.executeCommand(commandId);
 }
 
 function loadProjectProfiles() {
@@ -1246,8 +1296,15 @@ function openExplorerProfileWorkflow(title, instruction) {
   output.show(true);
 }
 
-function explorerWebviewHtml(url) {
+function explorerWebviewHtml(url, cfg = settings()) {
   const escaped = escapeHtml(url);
+  const baseUrl = url.replace(/\/+$/, "");
+  const state = {
+    baseUrl,
+    homeUrl: url,
+    codegenConfig: cfg.codegenConfig,
+    codegenProfiles: cfg.codegenProfiles,
+  };
   return `<!doctype html>
 <html>
 <head>
@@ -1255,20 +1312,199 @@ function explorerWebviewHtml(url) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>gemstone-rs Explorer</title>
 <style>
+* { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--vscode-foreground); background: var(--vscode-editor-background); }
-.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--vscode-panel-border); }
+button, input { font: inherit; }
+button { border: 1px solid var(--vscode-button-border, transparent); background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border-radius: 4px; padding: 5px 8px; cursor: pointer; text-align: left; }
+button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+button:hover { background: var(--vscode-button-secondaryHoverBackground); }
 a { color: var(--vscode-textLink-foreground); }
-iframe { display: block; width: 100vw; height: calc(100vh - 42px); border: 0; background: white; }
+.shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--vscode-panel-border); }
+.title { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
+.title strong { font-size: 13px; }
+.title span { color: var(--vscode-descriptionForeground); font-size: 11px; }
+.bar-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.layout { display: grid; grid-template-columns: minmax(260px, 330px) 1fr; min-height: 0; }
+.rail { border-right: 1px solid var(--vscode-panel-border); overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+.group { display: grid; gap: 6px; }
+.group h2 { color: var(--vscode-descriptionForeground); font-size: 11px; font-weight: 600; letter-spacing: 0; margin: 0 0 2px; text-transform: uppercase; }
+.field { display: grid; gap: 3px; color: var(--vscode-descriptionForeground); font-size: 11px; }
+.field input { width: 100%; border: 1px solid var(--vscode-input-border, transparent); background: var(--vscode-input-background); color: var(--vscode-input-foreground); border-radius: 4px; padding: 5px 6px; }
+.inspector { min-height: 160px; max-height: 34vh; overflow: auto; white-space: pre-wrap; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px; background: var(--vscode-editorWidget-background); color: var(--vscode-editorWidget-foreground); font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 11px; }
+.inspector.error { color: var(--vscode-errorForeground); }
+.content { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; }
+.iframe-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--vscode-panel-border); overflow-x: auto; }
+iframe { display: block; width: 100%; height: 100%; border: 0; background: white; }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .rail { border-right: 0; border-bottom: 1px solid var(--vscode-panel-border); max-height: 46vh; }
+}
 </style>
 </head>
 <body>
+<div class="shell">
 <div class="bar">
-  <strong>gemstone-rs Explorer</strong>
-  <a href="${escaped}">Open in Browser</a>
+  <div class="title">
+    <strong>gemstone-rs Explorer Workbench</strong>
+    <span id="status">Explorer URL: ${escaped}</span>
+  </div>
+  <div class="bar-actions">
+    <button class="primary" data-command="gemstoneRs.launchExplorer">Launch Explorer</button>
+    <button data-action="refresh">Refresh</button>
+    <button data-action="open-browser">Open Browser</button>
+  </div>
 </div>
-<iframe src="${escaped}" title="gemstone-rs Explorer"></iframe>
+<div class="layout">
+  <aside class="rail">
+    <div class="group">
+      <h2>Project</h2>
+      <label class="field">Codegen config<input id="codegenConfig" value="${escapeHtml(cfg.codegenConfig)}"></label>
+      <label class="field">Profile file<input id="codegenProfiles" value="${escapeHtml(cfg.codegenProfiles)}"></label>
+      <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
+      <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
+    </div>
+    <div class="group">
+      <h2>Live Inspector</h2>
+      <button data-probe="/api/status">Explorer Status</button>
+      <button data-probe="/api/setup/assistant">Setup Assistant</button>
+      <button data-probe="/api/codegen/profiles/check">Profile Status</button>
+      <button data-probe="/api/bridge/root">BridgeRoot</button>
+      <button data-probe="/api/bridge/keys">BridgeRoot Keys</button>
+      <button data-open-last>Open Last Output File</button>
+    </div>
+    <div class="group">
+      <h2>Codegen</h2>
+      <button data-probe="/api/codegen/explain">Explain Config</button>
+      <button data-probe="/api/codegen/preview">Preview Generated Wrappers</button>
+      <button data-probe="/api/codegen/diff">Diff Generated Wrappers</button>
+      <button data-probe="/api/codegen/check">Check Freshness</button>
+      <button data-command="gemstoneRs.codegenPreview">Preview in Editor</button>
+      <button data-command="gemstoneRs.codegenDiff">Diff in Editor</button>
+      <button data-command="gemstoneRs.codegenGenerate">Generate with Confirmation</button>
+    </div>
+    <div class="group">
+      <h2>Profile Codegen</h2>
+      <button data-probe="/api/codegen/explain-profile">Explain Profile</button>
+      <button data-probe="/api/codegen/preview-profile">Preview Profile</button>
+      <button data-probe="/api/codegen/diff-profile">Diff Profile</button>
+      <button data-probe="/api/codegen/check-profile">Check Profile</button>
+      <button data-command="gemstoneRs.codegenPreviewProfile">Preview Profile in Editor</button>
+      <button data-command="gemstoneRs.codegenGenerateProfile">Generate Profile with Confirmation</button>
+    </div>
+    <pre id="inspector" class="inspector">Use the inspector buttons to query the running explorer. The iframe remains the full explorer UI.</pre>
+  </aside>
+  <main class="content">
+    <div class="iframe-tabs">
+      <button data-nav="/">Home</button>
+      <button data-nav="/#browse">Browse</button>
+      <button data-nav="/#bridge-codegen">BridgeRoot</button>
+      <button data-nav="/#codegen-workflow">Codegen Workflow</button>
+      <button data-nav="/api/codegen/profiles/check">Profile Status JSON</button>
+    </div>
+    <iframe id="explorerFrame" src="${escaped}" title="gemstone-rs Explorer"></iframe>
+  </main>
+</div>
+</div>
+<script>
+const vscode = acquireVsCodeApi();
+const state = ${jsLiteral(state)};
+const frame = document.getElementById('explorerFrame');
+const inspector = document.getElementById('inspector');
+const status = document.getElementById('status');
+let lastOutputFile = '';
+
+function configValue(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function apiUrl(path) {
+  const url = new URL(path, state.baseUrl + '/');
+  const config = configValue('codegenConfig') || state.codegenConfig;
+  const profiles = configValue('codegenProfiles') || state.codegenProfiles;
+  if (path.includes('/api/codegen/') && !url.searchParams.has('config')) {
+    url.searchParams.set('config', config);
+  }
+  if ((path.includes('profile') || path.includes('/api/setup/assistant')) && !url.searchParams.has('profile_file')) {
+    url.searchParams.set('profile_file', profiles);
+  }
+  if (path.includes('-profile') && !url.searchParams.has('profile')) {
+    url.searchParams.set('profile', 'default');
+  }
+  return url;
+}
+
+function setInspector(text, isError) {
+  inspector.className = isError ? 'inspector error' : 'inspector';
+  inspector.textContent = text;
+}
+
+async function probe(path) {
+  const url = apiUrl(path);
+  status.textContent = 'GET ' + url.pathname + url.search;
+  setInspector('Loading ' + url.href + ' ...', false);
+  try {
+    const response = await fetch(url.href);
+    const text = await response.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = text;
+    }
+    if (parsed && typeof parsed === 'object' && parsed.output) {
+      lastOutputFile = parsed.output;
+    }
+    if (parsed && typeof parsed === 'object' && parsed.explain && parsed.explain.output) {
+      lastOutputFile = parsed.explain.output;
+    }
+    setInspector(typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2), !response.ok);
+  } catch (error) {
+    setInspector('Could not reach explorer at ' + state.baseUrl + '\\n' + error.message + '\\n\\nRun GemStone RS: Launch Explorer first.', true);
+  }
+}
+
+function navigate(path) {
+  frame.src = new URL(path, state.baseUrl + '/').href;
+}
+
+document.querySelectorAll('[data-command]').forEach(button => {
+  button.addEventListener('click', () => vscode.postMessage({
+    command: 'runWorkbenchCommand',
+    id: button.dataset.command
+  }));
+});
+
+document.querySelectorAll('[data-probe]').forEach(button => {
+  button.addEventListener('click', () => probe(button.dataset.probe));
+});
+
+document.querySelectorAll('[data-nav]').forEach(button => {
+  button.addEventListener('click', () => navigate(button.dataset.nav));
+});
+
+document.querySelector('[data-action="refresh"]').addEventListener('click', () => {
+  frame.src = frame.src;
+});
+
+document.querySelector('[data-action="open-browser"]').addEventListener('click', () => {
+  vscode.postMessage({ command: 'openExternal', url: state.homeUrl });
+});
+
+document.querySelector('[data-open-last]').addEventListener('click', () => {
+  if (!lastOutputFile) {
+    setInspector('No output file has been reported yet. Run Check, Explain, Preview, or Diff first.', true);
+    return;
+  }
+  vscode.postMessage({ command: 'openPath', path: lastOutputFile });
+});
+</script>
 </body>
 </html>`;
+}
+
+function jsLiteral(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
 async function openCodegenDocs() {

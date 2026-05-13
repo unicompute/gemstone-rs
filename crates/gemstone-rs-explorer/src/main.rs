@@ -2006,7 +2006,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 </div>
 </header>
 <main>
-<section>
+<section id="browse">
 <h2>Browse</h2>
 <div class="actions">
 <button onclick="loadDictionaries()">Dictionaries</button>
@@ -2021,7 +2021,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <label>Selector<input id="selector" value="printString"></label>
 <div id="items" class="list"></div>
 </section>
-<section>
+<section id="bridge-codegen">
 <h2>BridgeRoot and Codegen</h2>
 <div class="actions">
 <button onclick="runSetupAssistant()">Run Setup Assistant</button>
@@ -2046,7 +2046,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="putBridgeValue()">Put Value</button>
 <button class="secondary" onclick="removeBridgeValue()">Remove</button>
 </div>
-<h2>Codegen Workflow</h2>
+<h2 id="codegen-workflow">Codegen Workflow</h2>
 <label>Config path<input id="codegenConfig" value="examples/codegen/gemstone-rs.codegen"></label>
 <label>Config root<input id="codegenRoot" placeholder="server default from --codegen-root"></label>
 <label>Known configs<select id="codegenConfigPicker" onchange="pickCodegenConfig()"><option value="">Refresh to list configs</option></select></label>

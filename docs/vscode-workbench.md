@@ -231,11 +231,15 @@ It is still the same loopback-only explorer process. If the explorer is not
 running, the webview will show a connection error and the output panel will show
 the URL to start.
 
-The embedded page includes the same browse, BridgeRoot, and Codegen Workflow
-panels as the external browser view. That makes it the quickest place to
-preview generated wrappers, inspect unified and side-by-side diffs, run
-`codegen check`, and test BridgeRoot key/value policies without leaving VS
-Code. The explorer page can load and save the selected codegen config file,
+The embedded page now acts as the main IDE surface for the local explorer. The
+iframe remains the full browser UI, while the side inspector can query explorer
+status, run setup checks, inspect project profile freshness, preview Codegen
+JSON, inspect diffs, check generated freshness, and inspect BridgeRoot keys. The
+same shell can hand off to native VS Code commands for generated wrapper
+preview, diff, check, generate-with-confirmation, profile checks, docs, and
+opening the last generated output file reported by the explorer.
+
+The explorer page can load and save the selected codegen config file,
 posting the editor contents as the request body; saves still require the
 explorer to run with `--allow-write`. Use `Refresh Configs` in the embedded
 page to populate the `Known configs` picker from the explorer process working

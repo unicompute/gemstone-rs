@@ -111,6 +111,12 @@ BridgeRoot writes through the CLI after prompting for a key and value.
 `Run Generated Mapping Example` starts the checked-in mapping demo in a
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
+The webview wraps the explorer in a workbench shell: the iframe remains the
+full browser UI, while the side inspector can query explorer status, setup
+checks, project profile freshness, Codegen preview/diff/check JSON, and
+BridgeRoot keys. Workbench buttons can hand off to native VS Code commands for
+previewing wrappers, opening diffs, generating with confirmation, checking
+project profiles, opening docs, and opening generated output files.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
 same masked environment and GCI-library checks as the terminal. `Verify Live
 Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
