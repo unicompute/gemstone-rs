@@ -10,6 +10,7 @@ pub fn sample_booking() -> generated::BookingDraft {
         amount: 100,
         currency: "GBP".to_string(),
         tags: vec!["codegen".to_string(), "compile-smoke".to_string()],
+        note: None,
     }
 }
 

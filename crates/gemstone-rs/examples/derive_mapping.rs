@@ -2,7 +2,7 @@
 //
 // Expected output includes:
 //
-// derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"] }
+// derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], note: None }
 // bridge root identity: <number>
 
 use gemstone_rs::{BridgeKeyType, BridgeMapped, Config, Session};
@@ -19,6 +19,7 @@ struct BookingDraft {
     amount: i64,
     customer: CustomerDraft,
     tags: Vec<String>,
+    note: Option<String>,
 }
 
 fn main() -> gemstone_rs::Result<()> {
@@ -31,6 +32,7 @@ fn main() -> gemstone_rs::Result<()> {
             name: "Tariq".to_string(),
         },
         tags: vec!["priority".to_string(), "demo".to_string()],
+        note: None,
     };
 
     bridge_root.transaction(|root| {

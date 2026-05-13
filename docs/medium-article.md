@@ -345,6 +345,7 @@ struct BookingDraft {
     amount: i64,
     customer: CustomerDraft,
     tags: Vec<String>,
+    note: Option<String>,
 }
 
 let mut session = Session::login(Config::from_env()?)?;
@@ -356,6 +357,7 @@ let draft = BookingDraft {
         name: "Tariq".to_string(),
     },
     tags: vec!["priority".to_string(), "demo".to_string()],
+    note: None,
 };
 
 bridge_root.transaction(|root| {
@@ -375,6 +377,7 @@ That example shows the important mapping choices:
 | `key_type = "Symbol"` | Symbol-keyed dictionaries are explicit instead of accidental. |
 | nested structs | nested dictionaries can read back into nested Rust structs. |
 | `Vec<T>` | GemStone arrays can read back into Rust vectors. |
+| `Option<T>` | missing keys and GemStone `nil` can read back as `None`. |
 | mapping errors | nested failures report paths like `booking.customer.name` and `tags[2]`. |
 | `transaction` | BridgeRoot writes can commit on success and abort on error. |
 
@@ -385,6 +388,7 @@ mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.
 field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.note | type=Option<String> | key=note
 ```
 
 Generate a mapping proposal from a live stone:

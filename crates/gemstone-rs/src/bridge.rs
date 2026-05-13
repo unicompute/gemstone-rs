@@ -237,6 +237,14 @@ impl<T: BridgeFieldWrite> BridgeFieldWrite for Vec<T> {
     }
 }
 
+impl<T: BridgeFieldWrite> BridgeFieldWrite for Option<T> {
+    fn to_bridge_field_value(&self) -> BridgeValue {
+        self.as_ref()
+            .map(BridgeFieldWrite::to_bridge_field_value)
+            .unwrap_or(BridgeValue::Nil)
+    }
+}
+
 pub trait BridgeFieldRead: Sized {
     fn read_bridge_field(
         dictionary: &mut BridgeDictionary<'_>,
@@ -364,6 +372,41 @@ impl<T: BridgeFieldRead> BridgeFieldRead for Vec<T> {
     }
 }
 
+impl<T: BridgeFieldRead> BridgeFieldRead for Option<T> {
+    fn read_bridge_field(
+        dictionary: &mut BridgeDictionary<'_>,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<Self> {
+        let context = BridgeFieldContext::new(key, key_type, T::expected_type());
+        if !dictionary
+            .contains_key_with_key_type(key, key_type)
+            .map_err(|err| context.lookup_error(err))?
+        {
+            return Ok(None);
+        }
+        let oop = dictionary
+            .at_oop_with_key_type(key, key_type)
+            .map_err(|err| context.lookup_error(err))?;
+        Self::read_bridge_oop(dictionary.session, oop, &context)
+    }
+
+    fn read_bridge_oop(
+        session: &mut Session,
+        oop: Oop,
+        context: &BridgeFieldContext,
+    ) -> Result<Self> {
+        if oop == session.nil_oop() {
+            return Ok(None);
+        }
+        T::read_bridge_oop(session, oop, context).map(Some)
+    }
+
+    fn expected_type() -> &'static str {
+        "Optional"
+    }
+}
+
 pub struct BridgeRoot<'a> {
     session: &'a mut Session,
     name: String,
@@ -403,6 +446,18 @@ impl<'a> BridgeRoot<'a> {
 
     pub fn keys(&mut self) -> Result<Vec<BridgeKeySummary>> {
         dictionary_keys(self.session, self.oop)
+    }
+
+    pub fn contains_key(&mut self, key: &str) -> Result<bool> {
+        self.contains_key_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn contains_key_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<bool> {
+        dictionary_contains_key(self.session, self.oop, key, key_type)
     }
 
     pub fn put(&mut self, key: &str, value: impl Into<BridgeValue>) -> Result<Oop> {
@@ -540,6 +595,18 @@ impl<'a> BridgeDictionary<'a> {
 
     pub fn keys(&mut self) -> Result<Vec<BridgeKeySummary>> {
         dictionary_keys(self.session, self.oop)
+    }
+
+    pub fn contains_key(&mut self, key: &str) -> Result<bool> {
+        self.contains_key_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn contains_key_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<bool> {
+        dictionary_contains_key(self.session, self.oop, key, key_type)
     }
 
     pub fn put(&mut self, key: &str, value: impl Into<BridgeValue>) -> Result<Oop> {
@@ -734,6 +801,19 @@ fn unexpected_field(key: &str, expected: &'static str, actual: Value) -> Error {
     }
 }
 
+fn dictionary_contains_key(
+    session: &mut Session,
+    dictionary: Oop,
+    key: &str,
+    key_type: BridgeKeyType,
+) -> Result<bool> {
+    let key_oop = BridgeKey::new(key, key_type).to_oop(session)?;
+    match session.perform(dictionary, "includesKey:", &[key_oop])? {
+        Value::Bool(value) => Ok(value),
+        other => Err(unexpected_field(key, "Bool", other)),
+    }
+}
+
 fn dictionary_keys(session: &mut Session, dictionary: Oop) -> Result<Vec<BridgeKeySummary>> {
     let keys = session.perform_oop(dictionary, "keys", &[])?;
     let array = session.perform_oop(keys, "asArray", &[])?;
@@ -820,6 +900,18 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "field booking.items[2] (String) expected GemStone value type Customer, got lookup failed: GemStone error #2011 fatal=false: index out of bounds"
+        );
+    }
+
+    #[test]
+    fn optional_fields_write_some_or_nil() {
+        let none: Option<String> = None;
+        assert_eq!(none.to_bridge_field_value(), BridgeValue::Nil);
+
+        let some = Some("reference".to_string());
+        assert_eq!(
+            some.to_bridge_field_value(),
+            BridgeValue::String("reference".to_string())
         );
     }
 }

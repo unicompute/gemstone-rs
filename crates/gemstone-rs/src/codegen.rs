@@ -362,10 +362,23 @@ pub enum FieldType {
     Oop,
     Mapped(String),
     Vec(Box<FieldType>),
+    Option(Box<FieldType>),
 }
 
 impl FieldType {
     fn parse(value: &str) -> std::result::Result<Self, String> {
+        if let Some(inner) = value
+            .strip_prefix("Option<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Option(Box::new(Self::parse(inner.trim())?)));
+        }
+        if let Some(inner) = value
+            .strip_prefix("Optional<")
+            .and_then(|text| text.strip_suffix('>'))
+        {
+            return Ok(Self::Option(Box::new(Self::parse(inner.trim())?)));
+        }
         if let Some(inner) = value
             .strip_prefix("Vec<")
             .and_then(|text| text.strip_suffix('>'))
@@ -417,6 +430,7 @@ impl FieldType {
             Self::Oop => "Oop".to_string(),
             Self::Mapped(name) => name.clone(),
             Self::Vec(inner) => format!("Vec<{}>", inner.rust_type()),
+            Self::Option(inner) => format!("Option<{}>", inner.rust_type()),
         }
     }
 
@@ -428,6 +442,7 @@ impl FieldType {
             Self::Oop => "Oop".to_string(),
             Self::Mapped(name) => format!("Mapped<{name}>"),
             Self::Vec(inner) => format!("Vec<{}>", inner.config_name()),
+            Self::Option(inner) => format!("Option<{}>", inner.config_name()),
         }
     }
 }
@@ -917,7 +932,8 @@ pub fn sample_config() -> &'static str {
      field = BookingDraft.name | type=String | key=name\n\
      field = BookingDraft.amount | type=SmallInt | key=amount\n\
      field = BookingDraft.currency | type=String | key=currency\n\
-     field = BookingDraft.tags | type=Vec<String> | key=tags\n"
+     field = BookingDraft.tags | type=Vec<String> | key=tags\n\
+     field = BookingDraft.note | type=Option<String> | key=note\n"
 }
 
 pub fn sample_mapping_config(mapped: &str) -> String {
@@ -926,7 +942,8 @@ pub fn sample_mapping_config(mapped: &str) -> String {
         "mapped = {mapped} | doc=Typed payload stored under GemStoneRsBridgeRoot.\n\
          field = {mapped}.name | type=String | key=name | key_type=String\n\
          field = {mapped}.amount | type=SmallInt | key=amount | key_type=String\n\
-         field = {mapped}.tags | type=Vec<String> | key=tags | key_type=String\n"
+         field = {mapped}.tags | type=Vec<String> | key=tags | key_type=String\n\
+         field = {mapped}.note | type=Option<String> | key=note | key_type=String\n"
     )
 }
 
@@ -1483,7 +1500,7 @@ mod tests {
     #[test]
     fn parses_symbol_keys_and_nested_field_types() -> Result<()> {
         let config = Config::parse(
-            "mapped = BookingDraft\nfield = BookingDraft.customer | type=Mapped<Customer> | key=customer | key_type=Symbol\nfield = BookingDraft.tags | type=Vec<String> | key=tags\n",
+            "mapped = BookingDraft\nfield = BookingDraft.customer | type=Mapped<Customer> | key=customer | key_type=Symbol\nfield = BookingDraft.tags | type=Vec<String> | key=tags\nfield = BookingDraft.note | type=Option<String> | key=note\n",
             None,
         )?;
         let fields = &config.mapped[0].fields;
@@ -1496,9 +1513,14 @@ mod tests {
             fields[1].field_type,
             FieldType::Vec(Box::new(FieldType::String))
         );
+        assert_eq!(
+            fields[2].field_type,
+            FieldType::Option(Box::new(FieldType::String))
+        );
         let generated = generate(&config);
         assert!(generated.source.contains("BridgeKeyType::Symbol"));
         assert!(generated.source.contains("pub tags: Vec<String>"));
+        assert!(generated.source.contains("pub note: Option<String>"));
         Ok(())
     }
 
@@ -1507,6 +1529,7 @@ mod tests {
         let source = sample_mapping_config("booking draft");
         assert!(source.contains("mapped = BookingDraft"));
         assert!(source.contains("field = BookingDraft.tags | type=Vec<String>"));
+        assert!(source.contains("field = BookingDraft.note | type=Option<String>"));
     }
 
     #[test]

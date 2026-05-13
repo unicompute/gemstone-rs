@@ -27,6 +27,7 @@ The initial mapping layer supports:
 - `BridgeRoot::commit_with_retry`
 - `BridgeRoot::transaction`
 - `BridgeRoot::keys`
+- `BridgeRoot::contains_key`
 - `BridgeDictionary::at_oop`
 - `BridgeDictionary::at_value`
 - `BridgeDictionary::at_string`
@@ -35,6 +36,7 @@ The initial mapping layer supports:
 - `BridgeDictionary::at_dictionary`
 - `BridgeDictionary::at_mapped`
 - `BridgeDictionary::at_vec`
+- `BridgeDictionary::contains_key`
 - `BridgeDictionary::keys`
 - `BridgeKey`
 - `BridgeKeyType::String`
@@ -194,6 +196,7 @@ fn main() -> gemstone_rs::Result<()> {
             name: "Tariq".to_string(),
         },
         tags: vec!["priority".to_string(), "demo".to_string()],
+        note: None,
     };
 
     bridge_root.put_mapped("DerivedBookingDraft", &draft)?;
@@ -214,7 +217,7 @@ cargo run -p gemstone-rs --example derive_mapping
 Expected output includes:
 
 ```text
-derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"] }
+derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], note: None }
 bridge root identity: <number>
 ```
 
@@ -231,6 +234,7 @@ format:
 | `Oop` | raw object reference | `BridgeFieldRead` / `at_oop` |
 | another `BridgeMapped` struct | nested `Dictionary` | `BridgeDictionary::at_mapped` |
 | `Vec<T>` | `Array` | `BridgeDictionary::at_vec` |
+| `Option<T>` | value, `nil`, or missing key | `BridgeFieldRead` |
 
 This lets a Rust payload keep normal nested shape:
 
@@ -239,8 +243,15 @@ This lets a Rust payload keep normal nested shape:
 struct BookingDraft {
     customer: CustomerDraft,
     tags: Vec<String>,
+    note: Option<String>,
 }
 ```
+
+Optional fields are useful when a BridgeRoot dictionary evolves over time.
+`None` writes as GemStone `nil`; read-back returns `None` when the key is
+missing or when the stored value is `nil`. `Some(value)` reads through the
+inner field type, so `Option<CustomerDraft>` still reports nested mapping
+errors with the full field path.
 
 When read-back fails, mapping errors include field context:
 
@@ -339,6 +350,7 @@ struct BookingDraft {
     customer: CustomerDraft,
     items: Vec<LineItemDraft>,
     tags: Vec<String>,
+    note: Option<String>,
 }
 ```
 
@@ -390,6 +402,7 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.note | type=Option<String> | key=note
 ```
 
 Generate a mapping config proposal from a live GemStone class:

@@ -112,16 +112,19 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.note | type=Option<String> | key=note | doc=Optional note.
 ```
 
 Supported field types are `String`, `SmallInt`, `Bool`, `Oop`,
-`Mapped<OtherStruct>`, and `Vec<T>`.
+`Mapped<OtherStruct>`, `Vec<T>`, and `Option<T>`. Optional fields write
+`None` as GemStone `nil`; read-back returns `None` when the key is missing or
+when the stored value is `nil`.
 
 Field options:
 
 | Option | Example | Purpose |
 | --- | --- | --- |
-| `type` | `type=Vec<String>` | Rust/GemStone field conversion. |
+| `type` | `type=Option<String>` | Rust/GemStone field conversion. |
 | `key` | `key=amount` | GemStone dictionary key. |
 | `key_type` | `key_type=Symbol` | Use string keys or symbol keys explicitly. |
 | `doc` | `doc=Booking amount.` | Writes a Rust doc comment above the field. |
@@ -305,7 +308,7 @@ cargo run -p gemstone-rs --example generated_mapping_app
 Expected output:
 
 ```text
-generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"] }
+generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], note: Some("window seat") }
 ```
 
 The config-driven mapping emits a struct like:
@@ -317,6 +320,8 @@ pub struct BookingDraft {
     pub amount: i64,
     pub currency: String,
     pub tags: Vec<String>,
+    /// Optional note.
+    pub note: Option<String>,
 }
 ```
 

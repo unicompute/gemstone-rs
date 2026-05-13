@@ -50,6 +50,8 @@ pub struct BookingDraft {
     pub amount: i64,
     pub currency: String,
     pub tags: Vec<String>,
+    /// Optional note; missing or nil reads back as None.
+    pub note: Option<String>,
 }
 
 impl BridgeMapped for BookingDraft {
@@ -71,6 +73,10 @@ impl BridgeMapped for BookingDraft {
                 BridgeKey::new("tags", BridgeKeyType::String),
                 BridgeFieldWrite::to_bridge_field_value(&self.tags),
             ),
+            (
+                BridgeKey::new("note", BridgeKeyType::String),
+                BridgeFieldWrite::to_bridge_field_value(&self.note),
+            ),
         ])
     }
 
@@ -88,6 +94,7 @@ impl BridgeMapped for BookingDraft {
                 BridgeKeyType::String,
             )?,
             tags: BridgeFieldRead::read_bridge_field(dictionary, "tags", BridgeKeyType::String)?,
+            note: BridgeFieldRead::read_bridge_field(dictionary, "note", BridgeKeyType::String)?,
         })
     }
 }

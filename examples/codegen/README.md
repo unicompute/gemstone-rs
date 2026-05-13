@@ -65,10 +65,12 @@ field = BookingDraft.name | type=String | key=name
 field = BookingDraft.amount | type=SmallInt | key=amount | key_type=Symbol
 field = BookingDraft.currency | type=String | key=currency
 field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.note | type=Option<String> | key=note
 ```
 
 Mapped fields support string keys, symbol keys, nested mapped structs, and
-vectors.
+vectors. Optional fields use `Option<T>`; missing keys and GemStone `nil` read
+back as `None`, while `Some(value)` reads through the inner field type.
 
 Generate a config from a live stone:
 

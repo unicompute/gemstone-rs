@@ -2,7 +2,7 @@
 //
 // Expected output includes:
 //
-// generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"] }
+// generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], note: Some("window seat") }
 
 #[allow(dead_code)]
 #[path = "../../../examples/codegen/generated/gemstone_wrappers.rs"]
@@ -20,6 +20,7 @@ fn main() -> gemstone_rs::Result<()> {
         amount: 100,
         currency: "GBP".to_string(),
         tags: vec!["priority".to_string(), "demo".to_string()],
+        note: Some("window seat".to_string()),
     };
     bridge_root.put_mapped("GeneratedBookingDraft", &draft)?;
 
