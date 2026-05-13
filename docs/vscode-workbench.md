@@ -68,6 +68,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Validate Project Profiles
 - List Project Profiles
 - Show Project Profile
+- Resolve Project Profile
 - Open Codegen Docs
 
 `Explorer` exposes:
@@ -223,7 +224,10 @@ without opening the explorer. Validation runs `gemstone-rs profile validate`
 against the selected profile file and writes the result to the GemStone RS
 output panel. `GemStone RS: List Project Profiles` and `GemStone RS: Show
 Project Profile` run `gemstone-rs profile list/show` and render the parsed
-config/root/mapped/class fields in the same output panel. The extension also
+config/root/mapped/class fields in the same output panel. `GemStone RS:
+Resolve Project Profile` runs `gemstone-rs profile resolve` and shows the
+config path that profile-driven codegen will use. Profile-specific commands
+use a QuickPick populated from the project profile file. The extension also
 contributes JSON validation for files named `gemstone-rs.codegen-profiles.json`.
 
 ## Develop the Extension

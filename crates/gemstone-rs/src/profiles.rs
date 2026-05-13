@@ -2,7 +2,7 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -75,6 +75,28 @@ pub struct CodegenProfile {
     pub root: Option<String>,
     pub mapped: Option<String>,
     pub class_name: Option<String>,
+}
+
+impl CodegenProfile {
+    pub fn resolved_config_path(&self) -> Result<PathBuf> {
+        let config = self
+            .config
+            .as_deref()
+            .filter(|value| !value.trim().is_empty())
+            .ok_or_else(|| {
+                Error::schema(format!("profile {} does not define config", self.name))
+            })?;
+        let config_path = PathBuf::from(config);
+        if config_path.is_absolute() {
+            return Ok(config_path);
+        }
+        let root = self.root.as_deref().unwrap_or_default().trim();
+        if root.is_empty() {
+            Ok(config_path)
+        } else {
+            Ok(PathBuf::from(root).join(config_path))
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -501,6 +523,33 @@ mod tests {
             })
         );
         assert!(project.get("missing").is_none());
+    }
+
+    #[test]
+    fn resolves_profile_config_path() {
+        let profile = CodegenProfile {
+            name: "default".to_string(),
+            config: Some("examples/codegen/gemstone-rs.codegen".to_string()),
+            root: Some("workspace".to_string()),
+            mapped: None,
+            class_name: None,
+        };
+        assert_eq!(
+            profile.resolved_config_path().unwrap(),
+            PathBuf::from("workspace/examples/codegen/gemstone-rs.codegen")
+        );
+
+        let profile = CodegenProfile {
+            name: "default".to_string(),
+            config: Some("/tmp/gemstone-rs.codegen".to_string()),
+            root: Some("workspace".to_string()),
+            mapped: None,
+            class_name: None,
+        };
+        assert_eq!(
+            profile.resolved_config_path().unwrap(),
+            PathBuf::from("/tmp/gemstone-rs.codegen")
+        );
     }
 
     #[test]

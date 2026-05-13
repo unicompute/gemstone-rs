@@ -190,7 +190,7 @@ BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot Key,
 Run Generated Mapping Example, Load Project Profiles, Save Project Profiles,
 Export Codegen Profile, Show Sample Project Profiles, Create Project Profiles,
 Validate Project Profiles, List Project Profiles, Show Project Profile, and
-Open Docs actions.
+Resolve Project Profile, and Open Docs actions.
 
 ## Later Examples
 

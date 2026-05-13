@@ -45,6 +45,7 @@ function activate(context) {
   register(context, "gemstoneRs.validateProjectProfiles", validateProjectProfiles);
   register(context, "gemstoneRs.listProjectProfiles", listProjectProfiles);
   register(context, "gemstoneRs.showProjectProfile", showProjectProfile);
+  register(context, "gemstoneRs.resolveProjectProfile", resolveProjectProfile);
   register(context, "gemstoneRs.launchExplorer", launchExplorer);
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
@@ -166,6 +167,7 @@ class GemStoneTreeProvider {
         actionNode("Validate Project Profiles", "gemstoneRs.validateProjectProfiles"),
         actionNode("List Project Profiles", "gemstoneRs.listProjectProfiles"),
         actionNode("Show Project Profile", "gemstoneRs.showProjectProfile"),
+        actionNode("Resolve Project Profile", "gemstoneRs.resolveProjectProfile"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
       ];
     }
@@ -740,23 +742,19 @@ async function listProjectProfiles() {
 }
 
 async function showProjectProfile() {
-  const profileName = await vscode.window.showInputBox({
-    title: "Show Project Profile",
-    prompt: "Project profile name",
-    value: "default",
-  });
-  if (!profileName) {
+  const selection = await pickProjectProfile("Show Project Profile");
+  if (!selection) {
     return;
   }
-  const profilePath = await vscode.window.showInputBox({
-    title: "Show Project Profile",
-    prompt: "Path to gemstone-rs.codegen-profiles.json",
-    value: settings().codegenProfiles,
-  });
-  if (!profilePath) {
+  await runAndShow(["profile", "show", selection.name, selection.path], { allowFailure: true });
+}
+
+async function resolveProjectProfile() {
+  const selection = await pickProjectProfile("Resolve Project Profile");
+  if (!selection) {
     return;
   }
-  await runAndShow(["profile", "show", profileName, profilePath], { allowFailure: true });
+  await runAndShow(["profile", "resolve", selection.name, selection.path], { allowFailure: true });
 }
 
 function openExplorerProfileWorkflow(title, instruction) {
@@ -816,14 +814,11 @@ async function askConfigPath() {
 }
 
 async function askProfileCodegenArgs(title) {
-  const profileName = await vscode.window.showInputBox({
-    title,
-    prompt: "Project profile name",
-    value: "default",
-  });
-  if (!profileName) {
-    return undefined;
-  }
+  const selection = await pickProjectProfile(title);
+  return selection ? [selection.name, selection.path] : undefined;
+}
+
+async function pickProjectProfile(title) {
   const profilePath = await vscode.window.showInputBox({
     title,
     prompt: "Path to gemstone-rs.codegen-profiles.json",
@@ -832,7 +827,56 @@ async function askProfileCodegenArgs(title) {
   if (!profilePath) {
     return undefined;
   }
-  return [profileName, profilePath];
+  const result = await runCli(["profile", "list", "--json", profilePath], { allowFailure: true });
+  if (result.code !== 0) {
+    output.clear();
+    output.appendLine(commandLine(result));
+    output.append(result.stdout);
+    output.append(result.stderr);
+    output.show(true);
+    vscode.window.showErrorMessage("gemstone-rs profile list failed. See GemStone RS output.");
+    return undefined;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch (error) {
+    output.clear();
+    output.appendLine(commandLine(result));
+    output.append(result.stdout);
+    output.append(result.stderr);
+    output.appendLine(`JSON parse error: ${error.message}`);
+    output.show(true);
+    vscode.window.showErrorMessage("gemstone-rs profile list returned invalid JSON.");
+    return undefined;
+  }
+
+  const profiles = Array.isArray(parsed.profiles) ? parsed.profiles : [];
+  if (profiles.length === 0) {
+    vscode.window.showWarningMessage(`No profiles found in ${profilePath}.`);
+    return undefined;
+  }
+  const item = await vscode.window.showQuickPick(profiles.map(profileQuickPickItem), {
+    title,
+    placeHolder: "Select a project profile",
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
+  return item ? { name: item.profile.name, path: profilePath } : undefined;
+}
+
+function profileQuickPickItem(profile) {
+  const config = profile.config || "-";
+  const root = profile.root === "" ? "\"\"" : profile.root || "-";
+  const mapped = profile.mapped || "-";
+  const className = profile.className || "-";
+  return {
+    label: profile.name || "(unnamed)",
+    description: config,
+    detail: `root=${root} mapped=${mapped} className=${className}`,
+    profile,
+  };
 }
 
 async function runAndShow(args, options = {}) {

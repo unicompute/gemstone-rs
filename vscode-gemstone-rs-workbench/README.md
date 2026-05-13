@@ -62,6 +62,7 @@ For a source checkout:
 - `GemStone RS: Validate Project Profiles`
 - `GemStone RS: List Project Profiles`
 - `GemStone RS: Show Project Profile`
+- `GemStone RS: Resolve Project Profile`
 - `GemStone RS: Launch Explorer`
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
@@ -79,8 +80,10 @@ Project Profiles` opens the built-in `gemstone-rs profile sample` output in an
 untitled JSON editor, `Create Project Profiles` writes that sample with
 `gemstone-rs profile init`, and `Validate Project Profiles` runs
 `gemstone-rs profile validate` directly and shows the result in the GemStone RS
-output panel. `List Project Profiles` and `Show Project Profile` render parsed
-profile details through `gemstone-rs profile list/show`. The extension also
+output panel. `List Project Profiles`, `Show Project Profile`, and `Resolve
+Project Profile` render parsed profile details and resolved config paths
+through `gemstone-rs profile list/show/resolve`. Profile commands use a
+QuickPick populated from the project profile file. The extension also
 contributes JSON validation for files named
 `gemstone-rs.codegen-profiles.json`.
 `Generate Mapping Config` asks the live stone for a starter `BridgeMapped`
@@ -106,9 +109,9 @@ Open the GemStone RS activity bar item to use the sidebar tree:
 - `Codegen Config` also exposes Load Project Profiles, Save Project Profiles,
   Export Codegen Profile, Show Sample Project Profiles, Create Project
   Profiles, Validate Project Profiles, List Project Profiles, Show Project
-  Profile, Generate Mapping Config, Preview BridgeRoot, List BridgeRoot Keys,
-  Put BridgeRoot String, Remove BridgeRoot Key, and Run Generated Mapping
-  Example.
+  Profile, Resolve Project Profile, Generate Mapping Config, Preview
+  BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
+  Key, and Run Generated Mapping Example.
 - `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, Launch Explorer, and
   Open Explorer Webview.
 

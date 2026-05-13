@@ -54,6 +54,7 @@
     "onCommand:gemstoneRs.validateProjectProfiles",
     "onCommand:gemstoneRs.listProjectProfiles",
     "onCommand:gemstoneRs.showProjectProfile",
+    "onCommand:gemstoneRs.resolveProjectProfile",
     "onCommand:gemstoneRs.launchExplorer",
     "onCommand:gemstoneRs.openExplorerWebview",
     "onCommand:gemstoneRs.openMethodSource",
@@ -197,6 +198,10 @@
       {
         "command": "gemstoneRs.showProjectProfile",
         "title": "GemStone RS: Show Project Profile"
+      },
+      {
+        "command": "gemstoneRs.resolveProjectProfile",
+        "title": "GemStone RS: Resolve Project Profile"
       },
       {
         "command": "gemstoneRs.launchExplorer",

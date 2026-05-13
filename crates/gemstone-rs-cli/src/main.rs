@@ -248,6 +248,23 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             }
             Ok(())
         }
+        Command::ProfileResolve { path, name, format } => {
+            let project = profiles::load_file(&path)?;
+            let profile = project.get(&name).ok_or_else(|| {
+                CliError::CodegenCheck(format!("profile {name} not found in {}", path.display()))
+            })?;
+            let resolved = profile.resolved_config_path()?;
+            match format {
+                OutputFormat::Human => print_resolved_project_profile(&path, profile, &resolved),
+                OutputFormat::Json => println!(
+                    r#"{{"path":"{}","profile":{},"resolvedConfig":"{}"}}"#,
+                    escape_json(&path.display().to_string()),
+                    codegen_profile_json(profile),
+                    escape_json(&resolved.display().to_string())
+                ),
+            }
+            Ok(())
+        }
         Command::CodegenInit { config } => {
             if config.exists() {
                 return Err(CliError::CodegenCheck(format!(
@@ -682,6 +699,15 @@ fn print_project_profile(path: &Path, profile: &profiles::CodegenProfile) {
     );
 }
 
+fn print_resolved_project_profile(
+    path: &Path,
+    profile: &profiles::CodegenProfile,
+    resolved: &Path,
+) {
+    print_project_profile(path, profile);
+    println!("resolvedConfig: {}", resolved.display());
+}
+
 fn profile_field(value: Option<&str>) -> String {
     match value {
         Some("") => "\"\"".to_string(),
@@ -767,6 +793,11 @@ enum Command {
         format: OutputFormat,
     },
     ProfileShow {
+        path: PathBuf,
+        name: String,
+        format: OutputFormat,
+    },
+    ProfileResolve {
         path: PathBuf,
         name: String,
         format: OutputFormat,
@@ -923,8 +954,13 @@ fn parse_profile_command(args: &[String]) -> Result<Command, CliError> {
             |path, format| Command::ProfileList { path, format },
         ),
         Some("show") => parse_profile_show_command(&args[1..]),
+        Some("resolve") => parse_profile_name_path_format_command(
+            &args[1..],
+            "profile resolve <name> [--json] [path]",
+            |name, path, format| Command::ProfileResolve { path, name, format },
+        ),
         _ => Err(CliError::usage(
-            "expected: profile sample | profile init [path] | profile validate [--json] [path] | profile list [--json] [path] | profile show <name> [--json] [path]",
+            "expected: profile sample | profile init [path] | profile validate [--json] [path] | profile list [--json] [path] | profile show <name> [--json] [path] | profile resolve <name> [--json] [path]",
         )),
     }
 }
@@ -965,21 +1001,27 @@ fn parse_profile_path_format_command(
 }
 
 fn parse_profile_show_command(args: &[String]) -> Result<Command, CliError> {
+    parse_profile_name_path_format_command(
+        args,
+        "profile show <name> [--json] [path]",
+        |name, path, format| Command::ProfileShow { path, name, format },
+    )
+}
+
+fn parse_profile_name_path_format_command(
+    args: &[String],
+    usage: &'static str,
+    build: impl FnOnce(String, PathBuf, OutputFormat) -> Command,
+) -> Result<Command, CliError> {
     let mut format = OutputFormat::Human;
     let mut name = None;
     let mut path = None;
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
-            "-h" | "--help" => {
-                return Err(CliError::usage(
-                    "expected: profile show <name> [--json] [path]",
-                ));
-            }
+            "-h" | "--help" => return Err(CliError::usage(format!("expected: {usage}"))),
             option if option.starts_with('-') => {
-                return Err(CliError::usage(format!(
-                    "unknown profile show option: {option}"
-                )));
+                return Err(CliError::usage(format!("unknown profile option: {option}")));
             }
             value if name.is_none() => name = Some(value.to_string()),
             value if path.is_none() => path = Some(PathBuf::from(value)),
@@ -991,11 +1033,11 @@ fn parse_profile_show_command(args: &[String]) -> Result<Command, CliError> {
         }
     }
 
-    Ok(Command::ProfileShow {
-        path: path.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
-        name: name.ok_or_else(|| CliError::usage("missing profile name"))?,
+    Ok(build(
+        name.ok_or_else(|| CliError::usage("missing profile name"))?,
+        path.unwrap_or_else(|| PathBuf::from(profiles::DEFAULT_PROFILE_PATH)),
         format,
-    })
+    ))
 }
 
 fn parse_codegen_profile_command(
@@ -1329,26 +1371,7 @@ fn profile_codegen_config_path(
             profile_file.display()
         ))
     })?;
-    let config = profile
-        .config
-        .as_deref()
-        .filter(|value| !value.trim().is_empty())
-        .ok_or_else(|| {
-            CliError::CodegenCheck(format!(
-                "profile {profile_name} in {} does not define config",
-                profile_file.display()
-            ))
-        })?;
-    let config_path = PathBuf::from(config);
-    if config_path.is_absolute() {
-        return Ok(config_path);
-    }
-    let root = profile.root.as_deref().unwrap_or_default().trim();
-    if root.is_empty() {
-        Ok(config_path)
-    } else {
-        Ok(PathBuf::from(root).join(config_path))
-    }
+    profile.resolved_config_path().map_err(CliError::Profiles)
 }
 
 fn run_codegen_diff(config_path: &Path) -> Result<(), CliError> {
@@ -1403,6 +1426,7 @@ fn usage() -> &'static str {
   gemstone-rs profile validate [--json] [path]
   gemstone-rs profile list [--json] [path]
   gemstone-rs profile show <name> [--json] [path]
+  gemstone-rs profile resolve <name> [--json] [path]
   gemstone-rs codegen init [config]
   gemstone-rs codegen preview [config]
   gemstone-rs codegen preview-profile <profile-name> [profile-file]
@@ -1852,6 +1876,21 @@ mod tests {
             ]))
             .unwrap(),
             Command::ProfileShow {
+                path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
+                name: "default".to_string(),
+                format: OutputFormat::Json
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "profile",
+                "resolve",
+                "default",
+                "examples/codegen/gemstone-rs.codegen-profiles.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::ProfileResolve {
                 path: PathBuf::from("examples/codegen/gemstone-rs.codegen-profiles.json"),
                 name: "default".to_string(),
                 format: OutputFormat::Json
