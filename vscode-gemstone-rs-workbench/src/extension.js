@@ -17,6 +17,7 @@ function activate(context) {
 
   register(context, "gemstoneRs.refreshExplorer", () => explorerProvider.refresh());
   register(context, "gemstoneRs.verifySetup", verifySetup);
+  register(context, "gemstoneRs.verifyLiveSetup", verifyLiveSetup);
   register(context, "gemstoneRs.doctor", doctor);
   register(context, "gemstoneRs.eval", evalSmalltalk);
   register(context, "gemstoneRs.browseDictionaries", browseDictionaries);
@@ -178,6 +179,7 @@ class GemStoneTreeProvider {
       return [
         actionNode("Doctor", "gemstoneRs.doctor"),
         actionNode("Verify Setup", "gemstoneRs.verifySetup"),
+        actionNode("Verify Live Setup", "gemstoneRs.verifyLiveSetup"),
         actionNode("Eval Smalltalk", "gemstoneRs.eval"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
         actionNode("Open Explorer Webview", "gemstoneRs.openExplorerWebview"),
@@ -221,9 +223,27 @@ async function childrenFromCli(args, mapper) {
 }
 
 async function verifySetup() {
+  await runSetupCheck({
+    args: ["doctor"],
+    title: "gemstone-rs Workbench setup",
+    success: "gemstone-rs setup check passed.",
+    failure: "gemstone-rs setup check found issues. See GemStone RS output.",
+  });
+}
+
+async function verifyLiveSetup() {
+  await runSetupCheck({
+    args: ["doctor", "--live"],
+    title: "gemstone-rs Workbench live setup",
+    success: "gemstone-rs live setup check passed.",
+    failure: "gemstone-rs live setup check found issues. See GemStone RS output.",
+  });
+}
+
+async function runSetupCheck({ args, title, success, failure }) {
   const cfg = settings();
-  const result = await runCli(["doctor"], { allowFailure: true });
-  const reportText = formatSetupReport(cfg, result);
+  const result = await runCli(args, { allowFailure: true });
+  const reportText = formatSetupReport(cfg, result, title);
   output.clear();
   output.append(reportText);
   output.show(true);
@@ -231,14 +251,14 @@ async function verifySetup() {
   let action;
   if (result.code === 0) {
     action = await vscode.window.showInformationMessage(
-      "gemstone-rs setup check passed.",
+      success,
       "Copy Report",
       "Copy Env Script",
       "Open Settings"
     );
   } else {
     action = await vscode.window.showWarningMessage(
-      "gemstone-rs setup check found issues. See GemStone RS output.",
+      failure,
       "Copy Report",
       "Copy Env Script",
       "Open Settings"
@@ -247,9 +267,9 @@ async function verifySetup() {
   await handleSetupAction(action, reportText);
 }
 
-function formatSetupReport(cfg, result) {
+function formatSetupReport(cfg, result, title) {
   const lines = [
-    "gemstone-rs Workbench setup",
+    title,
     `cwd: ${cfg.cwd}`,
     `useCargo: ${cfg.useCargo}`,
     `cliPath: ${cfg.cliPath}`,

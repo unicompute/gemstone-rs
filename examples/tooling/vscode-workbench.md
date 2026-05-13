@@ -76,14 +76,16 @@ change.
 From the `Explorer` tree:
 
 1. Run `Verify Setup`.
-2. Run `Eval Smalltalk` with `3 + 4`.
-3. Run `Launch Explorer`.
-4. Run `Open Explorer Webview`.
+2. Run `Verify Live Setup` when credentials and a reachable stone are ready.
+3. Run `Eval Smalltalk` with `3 + 4`.
+4. Run `Launch Explorer`.
+5. Run `Open Explorer Webview`.
 
 `Verify Setup` shows the active checkout, CLI, explorer, codegen config, and
 project profile paths beside the `gemstone-rs doctor` output. Use the result
 actions to copy the report, copy a safe `GS_*` environment export script with a
-placeholder password, or jump straight to the workbench settings.
+placeholder password, or jump straight to the workbench settings. `Verify Live
+Setup` uses the same report format but calls `gemstone-rs doctor --live`.
 
 `Launch Explorer` starts `gemstone-rs-explorer` in a VS Code terminal and opens
 the loopback URL. `Open Explorer Webview` embeds the running local explorer in a

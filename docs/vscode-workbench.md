@@ -76,6 +76,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 
 - Doctor
 - Verify Setup
+- Verify Live Setup
 - Eval Smalltalk
 - Launch Explorer
 - Open Explorer Webview
@@ -85,6 +86,7 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 Commands:
 
 - `GemStone RS: Verify Setup`
+- `GemStone RS: Verify Live Setup`
 - `GemStone RS: Doctor`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
@@ -122,10 +124,12 @@ Commands:
 
 `GemStone RS: Verify Setup` and `GemStone RS: Doctor` both run the CLI
 `gemstone-rs doctor` report, so the workbench setup view and terminal setup
-use the same diagnostic path. `Verify Setup` adds the active checkout, CLI,
-explorer, codegen config, and profile paths, then offers result actions to copy
-the full report, copy a safe `GS_*` environment export script with a placeholder
-password, or open the extension settings.
+use the same diagnostic path. `GemStone RS: Verify Live Setup` runs
+`gemstone-rs doctor --live` when credentials and a reachable stone are
+available. Both setup checks add the active checkout, CLI, explorer, codegen
+config, and profile paths, then offer result actions to copy the full report,
+copy a safe `GS_*` environment export script with a placeholder password, or
+open the extension settings.
 
 ## Codegen Workflow
 

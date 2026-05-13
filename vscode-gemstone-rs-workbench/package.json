@@ -26,6 +26,7 @@
     "onView:gemstoneRsExplorer",
     "onCommand:gemstoneRs.refreshExplorer",
     "onCommand:gemstoneRs.verifySetup",
+    "onCommand:gemstoneRs.verifyLiveSetup",
     "onCommand:gemstoneRs.doctor",
     "onCommand:gemstoneRs.eval",
     "onCommand:gemstoneRs.browseDictionaries",
@@ -87,6 +88,10 @@
       {
         "command": "gemstoneRs.verifySetup",
         "title": "GemStone RS: Verify Setup"
+      },
+      {
+        "command": "gemstoneRs.verifyLiveSetup",
+        "title": "GemStone RS: Verify Live Setup"
       },
       {
         "command": "gemstoneRs.doctor",

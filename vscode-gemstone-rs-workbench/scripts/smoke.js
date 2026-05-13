@@ -24,6 +24,7 @@ function includes(list, value) {
 const requiredCommands = [
   "gemstoneRs.openExplorerWebview",
   "gemstoneRs.launchExplorer",
+  "gemstoneRs.verifyLiveSetup",
   "gemstoneRs.codegenPreview",
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
@@ -71,8 +72,10 @@ assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
 assert(extensionSource.includes("Copy Env Script"), "verify setup should offer environment script copy");
 assert(extensionSource.includes("Open Settings"), "verify setup should offer settings shortcut");
+assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
 assert(extensionSource.includes("GS_PASSWORD='change-me'"), "environment script should not copy real passwords");
 assert(readme.includes("Open Explorer Webview"), "README should mention the webview command");
+assert(readme.includes("Verify Live Setup"), "README should mention live setup verification");
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");

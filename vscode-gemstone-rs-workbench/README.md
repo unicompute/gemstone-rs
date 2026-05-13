@@ -34,6 +34,7 @@ For a source checkout:
 ## Commands
 
 - `GemStone RS: Verify Setup`
+- `GemStone RS: Verify Live Setup`
 - `GemStone RS: Doctor`
 - `GemStone RS: Eval Smalltalk`
 - `GemStone RS: Browse Dictionaries`
@@ -100,11 +101,12 @@ BridgeRoot writes through the CLI after prompting for a key and value.
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
 `Verify Setup` and `Doctor` run `gemstone-rs doctor`, so VS Code reports the
-same masked environment and GCI-library checks as the terminal. `Verify Setup`
-also reports the active checkout, CLI, explorer, codegen config, and profile
-paths. Its result actions can copy the setup report, copy a safe `GS_*`
-environment export script with a placeholder password, or open the extension
-settings.
+same masked environment and GCI-library checks as the terminal. `Verify Live
+Setup` runs `gemstone-rs doctor --live` when credentials and a reachable stone
+are available. Both setup checks report the active checkout, CLI, explorer,
+codegen config, and profile paths. Their result actions can copy the setup
+report, copy a safe `GS_*` environment export script with a placeholder
+password, or open the extension settings.
 
 ## Sidebar
 
@@ -120,8 +122,8 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Profile, Resolve Project Profile, Check Project Profiles, Generate Mapping Config, Preview
   BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Remove BridgeRoot
   Key, and Run Generated Mapping Example.
-- `Explorer` exposes Doctor, Verify Setup, Eval Smalltalk, Launch Explorer, and
-  Open Explorer Webview.
+- `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Eval Smalltalk,
+  Launch Explorer, and Open Explorer Webview.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with
