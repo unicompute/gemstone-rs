@@ -311,18 +311,18 @@ curl -i http://127.0.0.1:3000/health/gemstone
 
 The example uses only the Rust standard library. It proves the service shape and
 GemStone health-check flow without pulling web framework dependencies into the
-workspace. `gemstone-py` is still ahead for batteries-included FastAPI,
+core crate. `gemstone-py` is still ahead for batteries-included FastAPI,
 Litestar, and Django adapters; `gemstone-rs` now has a direct Rust service
-smoke path plus checked Axum and Actix services outside the core workspace:
+smoke path plus packaged Axum and Actix adapter crates:
 
 ```bash
 cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 ```
 
-The Axum and Actix services now start a bounded `SessionWorkerPool`, then wrap
-the shared `gemstone_rs::web` health response helper in framework-specific
-blocking calls.
+The Axum and Actix services now start a bounded `SessionWorkerPool`, then use
+`gemstone-rs-axum` or `gemstone-rs-actix` to expose `/`, `/health/local`, and
+`/health/gemstone` without copying handler code.
 
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:
@@ -354,9 +354,8 @@ The installed CLI can also scaffold this shape:
 gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool
 ```
 
-Reusable adapter crates and an async facade remain planned; the dependency-free
-`gemstone_rs::web` helpers are the shared response layer those adapters should
-wrap.
+An async facade remains planned; the dependency-free `gemstone_rs::web` helpers
+are still the shared response layer beneath the packaged framework adapters.
 
 ## Recipe 20: Run the Local Explorer
 

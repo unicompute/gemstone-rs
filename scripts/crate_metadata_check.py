@@ -15,6 +15,8 @@ CRATE_ORDER = [
     "gemstone-gci",
     "gemstone-rs-macros",
     "gemstone-rs",
+    "gemstone-rs-axum",
+    "gemstone-rs-actix",
     "gemstone-rs-cli",
     "gemstone-rs-explorer",
 ]
@@ -23,6 +25,8 @@ CRATE_PATHS = {
     "gemstone-gci": "crates/gemstone-gci",
     "gemstone-rs-macros": "crates/gemstone-rs-macros",
     "gemstone-rs": "crates/gemstone-rs",
+    "gemstone-rs-axum": "crates/gemstone-rs-axum",
+    "gemstone-rs-actix": "crates/gemstone-rs-actix",
     "gemstone-rs-cli": "crates/gemstone-rs-cli",
     "gemstone-rs-explorer": "crates/gemstone-rs-explorer",
 }
@@ -34,6 +38,8 @@ EXPECTED_BINS = {
 
 LOCAL_DEPENDENCIES = {
     "gemstone-rs": ["gemstone-gci", "gemstone-rs-macros"],
+    "gemstone-rs-axum": ["gemstone-rs"],
+    "gemstone-rs-actix": ["gemstone-rs"],
     "gemstone-rs-cli": ["gemstone-rs"],
     "gemstone-rs-explorer": ["gemstone-rs"],
 }

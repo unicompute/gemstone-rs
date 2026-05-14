@@ -16,11 +16,19 @@ CRATE_MANIFESTS = {
     "gemstone-gci": ROOT / "crates/gemstone-gci/Cargo.toml",
     "gemstone-rs-macros": ROOT / "crates/gemstone-rs-macros/Cargo.toml",
     "gemstone-rs": ROOT / "crates/gemstone-rs/Cargo.toml",
+    "gemstone-rs-axum": ROOT / "crates/gemstone-rs-axum/Cargo.toml",
+    "gemstone-rs-actix": ROOT / "crates/gemstone-rs-actix/Cargo.toml",
     "gemstone-rs-cli": ROOT / "crates/gemstone-rs-cli/Cargo.toml",
     "gemstone-rs-explorer": ROOT / "crates/gemstone-rs-explorer/Cargo.toml",
 }
 
-WORKSPACE_DEPS = ["gemstone-gci", "gemstone-rs-macros", "gemstone-rs"]
+WORKSPACE_DEPS = [
+    "gemstone-gci",
+    "gemstone-rs-macros",
+    "gemstone-rs",
+    "gemstone-rs-axum",
+    "gemstone-rs-actix",
+]
 
 
 def read_text(path: Path) -> str:

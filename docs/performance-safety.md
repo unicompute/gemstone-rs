@@ -33,8 +33,8 @@ For web servers:
 - use `SessionWorker` when you want one reusable dedicated session lane
 - use `SessionWorkerPool` when a service needs a bounded set of reusable lanes
 - use `spawn_blocking` or framework blocking helpers for simple per-request probes
-- prefer a small `SessionWorkerPool` for web services until a framework adapter
-  crate owns the pattern
+- prefer a small `SessionWorkerPool` for web services and reuse
+  `gemstone-rs-axum` or `gemstone-rs-actix` instead of copying handler code
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

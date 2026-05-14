@@ -8,4 +8,4 @@ publish = false
 
 [dependencies]
 actix-web = "4"
-gemstone-rs = { path = "../../crates/gemstone-rs" }
+gemstone-rs-actix = { path = "../../crates/gemstone-rs-actix" }

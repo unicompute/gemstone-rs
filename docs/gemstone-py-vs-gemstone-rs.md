@@ -55,7 +55,7 @@ file.
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
-| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, checked Axum, and checked Actix examples; packaged adapters still planned |
+| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, and checked Axum/Actix examples |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -83,7 +83,7 @@ file.
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
 | Rust HTTP service demo | Not applicable | Supported through `cargo run -p gemstone-rs --example http_service -- --port 3000` |
-| Axum/Actix demo | Not applicable | Axum and Actix services supported through `examples/axum-service` and `examples/actix-service` |
+| Axum/Actix demo | Not applicable | Axum and Actix services supported through `gemstone-rs-axum`, `gemstone-rs-actix`, `examples/axum-service`, and `examples/actix-service` |
 | Installed examples index | `gemstone-examples hello`, `list`, `plan3-map` | `gemstone-rs hello`, `compare gemstone-py`, `examples list`, `map`, `show`, `run --dry-run`, `scaffold`, plus JSON for tooling |
 | Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
 | VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
@@ -103,7 +103,7 @@ test that should verify it.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Package the shared `gemstone_rs::web` helpers into reusable Axum/Actix adapter crates with startup, `/`, `/health/local`, `/health/gemstone`, `SessionWorkerPool` wiring, and CI smoke coverage. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add middleware examples, request tracing, and live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
@@ -140,21 +140,20 @@ not the implementation language:
   standalone Cargo projects from the installed CLI, reducing the need for a
   source checkout. `profile_codegen_workflow` includes codegen config and
   project profile files, not only Rust source.
-- Rust web service shape: `http_service` now gives a real HTTP example with
-  `/`, `/health/local`, and `/health/gemstone` without adding framework
-  dependencies; `examples/axum-service` is a checked Axum crate using
-  `SessionWorkerPool`, `gemstone_rs::web`, and `spawn_blocking`;
-  `examples/actix-service` is a checked Actix Web crate using
-  `SessionWorkerPool`, `gemstone_rs::web`, and `web::block`. The installed CLI
-  can scaffold `session_worker_pool`, `axum_service`, and `actix_service`.
-  Reusable adapter crates and an async facade remain future work.
+- Rust web service shape: `http_service` gives a real HTTP example with `/`,
+  `/health/local`, and `/health/gemstone` without adding framework
+  dependencies. `gemstone-rs-axum` and `gemstone-rs-actix` now package the
+  same route contract for framework users, and `examples/axum-service` plus
+  `examples/actix-service` are checked crates using those adapters. The
+  installed CLI can scaffold `session_worker_pool`, `axum_service`, and
+  `actix_service`. Richer framework middleware and an async facade remain
+  future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for
   explorer-integrated workflows and richer generated wrapper profile variants,
-  plus reusable Rust web adapter crates, an async facade, and richer explorer
-  screens before its onboarding feels as complete as
-  gemstone-py.
+  plus framework middleware, an async facade, and richer explorer screens
+  before its onboarding feels as complete as gemstone-py.
 
 ## How They Should Work Together
 

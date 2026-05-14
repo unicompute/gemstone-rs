@@ -67,6 +67,8 @@ Install:
 
 \`\`\`bash
 cargo add gemstone-rs
+cargo add gemstone-rs-axum
+cargo add gemstone-rs-actix
 cargo install gemstone-rs-cli
 cargo install gemstone-rs-explorer
 \`\`\`
@@ -81,6 +83,7 @@ Highlights:
 - Workbench automatically passes the configured env file when it exists.
 - \`codegen explain --json\` and \`codegen explain-profile --json\` for structured Codegen summaries.
 - Shared \`profile check --json\` report model for CLI, explorer, and VS Code.
+- Packaged \`gemstone-rs-axum\` and \`gemstone-rs-actix\` adapter crates for Rust web services.
 - Codegen/profile-check schemas and generated-wrapper compile smoke checks.
 - Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
 - Explorer project profile status table with Preview/Diff/Check/Generate actions.

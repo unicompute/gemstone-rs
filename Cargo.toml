@@ -2,6 +2,8 @@
 members = [
   "crates/gemstone-gci",
   "crates/gemstone-rs",
+  "crates/gemstone-rs-actix",
+  "crates/gemstone-rs-axum",
   "crates/gemstone-rs-cli",
   "crates/gemstone-rs-explorer",
   "crates/gemstone-rs-macros",
@@ -19,6 +21,11 @@ categories = ["api-bindings", "database"]
 
 [workspace.dependencies]
 gemstone-rs = { version = "0.2.2", path = "crates/gemstone-rs" }
+gemstone-rs-actix = { version = "0.2.2", path = "crates/gemstone-rs-actix" }
+gemstone-rs-axum = { version = "0.2.2", path = "crates/gemstone-rs-axum" }
 gemstone-gci = { version = "0.2.2", path = "crates/gemstone-gci" }
 gemstone-rs-macros = { version = "0.2.2", path = "crates/gemstone-rs-macros" }
+actix-web = "4"
+axum = "0.8"
 libloading = "0.8"
+tokio = { version = "1", features = ["rt"] }

@@ -110,8 +110,8 @@ CLI binary is installed and runnable.
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | Terminal-only browse workflow. |
 | HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | Standard-library web service with `/`, `/health/local`, and `/health/gemstone`. |
-| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `SessionWorkerPool` and shared `gemstone_rs::web` health responses. |
-| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | Checked Actix route shape with `SessionWorkerPool` and shared `gemstone_rs::web` health responses. |
+| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `gemstone-rs-axum`, `SessionWorkerPool`, and shared `gemstone_rs::web` health responses. |
+| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | Checked Actix route shape with `gemstone-rs-actix`, `SessionWorkerPool`, and shared `gemstone_rs::web` health responses. |
 
 ## Suggested Learning Order
 
@@ -305,5 +305,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- a reusable framework adapter crate wired into CI
+- richer middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
 - a richer class browser walkthrough with captured output

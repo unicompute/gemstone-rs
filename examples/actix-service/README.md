@@ -1,8 +1,9 @@
 # Actix Service Example
 
 This is a checked Rust-native Actix Web service for teams that want
-`gemstone-rs` inside an async web application. It is intentionally kept outside
-the main workspace so the core crate stays dependency-light.
+`gemstone-rs` inside an async web application. It uses the reusable
+`gemstone-rs-actix` adapter crate so application code does not copy
+health-route handlers.
 
 It exposes the same minimal contract used by the Python FastAPI/Litestar
 examples:
@@ -33,10 +34,10 @@ curl -i http://127.0.0.1:3000/health/local
 curl -i http://127.0.0.1:3000/health/gemstone
 ```
 
-The service starts a bounded `SessionWorkerPool` and the GemStone health route
-uses the shared `gemstone_rs::web` response helper inside
-`actix_web::web::block`. Each underlying GemStone `Session` stays pinned to one
-worker thread.
+The service starts a bounded `SessionWorkerPool` and passes it to
+`gemstone_rs_actix::scope_with_name`. The adapter wraps the shared
+`gemstone_rs::web` response helper inside `actix_web::web::block`. Each
+underlying GemStone `Session` stays pinned to one worker thread.
 
 Use the installed scaffold when you want to start a separate application:
 

@@ -68,7 +68,7 @@ if [[ "$VERIFY_GITHUB_RELEASE" != "0" && "$VERIFY_GITHUB_RELEASE" != "false" ]];
   require python3
 fi
 
-for crate in gemstone-gci gemstone-rs-macros gemstone-rs gemstone-rs-cli gemstone-rs-explorer; do
+for crate in gemstone-gci gemstone-rs-macros gemstone-rs gemstone-rs-axum gemstone-rs-actix gemstone-rs-cli gemstone-rs-explorer; do
   check_crate_version "$crate"
 done
 

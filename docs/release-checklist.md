@@ -136,8 +136,10 @@ The workflow publishes crates in dependency order:
 1. `gemstone-gci`
 2. `gemstone-rs-macros`
 3. `gemstone-rs`
-4. `gemstone-rs-cli`
-5. `gemstone-rs-explorer`
+4. `gemstone-rs-axum`
+5. `gemstone-rs-actix`
+6. `gemstone-rs-cli`
+7. `gemstone-rs-explorer`
 
 It also packages/publishes the VSIX and can create the GitHub release with the
 VSIX attached.

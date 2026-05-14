@@ -12,6 +12,8 @@ manifest_for_crate() {
     gemstone-gci) echo "crates/gemstone-gci/Cargo.toml" ;;
     gemstone-rs-macros) echo "crates/gemstone-rs-macros/Cargo.toml" ;;
     gemstone-rs) echo "crates/gemstone-rs/Cargo.toml" ;;
+    gemstone-rs-axum) echo "crates/gemstone-rs-axum/Cargo.toml" ;;
+    gemstone-rs-actix) echo "crates/gemstone-rs-actix/Cargo.toml" ;;
     gemstone-rs-cli) echo "crates/gemstone-rs-cli/Cargo.toml" ;;
     gemstone-rs-explorer) echo "crates/gemstone-rs-explorer/Cargo.toml" ;;
     *) echo "unknown crate: $1" >&2; return 2 ;;
@@ -59,5 +61,7 @@ publish_crate() {
 publish_crate gemstone-gci
 publish_crate gemstone-rs-macros
 publish_crate gemstone-rs
+publish_crate gemstone-rs-axum
+publish_crate gemstone-rs-actix
 publish_crate gemstone-rs-cli
 publish_crate gemstone-rs-explorer

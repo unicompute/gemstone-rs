@@ -609,9 +609,9 @@ as thread-local. The repository now includes a standard-library HTTP service
 example with `/`, `/health/local`, and `/health/gemstone` routes, a checked
 Axum service under `examples/axum-service`, and a checked Actix service under
 `examples/actix-service`. The shared `gemstone_rs::web` module now builds the
-JSON health responses, while each framework example wraps the same
-`SessionWorkerPool` health check in its blocking helper. That keeps the core
-workspace dependency-light while proving the async web-service shape.
+JSON health responses, while `gemstone-rs-axum` and `gemstone-rs-actix` package
+the framework route handlers. That keeps the core crate dependency-light while
+proving the async web-service shape.
 The newer `SessionWorker` API gives these services a reusable dedicated-thread
 session lane when opening a session per health request is not enough:
 

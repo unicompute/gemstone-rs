@@ -1675,11 +1675,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "gemstone-rs::web, SessionWorkerPool, checked Axum/Actix services, and installed scaffolds",
+        crates: "gemstone-rs::web, gemstone-rs-axum, gemstone-rs-actix, SessionWorkerPool, checked Axum/Actix services, and installed scaffolds",
         examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, SessionWorkerPool, checked Axum/Actix services, and installed scaffolds exist; packaged framework adapters remain planned",
+        status: "Shared JSON health helpers, std HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked services, and installed scaffolds exist; richer middleware remains planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1723,8 +1723,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, checked Axum, and checked Actix examples exist; packaged adapters are still planned",
-        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and bounded session-worker boundaries",
+        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, and checked Axum/Actix examples exist",
+        recommendation: "Use gemstone-py today for the broadest framework coverage; use gemstone-rs when Rust services need direct GemStone health routes and bounded session-worker boundaries",
     },
     ComparisonInfo {
         topic: "Codegen and mapping",
@@ -1751,8 +1751,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs has shared JSON health helpers, standard-library HTTP, SessionWorkerPool, checked Axum/Actix services, and installed Axum/Actix scaffolds, but no packaged framework adapter crate yet.",
-        next_action: "Package gemstone_rs::web into reusable Axum/Actix adapter crates with startup, /, /health/local, /health/gemstone, SessionWorkerPool wiring, and CI smoke coverage.",
+        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked services, and installed Axum/Actix scaffolds. It still needs richer framework middleware, request tracing, and live route smoke coverage.",
+        next_action: "Add middleware examples, request tracing, and live route smoke tests for the packaged Axum/Actix adapters.",
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
@@ -1775,7 +1775,7 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Async facade",
         gemstone_py_strength: "gemstone-py has async examples, FastAPI integration, and lifetime/GC tests around async behavior.",
-        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and now has SessionWorkerPool and shared web helpers, but no async facade or packaged framework adapter crate yet.",
+        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and now has SessionWorkerPool plus packaged web adapters, but no general async facade yet.",
         next_action: "Add an async facade over SessionWorkerPool after GCI thread behavior is proven with live tests.",
         verify_with: "GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_",
     },
@@ -1934,6 +1934,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Standalone Axum service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/axum_service.rs"),
         extra_dependencies: r#"axum = "0.8"
+gemstone-rs-axum = "0.2.2"
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 "#,
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
@@ -1945,6 +1946,7 @@ tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
         description: "Standalone Actix Web service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/actix_service.rs"),
         extra_dependencies: r#"actix-web = "4"
+gemstone-rs-actix = "0.2.2"
 "#,
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
@@ -4031,7 +4033,7 @@ mod tests {
         assert!(FEATURE_MAP
             .iter()
             .any(|feature| feature.title == "Rust web services"
-                && feature.status.contains("packaged framework adapters")));
+                && feature.status.contains("packaged Axum/Actix adapters")));
         assert!(FEATURE_MAP
             .iter()
             .any(|feature| feature.title == "Safe sessions and transactions"
@@ -4067,7 +4069,7 @@ mod tests {
             .iter()
             .any(|row| row.topic == "Web frameworks"
                 && row.gemstone_py.contains("FastAPI")
-                && row.gemstone_rs.contains("packaged adapters")));
+                && row.gemstone_rs.contains("packaged Axum/Actix adapters")));
         assert!(comparison_json(&GEMSTONE_PY_COMPARISON[0]).contains(r#""gemstonePy":"#));
     }
 
@@ -4077,7 +4079,7 @@ mod tests {
             gap.priority == "P1"
                 && gap.area == "Web framework adapters"
                 && gap.gemstone_py_strength.contains("FastAPI")
-                && gap.next_action.contains("adapter crates")
+                && gap.next_action.contains("middleware")
         }));
         assert!(GEMSTONE_PY_GAPS
             .iter()
@@ -4163,12 +4165,14 @@ mod tests {
         let axum_toml = scaffold_cargo_toml(axum);
         assert!(axum_toml.contains(r#"name = "gemstone-rs-axum-service""#));
         assert!(axum_toml.contains(r#"axum = "0.8""#));
+        assert!(axum_toml.contains(r#"gemstone-rs-axum = "0.2.2""#));
         assert!(axum_toml.contains(r#"tokio = { version = "1""#));
 
         let actix = find_scaffold_template("actix").unwrap();
         let actix_toml = scaffold_cargo_toml(actix);
         assert!(actix_toml.contains(r#"name = "gemstone-rs-actix-service""#));
         assert!(actix_toml.contains(r#"actix-web = "4""#));
+        assert!(actix_toml.contains(r#"gemstone-rs-actix = "0.2.2""#));
 
         let err = scaffold_example_project(template, &target, false)
             .unwrap_err()

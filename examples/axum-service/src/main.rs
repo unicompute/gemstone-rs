@@ -1,11 +1,3 @@
-use axum::{
-    extract::State,
-    http::{header, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    Router,
-};
-use gemstone_rs::{web as gemstone_web, Config, SessionWorkerPool};
 use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
@@ -19,58 +11,21 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
-    let pool = SessionWorkerPool::start(Config::from_env()?, options.workers)?;
+    let pool = gemstone_rs_axum::pool_from_env(options.workers)?;
     let listener = tokio::net::TcpListener::bind(options.addr()).await?;
     println!(
         "gemstone-rs Axum service running at http://{}/",
         listener.local_addr()?
     );
-    println!("GET /");
-    println!("GET /health/local");
-    println!("GET /health/gemstone");
-    axum::serve(listener, app(pool)).await?;
+    for route in gemstone_rs_axum::ROUTES {
+        println!("{route}");
+    }
+    axum::serve(
+        listener,
+        gemstone_rs_axum::router_with_name(pool, "gemstone-rs Axum service example"),
+    )
+    .await?;
     Ok(())
-}
-
-#[derive(Clone)]
-struct AppState {
-    pool: SessionWorkerPool,
-}
-
-fn app(pool: SessionWorkerPool) -> Router {
-    Router::new()
-        .route("/", get(root))
-        .route("/health/local", get(health_local))
-        .route("/health/gemstone", get(health_gemstone))
-        .with_state(AppState { pool })
-}
-
-async fn root() -> impl IntoResponse {
-    json_response(gemstone_web::index_response(
-        "gemstone-rs Axum service example",
-    ))
-}
-
-async fn health_local() -> impl IntoResponse {
-    json_response(gemstone_web::local_health_response())
-}
-
-async fn health_gemstone(State(state): State<AppState>) -> impl IntoResponse {
-    let pool = state.pool.clone();
-    let response = match tokio::task::spawn_blocking(move || {
-        gemstone_web::gemstone_health_response(&pool)
-    })
-    .await
-    {
-        Ok(response) => response,
-        Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
-    };
-    json_response(response)
-}
-
-fn json_response(response: gemstone_web::JsonResponse) -> impl IntoResponse {
-    let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    (status, [(header::CONTENT_TYPE, "application/json")], response.body)
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -129,9 +84,9 @@ fn print_routes(options: &Options) {
     println!("gemstone-rs Axum service example");
     println!("  bind: {}", options.addr());
     println!("  workers: {}", options.workers);
-    println!("  GET /");
-    println!("  GET /health/local");
-    println!("  GET /health/gemstone");
+    for route in gemstone_rs_axum::ROUTES {
+        println!("  {route}");
+    }
     println!();
     println!("Start:");
     println!(

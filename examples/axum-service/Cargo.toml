@@ -8,5 +8,5 @@ publish = false
 
 [dependencies]
 axum = "0.8"
-gemstone-rs = { path = "../../crates/gemstone-rs" }
+gemstone-rs-axum = { path = "../../crates/gemstone-rs-axum" }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }

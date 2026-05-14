@@ -12,6 +12,8 @@ The Cargo package is named `gemstone-rs`; Rust code imports it as
 | --- | --- |
 | `crates/gemstone-gci` | Low-level dynamic `libgcirpc` loader, OOP constants, and raw GCI ABI calls. |
 | `crates/gemstone-rs` | Safe Rust API with `Config`, `Session`, `Oop`, `Value`, and transaction helpers. |
+| `crates/gemstone-rs-axum` | Axum route helpers for `/`, `/health/local`, and `/health/gemstone`. |
+| `crates/gemstone-rs-actix` | Actix Web route helpers for `/`, `/health/local`, and `/health/gemstone`. |
 | `crates/gemstone-rs-cli` | CLI for evaluating Smalltalk, inspecting OOPs, browsing code, and running codegen. |
 | `crates/gemstone-rs-explorer` | Local-only web explorer proving ground for browse, inspect, eval, and codegen endpoints. |
 | `vscode-gemstone-rs-workbench` | Thin VS Code command layer over the Rust CLI and explorer. |
@@ -46,6 +48,8 @@ For Rust applications:
 
 ```bash
 cargo add gemstone-rs
+cargo add gemstone-rs-axum
+cargo add gemstone-rs-actix
 ```
 
 For command-line tools:
@@ -146,7 +150,8 @@ let source = browser.source("Object", "printString", false, "")?;
 ```
 
 Web-service helpers are dependency-free and are reused by the standard HTTP,
-Axum, and Actix examples:
+Axum, and Actix examples. Use `gemstone-rs-axum` or `gemstone-rs-actix` when
+you want framework routes without copying handler code:
 
 ```rust
 use gemstone_rs::{web, Config, SessionWorkerPool};
@@ -155,6 +160,11 @@ let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
 let response = web::gemstone_health_response(&pool);
 assert_eq!(response.status, 200);
 pool.shutdown()?;
+```
+
+```rust,no_run
+let pool = gemstone_rs_axum::pool_from_env(2)?;
+let app = gemstone_rs_axum::router_with_name(pool, "booking service");
 ```
 
 Runtime environment:
@@ -521,8 +531,9 @@ scripts/publish_verify.sh 0.2.2
 ```
 
 The verification script checks crates.io package versions, installs
-`gemstone-rs-cli` and `gemstone-rs-explorer`, runs both binaries with `--help`,
-and confirms the Marketplace version matches the VS Code package metadata.
+all published crates, installs `gemstone-rs-cli` and `gemstone-rs-explorer`,
+runs both binaries with `--help`, and confirms the Marketplace version matches
+the VS Code package metadata.
 
 ## Publishing
 
@@ -530,7 +541,10 @@ The crates must be published in dependency order:
 
 ```bash
 cargo publish -p gemstone-gci
+cargo publish -p gemstone-rs-macros
 cargo publish -p gemstone-rs
+cargo publish -p gemstone-rs-axum
+cargo publish -p gemstone-rs-actix
 cargo publish -p gemstone-rs-cli
 cargo publish -p gemstone-rs-explorer
 ```

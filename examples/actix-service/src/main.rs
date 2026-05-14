@@ -1,5 +1,4 @@
-use actix_web::{http::StatusCode, web as actix, App, HttpResponse, HttpServer, Responder};
-use gemstone_rs::{web as gemstone_web, Config, SessionWorkerPool};
+use actix_web::{App, HttpServer};
 use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
@@ -13,13 +12,12 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
-    let pool = SessionWorkerPool::start(Config::from_env()?, options.workers)?;
+    let pool = gemstone_rs_actix::pool_from_env(options.workers)?;
     let server = HttpServer::new(move || {
-        App::new()
-            .app_data(actix::Data::new(pool.clone()))
-            .route("/", actix::get().to(root))
-            .route("/health/local", actix::get().to(health_local))
-            .route("/health/gemstone", actix::get().to(health_gemstone))
+        App::new().service(gemstone_rs_actix::scope_with_name(
+            pool.clone(),
+            "gemstone-rs Actix service example",
+        ))
     })
     .bind(options.addr())?;
 
@@ -29,37 +27,11 @@ async fn main() -> AppResult<()> {
         .map(std::string::ToString::to_string)
         .unwrap_or_else(|| options.addr());
     println!("gemstone-rs Actix service running at http://{display_addr}/");
-    println!("GET /");
-    println!("GET /health/local");
-    println!("GET /health/gemstone");
+    for route in gemstone_rs_actix::ROUTES {
+        println!("{route}");
+    }
     server.run().await?;
     Ok(())
-}
-
-async fn root() -> impl Responder {
-    actix_response(gemstone_web::index_response(
-        "gemstone-rs Actix service example",
-    ))
-}
-
-async fn health_local() -> impl Responder {
-    actix_response(gemstone_web::local_health_response())
-}
-
-async fn health_gemstone(pool: actix::Data<SessionWorkerPool>) -> impl Responder {
-    let pool = pool.get_ref().clone();
-    let response = match actix::block(move || gemstone_web::gemstone_health_response(&pool)).await {
-        Ok(response) => response,
-        Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
-    };
-    actix_response(response)
-}
-
-fn actix_response(response: gemstone_web::JsonResponse) -> HttpResponse {
-    let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    HttpResponse::build(status)
-        .content_type("application/json")
-        .body(response.body)
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -118,9 +90,9 @@ fn print_routes(options: &Options) {
     println!("gemstone-rs Actix service example");
     println!("  bind: {}", options.addr());
     println!("  workers: {}", options.workers);
-    println!("  GET /");
-    println!("  GET /health/local");
-    println!("  GET /health/gemstone");
+    for route in gemstone_rs_actix::ROUTES {
+        println!("  {route}");
+    }
     println!();
     println!("Start:");
     println!(
