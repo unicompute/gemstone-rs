@@ -22,17 +22,19 @@ ROOT = Path(__file__).resolve().parents[1]
 class HttpResult:
     status: int
     body: str
+    headers: dict[str, str]
 
 
 @dataclass(frozen=True)
 class Service:
     name: str
     manifest: Path
+    adapter: str
 
 
 SERVICES = [
-    Service("axum", ROOT / "examples/axum-service/Cargo.toml"),
-    Service("actix", ROOT / "examples/actix-service/Cargo.toml"),
+    Service("axum", ROOT / "examples/axum-service/Cargo.toml", "axum"),
+    Service("actix", ROOT / "examples/actix-service/Cargo.toml", "actix"),
 ]
 
 
@@ -45,9 +47,11 @@ def free_port() -> int:
 def http_get(url: str) -> HttpResult:
     try:
         with urllib.request.urlopen(url, timeout=2.0) as response:
-            return HttpResult(response.status, response.read().decode("utf-8"))
+            headers = {key.lower(): value for key, value in response.headers.items()}
+            return HttpResult(response.status, response.read().decode("utf-8"), headers)
     except urllib.error.HTTPError as err:
-        return HttpResult(err.code, err.read().decode("utf-8"))
+        headers = {key.lower(): value for key, value in err.headers.items()}
+        return HttpResult(err.code, err.read().decode("utf-8"), headers)
 
 
 def wait_for_local_health(base_url: str, process: subprocess.Popen[str]) -> None:
@@ -73,6 +77,15 @@ def assert_json(result: HttpResult, expected_status: int) -> dict:
         return json.loads(result.body)
     except json.JSONDecodeError as err:
         raise AssertionError(f"response is not JSON: {result.body}") from err
+
+
+def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None:
+    adapter = result.headers.get("x-gemstone-rs-adapter")
+    if adapter != service.adapter:
+        raise AssertionError(f"{service.name} adapter header mismatch: {adapter!r}")
+    actual_route = result.headers.get("x-gemstone-rs-route")
+    if actual_route != route:
+        raise AssertionError(f"{service.name} route header mismatch: {actual_route!r}")
 
 
 def check_routes(service: Service) -> None:
@@ -101,15 +114,20 @@ def check_routes(service: Service) -> None:
     try:
         wait_for_local_health(base_url, process)
 
-        root = assert_json(http_get(f"{base_url}/"), 200)
+        root_response = http_get(f"{base_url}/")
+        assert_diagnostics(service, root_response, "root")
+        root = assert_json(root_response, 200)
         if "name" not in root or root.get("endpoints", {}).get("gemstone") != "/health/gemstone":
             raise AssertionError(f"{service.name} root response is missing endpoint metadata: {root}")
 
-        local = assert_json(http_get(f"{base_url}/health/local"), 200)
+        local_response = http_get(f"{base_url}/health/local")
+        assert_diagnostics(service, local_response, "health.local")
+        local = assert_json(local_response, 200)
         if local.get("ok") is not True:
             raise AssertionError(f"{service.name} local health is not ok: {local}")
 
         gemstone = http_get(f"{base_url}/health/gemstone")
+        assert_diagnostics(service, gemstone, "health.gemstone")
         if os.environ.get("GS_RUN_LIVE_RUST") == "1":
             body = assert_json(gemstone, 200)
             if body.get("result") != 7:

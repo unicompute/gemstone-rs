@@ -146,9 +146,10 @@ not the implementation language:
   same route contract for framework users, and `examples/axum-service` plus
   `examples/actix-service` are checked crates using those adapters. They can
   start before credentials are configured and report `/health/gemstone` as a
-  `503` JSON error until the pool is available. The installed CLI can scaffold
-  `session_worker_pool`, `axum_service`, and `actix_service`. Richer framework
-  middleware and an async facade remain future work.
+  `503` JSON error until the pool is available. They also emit diagnostic
+  adapter and route headers for route smoke tests and proxy logs. The installed
+  CLI can scaffold `session_worker_pool`, `axum_service`, and `actix_service`.
+  Richer framework middleware and an async facade remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for

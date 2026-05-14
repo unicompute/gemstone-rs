@@ -48,6 +48,9 @@ Run the route smoke check:
 python3 scripts/framework_route_smoke.py
 ```
 
+Responses include `x-gemstone-rs-adapter: actix` and an
+`x-gemstone-rs-route` value of `root`, `health.local`, or `health.gemstone`.
+
 Use the installed scaffold when you want to start a separate application:
 
 ```bash

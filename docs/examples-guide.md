@@ -122,6 +122,9 @@ the route contract with:
 python3 scripts/framework_route_smoke.py
 ```
 
+The same smoke check asserts diagnostic headers from the adapters:
+`x-gemstone-rs-adapter` and `x-gemstone-rs-route`.
+
 ## Suggested Learning Order
 
 1. `gemstone-rs hello`

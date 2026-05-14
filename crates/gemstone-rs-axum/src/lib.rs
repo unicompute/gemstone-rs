@@ -18,12 +18,21 @@
 
 use axum::{
     extract::State,
-    http::{header, StatusCode},
+    http::{header, HeaderName, StatusCode},
     response::IntoResponse,
     routing::get,
     Router,
 };
 use gemstone_rs::{web as gemstone_web, Config, Result, SessionWorkerPool};
+
+/// Adapter name exposed through diagnostic response headers.
+pub const ADAPTER_NAME: &str = "axum";
+
+/// Header reporting which adapter produced the response.
+pub const ADAPTER_HEADER: &str = "x-gemstone-rs-adapter";
+
+/// Header reporting which route handler produced the response.
+pub const ROUTE_HEADER: &str = "x-gemstone-rs-route";
 
 /// Route contract exposed by [`router`] and [`router_with_name`].
 pub const ROUTES: &[&str] = &["GET /", "GET /health/local", "GET /health/gemstone"];
@@ -94,12 +103,12 @@ pub fn router_with_health_pool(
 
 /// Root route handler.
 pub async fn root(State(state): State<AppState>) -> impl IntoResponse {
-    json_response(gemstone_web::index_response(&state.service_name))
+    json_response_with_route(gemstone_web::index_response(&state.service_name), "root")
 }
 
 /// Local process health route handler.
 pub async fn health_local() -> impl IntoResponse {
-    json_response(gemstone_web::local_health_response())
+    json_response_with_route(gemstone_web::local_health_response(), "health.local")
 }
 
 /// Live GemStone health route handler.
@@ -110,15 +119,28 @@ pub async fn health_gemstone(State(state): State<AppState>) -> impl IntoResponse
             Ok(response) => response,
             Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
         };
-    json_response(response)
+    json_response_with_route(response, "health.gemstone")
 }
 
 /// Convert a shared gemstone-rs JSON response into an Axum response tuple.
 pub fn json_response(response: gemstone_web::JsonResponse) -> impl IntoResponse {
+    json_response_with_route(response, "generic")
+}
+
+/// Convert a shared gemstone-rs JSON response into an Axum response tuple with
+/// diagnostic adapter headers.
+pub fn json_response_with_route(
+    response: gemstone_web::JsonResponse,
+    route: &'static str,
+) -> impl IntoResponse {
     let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
     (
         status,
-        [(header::CONTENT_TYPE, "application/json")],
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (HeaderName::from_static(ADAPTER_HEADER), ADAPTER_NAME),
+            (HeaderName::from_static(ROUTE_HEADER), route),
+        ],
         response.body,
     )
 }
@@ -133,6 +155,8 @@ mod tests {
             ROUTES,
             &["GET /", "GET /health/local", "GET /health/gemstone"]
         );
+        assert_eq!(ADAPTER_HEADER, "x-gemstone-rs-adapter");
+        assert_eq!(ROUTE_HEADER, "x-gemstone-rs-route");
     }
 
     #[test]

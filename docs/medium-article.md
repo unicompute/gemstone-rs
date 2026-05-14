@@ -615,7 +615,8 @@ proving the async web-service shape.
 The framework services can start before credentials are configured: `/` and
 `/health/local` keep responding, while `/health/gemstone` returns a clear `503`
 JSON error until the GemStone pool is available. A route smoke script checks
-that contract for both frameworks.
+that contract for both frameworks, including diagnostic headers that identify
+the adapter and route that produced each response.
 The newer `SessionWorker` API gives these services a reusable dedicated-thread
 session lane when opening a session per health request is not enough:
 

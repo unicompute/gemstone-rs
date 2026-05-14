@@ -1679,7 +1679,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
+        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, diagnostic headers, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
     },
     FeatureInfo {
         stream: "10",

@@ -28,3 +28,8 @@ For development tools or container startup checks, use `router_from_env(2)` or
 `router_from_env_with_name(2, "my service")`. Those functions let the service
 start even when credentials are missing; `/health/gemstone` returns a `503`
 JSON error until the GemStone pool can be created.
+
+Every adapter response also includes diagnostic headers:
+
+- `x-gemstone-rs-adapter: axum`
+- `x-gemstone-rs-route: root`, `health.local`, or `health.gemstone`

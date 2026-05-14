@@ -38,6 +38,8 @@ For web servers:
 - use the adapter `*_from_env` helpers when the HTTP process should start
   before GemStone credentials are configured; `/health/gemstone` will report
   unavailable until the pool is ready
+- keep `x-gemstone-rs-adapter` and `x-gemstone-rs-route` headers enabled in
+  local services so route smoke tests and proxy logs can identify health paths
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 
