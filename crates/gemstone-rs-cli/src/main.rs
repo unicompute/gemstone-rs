@@ -1729,7 +1729,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Codegen and mapping",
         gemstone_py: "Python codegen and typed access demos",
-        gemstone_rs: "Rust wrapper generation, BridgeRoot mapping, derive macro, preview/diff/check/generate",
+        gemstone_rs: "Rust wrapper generation, typed argument conversion, typed return helpers, BridgeRoot mapping, derive macro, preview/diff/check/generate",
         recommendation: "Use gemstone-rs when compile-time Rust wrapper checks matter",
     },
     ComparisonInfo {

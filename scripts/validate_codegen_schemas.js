@@ -113,6 +113,14 @@ function assertExplain(value) {
     for (const method of cls.methods) {
       assert.strictEqual(typeof method.selector, "string");
       assert(Array.isArray(method.args));
+      assert(Array.isArray(method.argTypes));
+      assert(Array.isArray(method.arguments));
+      assert.strictEqual(method.args.length, method.argTypes.length);
+      assert.strictEqual(method.args.length, method.arguments.length);
+      for (const arg of method.arguments) {
+        assert.strictEqual(typeof arg.name, "string");
+        assert(["Oop", "String", "Symbol", "SmallInt", "Bool"].includes(arg.type));
+      }
       assert.strictEqual(typeof method.return, "string");
       assert(method.doc === null || typeof method.doc === "string");
     }

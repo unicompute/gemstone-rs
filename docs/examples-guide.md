@@ -210,6 +210,13 @@ after generate: exists=true up_to_date=true
 diff after generate: clean
 ```
 
+The checked-in codegen sample also demonstrates typed arguments. A config line
+such as `method = Object>>perform: | args=selector:Symbol` generates a Rust
+method that accepts `selector: impl AsRef<str>` and creates the GemStone symbol
+before dispatch. For application wrappers, use `SmallInt`, `String`, `Symbol`,
+`Bool`, or the default `Oop` depending on how much conversion you want at the
+generated boundary.
+
 ## CLI Equivalents
 
 The CLI gives you the same live checks without compiling examples:

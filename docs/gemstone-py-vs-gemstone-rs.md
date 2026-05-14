@@ -56,7 +56,7 @@ file.
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
 | Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, and checked Axum/Actix examples |
-| Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, and profile scaffolds |
+| Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, typed argument conversion, typed return helpers, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
 | VS Code extension | More complete product flow | Thin command/workbench layer over Rust CLI and explorer |
@@ -78,6 +78,7 @@ file.
 | OOP handles/export set | Supported | Supported |
 | Browser dictionaries/classes/protocols/methods/source | Supported | Supported through `Browser`, CLI, and explorer |
 | Generated wrappers | Supported | Supported for selected classes/methods |
+| Generated typed arguments | Python naturally passes Python values | Supported through `args=name:Type` for `SmallInt`, `String`, `Symbol`, `Bool`, and explicit `Oop` |
 | Codegen diff/check/generate | Supported | Supported |
 | Live codegen discovery | Supported | Supported through CLI/API and installed scaffolds |
 | FastAPI demo | Supported | Not applicable |

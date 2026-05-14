@@ -52,6 +52,7 @@ method = UserGlobals:OkzBooking class>>findById: | args=id | return=Oop
 | Option | Example | Purpose |
 | --- | --- | --- |
 | `args` | `args=id,user` | Names generated Rust function arguments. |
+| `args` with types | `args=id:SmallInt,name:String,selector:Symbol,enabled:Bool` | Generates native Rust parameters and converts them to GemStone OOPs before `perform`. |
 | `return` | `return=String` | Generates a typed return helper instead of `Value`. |
 | `doc` | `doc=Find by id.` | Writes a Rust doc comment above the generated method. |
 
@@ -60,11 +61,35 @@ keywords. For example `at:put:` becomes `at, put`, and
 `withCustomer:amount:` becomes `customer, amount`. Provide explicit `args=...`
 when the selector keywords are not good Rust argument names.
 
+Untyped arguments stay explicit as `Oop`. Add a type after the argument name
+when the generated wrapper should accept native Rust values:
+
+```text
+method = UserGlobals:OkzBooking class>>findById: | args=id:SmallInt | return=Oop
+method = Object>>perform: | args=selector:Symbol
+method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return=Oop
+```
+
+Those examples generate signatures like:
+
+```rust
+pub fn find_by_id(&mut self, id: i64) -> Result<Oop> {
+    let id = self.session.smallint_oop(id);
+    let value = self.session.perform(self.oop, "findById:", &[id])?;
+    // typed return conversion follows
+}
+
+pub fn perform(&mut self, selector: impl AsRef<str>) -> Result<Value> {
+    let selector = self.session.new_symbol(selector.as_ref())?;
+    self.session.perform(self.oop, "perform:", &[selector])
+}
+```
+
 Generated wrapper files include a small `#[cfg(test)]` surface-name test stub,
 so downstream crates can keep generated wrapper names visible to Rust test
 tooling. Use `codegen explain` before generating when you want a readable
 summary of the output file, test stub, wrapper classes, selectors, argument
-names, return helpers, mapped structs, and BridgeRoot field mappings:
+names and types, return helpers, mapped structs, and BridgeRoot field mappings:
 
 ```bash
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
@@ -74,7 +99,9 @@ gemstone-rs --env-file .env.gemstone-rs codegen check examples/codegen/gemstone-
 
 The JSON form is intended for editor and explorer integrations that want to
 render the output path, generated test stubs, class wrappers, selector
-arguments, return helpers, and mapped fields as structured data.
+arguments, argument types, return helpers, and mapped fields as structured
+data. Method entries include both the legacy `args` name list and an
+`arguments` array with `{name, type}` objects for richer UI rendering.
 
 Machine-readable schema files are committed for tooling:
 

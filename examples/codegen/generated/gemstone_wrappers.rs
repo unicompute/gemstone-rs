@@ -43,6 +43,13 @@ impl<'a> Object<'a> {
         let value = self.session.perform(self.oop, "class", &[])?;
         Ok(value)
     }
+
+    /// Perform a unary selector supplied as a Rust string.
+    pub fn perform(&mut self, selector: impl AsRef<str>) -> Result<Value> {
+        let selector = self.session.new_symbol(selector.as_ref())?;
+        let value = self.session.perform(self.oop, "perform:", &[selector])?;
+        Ok(value)
+    }
 }
 
 /// A typed Rust payload stored under BridgeRoot.
@@ -120,6 +127,7 @@ mod generated_code_tests {
         let names: &[&str] = &[
             "Object::print_string",
             "Object::class",
+            "Object::perform",
             "BookingDraft",
         ];
         assert!(names.iter().all(|name| !name.is_empty()));

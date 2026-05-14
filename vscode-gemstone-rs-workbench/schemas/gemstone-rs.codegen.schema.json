@@ -68,9 +68,24 @@
         "args": {
           "type": "array",
           "items": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Argument name. The line-oriented config can also spell this as name:Type."
+              },
+              {
+                "$ref": "#/$defs/argument"
+              }
+            ]
           },
           "default": []
+        },
+        "argTypes": {
+          "type": "array",
+          "items": {
+            "enum": ["Oop", "String", "Symbol", "SmallInt", "Bool"]
+          },
+          "description": "Optional parallel type list for tools that keep names and types separate."
         },
         "return": {
           "enum": ["Value", "Oop", "String", "SmallInt", "Bool"],
@@ -78,6 +93,21 @@
         },
         "doc": {
           "type": "string"
+        }
+      }
+    },
+    "argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": ["Oop", "String", "Symbol", "SmallInt", "Bool"],
+          "default": "Oop"
         }
       }
     },

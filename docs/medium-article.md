@@ -273,6 +273,35 @@ The repository also commits schemas for the codegen model, project profiles,
 and `codegen explain --json` output, so editor panels and release checks can
 reason about the same structures.
 
+The newest wrapper polish is typed method arguments. An argument can remain an
+explicit `Oop`, or the config can ask codegen to accept native Rust values and
+convert them at the call boundary:
+
+```text
+method = UserGlobals:OkzBooking class>>findById: | args=id:SmallInt | return=Oop
+method = Object>>perform: | args=selector:Symbol
+method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return=Oop
+```
+
+That produces wrapper methods shaped for normal Rust callers:
+
+```rust
+pub fn find_by_id(&mut self, id: i64) -> Result<Oop> {
+    let id = self.session.smallint_oop(id);
+    let value = self.session.perform(self.oop, "findById:", &[id])?;
+    // typed return conversion follows
+}
+
+pub fn perform(&mut self, selector: impl AsRef<str>) -> Result<Value> {
+    let selector = self.session.new_symbol(selector.as_ref())?;
+    self.session.perform(self.oop, "perform:", &[selector])
+}
+```
+
+That is a direct catch-up item against `gemstone-py`: Python callers naturally
+pass Python ints and strings, while Rust now gets generated signatures that
+make those conversions explicit and compile-checked.
+
 Generate a starter config from a live stone:
 
 ```bash

@@ -58,7 +58,7 @@
     "method": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["selector", "args", "return", "doc"],
+      "required": ["selector", "args", "argTypes", "arguments", "return", "doc"],
       "properties": {
         "selector": {
           "type": "string"
@@ -69,11 +69,36 @@
             "type": "string"
           }
         },
+        "argTypes": {
+          "type": "array",
+          "items": {
+            "enum": ["Oop", "String", "Symbol", "SmallInt", "Bool"]
+          }
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/argument"
+          }
+        },
         "return": {
           "type": "string"
         },
         "doc": {
           "type": ["string", "null"]
+        }
+      }
+    },
+    "argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": ["Oop", "String", "Symbol", "SmallInt", "Bool"]
         }
       }
     },

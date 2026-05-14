@@ -39,6 +39,7 @@ output = generated/gemstone_wrappers.rs
 class = Object
 method = Object>>printString | return=String | doc=Return the receiver printString.
 method = Object>>class
+method = Object>>perform: | args=selector:Symbol | doc=Perform a unary selector supplied as a Rust string.
 ```
 
 Use `Dictionary:ClassName` when a class must be resolved from a specific
@@ -55,7 +56,13 @@ Optional method metadata controls generated signatures:
 
 ```text
 method = UserGlobals:OkzBooking>>findById: | args=id | return=Oop | doc=Find a booking by id.
+method = UserGlobals:OkzBooking class>>findById: | args=id:SmallInt | return=Oop
+method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return=Oop
 ```
+
+Untyped `args` stay as `Oop` parameters. Typed arguments generate native Rust
+parameters and convert them before `perform`: `SmallInt` becomes `i64`,
+`String` and `Symbol` become `impl AsRef<str>`, and `Bool` becomes `bool`.
 
 The same config can generate typed `BridgeMapped` structs:
 

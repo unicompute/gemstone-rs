@@ -493,6 +493,7 @@ pub struct MethodSpec {
     pub class_ref: ClassRef,
     pub selector: String,
     pub args: Vec<String>,
+    pub arg_types: Vec<ArgType>,
     pub return_type: ReturnType,
     pub doc: Option<String>,
 }
@@ -512,6 +513,7 @@ impl MethodSpec {
             return Err("method selector is empty".to_string());
         }
         let mut args = Vec::new();
+        let mut arg_types = Vec::new();
         let mut return_type = ReturnType::Value;
         let mut doc = None;
         for option in parts {
@@ -520,12 +522,9 @@ impl MethodSpec {
             };
             match key.trim() {
                 "args" => {
-                    args = value
-                        .split(',')
-                        .map(str::trim)
-                        .filter(|arg| !arg.is_empty())
-                        .map(str::to_string)
-                        .collect();
+                    let parsed = parse_method_args(value.trim())?;
+                    args = parsed.iter().map(|arg| arg.name.clone()).collect();
+                    arg_types = parsed.into_iter().map(|arg| arg.arg_type).collect();
                 }
                 "return" => return_type = ReturnType::parse(value.trim())?,
                 "doc" => doc = Some(value.trim().to_string()),
@@ -543,6 +542,7 @@ impl MethodSpec {
             class_ref,
             selector: selector.to_string(),
             args,
+            arg_types,
             return_type,
             doc,
         })
@@ -557,6 +557,94 @@ impl MethodSpec {
             inferred_selector_args(&self.selector)
         } else {
             self.args.iter().map(|arg| rust_fn_name(arg)).collect()
+        }
+    }
+
+    fn arg_specs(&self) -> Vec<MethodArgSpec> {
+        let names = self.arg_names();
+        names
+            .into_iter()
+            .enumerate()
+            .map(|(index, name)| MethodArgSpec {
+                name,
+                arg_type: self.arg_types.get(index).cloned().unwrap_or(ArgType::Oop),
+            })
+            .collect()
+    }
+
+    fn config_args(&self) -> Vec<String> {
+        self.args
+            .iter()
+            .enumerate()
+            .map(|(index, name)| {
+                let arg_type = self.arg_types.get(index).cloned().unwrap_or(ArgType::Oop);
+                if arg_type == ArgType::Oop {
+                    name.clone()
+                } else {
+                    format!("{name}:{}", arg_type.config_name())
+                }
+            })
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MethodArgSpec {
+    name: String,
+    arg_type: ArgType,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ArgType {
+    Oop,
+    String,
+    Symbol,
+    SmallInt,
+    Bool,
+}
+
+impl ArgType {
+    fn parse(value: &str) -> std::result::Result<Self, String> {
+        match value {
+            "" | "Oop" | "OOP" | "oop" => Ok(Self::Oop),
+            "String" | "string" | "str" => Ok(Self::String),
+            "Symbol" | "symbol" => Ok(Self::Symbol),
+            "SmallInt" | "smallInt" | "smallint" | "i64" => Ok(Self::SmallInt),
+            "Bool" | "Boolean" | "bool" | "boolean" => Ok(Self::Bool),
+            other => Err(format!("unsupported argument type: {other}")),
+        }
+    }
+
+    fn config_name(&self) -> &'static str {
+        match self {
+            Self::Oop => "Oop",
+            Self::String => "String",
+            Self::Symbol => "Symbol",
+            Self::SmallInt => "SmallInt",
+            Self::Bool => "Bool",
+        }
+    }
+
+    fn rust_type(&self) -> &'static str {
+        match self {
+            Self::Oop => "Oop",
+            Self::String | Self::Symbol => "impl AsRef<str>",
+            Self::SmallInt => "i64",
+            Self::Bool => "bool",
+        }
+    }
+
+    fn conversion_source(&self, name: &str) -> String {
+        match self {
+            Self::Oop => String::new(),
+            Self::String => {
+                format!("        let {name} = self.session.new_string({name}.as_ref())?;\n")
+            }
+            Self::Symbol => {
+                format!("        let {name} = self.session.new_symbol({name}.as_ref())?;\n")
+            }
+            Self::SmallInt => format!("        let {name} = self.session.smallint_oop({name});\n"),
+            Self::Bool => format!("        let {name} = self.session.bool_oop({name});\n"),
         }
     }
 }
@@ -653,7 +741,11 @@ pub fn explain(config: &Config) -> String {
             class.methods.len()
         ));
         for method in &class.methods {
-            let args = method.arg_names();
+            let args = method
+                .arg_specs()
+                .into_iter()
+                .map(|arg| format!("{}:{}", arg.name, arg.arg_type.config_name()))
+                .collect::<Vec<_>>();
             out.push_str(&format!(
                 "    method: {}>>{} args=[{}] return={}\n",
                 method.class_ref.display_name(),
@@ -693,10 +785,29 @@ pub fn explain_json(config: &Config) -> String {
                 .methods
                 .iter()
                 .map(|method| {
+                    let args = method.arg_specs();
+                    let arg_names = args.iter().map(|arg| arg.name.clone()).collect::<Vec<_>>();
+                    let arg_types = args
+                        .iter()
+                        .map(|arg| arg.arg_type.config_name().to_string())
+                        .collect::<Vec<_>>();
+                    let arguments = args
+                        .iter()
+                        .map(|arg| {
+                            format!(
+                                r#"{{"name":"{}","type":"{}"}}"#,
+                                json_escape(&arg.name),
+                                arg.arg_type.config_name()
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",");
                     format!(
-                        r#"{{"selector":"{}","args":[{}],"return":"{}","doc":{}}}"#,
+                        r#"{{"selector":"{}","args":[{}],"argTypes":[{}],"arguments":[{}],"return":"{}","doc":{}}}"#,
                         json_escape(&method.selector),
-                        json_string_array(&method.arg_names()),
+                        json_string_array(&arg_names),
+                        json_string_array(&arg_types),
+                        arguments,
                         method.return_type.config_name(),
                         optional_json_string(method.doc.as_deref())
                     )
@@ -845,6 +956,7 @@ pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) ->
                 class_ref: class_ref.clone(),
                 selector,
                 args: Vec::new(),
+                arg_types: Vec::new(),
                 return_type: ReturnType::Value,
                 doc: first_source_line(&source),
             });
@@ -920,7 +1032,7 @@ pub fn config_source(config: &Config) -> String {
             source.push_str(&method.selector);
             if !method.args.is_empty() {
                 source.push_str(" | args=");
-                source.push_str(&method.args.join(","));
+                source.push_str(&method.config_args().join(","));
             }
             if method.return_type != ReturnType::Value {
                 source.push_str(" | return=");
@@ -1157,8 +1269,11 @@ fn mapped_field_read(field: &FieldSpec) -> String {
 fn method_source(method: &MethodSpec) -> String {
     let mut source = String::new();
     let fn_name = method.fn_name();
-    let arg_names = method.arg_names();
-    let args: Vec<String> = arg_names.iter().map(|arg| format!("{arg}: Oop")).collect();
+    let arg_specs = method.arg_specs();
+    let args: Vec<String> = arg_specs
+        .iter()
+        .map(|arg| format!("{}: {}", arg.name, arg.arg_type.rust_type()))
+        .collect();
     let args_suffix = if args.is_empty() {
         String::new()
     } else {
@@ -1171,6 +1286,13 @@ fn method_source(method: &MethodSpec) -> String {
         "    pub fn {fn_name}(&mut self{args_suffix}) -> Result<{}> {{\n",
         method.return_type.rust_type()
     ));
+    for arg in &arg_specs {
+        source.push_str(&arg.arg_type.conversion_source(&arg.name));
+    }
+    let arg_names = arg_specs
+        .iter()
+        .map(|arg| arg.name.clone())
+        .collect::<Vec<_>>();
     source.push_str(&format!(
         "        let value = self.session.perform(self.oop, {}, &[{}])?;\n",
         rust_string_literal(&method.selector),
@@ -1222,6 +1344,28 @@ fn split_directive(line: &str) -> Option<(&str, &str)> {
     let key = parts.next()?.trim();
     let value = parts.next()?.trim();
     Some((key, value))
+}
+
+fn parse_method_args(value: &str) -> std::result::Result<Vec<MethodArgSpec>, String> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|arg| !arg.is_empty())
+        .map(|arg| {
+            let (name, arg_type) = arg
+                .split_once(':')
+                .map(|(name, arg_type)| (name.trim(), ArgType::parse(arg_type.trim())))
+                .unwrap_or((arg, Ok(ArgType::Oop)));
+            let name = name.trim();
+            if name.is_empty() {
+                return Err("method argument name is empty".to_string());
+            }
+            Ok(MethodArgSpec {
+                name: name.to_string(),
+                arg_type: arg_type?,
+            })
+        })
+        .collect()
 }
 
 fn first_source_line(source: &str) -> Option<String> {
@@ -1443,6 +1587,7 @@ mod tests {
         assert_eq!(config.classes[1].class_ref.dictionary, "UserGlobals");
         assert_eq!(config.classes[1].methods[0].selector, "findById:");
         assert_eq!(config.classes[1].methods[0].args, vec!["id"]);
+        assert_eq!(config.classes[1].methods[0].arg_types, vec![ArgType::Oop]);
         assert_eq!(config.classes[1].methods[0].return_type, ReturnType::Oop);
         Ok(())
     }
@@ -1480,6 +1625,50 @@ mod tests {
         assert!(generated
             .source
             .contains("pub fn with_customer_amount(&mut self, customer: Oop, amount: Oop)"));
+        Ok(())
+    }
+
+    #[test]
+    fn parses_and_generates_typed_method_arguments() -> Result<()> {
+        let config = Config::parse(
+            "class = UserGlobals:Order\nmethod = UserGlobals:Order>>findById:customer:active: | args=id:SmallInt,customer:String,active:Bool | return=Oop\nmethod = UserGlobals:Order>>findBySymbol: | args=key:Symbol | return=Oop\n",
+            None,
+        )?;
+        let method = &config.classes[0].methods[0];
+        assert_eq!(
+            method.arg_types,
+            vec![ArgType::SmallInt, ArgType::String, ArgType::Bool]
+        );
+        assert_eq!(
+            method.config_args(),
+            vec!["id:SmallInt", "customer:String", "active:Bool"]
+        );
+
+        let generated = generate(&config);
+        assert!(generated.source.contains(
+            "pub fn find_by_id_customer_active(&mut self, id: i64, customer: impl AsRef<str>, active: bool) -> Result<Oop>"
+        ));
+        assert!(generated
+            .source
+            .contains("let id = self.session.smallint_oop(id);"));
+        assert!(generated
+            .source
+            .contains("let customer = self.session.new_string(customer.as_ref())?;"));
+        assert!(generated
+            .source
+            .contains("let active = self.session.bool_oop(active);"));
+        assert!(generated
+            .source
+            .contains("pub fn find_by_symbol(&mut self, key: impl AsRef<str>) -> Result<Oop>"));
+        assert!(generated
+            .source
+            .contains("let key = self.session.new_symbol(key.as_ref())?;"));
+
+        let explanation = explain(&config);
+        assert!(explanation.contains("args=[id:SmallInt, customer:String, active:Bool]"));
+        let json = explain_json(&config);
+        assert!(json.contains(r#""argTypes":["SmallInt","String","Bool"]"#));
+        assert!(json.contains(r#""arguments":[{"name":"id","type":"SmallInt"}"#));
         Ok(())
     }
 

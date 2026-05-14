@@ -2317,10 +2317,13 @@ function renderCodegenExplain(explain) {
     '',
     'Classes:'
   ];
-  for (const cls of explain.classes || []) {
+    for (const cls of explain.classes || []) {
     lines.push('  ' + cls.name + ' methods=' + ((cls.methods || []).length));
     for (const method of cls.methods || []) {
-      lines.push('    ' + method.selector + '(' + (method.args || []).join(', ') + ') -> ' + method.return);
+      const args = (method.arguments || []).length
+        ? method.arguments.map(arg => arg.name + ':' + arg.type).join(', ')
+        : (method.args || []).join(', ');
+      lines.push('    ' + method.selector + '(' + args + ') -> ' + method.return);
     }
   }
   lines.push('', 'Mapped:');

@@ -284,6 +284,13 @@ cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 ```
 
+Codegen method arguments can stay explicit as OOPs or be typed at the wrapper
+edge. For example, `args=id:SmallInt,selector:Symbol,name:String,active:Bool`
+generates Rust parameters such as `id: i64`, `selector: impl AsRef<str>`, and
+`active: bool`, then converts them with the active `Session` before calling
+GemStone. This keeps the generated wrappers easier to call from Rust services
+without hiding the lower-level OOP API.
+
 The CLI intentionally uses only the standard library. `doctor` checks the
 GemStone environment, GCI library resolution, and optionally a live `3 + 4`
 probe. The report includes which source selected `libgcirpc`: explicit config,
