@@ -1416,6 +1416,7 @@ struct ScaffoldTemplate {
     title: &'static str,
     description: &'static str,
     main_rs: &'static str,
+    extra_dependencies: &'static str,
 }
 
 const EXAMPLES: &[ExampleInfo] = &[
@@ -1633,11 +1634,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "gemstone-rs examples plus planned Axum/Actix adapters",
-        examples: "http_service, axum-service/README.md",
+        crates: "gemstone-rs examples plus installed Axum scaffold and planned adapters",
+        examples: "http_service, axum-service/README.md, examples scaffold axum_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Std HTTP service example added; gemstone-py is ahead for web framework adapters",
+        status: "Std HTTP service and Axum scaffold exist; gemstone-py is still ahead for checked framework adapters",
     },
     FeatureInfo {
         stream: "10",
@@ -1681,8 +1682,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Standard-library HTTP service example exists; Axum/Actix adapters are still planned",
-        recommendation: "Use gemstone-py today for framework adapters; use gemstone-rs to prove Rust service integration and GCI thread boundaries",
+        gemstone_rs: "Standard-library HTTP service example exists and an Axum scaffold can create a standalone project; Actix and deeper adapters are still planned",
+        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and GCI thread boundaries",
     },
     ComparisonInfo {
         topic: "Codegen and mapping",
@@ -1709,9 +1710,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service and Axum sketch, but no real Axum or Actix adapter crate yet.",
-        next_action: "Add a tiny Axum or Actix example crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
-        verify_with: "cargo run -p gemstone-rs --example http_service -- --routes; future Axum/Actix smoke test",
+        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service and an installed Axum scaffold, but no maintained framework adapter crate or CI-built Axum/Actix example yet.",
+        next_action: "Promote the Axum scaffold into a checked source example or adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
+        verify_with: "gemstone-rs examples scaffold axum_service /tmp/gemstone-rs-axum-service --force",
     },
     GapInfo {
         priority: "P1",
@@ -1725,9 +1726,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Installed example experience",
         gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
-        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, codegen, and HTTP service projects, but not every source-checkout example has an installed template yet.",
-        next_action: "Expand examples scaffold templates to generated-wrapper, derive-mapping, and framework-adapter projects.",
-        verify_with: "gemstone-rs examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force",
+        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, derive mapping, generated wrappers, codegen workflow, standard HTTP, and Axum projects, but source-checkout live discovery examples still do not have installed templates.",
+        next_action: "Expand examples scaffold templates to codegen discovery, profile-driven generated wrappers, and explorer-integrated projects.",
+        verify_with: "gemstone-rs examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper --force",
     },
     GapInfo {
         priority: "P2",
@@ -1762,6 +1763,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs Quickstart",
         description: "Login, evaluate 3 + 4, and round-trip a UserGlobals string.",
         main_rs: include_str!("../templates/quickstart.rs"),
+        extra_dependencies: "",
     },
     ScaffoldTemplate {
         name: "browser",
@@ -1769,6 +1771,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs Browser",
         description: "Browse dictionaries, protocols, methods, and Object>>printString source.",
         main_rs: include_str!("../templates/browser.rs"),
+        extra_dependencies: "",
     },
     ScaffoldTemplate {
         name: "bridge_root_mapping",
@@ -1776,6 +1779,15 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs BridgeRoot Mapping",
         description: "Store and read a typed Rust payload under GemStoneRsBridgeRoot.",
         main_rs: include_str!("../templates/bridge_root_mapping.rs"),
+        extra_dependencies: "",
+    },
+    ScaffoldTemplate {
+        name: "derive_mapping",
+        package_name: "gemstone-rs-derive-mapping",
+        title: "gemstone-rs Derive Mapping",
+        description: "Use #[derive(BridgeMapped)] with nested structs, vectors, maps, optionals, and symbol keys.",
+        main_rs: include_str!("../templates/derive_mapping.rs"),
+        extra_dependencies: "",
     },
     ScaffoldTemplate {
         name: "codegen_preview",
@@ -1784,6 +1796,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description:
             "Preview generated Rust wrappers without writing files or connecting to GemStone.",
         main_rs: include_str!("../templates/codegen_preview.rs"),
+        extra_dependencies: "",
     },
     ScaffoldTemplate {
         name: "codegen_workflow",
@@ -1791,6 +1804,23 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs Codegen Workflow",
         description: "Run config, preview, diff, check, and generate in one offline example.",
         main_rs: include_str!("../templates/codegen_workflow.rs"),
+        extra_dependencies: "",
+    },
+    ScaffoldTemplate {
+        name: "generated_wrapper_app",
+        package_name: "gemstone-rs-generated-wrapper-app",
+        title: "gemstone-rs Generated Wrapper App",
+        description: "Call Object>>printString through a generated-style Rust wrapper.",
+        main_rs: include_str!("../templates/generated_wrapper_app.rs"),
+        extra_dependencies: "",
+    },
+    ScaffoldTemplate {
+        name: "generated_mapping_app",
+        package_name: "gemstone-rs-generated-mapping-app",
+        title: "gemstone-rs Generated Mapping App",
+        description: "Use generated-style BridgeMapped structs stored under BridgeRoot.",
+        main_rs: include_str!("../templates/generated_mapping_app.rs"),
+        extra_dependencies: "",
     },
     ScaffoldTemplate {
         name: "http_service",
@@ -1798,6 +1828,18 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs HTTP Service",
         description: "Standard-library HTTP service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/http_service.rs"),
+        extra_dependencies: "",
+    },
+    ScaffoldTemplate {
+        name: "axum_service",
+        package_name: "gemstone-rs-axum-service",
+        title: "gemstone-rs Axum Service",
+        description: "Standalone Axum service with /, /health/local, and /health/gemstone.",
+        main_rs: include_str!("../templates/axum_service.rs"),
+        extra_dependencies: r#"axum = "0.8"
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
+"#,
     },
 ];
 
@@ -2075,8 +2117,12 @@ fn run_example(
 
 fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
     let name = match name {
+        "axum" | "framework" | "framework_adapter" | "framework-adapter" => "axum_service",
         "bridge" | "mapping" => "bridge_root_mapping",
         "codegen" => "codegen_workflow",
+        "derive" | "derive-mapping" => "derive_mapping",
+        "generated-mapping" | "generated_mapping" => "generated_mapping_app",
+        "generated-wrapper" | "generated_wrapper" | "wrapper" => "generated_wrapper_app",
         "http" | "http-service" | "http_service" => "http_service",
         other => other,
     };
@@ -2133,7 +2179,7 @@ fn write_scaffold_file(path: &Path, source: &str, force: bool) -> Result<(), Cli
 }
 
 fn scaffold_cargo_toml(template: &ScaffoldTemplate) -> String {
-    format!(
+    let mut cargo_toml = format!(
         r#"[package]
 name = "{}"
 version = "0.1.0"
@@ -2144,7 +2190,11 @@ gemstone-rs = "{}"
 "#,
         template.package_name,
         env!("CARGO_PKG_VERSION")
-    )
+    );
+    if !template.extra_dependencies.is_empty() {
+        cargo_toml.push_str(template.extra_dependencies);
+    }
+    cargo_toml
 }
 
 fn scaffold_readme(template: &ScaffoldTemplate) -> String {
@@ -3837,7 +3887,7 @@ mod tests {
         assert!(FEATURE_MAP
             .iter()
             .any(|feature| feature.title == "Rust web services"
-                && feature.status.contains("gemstone-py is ahead")));
+                && feature.status.contains("gemstone-py is still ahead")));
         assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
     }
 
@@ -3872,9 +3922,13 @@ mod tests {
             "quickstart",
             "browser",
             "bridge_root_mapping",
+            "derive_mapping",
             "codegen_preview",
             "codegen_workflow",
+            "generated_wrapper_app",
+            "generated_mapping_app",
             "http_service",
+            "axum_service",
         ] {
             assert!(
                 find_scaffold_template(name).is_some(),
@@ -3889,6 +3943,14 @@ mod tests {
         assert_eq!(
             find_scaffold_template("bridge").unwrap().name,
             "bridge_root_mapping"
+        );
+        assert_eq!(
+            find_scaffold_template("wrapper").unwrap().name,
+            "generated_wrapper_app"
+        );
+        assert_eq!(
+            find_scaffold_template("framework").unwrap().name,
+            "axum_service"
         );
 
         let target =
@@ -3905,6 +3967,12 @@ mod tests {
         assert!(cargo_toml.contains(r#"gemstone-rs = ""#));
         assert!(main_rs.contains("Session::login(Config::from_env()?)"));
         assert!(readme.contains("gemstone-rs examples scaffold quickstart"));
+
+        let axum = find_scaffold_template("axum").unwrap();
+        let axum_toml = scaffold_cargo_toml(axum);
+        assert!(axum_toml.contains(r#"name = "gemstone-rs-axum-service""#));
+        assert!(axum_toml.contains(r#"axum = "0.8""#));
+        assert!(axum_toml.contains(r#"tokio = { version = "1""#));
 
         let err = scaffold_example_project(template, &target, false)
             .unwrap_err()

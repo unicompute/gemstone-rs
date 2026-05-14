@@ -25,9 +25,13 @@ cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
 cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-browser --force
 cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemstone-rs-bridge-root-mapping --force
+cargo run -p gemstone-rs-cli -- examples scaffold derive_mapping /tmp/gemstone-rs-derive-mapping --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-codegen-preview --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
+cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper-app --force
+cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-generated-mapping-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
+cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -118,8 +122,10 @@ example when you are in a `gemstone-rs` source checkout. Use `--dry-run` in CI
 or docs checks to print the exact command without compiling or connecting to a
 stone. `scaffold <name> [path]` writes a standalone Cargo project from an
 installed template. Current templates include `quickstart`, `browser`,
-`bridge_root_mapping`, `codegen_preview`, `codegen_workflow`, and
-`http_service`; aliases include `bridge`, `mapping`, `codegen`, and `http`.
+`bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
+`generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
+`axum_service`; aliases include `bridge`, `mapping`, `derive`, `codegen`,
+`wrapper`, `framework`, `axum`, and `http`.
 `map` is the gemstone-rs equivalent of
 `gemstone-examples plan3-map`: it ties Rust crates, examples, docs, and
 gemstone-py reference points together for each feature stream.

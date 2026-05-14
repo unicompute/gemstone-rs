@@ -14,6 +14,8 @@ gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 ```
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
@@ -21,8 +23,8 @@ gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
 actions and verification commands. `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
-codegen, and HTTP service workflows. JSON output is intended for CI, docs
-checks, and editor tooling.
+derive mapping, generated wrappers, codegen, standard HTTP, and Axum workflows.
+JSON output is intended for CI, docs checks, and editor tooling.
 
 ## Streams
 
@@ -36,7 +38,7 @@ checks, and editor tooling.
 | 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, and generate parity; live discovery still needs more depth. |
 | 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API; Python explorer remains the richer product reference. |
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command and webview workflow exists; embedded explorer UX needs polish. |
-| 9 | Rust web services | `gemstone-rs` examples plus planned Axum/Actix adapters | `http_service`, `axum-service/README.md` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Standard-library HTTP service example added; `gemstone-py` is ahead for web framework adapters. |
+| 9 | Rust web services | `gemstone-rs` examples plus installed Axum scaffold and planned adapters | `http_service`, `axum-service/README.md`, `examples scaffold axum_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Standard-library HTTP service and Axum scaffold exist; `gemstone-py` is still ahead for checked framework adapters. |
 | 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
 | 11 | Shared native core | `gemstone-gci`, `gemstone-rs`, future `gemstone-py-native` wrapper | Shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Best long-term architecture; not wired into `gemstone-py-native` yet. |
 
@@ -48,8 +50,8 @@ BridgeRoot mapping, and CLI/explorer tooling that can run without Python in
 the process.
 
 `gemstone-py` remains stronger where Python already has mature product shape:
-web framework adapters, async examples, broader installed example launchers,
-the database explorer, package extras, and broader release surfaces.
+checked web framework adapters, async examples, the database explorer, package
+extras, and broader release surfaces.
 
 The projects should converge by sharing the Rust native core underneath
 `gemstone-py-native`, while keeping the Python and Rust APIs idiomatic for

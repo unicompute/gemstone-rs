@@ -41,6 +41,8 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 ```
 
 `gemstone-rs examples run <name>` launches the selected Cargo example from a
@@ -50,7 +52,8 @@ to GemStone, which makes it useful for CI and release docs checks. Use
 view across crates, examples, docs, and parity status. Use `gemstone-rs
 examples scaffold <name> [path]` when you installed the CLI and want a
 standalone Cargo project instead of a source-checkout example. Useful aliases
-include `bridge`, `mapping`, `codegen`, and `http`.
+include `bridge`, `mapping`, `derive`, `codegen`, `wrapper`, `framework`,
+`axum`, and `http`.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -62,9 +65,13 @@ sanity check after install.
 | Scaffold quickstart | `gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart` | You want a standalone quickstart project from the installed CLI. |
 | Scaffold browser | `gemstone-rs examples scaffold browser ./gemstone-rs-browser` | You want a standalone class-browser project from the installed CLI. |
 | Scaffold BridgeRoot mapping | `gemstone-rs examples scaffold bridge_root_mapping ./gemstone-rs-bridge-root-mapping` | You want a standalone BridgeRoot mapping project from the installed CLI. |
+| Scaffold derive mapping | `gemstone-rs examples scaffold derive_mapping ./gemstone-rs-derive-mapping` | You want a standalone derive-mapping project from the installed CLI. |
 | Scaffold codegen preview | `gemstone-rs examples scaffold codegen_preview ./gemstone-rs-codegen-preview` | You want a standalone no-live codegen preview project from the installed CLI. |
 | Scaffold codegen workflow | `gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow` | You want a standalone no-live codegen workflow project from the installed CLI. |
+| Scaffold generated wrapper | `gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper` | You want a standalone generated-style wrapper app from the installed CLI. |
+| Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
+| Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | You want a standalone Axum health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | You want the smallest live read/write round trip. |
 | Eval | `cargo run -p gemstone-rs --example eval` | You want only the `Session::eval("3 + 4")` shape. |
@@ -105,6 +112,8 @@ gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs-explorer --port 8787
 ```
 
@@ -185,7 +194,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- full Axum or Actix framework adapters wired into CI
+- a checked Axum or Actix framework adapter crate wired into CI
 
 ## Scope
 

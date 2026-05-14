@@ -38,6 +38,8 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 ```
 
 From a source checkout, `gemstone-rs examples run <name>` can launch the
@@ -45,8 +47,10 @@ selected Cargo example directly. Use `--dry-run` when you only want to verify
 the command that would run. From an installed CLI, `gemstone-rs examples
 scaffold <name> [path]` writes a standalone Cargo project from embedded
 templates. Current scaffold templates include `quickstart`, `browser`,
-`bridge_root_mapping`, `codegen_preview`, `codegen_workflow`, and
-`http_service`; aliases include `bridge`, `mapping`, `codegen`, and `http`.
+`bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
+`generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
+`axum_service`; aliases include `bridge`, `mapping`, `derive`, `codegen`,
+`wrapper`, `framework`, `axum`, and `http`.
 `gemstone-rs examples map` is the Rust equivalent of `gemstone-examples
 plan3-map`: it groups crates, examples, docs, and gemstone-py reference points
 by feature stream. The same content is maintained in [feature-map.md](feature-map.md).
@@ -63,9 +67,13 @@ CLI binary is installed and runnable.
 | Scaffold quickstart | `gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart` | Creates a standalone Cargo quickstart project from the installed CLI. |
 | Scaffold browser | `gemstone-rs examples scaffold browser ./gemstone-rs-browser` | Creates a standalone class-browser project from the installed CLI. |
 | Scaffold BridgeRoot mapping | `gemstone-rs examples scaffold bridge_root_mapping ./gemstone-rs-bridge-root-mapping` | Creates a standalone BridgeRoot mapping project from the installed CLI. |
+| Scaffold derive mapping | `gemstone-rs examples scaffold derive_mapping ./gemstone-rs-derive-mapping` | Creates a standalone derive-mapping project from the installed CLI. |
 | Scaffold codegen preview | `gemstone-rs examples scaffold codegen_preview ./gemstone-rs-codegen-preview` | Creates a standalone no-live codegen preview project from the installed CLI. |
 | Scaffold codegen workflow | `gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow` | Creates a standalone no-live codegen preview/diff/check/generate project from the installed CLI. |
+| Scaffold generated wrapper | `gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper` | Creates a standalone generated-style wrapper app from the installed CLI. |
+| Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | Creates a standalone generated-style BridgeMapped app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | Creates a standalone Rust HTTP health-service project from the installed CLI. |
+| Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | Creates a standalone Axum health-service project from the installed CLI. |
 | First login | `cargo run -p gemstone-rs --example hello_gemstone` | Reads env config, logs in, prints a session id, and evaluates `3 + 4`. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | Eval, `global_put`, `global_get`, string fetch, cleanup. |
 | Eval only | `cargo run -p gemstone-rs --example eval` | Minimal `Session::eval` shape. |
@@ -202,6 +210,8 @@ gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
@@ -272,5 +282,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- full Axum or Actix framework adapters wired into CI
+- a checked Axum or Actix framework adapter crate wired into CI
 - a richer class browser walkthrough with captured output
