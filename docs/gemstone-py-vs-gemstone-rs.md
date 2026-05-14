@@ -87,6 +87,28 @@ file.
 | Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
 | VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
 
+## Actionable Gap Report
+
+The CLI can print the remaining gemstone-py parity gaps directly:
+
+```bash
+gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-py --gaps --json
+```
+
+The report is intentionally action-oriented. Each row names the gemstone-py
+strength, the gemstone-rs gap, the next implementation step, and the command or
+test that should verify it.
+
+| Priority | Area | What gemstone-py has today | gemstone-rs next action |
+| --- | --- | --- | --- |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add a tiny Axum or Actix example crate with startup, `/`, `/health/local`, `/health/gemstone`, and CI smoke coverage. |
+| P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
+| P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Add scaffold/copy commands that materialize runnable Cargo example projects from installed templates. |
+| P2 | Async and pooling | gemstone-py has async examples and FastAPI integration. | Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests. |
+| P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
+| P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
+
 ## Current Gap Analysis
 
 `gemstone-py` remains better when the user wants a batteries-included Python

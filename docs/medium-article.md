@@ -629,6 +629,7 @@ cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example http_service -- --routes
+cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 ```
 
 For CI and release confidence:

@@ -37,6 +37,7 @@ gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
 gemstone-rs examples map
+gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 ```
 
@@ -90,6 +91,7 @@ gemstone-rs browse dictionaries
 gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
+gemstone-rs compare gemstone-py --gaps
 gemstone-rs-explorer --port 8787
 ```
 

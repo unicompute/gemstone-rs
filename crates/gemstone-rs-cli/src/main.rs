@@ -40,8 +40,8 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_hello(format);
             Ok(())
         }
-        Command::CompareGemstonePy { format } => {
-            print_gemstone_py_comparison(format);
+        Command::CompareGemstonePy { view, format } => {
+            print_gemstone_py_comparison(view, format);
             Ok(())
         }
         Command::Doctor {
@@ -1384,6 +1384,16 @@ struct ComparisonInfo {
     recommendation: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct GapInfo {
+    priority: &'static str,
+    area: &'static str,
+    gemstone_py_strength: &'static str,
+    gemstone_rs_gap: &'static str,
+    next_action: &'static str,
+    verify_with: &'static str,
+}
+
 const EXAMPLES: &[ExampleInfo] = &[
     ExampleInfo {
         name: "hello",
@@ -1670,6 +1680,57 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     },
 ];
 
+const GEMSTONE_PY_GAPS: &[GapInfo] = &[
+    GapInfo {
+        priority: "P1",
+        area: "Web framework adapters",
+        gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
+        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service and Axum sketch, but no real Axum or Actix adapter crate yet.",
+        next_action: "Add a tiny Axum or Actix example crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
+        verify_with: "cargo run -p gemstone-rs --example http_service -- --routes; future Axum/Actix smoke test",
+    },
+    GapInfo {
+        priority: "P1",
+        area: "Explorer product polish",
+        gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
+        gemstone_rs_gap: "gemstone-rs-explorer has useful endpoints and a local UI, but less polished browsing, diff, and BridgeRoot flows.",
+        next_action: "Make the embedded explorer webview the primary IDE surface for dictionaries, classes, methods, codegen, and BridgeRoot inspection.",
+        verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
+    },
+    GapInfo {
+        priority: "P1",
+        area: "Installed example experience",
+        gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
+        gemstone_rs_gap: "gemstone-rs examples run is strong for source checkouts, but installed users mostly get discovery and dry-run commands.",
+        next_action: "Add scaffold/copy commands that materialize runnable Cargo example projects from installed templates.",
+        verify_with: "gemstone-rs examples list; gemstone-rs examples run codegen_preview --dry-run",
+    },
+    GapInfo {
+        priority: "P2",
+        area: "Async and pooling",
+        gemstone_py_strength: "gemstone-py has async examples, FastAPI integration, and lifetime/GC tests around async behavior.",
+        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and has not yet introduced a worker/pool abstraction.",
+        next_action: "Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests.",
+        verify_with: "GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_",
+    },
+    GapInfo {
+        priority: "P2",
+        area: "Shared native core",
+        gemstone_py_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
+        gemstone_rs_gap: "gemstone-py-native does not yet wrap gemstone-gci/gemstone-rs as the shared native implementation.",
+        next_action: "Make gemstone-py-native a thin PyO3 adapter over the Rust GCI/session core.",
+        verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+    },
+    GapInfo {
+        priority: "P2",
+        area: "Release lane depth",
+        gemstone_py_strength: "gemstone-py has PyPI/TestPyPI, native wheel, VSIX, and post-publish verification lanes.",
+        gemstone_rs_gap: "gemstone-rs has crates/VSIX verification, but the full publish workflow is newer and less exercised.",
+        next_action: "Run the full release workflow regularly and keep crates.io, Marketplace, GitHub Release assets, PDFs, and checksums verified.",
+        verify_with: "scripts/publish_verify.sh <version>; scripts/verify_release_artifacts.py",
+    },
+];
+
 fn print_hello(format: OutputFormat) {
     let version = env!("CARGO_PKG_VERSION");
     let os = env::consts::OS;
@@ -1702,11 +1763,19 @@ fn print_hello(format: OutputFormat) {
     }
 }
 
-fn print_gemstone_py_comparison(format: OutputFormat) {
+fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
+    match view {
+        CompareView::Summary => print_gemstone_py_comparison_summary(format),
+        CompareView::Gaps => print_gemstone_py_gap_report(format),
+    }
+}
+
+fn print_gemstone_py_comparison_summary(format: OutputFormat) {
     match format {
         OutputFormat::Human => {
             println!("gemstone-rs vs gemstone-py");
             println!("  Full guide: docs/gemstone-py-vs-gemstone-rs.md");
+            println!("  Gap report: gemstone-rs compare gemstone-py --gaps");
             println!();
             for row in GEMSTONE_PY_COMPARISON {
                 println!("{}", row.topic);
@@ -1722,7 +1791,39 @@ fn print_gemstone_py_comparison(format: OutputFormat) {
                 .map(comparison_json)
                 .collect::<Vec<_>>()
                 .join(",");
-            println!(r#"{{"comparison":"gemstone-py","rows":[{}]}}"#, rows);
+            println!(
+                r#"{{"comparison":"gemstone-py","view":"summary","rows":[{}]}}"#,
+                rows
+            );
+        }
+    }
+}
+
+fn print_gemstone_py_gap_report(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-rs gaps vs gemstone-py");
+            println!("  Full guide: docs/gemstone-py-vs-gemstone-rs.md");
+            println!();
+            for gap in GEMSTONE_PY_GAPS {
+                println!("{} {}", gap.priority, gap.area);
+                println!("  gemstone-py strength: {}", gap.gemstone_py_strength);
+                println!("  gemstone-rs gap: {}", gap.gemstone_rs_gap);
+                println!("  Next action: {}", gap.next_action);
+                println!("  Verify with: {}", gap.verify_with);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let gaps = GEMSTONE_PY_GAPS
+                .iter()
+                .map(gap_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(
+                r#"{{"comparison":"gemstone-py","view":"gaps","gaps":[{}]}}"#,
+                gaps
+            );
         }
     }
 }
@@ -1734,6 +1835,18 @@ fn comparison_json(row: &ComparisonInfo) -> String {
         escape_json(row.gemstone_py),
         escape_json(row.gemstone_rs),
         escape_json(row.recommendation)
+    )
+}
+
+fn gap_json(gap: &GapInfo) -> String {
+    format!(
+        r#"{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","gemstoneRsGap":"{}","nextAction":"{}","verifyWith":"{}"}}"#,
+        escape_json(gap.priority),
+        escape_json(gap.area),
+        escape_json(gap.gemstone_py_strength),
+        escape_json(gap.gemstone_rs_gap),
+        escape_json(gap.next_action),
+        escape_json(gap.verify_with)
     )
 }
 
@@ -1989,6 +2102,7 @@ enum Command {
         format: OutputFormat,
     },
     CompareGemstonePy {
+        view: CompareView,
         format: OutputFormat,
     },
     Doctor {
@@ -2158,6 +2272,12 @@ enum OutputFormat {
     Json,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CompareView {
+    Summary,
+    Gaps,
+}
+
 fn parse_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Ok(Command::Help);
@@ -2283,16 +2403,21 @@ fn parse_hello_command(args: &[String]) -> Result<Command, CliError> {
 
 fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
     let mut format = OutputFormat::Human;
+    let mut view = CompareView::Summary;
     let mut target_seen = false;
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
+            "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
             "-h" | "--help" => {
-                return Err(CliError::usage("expected: compare gemstone-py [--json]"));
+                return Err(CliError::usage(
+                    "expected: compare gemstone-py [--gaps] [--json]",
+                ));
             }
             "gemstone-py" | "gemstone_py" | "py" if !target_seen => {
                 target_seen = true;
             }
+            "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
             value if value.starts_with('-') => {
                 return Err(CliError::usage(format!("unknown compare option: {value}")));
             }
@@ -2304,7 +2429,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
         }
     }
 
-    Ok(Command::CompareGemstonePy { format })
+    Ok(Command::CompareGemstonePy { view, format })
 }
 
 fn parse_format_only_command(
@@ -3135,7 +3260,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py [--json]
+  gemstone-rs compare gemstone-py [--gaps] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -3293,13 +3418,29 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["compare", "gemstone-py"])).unwrap(),
             Command::CompareGemstonePy {
+                view: CompareView::Summary,
                 format: OutputFormat::Human,
             }
         );
         assert_eq!(
             parse_command(&args(&["compare", "--json"])).unwrap(),
             Command::CompareGemstonePy {
+                view: CompareView::Summary,
                 format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--gaps", "--json"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Gaps,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "gaps"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Gaps,
+                format: OutputFormat::Human,
             }
         );
     }
@@ -3475,6 +3616,21 @@ mod tests {
                 && row.gemstone_py.contains("FastAPI")
                 && row.gemstone_rs.contains("planned")));
         assert!(comparison_json(&GEMSTONE_PY_COMPARISON[0]).contains(r#""gemstonePy":"#));
+    }
+
+    #[test]
+    fn gap_report_prioritizes_actionable_gemstone_py_gaps() {
+        assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
+            gap.priority == "P1"
+                && gap.area == "Web framework adapters"
+                && gap.gemstone_py_strength.contains("FastAPI")
+                && gap.next_action.contains("Axum")
+        }));
+        assert!(GEMSTONE_PY_GAPS
+            .iter()
+            .any(|gap| gap.area == "Explorer product polish"
+                && gap.gemstone_rs_gap.contains("less polished")));
+        assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 
     #[test]

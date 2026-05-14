@@ -9,13 +9,16 @@ Run it from the CLI:
 ```bash
 gemstone-rs hello
 gemstone-rs compare gemstone-py
+gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples map
 gemstone-rs examples map --json
 ```
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
-guide. JSON output is intended for CI, docs checks, and editor tooling.
+guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
+actions and verification commands. JSON output is intended for CI, docs checks,
+and editor tooling.
 
 ## Streams
 

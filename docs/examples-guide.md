@@ -34,6 +34,7 @@ gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
 gemstone-rs examples map
+gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 ```
 
@@ -186,6 +187,7 @@ gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
+gemstone-rs compare gemstone-py --gaps
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
