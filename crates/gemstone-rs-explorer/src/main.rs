@@ -2321,7 +2321,7 @@ function renderCodegenExplain(explain) {
     lines.push('  ' + cls.name + ' methods=' + ((cls.methods || []).length));
     for (const method of cls.methods || []) {
       const args = (method.arguments || []).length
-        ? method.arguments.map(arg => arg.name + ':' + arg.type).join(', ')
+        ? method.arguments.map(arg => arg.name + ':' + arg.type + ' as ' + arg.rustType).join(', ')
         : (method.args || []).join(', ');
       lines.push('    ' + method.selector + '(' + args + ') -> ' + method.return);
     }

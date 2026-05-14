@@ -92,13 +92,16 @@
     "argument": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "type"],
+      "required": ["name", "type", "rustType"],
       "properties": {
         "name": {
           "type": "string"
         },
         "type": {
           "enum": ["Oop", "String", "Symbol", "SmallInt", "Bool"]
+        },
+        "rustType": {
+          "type": "string"
         }
       }
     },

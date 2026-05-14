@@ -795,9 +795,10 @@ pub fn explain_json(config: &Config) -> String {
                         .iter()
                         .map(|arg| {
                             format!(
-                                r#"{{"name":"{}","type":"{}"}}"#,
+                                r#"{{"name":"{}","type":"{}","rustType":"{}"}}"#,
                                 json_escape(&arg.name),
-                                arg.arg_type.config_name()
+                                arg.arg_type.config_name(),
+                                json_escape(arg.arg_type.rust_type())
                             )
                         })
                         .collect::<Vec<_>>()
@@ -1081,6 +1082,7 @@ pub fn sample_config() -> &'static str {
      class = Object\n\
      method = Object>>printString | return=String | doc=Return the receiver printString.\n\
      method = Object>>class\n\
+     method = Object>>perform: | args=selector:Symbol | doc=Perform a unary selector supplied as a Rust string.\n\
      mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.\n\
      field = BookingDraft.name | type=String | key=name\n\
      field = BookingDraft.amount | type=SmallInt | key=amount\n\
@@ -1668,7 +1670,7 @@ mod tests {
         assert!(explanation.contains("args=[id:SmallInt, customer:String, active:Bool]"));
         let json = explain_json(&config);
         assert!(json.contains(r#""argTypes":["SmallInt","String","Bool"]"#));
-        assert!(json.contains(r#""arguments":[{"name":"id","type":"SmallInt"}"#));
+        assert!(json.contains(r#""arguments":[{"name":"id","type":"SmallInt","rustType":"i64"}"#));
         Ok(())
     }
 

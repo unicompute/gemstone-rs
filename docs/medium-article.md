@@ -271,7 +271,9 @@ project profile, which is useful when the committed profile file is the source
 of truth for generation.
 The repository also commits schemas for the codegen model, project profiles,
 and `codegen explain --json` output, so editor panels and release checks can
-reason about the same structures.
+reason about the same structures. The JSON summary now includes each argument's
+config type and generated Rust type, so the explorer and VS Code can show the
+conversion before a file is written.
 
 The newest wrapper polish is typed method arguments. An argument can remain an
 explicit `Oop`, or the config can ask codegen to accept native Rust values and

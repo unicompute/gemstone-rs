@@ -101,7 +101,7 @@ The JSON form is intended for editor and explorer integrations that want to
 render the output path, generated test stubs, class wrappers, selector
 arguments, argument types, return helpers, and mapped fields as structured
 data. Method entries include both the legacy `args` name list and an
-`arguments` array with `{name, type}` objects for richer UI rendering.
+`arguments` array with `{name, type, rustType}` objects for richer UI rendering.
 
 Machine-readable schema files are committed for tooling:
 

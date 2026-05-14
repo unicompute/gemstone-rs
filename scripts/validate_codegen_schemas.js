@@ -120,6 +120,7 @@ function assertExplain(value) {
       for (const arg of method.arguments) {
         assert.strictEqual(typeof arg.name, "string");
         assert(["Oop", "String", "Symbol", "SmallInt", "Bool"].includes(arg.type));
+        assert.strictEqual(typeof arg.rustType, "string");
       }
       assert.strictEqual(typeof method.return, "string");
       assert(method.doc === null || typeof method.doc === "string");

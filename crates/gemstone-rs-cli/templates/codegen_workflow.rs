@@ -26,7 +26,8 @@ fn main() -> codegen::Result<()> {
          output = generated/gemstone_wrappers.rs\n\
          class = Object\n\
          method = Object>>printString | return=String | doc=Return the receiver printString.\n\
-         method = Object>>class\n",
+         method = Object>>class\n\
+         method = Object>>perform: | args=selector:Symbol | doc=Perform a unary selector supplied as a Rust string.\n",
     )?;
 
     let config = Config::from_file(&config_path)?;
