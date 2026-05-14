@@ -605,8 +605,11 @@ The extension stays thin. The Rust CLI remains the contract, which keeps the
 tooling testable outside VS Code.
 
 For web services, keep GemStone calls on a blocking worker and treat `Session`
-as thread-local. The repository includes an Axum service sketch that shows the
-recommended shape without adding Axum as a core dependency.
+as thread-local. The repository now includes a standard-library HTTP service
+example with `/`, `/health/local`, and `/health/gemstone` routes, plus an Axum
+service sketch for the eventual framework adapter shape. That keeps the live
+service example runnable without adding Axum, Actix, Tokio, or serde to the core
+workspace.
 
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
@@ -625,6 +628,7 @@ cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example codegen_workflow
+cargo run -p gemstone-rs --example http_service -- --routes
 ```
 
 For CI and release confidence:

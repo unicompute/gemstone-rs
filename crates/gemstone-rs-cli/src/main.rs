@@ -1513,6 +1513,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         requires_live: true,
         description: "Use generated BridgeMapped structs stored under BridgeRoot.",
     },
+    ExampleInfo {
+        name: "http_service",
+        title: "HTTP service",
+        command: "cargo run -p gemstone-rs --example http_service",
+        category: "web",
+        requires_live: true,
+        description: "Standard-library HTTP service with /, /health/local, and /health/gemstone routes.",
+    },
 ];
 
 const FEATURE_MAP: &[FeatureInfo] = &[
@@ -1591,11 +1599,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "planned Axum/Actix adapters over gemstone-rs",
-        examples: "axum-service/README.md",
+        crates: "gemstone-rs examples plus planned Axum/Actix adapters",
+        examples: "http_service, axum-service/README.md",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Documented shape only; gemstone-py is ahead for web framework adapters",
+        status: "Std HTTP service example added; gemstone-py is ahead for web framework adapters",
     },
     FeatureInfo {
         stream: "10",
@@ -1639,8 +1647,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Axum/Actix shape is documented, but full adapters are still planned",
-        recommendation: "Use gemstone-py today for web-framework demos; use gemstone-rs for Rust service foundations",
+        gemstone_rs: "Standard-library HTTP service example exists; Axum/Actix adapters are still planned",
+        recommendation: "Use gemstone-py today for framework adapters; use gemstone-rs to prove Rust service integration and GCI thread boundaries",
     },
     ComparisonInfo {
         topic: "Codegen and mapping",

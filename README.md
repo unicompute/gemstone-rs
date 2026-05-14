@@ -159,12 +159,14 @@ cargo run -p gemstone-rs --example codegen_preview
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example generated_wrapper_app
 cargo run -p gemstone-rs --example generated_mapping_app
+cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs --example codegen_discover
 ```
 
 Additional walkthroughs:
 
 - [CLI browser walkthrough](examples/tooling/cli-browser-walkthrough.md)
+- [Standard-library HTTP service example](crates/gemstone-rs/examples/http_service.rs)
 - [Axum service sketch](examples/axum-service/README.md)
 
 See [examples/README.md](examples/README.md) and

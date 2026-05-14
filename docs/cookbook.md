@@ -294,6 +294,27 @@ gemstone-rs codegen discover examples/codegen/discovered.codegen Object
 Use this to bootstrap a config, then edit the generated mapping down to the API
 you actually want.
 
+## Recipe 19A: Run a Minimal Rust HTTP Health Service
+
+```bash
+cargo run -p gemstone-rs --example http_service -- --routes
+cargo run -p gemstone-rs --example http_service -- --port 3000
+```
+
+From a second terminal:
+
+```bash
+curl -i http://127.0.0.1:3000/
+curl -i http://127.0.0.1:3000/health/local
+curl -i http://127.0.0.1:3000/health/gemstone
+```
+
+The example uses only the Rust standard library. It proves the service shape and
+GemStone health-check flow without pulling web framework dependencies into the
+workspace. `gemstone-py` is still ahead for batteries-included FastAPI,
+Litestar, and Django adapters; `gemstone-rs` now has a direct Rust service
+smoke path while Axum or Actix adapters remain planned.
+
 ## Recipe 20: Run the Local Explorer
 
 ```bash

@@ -72,6 +72,7 @@ sanity check after install.
 | Explorer tooling | `examples/tooling/explorer.md` | You want to prove the local HTTP explorer endpoints. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | You want to prove sidebar browsing and codegen actions. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | You want a terminal-only class browser workflow. |
+| HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | You want a real Rust HTTP service shape without framework dependencies. |
 | Axum service sketch | `examples/axum-service/README.md` | You want the recommended shape for a Rust web service. |
 
 ## Installed CLI Equivalents
@@ -148,6 +149,12 @@ derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { na
 
 $ cargo run -p gemstone-rs --example generated_mapping_app
 generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }
+
+$ cargo run -p gemstone-rs --example http_service -- --routes
+gemstone-rs HTTP service example
+  GET /
+  GET /health/local
+  GET /health/gemstone
 ```
 
 Offline codegen examples are marked with `Does not require a live GemStone/S
@@ -163,7 +170,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- a full Axum or Actix project wired into CI
+- full Axum or Actix framework adapters wired into CI
 
 ## Scope
 

@@ -4,6 +4,23 @@ This is a Rust-native web-service sketch for teams that want `gemstone-rs` in
 an Axum application. It is intentionally kept outside the workspace so the core
 crate stays dependency-light.
 
+Start with the checked-in standard-library HTTP example when you want a
+dependency-free route shape first:
+
+```bash
+cargo run -p gemstone-rs --example http_service -- --routes
+cargo run -p gemstone-rs --example http_service -- --port 3000
+```
+
+It exposes the same minimal contract used by the Python FastAPI/Litestar
+examples:
+
+```text
+GET /
+GET /health/local
+GET /health/gemstone
+```
+
 Create a new service:
 
 ```bash

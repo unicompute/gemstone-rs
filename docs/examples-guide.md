@@ -73,6 +73,7 @@ CLI binary is installed and runnable.
 | Explorer tooling | `examples/tooling/explorer.md` | Local explorer startup and endpoint checks. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | Terminal-only browse workflow. |
+| HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | Standard-library web service with `/`, `/health/local`, and `/health/gemstone`. |
 | Axum service sketch | `examples/axum-service/README.md` | Recommended web-service shape without adding workspace dependencies. |
 
 ## Suggested Learning Order
@@ -96,7 +97,8 @@ CLI binary is installed and runnable.
 17. `examples/tooling/cli-browser-walkthrough.md`
 18. `examples/tooling/explorer.md`
 19. `examples/tooling/vscode-workbench.md`
-20. `examples/axum-service/README.md`
+20. `http_service`
+21. `examples/axum-service/README.md`
 
 ## Expected Output
 
@@ -139,6 +141,12 @@ derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { na
 
 $ cargo run -p gemstone-rs --example generated_mapping_app
 generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }
+
+$ cargo run -p gemstone-rs --example http_service -- --routes
+gemstone-rs HTTP service example
+  GET /
+  GET /health/local
+  GET /health/gemstone
 ```
 
 Offline examples should run without GemStone:
@@ -248,5 +256,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- a full Axum or Actix workspace member wired into CI
+- full Axum or Actix framework adapters wired into CI
 - a richer class browser walkthrough with captured output
