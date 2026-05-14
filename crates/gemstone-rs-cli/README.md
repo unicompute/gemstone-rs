@@ -23,6 +23,10 @@ cargo run -p gemstone-rs-cli -- examples map
 cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
+cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-browser --force
+cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemstone-rs-bridge-root-mapping --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-codegen-preview --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
@@ -113,10 +117,12 @@ stone, and what API surface it proves. `run` launches the selected Cargo
 example when you are in a `gemstone-rs` source checkout. Use `--dry-run` in CI
 or docs checks to print the exact command without compiling or connecting to a
 stone. `scaffold <name> [path]` writes a standalone Cargo project from an
-installed template; the first templates are `quickstart` and `http_service`.
-`map` is the gemstone-rs equivalent of `gemstone-examples plan3-map`: it ties
-Rust crates, examples, docs, and gemstone-py reference points together for each
-feature stream.
+installed template. Current templates include `quickstart`, `browser`,
+`bridge_root_mapping`, `codegen_preview`, `codegen_workflow`, and
+`http_service`; aliases include `bridge`, `mapping`, `codegen`, and `http`.
+`map` is the gemstone-rs equivalent of
+`gemstone-examples plan3-map`: it ties Rust crates, examples, docs, and
+gemstone-py reference points together for each feature stream.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

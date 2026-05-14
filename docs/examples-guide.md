@@ -37,13 +37,16 @@ gemstone-rs examples map
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
+gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 ```
 
 From a source checkout, `gemstone-rs examples run <name>` can launch the
 selected Cargo example directly. Use `--dry-run` when you only want to verify
 the command that would run. From an installed CLI, `gemstone-rs examples
 scaffold <name> [path]` writes a standalone Cargo project from embedded
-templates. The first scaffold templates are `quickstart` and `http_service`.
+templates. Current scaffold templates include `quickstart`, `browser`,
+`bridge_root_mapping`, `codegen_preview`, `codegen_workflow`, and
+`http_service`; aliases include `bridge`, `mapping`, `codegen`, and `http`.
 `gemstone-rs examples map` is the Rust equivalent of `gemstone-examples
 plan3-map`: it groups crates, examples, docs, and gemstone-py reference points
 by feature stream. The same content is maintained in [feature-map.md](feature-map.md).
@@ -58,6 +61,10 @@ CLI binary is installed and runnable.
 | --- | --- | --- |
 | Hello CLI | `gemstone-rs hello` | Verifies the installed CLI without GemStone credentials. |
 | Scaffold quickstart | `gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart` | Creates a standalone Cargo quickstart project from the installed CLI. |
+| Scaffold browser | `gemstone-rs examples scaffold browser ./gemstone-rs-browser` | Creates a standalone class-browser project from the installed CLI. |
+| Scaffold BridgeRoot mapping | `gemstone-rs examples scaffold bridge_root_mapping ./gemstone-rs-bridge-root-mapping` | Creates a standalone BridgeRoot mapping project from the installed CLI. |
+| Scaffold codegen preview | `gemstone-rs examples scaffold codegen_preview ./gemstone-rs-codegen-preview` | Creates a standalone no-live codegen preview project from the installed CLI. |
+| Scaffold codegen workflow | `gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow` | Creates a standalone no-live codegen preview/diff/check/generate project from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | Creates a standalone Rust HTTP health-service project from the installed CLI. |
 | First login | `cargo run -p gemstone-rs --example hello_gemstone` | Reads env config, logs in, prints a session id, and evaluates `3 + 4`. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | Eval, `global_put`, `global_get`, string fetch, cleanup. |
@@ -194,6 +201,7 @@ gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
+gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 

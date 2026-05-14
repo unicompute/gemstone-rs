@@ -104,7 +104,7 @@ test that should verify it.
 | --- | --- | --- | --- |
 | P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add a tiny Axum or Actix example crate with startup, `/`, `/health/local`, `/health/gemstone`, and CI smoke coverage. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
-| P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` beyond `quickstart` and `http_service` to codegen, browser, BridgeRoot mapping, and generated-wrapper projects. |
+| P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` beyond quickstart, browser, BridgeRoot mapping, codegen, and HTTP service templates to generated-wrapper, derive-mapping, and framework-adapter projects. |
 | P2 | Async and pooling | gemstone-py has async examples and FastAPI integration. | Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
@@ -130,17 +130,19 @@ not the implementation language:
   examples, docs, and gemstone-py reference points.
 - Source-checkout launching: `gemstone-rs examples run <name>` now executes
   the matching Cargo example, with `--dry-run` for CI and documentation checks.
-- Installed project scaffolding: `gemstone-rs examples scaffold quickstart`
-  and `gemstone-rs examples scaffold http_service` create standalone Cargo
-  projects from the installed CLI, reducing the need for a source checkout.
+- Installed project scaffolding: `gemstone-rs examples scaffold quickstart`,
+  `browser`, `bridge_root_mapping`, `codegen_preview`, `codegen_workflow`, and
+  `http_service` create standalone Cargo projects from the installed CLI,
+  reducing the need for a source checkout.
 - Rust web service shape: `http_service` now gives a real HTTP example with
   `/`, `/health/local`, and `/health/gemstone` without adding framework
   dependencies; Axum/Actix adapters remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
-- Remaining gap: gemstone-rs still needs scaffold templates for more examples,
-  fuller Rust web examples, richer explorer screens, and more generated wrapper
-  demos before its onboarding feels as complete as gemstone-py.
+- Remaining gap: gemstone-rs still needs scaffold templates for generated
+  wrappers, derive mapping, and framework adapters, plus fuller Rust web
+  examples and richer explorer screens before its onboarding feels as complete
+  as gemstone-py.
 
 ## How They Should Work Together
 

@@ -1725,9 +1725,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Installed example experience",
         gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
-        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart and HTTP service projects, but not every source-checkout example has an installed template yet.",
-        next_action: "Expand examples scaffold templates to codegen, browser, BridgeRoot mapping, and generated-wrapper projects.",
-        verify_with: "gemstone-rs examples scaffold quickstart /tmp/gemstone-rs-quickstart --force",
+        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, codegen, and HTTP service projects, but not every source-checkout example has an installed template yet.",
+        next_action: "Expand examples scaffold templates to generated-wrapper, derive-mapping, and framework-adapter projects.",
+        verify_with: "gemstone-rs examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force",
     },
     GapInfo {
         priority: "P2",
@@ -1762,6 +1762,35 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-rs Quickstart",
         description: "Login, evaluate 3 + 4, and round-trip a UserGlobals string.",
         main_rs: include_str!("../templates/quickstart.rs"),
+    },
+    ScaffoldTemplate {
+        name: "browser",
+        package_name: "gemstone-rs-browser",
+        title: "gemstone-rs Browser",
+        description: "Browse dictionaries, protocols, methods, and Object>>printString source.",
+        main_rs: include_str!("../templates/browser.rs"),
+    },
+    ScaffoldTemplate {
+        name: "bridge_root_mapping",
+        package_name: "gemstone-rs-bridge-root-mapping",
+        title: "gemstone-rs BridgeRoot Mapping",
+        description: "Store and read a typed Rust payload under GemStoneRsBridgeRoot.",
+        main_rs: include_str!("../templates/bridge_root_mapping.rs"),
+    },
+    ScaffoldTemplate {
+        name: "codegen_preview",
+        package_name: "gemstone-rs-codegen-preview",
+        title: "gemstone-rs Codegen Preview",
+        description:
+            "Preview generated Rust wrappers without writing files or connecting to GemStone.",
+        main_rs: include_str!("../templates/codegen_preview.rs"),
+    },
+    ScaffoldTemplate {
+        name: "codegen_workflow",
+        package_name: "gemstone-rs-codegen-workflow",
+        title: "gemstone-rs Codegen Workflow",
+        description: "Run config, preview, diff, check, and generate in one offline example.",
+        main_rs: include_str!("../templates/codegen_workflow.rs"),
     },
     ScaffoldTemplate {
         name: "http_service",
@@ -2045,6 +2074,12 @@ fn run_example(
 }
 
 fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
+    let name = match name {
+        "bridge" | "mapping" => "bridge_root_mapping",
+        "codegen" => "codegen_workflow",
+        "http" | "http-service" | "http_service" => "http_service",
+        other => other,
+    };
     SCAFFOLD_TEMPLATES
         .iter()
         .find(|template| template.name.eq_ignore_ascii_case(name))
@@ -3833,6 +3868,29 @@ mod tests {
 
     #[test]
     fn scaffold_writes_runnable_project_shape_and_refuses_overwrite() {
+        for name in [
+            "quickstart",
+            "browser",
+            "bridge_root_mapping",
+            "codegen_preview",
+            "codegen_workflow",
+            "http_service",
+        ] {
+            assert!(
+                find_scaffold_template(name).is_some(),
+                "missing scaffold template {name}"
+            );
+        }
+        assert!(scaffold_template_names().contains("codegen_workflow"));
+        assert_eq!(
+            find_scaffold_template("codegen").unwrap().name,
+            "codegen_workflow"
+        );
+        assert_eq!(
+            find_scaffold_template("bridge").unwrap().name,
+            "bridge_root_mapping"
+        );
+
         let target =
             std::env::temp_dir().join(format!("gemstone-rs-scaffold-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&target);

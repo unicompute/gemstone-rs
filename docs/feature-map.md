@@ -13,14 +13,16 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
+gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 ```
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
 guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
 actions and verification commands. `examples scaffold` creates standalone Cargo
-projects from installed templates. JSON output is intended for CI, docs checks,
-and editor tooling.
+projects from installed templates for quickstart, browser, BridgeRoot mapping,
+codegen, and HTTP service workflows. JSON output is intended for CI, docs
+checks, and editor tooling.
 
 ## Streams
 

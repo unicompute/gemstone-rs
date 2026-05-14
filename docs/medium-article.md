@@ -631,6 +631,7 @@ cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
 ```
 
 For CI and release confidence:

@@ -34,6 +34,10 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run http_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-scaffold-quickstart --force
+	cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-scaffold-browser --force
+	cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemstone-rs-scaffold-bridge-root-mapping --force
+	cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-scaffold-codegen-preview --force
+	cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-scaffold-codegen-workflow --force
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes
 
