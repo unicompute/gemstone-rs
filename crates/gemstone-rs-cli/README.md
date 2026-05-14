@@ -22,6 +22,8 @@ cargo run -p gemstone-rs-cli -- examples list
 cargo run -p gemstone-rs-cli -- examples map
 cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
+cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
+cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
 cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-browser --force
 cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemstone-rs-bridge-root-mapping --force
@@ -35,6 +37,7 @@ cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gem
 cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-generated-mapping-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
 cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
+cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-actix-service --force
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -128,8 +131,9 @@ installed template. Current templates include `quickstart`, `browser`,
 `bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
 `codegen_discover`, `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
-`axum_service`; aliases include `bridge`, `mapping`, `derive`, `codegen`,
-`discover`, `profiles`, `wrapper`, `framework`, `axum`, and `http`.
+`axum_service`, and `actix_service`; aliases include `bridge`, `mapping`,
+`derive`, `codegen`, `discover`, `profiles`, `wrapper`, `framework`, `axum`,
+`actix`, and `http`.
 `profile_codegen_workflow` writes both codegen config files and Rust source.
 `map` is the gemstone-rs equivalent of
 `gemstone-examples plan3-map`: it ties Rust crates, examples, docs, and

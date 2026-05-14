@@ -1,0 +1,12 @@
+[package]
+name = "gemstone-rs-actix-service"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+actix-web = "4"
+gemstone-rs = { path = "../../crates/gemstone-rs" }
+serde_json = "1"

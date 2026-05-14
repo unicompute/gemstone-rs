@@ -606,10 +606,11 @@ tooling testable outside VS Code.
 
 For web services, keep GemStone calls on a blocking worker and treat `Session`
 as thread-local. The repository now includes a standard-library HTTP service
-example with `/`, `/health/local`, and `/health/gemstone` routes, plus a
-checked Axum service under `examples/axum-service` that uses
-`tokio::task::spawn_blocking` for GemStone calls. That keeps the core workspace
-dependency-light while proving the async web-service shape.
+example with `/`, `/health/local`, and `/health/gemstone` routes, a checked
+Axum service under `examples/axum-service` that uses
+`tokio::task::spawn_blocking`, and a checked Actix service under
+`examples/actix-service` that uses `actix_web::web::block`. That keeps the
+core workspace dependency-light while proving the async web-service shape.
 
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
@@ -635,6 +636,7 @@ cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone
 cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper --force
 cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
+cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-actix-service --force
 ```
 
 For CI and release confidence:

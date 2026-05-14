@@ -33,6 +33,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run http_service --dry-run -- --routes
+	cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
+	cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-scaffold-quickstart --force
 	cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-scaffold-browser --force
 	cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemstone-rs-scaffold-bridge-root-mapping --force
@@ -46,9 +48,12 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-scaffold-generated-mapping-app --force
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-scaffold-axum-service --force
+	cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-scaffold-actix-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes
 	cargo test --manifest-path examples/axum-service/Cargo.toml
 	cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
+	cargo test --manifest-path examples/actix-service/Cargo.toml
+	cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample

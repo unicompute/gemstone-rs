@@ -68,11 +68,14 @@ gemstone-rs examples list
 gemstone-rs examples map
 gemstone-rs examples show quickstart
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples run axum_service --dry-run -- --routes
+gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
+gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
@@ -168,6 +171,7 @@ cargo run -p gemstone-rs --example generated_mapping_app
 cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs --example codegen_discover
 cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
+cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 ```
 
 Additional walkthroughs:
@@ -175,6 +179,7 @@ Additional walkthroughs:
 - [CLI browser walkthrough](examples/tooling/cli-browser-walkthrough.md)
 - [Standard-library HTTP service example](crates/gemstone-rs/examples/http_service.rs)
 - [Checked Axum service example](examples/axum-service/README.md)
+- [Checked Actix service example](examples/actix-service/README.md)
 
 See [examples/README.md](examples/README.md) and
 [docs/examples-guide.md](docs/examples-guide.md) for the full map.
@@ -212,6 +217,9 @@ cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gem
 cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-generated-mapping-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
 cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
+cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-actix-service --force
+cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
+cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -272,8 +280,8 @@ creates a standalone Cargo project from an installed template, including
 `codegen_preview`, `codegen_workflow`, `codegen_discover`,
 `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
-`axum_service`, so users can try gemstone-rs without keeping the repository
-checkout open. `profile_codegen_workflow` also writes
+`axum_service`, and `actix_service`, so users can try gemstone-rs without
+keeping the repository checkout open. `profile_codegen_workflow` also writes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside
 `src/main.rs`. `examples map` mirrors the `gemstone-examples plan3-map` idea
 by showing which Rust crates, examples, and docs correspond to each feature

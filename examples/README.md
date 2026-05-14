@@ -39,11 +39,14 @@ gemstone-rs examples list --json
 gemstone-rs examples map
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples run axum_service --dry-run -- --routes
+gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
+gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 ```
 
 `gemstone-rs examples run <name>` launches the selected Cargo example from a
@@ -54,8 +57,8 @@ view across crates, examples, docs, and parity status. Use `gemstone-rs
 examples scaffold <name> [path]` when you installed the CLI and want a
 standalone Cargo project instead of a source-checkout example. Useful aliases
 include `bridge`, `mapping`, `derive`, `codegen`, `discover`, `profiles`,
-`wrapper`, `framework`, `axum`, and `http`. Some scaffolds write supporting
-project files as well as Rust source; `profile_codegen_workflow` includes
+`wrapper`, `framework`, `axum`, `actix`, and `http`. Some scaffolds write
+supporting project files as well as Rust source; `profile_codegen_workflow` includes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json`.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
@@ -78,6 +81,7 @@ sanity check after install.
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
 | Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | You want a standalone Axum health-service project from the installed CLI. |
+| Scaffold Actix service | `gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service` | You want a standalone Actix Web health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | You want the smallest live read/write round trip. |
 | Eval | `cargo run -p gemstone-rs --example eval` | You want only the `Session::eval("3 + 4")` shape. |
@@ -99,6 +103,7 @@ sanity check after install.
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | You want a terminal-only class browser workflow. |
 | HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | You want a real Rust HTTP service shape without framework dependencies. |
 | Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | You want a checked Axum route shape for a Rust web service. |
+| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | You want a checked Actix Web route shape for a Rust web service. |
 
 ## Installed CLI Equivalents
 
@@ -121,6 +126,9 @@ gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
+gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
+gemstone-rs examples run axum_service --dry-run -- --routes
+gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs-explorer --port 8787
 ```
 
@@ -201,7 +209,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- an Actix framework example or reusable session-worker adapter crate wired into CI
+- a reusable session-worker or framework adapter crate wired into CI
 
 ## Scope
 

@@ -1563,6 +1563,22 @@ const EXAMPLES: &[ExampleInfo] = &[
         requires_live: true,
         description: "Standard-library HTTP service with /, /health/local, and /health/gemstone routes.",
     },
+    ExampleInfo {
+        name: "axum_service",
+        title: "Axum service",
+        command: "cargo run --manifest-path examples/axum-service/Cargo.toml",
+        category: "web",
+        requires_live: true,
+        description: "Checked Axum service with /, /health/local, and /health/gemstone routes.",
+    },
+    ExampleInfo {
+        name: "actix_service",
+        title: "Actix service",
+        command: "cargo run --manifest-path examples/actix-service/Cargo.toml",
+        category: "web",
+        requires_live: true,
+        description: "Checked Actix Web service with /, /health/local, and /health/gemstone routes.",
+    },
 ];
 
 const FEATURE_MAP: &[FeatureInfo] = &[
@@ -1641,11 +1657,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "gemstone-rs examples plus checked Axum service and installed Axum scaffold",
-        examples: "http_service, examples/axum-service, examples scaffold axum_service",
+        crates: "gemstone-rs examples plus checked Axum/Actix services and installed scaffolds",
+        examples: "http_service, examples/axum-service, examples/actix-service, examples scaffold axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Std HTTP service, checked Axum service, and Axum scaffold exist; gemstone-py is still ahead for broader framework adapters",
+        status: "Std HTTP, checked Axum/Actix services, and installed scaffolds exist; reusable framework adapters remain planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1689,8 +1705,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Standard-library HTTP service and checked Axum example exist; Actix and deeper adapters are still planned",
-        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and GCI thread boundaries",
+        gemstone_rs: "Standard-library HTTP, checked Axum, and checked Actix examples exist; reusable adapters are still planned",
+        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and blocking GCI boundaries",
     },
     ComparisonInfo {
         topic: "Codegen and mapping",
@@ -1717,9 +1733,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service, checked Axum service, and installed Axum scaffold, but no Actix example or reusable framework adapter crate yet.",
-        next_action: "Add an Actix example or reusable session-worker adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
-        verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
+        gemstone_rs_gap: "gemstone-rs has standard-library HTTP, checked Axum/Actix services, and installed Axum/Actix scaffolds, but no reusable framework adapter crate or session-worker abstraction yet.",
+        next_action: "Add a reusable session-worker or framework adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
+        verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
         priority: "P1",
@@ -1733,7 +1749,7 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Installed example experience",
         gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
-        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, derive mapping, generated wrappers, codegen discovery, profile codegen, standard HTTP, and Axum projects, but explorer-integrated workflows still need installed templates.",
+        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, derive mapping, generated wrappers, codegen discovery, profile codegen, standard HTTP, Axum, and Actix projects, but explorer-integrated workflows still need installed templates.",
         next_action: "Expand examples scaffold templates to explorer-integrated projects and richer generated wrapper profile variants.",
         verify_with: "gemstone-rs examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen --force",
     },
@@ -1893,6 +1909,17 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         extra_dependencies: r#"axum = "0.8"
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
+"#,
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
+    },
+    ScaffoldTemplate {
+        name: "actix_service",
+        package_name: "gemstone-rs-actix-service",
+        title: "gemstone-rs Actix Service",
+        description: "Standalone Actix Web service with /, /health/local, and /health/gemstone.",
+        main_rs: include_str!("../templates/actix_service.rs"),
+        extra_dependencies: r#"actix-web = "4"
+serde_json = "1"
 "#,
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
@@ -2153,7 +2180,11 @@ fn run_example(
 
     println!("running: {command}");
     let mut process = ProcessCommand::new("cargo");
-    process.args(["run", "-p", "gemstone-rs", "--example", example.name]);
+    if let Some(manifest_path) = example_manifest_path(example.name) {
+        process.args(["run", "--manifest-path", manifest_path]);
+    } else {
+        process.args(["run", "-p", "gemstone-rs", "--example", example.name]);
+    }
     if !extra_args.is_empty() {
         process.arg("--");
         process.args(extra_args);
@@ -2170,8 +2201,17 @@ fn run_example(
     }
 }
 
+fn example_manifest_path(name: &str) -> Option<&'static str> {
+    match name {
+        "axum_service" => Some("examples/axum-service/Cargo.toml"),
+        "actix_service" => Some("examples/actix-service/Cargo.toml"),
+        _ => None,
+    }
+}
+
 fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
     let name = match name {
+        "actix" | "actix-web" | "actix_web" => "actix_service",
         "axum" | "framework" | "framework_adapter" | "framework-adapter" => "axum_service",
         "bridge" | "mapping" => "bridge_root_mapping",
         "codegen" => "codegen_workflow",
@@ -3963,8 +4003,30 @@ mod tests {
         assert!(FEATURE_MAP
             .iter()
             .any(|feature| feature.title == "Rust web services"
-                && feature.status.contains("gemstone-py is still ahead")));
+                && feature.status.contains("reusable framework adapters")));
         assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
+    }
+
+    #[test]
+    fn framework_examples_use_checked_manifest_runner() {
+        let axum = find_example("axum_service").unwrap();
+        let actix = find_example("actix_service").unwrap();
+        assert_eq!(
+            example_run_command(axum, &["--routes".to_string()]),
+            "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes"
+        );
+        assert_eq!(
+            example_run_command(actix, &["--routes".to_string()]),
+            "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes"
+        );
+        assert_eq!(
+            example_manifest_path(axum.name),
+            Some("examples/axum-service/Cargo.toml")
+        );
+        assert_eq!(
+            example_manifest_path(actix.name),
+            Some("examples/actix-service/Cargo.toml")
+        );
     }
 
     #[test]
@@ -3973,7 +4035,7 @@ mod tests {
             .iter()
             .any(|row| row.topic == "Web frameworks"
                 && row.gemstone_py.contains("FastAPI")
-                && row.gemstone_rs.contains("planned")));
+                && row.gemstone_rs.contains("reusable adapters")));
         assert!(comparison_json(&GEMSTONE_PY_COMPARISON[0]).contains(r#""gemstonePy":"#));
     }
 
@@ -3983,7 +4045,7 @@ mod tests {
             gap.priority == "P1"
                 && gap.area == "Web framework adapters"
                 && gap.gemstone_py_strength.contains("FastAPI")
-                && gap.next_action.contains("Actix")
+                && gap.next_action.contains("session-worker")
         }));
         assert!(GEMSTONE_PY_GAPS
             .iter()
@@ -4008,6 +4070,7 @@ mod tests {
             "generated_mapping_app",
             "http_service",
             "axum_service",
+            "actix_service",
         ] {
             assert!(
                 find_scaffold_template(name).is_some(),
@@ -4030,6 +4093,10 @@ mod tests {
         assert_eq!(
             find_scaffold_template("framework").unwrap().name,
             "axum_service"
+        );
+        assert_eq!(
+            find_scaffold_template("actix").unwrap().name,
+            "actix_service"
         );
         assert_eq!(
             find_scaffold_template("discover").unwrap().name,
@@ -4060,6 +4127,11 @@ mod tests {
         assert!(axum_toml.contains(r#"name = "gemstone-rs-axum-service""#));
         assert!(axum_toml.contains(r#"axum = "0.8""#));
         assert!(axum_toml.contains(r#"tokio = { version = "1""#));
+
+        let actix = find_scaffold_template("actix").unwrap();
+        let actix_toml = scaffold_cargo_toml(actix);
+        assert!(actix_toml.contains(r#"name = "gemstone-rs-actix-service""#));
+        assert!(actix_toml.contains(r#"actix-web = "4""#));
 
         let err = scaffold_example_project(template, &target, false)
             .unwrap_err()
