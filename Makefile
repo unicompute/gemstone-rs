@@ -18,10 +18,15 @@ rust-check:
 	cargo test --workspace
 
 examples-check:
+	cargo run -p gemstone-rs-cli -- hello
+	cargo run -p gemstone-rs-cli -- hello --json
+	cargo run -p gemstone-rs-cli -- compare gemstone-py
+	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- examples list
 	cargo run -p gemstone-rs-cli -- examples list --json
 	cargo run -p gemstone-rs-cli -- examples map
 	cargo run -p gemstone-rs-cli -- examples map --json
+	cargo run -p gemstone-rs-cli -- examples hello
 	cargo run -p gemstone-rs-cli -- examples show quickstart
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run

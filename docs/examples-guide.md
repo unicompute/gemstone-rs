@@ -29,6 +29,7 @@ After installing the CLI, discover the same curated map without opening the
 repository docs:
 
 ```bash
+gemstone-rs hello
 gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
@@ -43,10 +44,15 @@ of `gemstone-examples plan3-map`: it groups crates, examples, docs, and
 gemstone-py reference points by feature stream. The same content is maintained
 in [feature-map.md](feature-map.md).
 
+`gemstone-rs hello` is the no-live equivalent of `gemstone-examples hello`.
+Use it before configuring GemStone credentials when you only want to prove the
+CLI binary is installed and runnable.
+
 ## Example Map
 
 | Feature | Command or path | What it demonstrates |
 | --- | --- | --- |
+| Hello CLI | `gemstone-rs hello` | Verifies the installed CLI without GemStone credentials. |
 | First login | `cargo run -p gemstone-rs --example hello_gemstone` | Reads env config, logs in, prints a session id, and evaluates `3 + 4`. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | Eval, `global_put`, `global_get`, string fetch, cleanup. |
 | Eval only | `cargo run -p gemstone-rs --example eval` | Minimal `Session::eval` shape. |
@@ -71,25 +77,26 @@ in [feature-map.md](feature-map.md).
 
 ## Suggested Learning Order
 
-1. `hello_gemstone`
-2. `quickstart`
-3. `browser`
-4. `live_smoke_cookbook`
-5. `oop_values`
-6. `transactions`
-7. `bridge_root_mapping`
-8. `derive_mapping`
-9. `codegen_preview`
-10. `codegen_workflow`
-11. `generated_wrapper_app`
-12. `generated_mapping_app`
-13. `codegen_discover`
-14. `codegen_discover_mapping`
-15. `examples/codegen/`
-16. `examples/tooling/cli-browser-walkthrough.md`
-17. `examples/tooling/explorer.md`
-18. `examples/tooling/vscode-workbench.md`
-19. `examples/axum-service/README.md`
+1. `gemstone-rs hello`
+2. `hello_gemstone`
+3. `quickstart`
+4. `browser`
+5. `live_smoke_cookbook`
+6. `oop_values`
+7. `transactions`
+8. `bridge_root_mapping`
+9. `derive_mapping`
+10. `codegen_preview`
+11. `codegen_workflow`
+12. `generated_wrapper_app`
+13. `generated_mapping_app`
+14. `codegen_discover`
+15. `codegen_discover_mapping`
+16. `examples/codegen/`
+17. `examples/tooling/cli-browser-walkthrough.md`
+18. `examples/tooling/explorer.md`
+19. `examples/tooling/vscode-workbench.md`
+20. `examples/axum-service/README.md`
 
 ## Expected Output
 

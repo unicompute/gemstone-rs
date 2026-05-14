@@ -7,17 +7,21 @@ Python reference point that inspired it.
 Run it from the CLI:
 
 ```bash
+gemstone-rs hello
+gemstone-rs compare gemstone-py
 gemstone-rs examples map
 gemstone-rs examples map --json
 ```
 
-The JSON form is intended for CI, docs checks, and editor tooling.
+`hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
+`compare gemstone-py` prints a compact version of the Python/Rust comparison
+guide. JSON output is intended for CI, docs checks, and editor tooling.
 
 ## Streams
 
 | Stream | Feature | Rust surface | Examples | Docs | gemstone-py reference | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Runtime and GCI loading | `gemstone-gci`, `gemstone-rs::Config` | `hello_gemstone`, `quickstart` | `docs/setup-guide.md`, `docs/performance-safety.md` | `gemstone_py.native`, native backend checks | Rust-native core; Python still has broader packaged backend docs. |
+| 1 | Runtime and GCI loading | `gemstone-gci`, `gemstone-rs::Config` | `hello`, `hello_gemstone`, `quickstart` | `docs/setup-guide.md`, `docs/performance-safety.md` | `gemstone_py.native`, native backend checks | Rust-native core; Python still has broader packaged backend docs. |
 | 2 | Safe sessions and transactions | `gemstone-rs::Session`, `TransactionGuard` | `quickstart`, `transactions`, `live_smoke_cookbook` | `docs/user-manual.md`, `docs/cookbook.md` | `GemStoneSession`, `SessionFacade`, transaction policies | Core parity for sync eval, perform, commit, and abort. |
 | 3 | Browser and inspection | `gemstone-rs::browser`, CLI `browse`, `gemstone-rs-explorer` | `browser`, `tooling/cli-browser-walkthrough.md` | `docs/user-manual.md`, `docs/explorer.md` | `gemstone_py.inspection`, `python-gemstone-database-explorer` | API parity is growing; the Python explorer is still more mature. |
 | 4 | OOP and value handling | `Oop`, `Value`, export-set helpers | `oop_values` | `docs/user-manual.md`, `docs/performance-safety.md` | Managed OOP handles and typed access examples | Rust has an explicit ownership model; Python is easier for casual scripting. |

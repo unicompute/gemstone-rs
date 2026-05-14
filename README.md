@@ -59,6 +59,8 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 
 ```bash
 gemstone-rs --help
+gemstone-rs hello
+gemstone-rs compare gemstone-py
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -176,6 +178,10 @@ cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --strict
 cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
+cargo run -p gemstone-rs-cli -- hello
+cargo run -p gemstone-rs-cli -- hello --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py
+cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
@@ -226,6 +232,10 @@ for local browser workflows. `doctor --strict` is intended for CI: it fails when
 library source is only coming from defaults. GCI diagnostics also report
 whether the selected `libgcirpc` exists, is a file, is readable, and whether
 the path appears to be arm64 or x86_64.
+`hello` is a no-GemStone sanity check similar to `gemstone-examples hello`; it
+prints the CLI version, target OS, target architecture, and executable path.
+`compare gemstone-py` prints the compact Rust/Python comparison from the
+comparison guide, with `--json` for tooling.
 `examples list` and `examples show <name>` provide an installed-CLI example
 index similar to `gemstone-examples list` in gemstone-py; `examples run <name>`
 launches the selected Cargo example from a source checkout, and `--dry-run`

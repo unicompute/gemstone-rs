@@ -10,6 +10,10 @@ cargo run -p gemstone-rs-cli -- doctor --live
 cargo run -p gemstone-rs-cli -- doctor --strict
 cargo run -p gemstone-rs-cli -- doctor --env-file .env.gemstone-rs --live
 cargo run -p gemstone-rs-cli -- doctor --json
+cargo run -p gemstone-rs-cli -- hello
+cargo run -p gemstone-rs-cli -- hello --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py
+cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
@@ -72,6 +76,12 @@ same template to `.env.gemstone-rs`; pass a path to choose another file, and
 pass `--force` to overwrite an existing file. `doctor --env-file` and
 `eval --env-file` load that file for one command, which is useful in CI and in
 shells where you do not want to source the file globally.
+
+`hello` is the fastest no-GemStone sanity check. It mirrors
+`gemstone-examples hello` from gemstone-py and prints the CLI version, target
+OS, target architecture, and executable path. `compare gemstone-py` prints a
+compact comparison summary; add `--json` when an editor, CI job, or release
+script needs structured output.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`

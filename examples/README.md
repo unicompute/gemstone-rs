@@ -32,6 +32,7 @@ The installed CLI also carries this curated map, so users do not need a source
 checkout open to discover examples:
 
 ```bash
+gemstone-rs hello
 gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
@@ -45,8 +46,13 @@ to GemStone, which makes it useful for CI and release docs checks. Use
 `gemstone-rs examples map` when you want the gemstone-py-style feature stream
 view across crates, examples, docs, and parity status.
 
+`gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
+GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
+sanity check after install.
+
 | Role | Command | Use it when |
 | --- | --- | --- |
+| Hello CLI | `gemstone-rs hello` | You want to verify the installed CLI without GemStone credentials. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | You want the smallest live read/write round trip. |
 | Eval | `cargo run -p gemstone-rs --example eval` | You want only the `Session::eval("3 + 4")` shape. |

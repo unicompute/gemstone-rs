@@ -36,6 +36,14 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("{}", usage());
             Ok(())
         }
+        Command::Hello { format } => {
+            print_hello(format);
+            Ok(())
+        }
+        Command::CompareGemstonePy { format } => {
+            print_gemstone_py_comparison(format);
+            Ok(())
+        }
         Command::Doctor {
             live,
             strict,
@@ -1368,7 +1376,23 @@ struct FeatureInfo {
     status: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ComparisonInfo {
+    topic: &'static str,
+    gemstone_py: &'static str,
+    gemstone_rs: &'static str,
+    recommendation: &'static str,
+}
+
 const EXAMPLES: &[ExampleInfo] = &[
+    ExampleInfo {
+        name: "hello",
+        title: "Hello",
+        command: "gemstone-rs hello",
+        category: "cli",
+        requires_live: false,
+        description: "No-GemStone CLI sanity check, matching gemstone-examples hello.",
+    },
     ExampleInfo {
         name: "hello_gemstone",
         title: "Hello GemStone",
@@ -1496,7 +1520,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "1",
         title: "Runtime and GCI loading",
         crates: "gemstone-gci, gemstone-rs::Config",
-        examples: "hello_gemstone, quickstart",
+        examples: "hello, hello_gemstone, quickstart",
         docs: "docs/setup-guide.md, docs/performance-safety.md",
         gemstone_py_reference: "gemstone_py.native, native backend checks",
         status: "Rust-native core; Python still has broader packaged backend docs",
@@ -1592,6 +1616,118 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         status: "Best long-term architecture; not wired into gemstone-py-native yet",
     },
 ];
+
+const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
+    ComparisonInfo {
+        topic: "Best fit",
+        gemstone_py: "Python apps, scripts, notebooks, FastAPI/Litestar/Django examples, and Python-first teams",
+        gemstone_rs: "Rust services, CLIs, workers, native tooling, and no-Python GemStone access",
+        recommendation: "Choose the language/runtime your application already lives in",
+    },
+    ComparisonInfo {
+        topic: "Install path",
+        gemstone_py: "python -m pip install gemstone-py; optional native acceleration with gemstone-py[fast]",
+        gemstone_rs: "cargo add gemstone-rs; cargo install gemstone-rs-cli gemstone-rs-explorer",
+        recommendation: "Use pip for Python deliverables and Cargo for Rust deliverables",
+    },
+    ComparisonInfo {
+        topic: "Examples",
+        gemstone_py: "gemstone-examples list, plan3-map, hello, quickstart, fastapi, litestar",
+        gemstone_rs: "gemstone-rs hello; examples list/map/show/run; Cargo examples from source checkout",
+        recommendation: "gemstone-py is ahead for installed runnable examples; gemstone-rs now has comparable discovery",
+    },
+    ComparisonInfo {
+        topic: "Web frameworks",
+        gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
+        gemstone_rs: "Axum/Actix shape is documented, but full adapters are still planned",
+        recommendation: "Use gemstone-py today for web-framework demos; use gemstone-rs for Rust service foundations",
+    },
+    ComparisonInfo {
+        topic: "Codegen and mapping",
+        gemstone_py: "Python codegen and typed access demos",
+        gemstone_rs: "Rust wrapper generation, BridgeRoot mapping, derive macro, preview/diff/check/generate",
+        recommendation: "Use gemstone-rs when compile-time Rust wrapper checks matter",
+    },
+    ComparisonInfo {
+        topic: "Explorer and VS Code",
+        gemstone_py: "More mature database explorer and workbench product flow",
+        gemstone_rs: "Local explorer, command workbench, embedded webview, and CLI-backed codegen workflow",
+        recommendation: "Python explorer remains the product reference; Rust explorer is the backend proving ground",
+    },
+    ComparisonInfo {
+        topic: "Native bridge direction",
+        gemstone_py: "Python API should eventually consume a thin PyO3 native layer",
+        gemstone_rs: "Owns the long-term shared GCI core in gemstone-gci and gemstone-rs",
+        recommendation: "Make gemstone-py-native wrap the Rust core over time",
+    },
+];
+
+fn print_hello(format: OutputFormat) {
+    let version = env!("CARGO_PKG_VERSION");
+    let os = env::consts::OS;
+    let arch = env::consts::ARCH;
+    let family = env::consts::FAMILY;
+    let executable = env::current_exe()
+        .ok()
+        .map(|path| path.display().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    match format {
+        OutputFormat::Human => {
+            println!("Hello from:");
+            println!("  gemstone-rs CLI version: {version}");
+            println!("  Rust target OS:          {os}");
+            println!("  Rust target arch:        {arch}");
+            println!("  Rust target family:      {family}");
+            println!("  Executable:              {executable}");
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"name":"gemstone-rs","version":"{}","os":"{}","arch":"{}","family":"{}","executable":"{}"}}"#,
+                escape_json(version),
+                escape_json(os),
+                escape_json(arch),
+                escape_json(family),
+                escape_json(&executable)
+            );
+        }
+    }
+}
+
+fn print_gemstone_py_comparison(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-rs vs gemstone-py");
+            println!("  Full guide: docs/gemstone-py-vs-gemstone-rs.md");
+            println!();
+            for row in GEMSTONE_PY_COMPARISON {
+                println!("{}", row.topic);
+                println!("  gemstone-py: {}", row.gemstone_py);
+                println!("  gemstone-rs: {}", row.gemstone_rs);
+                println!("  Recommendation: {}", row.recommendation);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let rows = GEMSTONE_PY_COMPARISON
+                .iter()
+                .map(comparison_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(r#"{{"comparison":"gemstone-py","rows":[{}]}}"#, rows);
+        }
+    }
+}
+
+fn comparison_json(row: &ComparisonInfo) -> String {
+    format!(
+        r#"{{"topic":"{}","gemstonePy":"{}","gemstoneRs":"{}","recommendation":"{}"}}"#,
+        escape_json(row.topic),
+        escape_json(row.gemstone_py),
+        escape_json(row.gemstone_rs),
+        escape_json(row.recommendation)
+    )
+}
 
 fn find_example(name: &str) -> Option<&'static ExampleInfo> {
     EXAMPLES.iter().find(|example| {
@@ -1841,6 +1977,12 @@ fn path_field(value: Option<&Path>) -> String {
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Command {
     Help,
+    Hello {
+        format: OutputFormat,
+    },
+    CompareGemstonePy {
+        format: OutputFormat,
+    },
     Doctor {
         live: bool,
         strict: bool,
@@ -2015,6 +2157,8 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
 
     match command {
         "-h" | "--help" | "help" => Ok(Command::Help),
+        "hello" => parse_hello_command(&args[1..]),
+        "compare" => parse_compare_command(&args[1..]),
         "doctor" => parse_doctor_command(&args[1..]),
         "env" => parse_env_command(&args[1..]),
         "examples" | "example" => parse_examples_command(&args[1..]),
@@ -2125,6 +2269,56 @@ fn parse_env_write_command(args: &[String]) -> Result<Command, CliError> {
     })
 }
 
+fn parse_hello_command(args: &[String]) -> Result<Command, CliError> {
+    parse_format_only_command(args, "hello [--json]", |format| Command::Hello { format })
+}
+
+fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut target_seen = false;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage("expected: compare gemstone-py [--json]"));
+            }
+            "gemstone-py" | "gemstone_py" | "py" if !target_seen => {
+                target_seen = true;
+            }
+            value if value.starts_with('-') => {
+                return Err(CliError::usage(format!("unknown compare option: {value}")));
+            }
+            value => {
+                return Err(CliError::usage(format!(
+                    "unknown comparison target: {value}; expected gemstone-py"
+                )))
+            }
+        }
+    }
+
+    Ok(Command::CompareGemstonePy { format })
+}
+
+fn parse_format_only_command(
+    args: &[String],
+    usage: &'static str,
+    build: impl Fn(OutputFormat) -> Command,
+) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => return Err(CliError::usage(format!("expected: {usage}"))),
+            other => {
+                return Err(CliError::usage(format!(
+                    "unexpected argument for {usage}: {other}"
+                )))
+            }
+        }
+    }
+    Ok(build(format))
+}
+
 fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Ok(Command::ExamplesList {
@@ -2134,18 +2328,19 @@ fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
     match command {
         "list" => parse_examples_list_command(&args[1..]),
         "map" | "feature-map" | "plan3-map" => parse_examples_map_command(&args[1..]),
+        "hello" => parse_hello_command(&args[1..]),
         "show" => parse_examples_show_command(&args[1..]),
         "run" => parse_examples_run_command(&args[1..]),
         "--json" => Ok(Command::ExamplesList {
             format: OutputFormat::Json,
         }),
         "-h" | "--help" => Err(CliError::usage(
-            "expected: examples [list [--json] | map [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+            "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
         )),
         name => {
             if args.len() > 2 {
                 return Err(CliError::usage(
-                    "expected: examples [list [--json] | map [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+                    "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
                 ));
             }
             let format = if args.get(1).is_some_and(|arg| arg == "--json") {
@@ -2931,11 +3126,14 @@ fn run_codegen_check(config_path: &Path) -> Result<(), CliError> {
 fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
+  gemstone-rs hello [--json]
+  gemstone-rs compare gemstone-py [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
   gemstone-rs examples list [--json]
   gemstone-rs examples map [--json]
+  gemstone-rs examples hello [--json]
   gemstone-rs examples show <name> [--json]
   gemstone-rs examples run <name> [--dry-run] [-- <args>...]
   gemstone-rs eval [--env-file <path>] <smalltalk>
@@ -3062,6 +3260,40 @@ mod tests {
     fn parses_help_without_live_gemstone() {
         assert_eq!(parse_command(&args(&[])).unwrap(), Command::Help);
         assert_eq!(parse_command(&args(&["--help"])).unwrap(), Command::Help);
+    }
+
+    #[test]
+    fn parses_hello_and_comparison_commands() {
+        assert_eq!(
+            parse_command(&args(&["hello"])).unwrap(),
+            Command::Hello {
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["hello", "--json"])).unwrap(),
+            Command::Hello {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["examples", "hello", "--json"])).unwrap(),
+            Command::Hello {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py"])).unwrap(),
+            Command::CompareGemstonePy {
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "--json"])).unwrap(),
+            Command::CompareGemstonePy {
+                format: OutputFormat::Json,
+            }
+        );
     }
 
     #[test]
@@ -3225,6 +3457,16 @@ mod tests {
             .any(|feature| feature.title == "Rust web services"
                 && feature.status.contains("gemstone-py is ahead")));
         assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
+    }
+
+    #[test]
+    fn comparison_rows_include_clear_gemstone_py_gaps() {
+        assert!(GEMSTONE_PY_COMPARISON
+            .iter()
+            .any(|row| row.topic == "Web frameworks"
+                && row.gemstone_py.contains("FastAPI")
+                && row.gemstone_rs.contains("planned")));
+        assert!(comparison_json(&GEMSTONE_PY_COMPARISON[0]).contains(r#""gemstonePy":"#));
     }
 
     #[test]
