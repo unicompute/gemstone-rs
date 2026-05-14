@@ -30,9 +30,11 @@ the thread that logged it in.
 
 For web servers:
 
-- use `SessionWorker` when you want a reusable dedicated session lane
+- use `SessionWorker` when you want one reusable dedicated session lane
+- use `SessionWorkerPool` when a service needs a bounded set of reusable lanes
 - use `spawn_blocking` or framework blocking helpers for simple per-request probes
-- prefer one session worker per lane until a proven bounded pool exists
+- prefer a small `SessionWorkerPool` for web services until a framework adapter
+  crate owns the pattern
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

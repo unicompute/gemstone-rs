@@ -622,6 +622,17 @@ assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
 worker.shutdown()?;
 ```
 
+For real services, `SessionWorkerPool` keeps the same safety rule while
+spreading calls across a bounded set of GemStone sessions:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
+pool.shutdown()?;
+```
+
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
 diagnostics, and release automation can all agree.
@@ -639,6 +650,7 @@ cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
+cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
@@ -646,6 +658,7 @@ cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-qu
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
 cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper --force
+cargo run -p gemstone-rs-cli -- examples scaffold session_worker_pool /tmp/gemstone-rs-worker-pool --force
 cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
 cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-actix-service --force
 ```

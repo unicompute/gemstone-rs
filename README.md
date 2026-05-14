@@ -163,6 +163,7 @@ cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
+cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example codegen_preview
@@ -179,6 +180,7 @@ Additional walkthroughs:
 
 - [CLI browser walkthrough](examples/tooling/cli-browser-walkthrough.md)
 - [Standard-library HTTP service example](crates/gemstone-rs/examples/http_service.rs)
+- [Session worker pool example](crates/gemstone-rs/examples/session_worker_pool.rs)
 - [Checked Axum service example](examples/axum-service/README.md)
 - [Checked Actix service example](examples/actix-service/README.md)
 
@@ -281,8 +283,8 @@ creates a standalone Cargo project from an installed template, including
 `codegen_preview`, `codegen_workflow`, `codegen_discover`,
 `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`,
-`axum_service`, and `actix_service`, so users can try gemstone-rs without
-keeping the repository checkout open. `profile_codegen_workflow` also writes
+`session_worker_pool`, `axum_service`, and `actix_service`, so users can try
+gemstone-rs without keeping the repository checkout open. `profile_codegen_workflow` also writes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside
 `src/main.rs`. `examples map` mirrors the `gemstone-examples plan3-map` idea
 by showing which Rust crates, examples, and docs correspond to each feature

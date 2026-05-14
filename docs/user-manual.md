@@ -58,6 +58,18 @@ assert_eq!(worker.fetch_string(printed)?, "7");
 worker.shutdown()?;
 ```
 
+Use `SessionWorkerPool` when a web service needs several independent GemStone
+session lanes behind one cloneable handle:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
+assert_eq!(pool.eval("40 + 2")?, Value::SmallInt(42));
+pool.shutdown()?;
+```
+
 ## Eval and Perform
 
 `eval` returns a marshalled `Value`:

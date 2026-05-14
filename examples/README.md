@@ -80,6 +80,7 @@ sanity check after install.
 | Scaffold generated wrapper | `gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper` | You want a standalone generated-style wrapper app from the installed CLI. |
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
+| Scaffold worker pool | `gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool` | You want a standalone bounded SessionWorkerPool project from the installed CLI. |
 | Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | You want a standalone Axum health-service project from the installed CLI. |
 | Scaffold Actix service | `gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service` | You want a standalone Actix Web health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
@@ -89,6 +90,7 @@ sanity check after install.
 | Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | You want login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | You want commit-on-success and abort-on-error behavior. |
 | Session worker | `cargo run -p gemstone-rs --example session_worker` | You want a dedicated-thread worker for web services and async runtimes. |
+| Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | You want a bounded round-robin pool of dedicated GemStone session workers. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
@@ -210,7 +212,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- a bounded worker pool or framework adapter crate wired into CI
+- a reusable framework adapter crate wired into CI
 
 ## Scope
 

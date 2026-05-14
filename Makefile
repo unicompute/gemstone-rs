@@ -33,6 +33,7 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
+	cargo run -p gemstone-rs-cli -- examples run session_worker_pool --dry-run
 	cargo run -p gemstone-rs-cli -- examples run http_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes
@@ -48,6 +49,7 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-scaffold-generated-wrapper-app --force
 	cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-scaffold-generated-mapping-app --force
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force
+	cargo run -p gemstone-rs-cli -- examples scaffold session_worker_pool /tmp/gemstone-rs-scaffold-session-worker-pool --force
 	cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-scaffold-axum-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-scaffold-actix-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes

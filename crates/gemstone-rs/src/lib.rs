@@ -201,6 +201,20 @@
 //! }
 //! ```
 //!
+//! Use `SessionWorkerPool` when a service needs a bounded number of reusable
+//! GemStone session lanes:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, SessionWorkerPool, Value};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+//!     assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
+//!     pool.shutdown()?;
+//!     Ok(())
+//! }
+//! ```
+//!
 //! OOPs and values are explicit:
 //!
 //! ```no_run
@@ -285,6 +299,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::rc::Rc;
 pub use worker::SessionWorker;
+pub use worker::SessionWorkerPool;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -1236,6 +1251,30 @@ mod tests {
     }
 
     #[test]
+    fn session_worker_pool_rejects_zero_workers() {
+        let err = match SessionWorkerPool::start(Config::default(), 0) {
+            Ok(pool) => {
+                let _ = pool.shutdown();
+                panic!("expected zero-worker rejection");
+            }
+            Err(err) => err,
+        };
+        assert!(matches!(err, Error::MissingConfig("worker_count")));
+    }
+
+    #[test]
+    fn session_worker_pool_reports_first_login_error() {
+        let err = match SessionWorkerPool::start(Config::default(), 2) {
+            Ok(pool) => {
+                let _ = pool.shutdown();
+                panic!("expected missing credentials");
+            }
+            Err(err) => err,
+        };
+        assert!(matches!(err, Error::MissingEnvironment("GS_USERNAME")));
+    }
+
+    #[test]
     fn value_oop_accessors_are_explicit() {
         let oop = Oop::from_smallint(7);
         assert_eq!(Value::Oop(oop).as_oop(), Some(oop));
@@ -1373,6 +1412,34 @@ mod tests {
         worker.global_put(&key, Oop::NIL)?;
         worker.commit()?;
         worker.shutdown()?;
+        Ok(())
+    }
+
+    #[test]
+    fn live_session_worker_pool_eval_and_round_robin_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
+        if required_env("GS_USERNAME").is_err() || required_env("GS_PASSWORD").is_err() {
+            return Ok(());
+        }
+
+        let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+        assert_eq!(pool.size(), 2);
+        assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
+        assert_eq!(pool.eval("4 + 5")?, Value::SmallInt(9));
+
+        let key = live_key("GemStoneRsWorkerPool");
+        let key_for_write = key.clone();
+        pool.transaction(move |session| {
+            let value = session.new_string("pool")?;
+            session.global_put(&key_for_write, value)
+        })?;
+        let stored = pool.global_get(&key)?;
+        assert_eq!(pool.fetch_string(stored)?, "pool");
+        pool.global_put(&key, Oop::NIL)?;
+        pool.commit()?;
+        pool.shutdown()?;
         Ok(())
     }
 

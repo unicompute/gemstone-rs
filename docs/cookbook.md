@@ -335,8 +335,25 @@ worker.shutdown()?;
 # Ok::<(), gemstone_rs::Error>(())
 ```
 
-Reusable adapter crates, a bounded worker pool, and an async facade remain
-planned.
+Use `SessionWorkerPool` when the service should keep a fixed number of
+GemStone sessions warm and dispatch calls round-robin:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
+pool.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
+The installed CLI can also scaffold this shape:
+
+```bash
+gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool
+```
+
+Reusable adapter crates and an async facade remain planned.
 
 ## Recipe 20: Run the Local Explorer
 

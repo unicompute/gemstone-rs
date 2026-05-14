@@ -54,7 +54,7 @@ templates. Current scaffold templates include `quickstart`, `browser`,
 `bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
 `codegen_discover`, `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`,
-`axum_service`, and `actix_service`; aliases include `bridge`, `mapping`,
+`session_worker_pool`, `axum_service`, and `actix_service`; aliases include `bridge`, `mapping`,
 `derive`, `codegen`, `discover`, `profiles`, `wrapper`, `framework`, `axum`,
 `actix`, and `http`.
 Scaffolds can include supporting project files; `profile_codegen_workflow`
@@ -84,6 +84,7 @@ CLI binary is installed and runnable.
 | Scaffold generated wrapper | `gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper` | Creates a standalone generated-style wrapper app from the installed CLI. |
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | Creates a standalone generated-style BridgeMapped app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | Creates a standalone Rust HTTP health-service project from the installed CLI. |
+| Scaffold worker pool | `gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool` | Creates a standalone bounded SessionWorkerPool project from the installed CLI. |
 | Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | Creates a standalone Axum health-service project from the installed CLI. |
 | Scaffold Actix service | `gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service` | Creates a standalone Actix Web health-service project from the installed CLI. |
 | First login | `cargo run -p gemstone-rs --example hello_gemstone` | Reads env config, logs in, prints a session id, and evaluates `3 + 4`. |
@@ -93,6 +94,7 @@ CLI binary is installed and runnable.
 | Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | Login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | Commit-on-success and abort-on-error transaction wrapper. |
 | Session worker | `cargo run -p gemstone-rs --example session_worker` | Dedicated-thread `SessionWorker` for web services and async runtimes. |
+| Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | Bounded round-robin pool of dedicated GemStone session workers. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
@@ -120,9 +122,10 @@ CLI binary is installed and runnable.
 5. `live_smoke_cookbook`
 6. `transactions`
 7. `session_worker`
-8. `oop_values`
-9. `bridge_root_mapping`
-10. `derive_mapping`
+8. `session_worker_pool`
+9. `oop_values`
+10. `bridge_root_mapping`
+11. `derive_mapping`
 11. `codegen_preview`
 12. `codegen_workflow`
 13. `generated_wrapper_app`
@@ -302,5 +305,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- a bounded worker pool or framework adapter crate wired into CI
+- a reusable framework adapter crate wired into CI
 - a richer class browser walkthrough with captured output

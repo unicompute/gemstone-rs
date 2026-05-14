@@ -54,8 +54,8 @@ file.
 | Stable install path | Mature: PyPI and TestPyPI | Early: crates.io workflow and verification added |
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
-| Async API | Mature enough for examples and tests | Initial dedicated-thread `SessionWorker`; async facade and pool still planned |
-| Web frameworks | FastAPI, Litestar, Django examples | Standard-library HTTP plus `SessionWorker`, checked Axum, and checked Actix examples; reusable adapters still planned |
+| Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
+| Web frameworks | FastAPI, Litestar, Django examples | Standard-library HTTP plus `SessionWorkerPool`, checked Axum, and checked Actix examples; reusable adapters still planned |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -74,7 +74,7 @@ file.
 | String round-trip | Supported | Supported |
 | `perform` and `perform_oop` | Supported | Supported |
 | Commit/abort | Supported | Supported |
-| Dedicated session worker | Supported through Python web integration patterns | Supported through `SessionWorker` |
+| Dedicated session worker | Supported through Python web integration patterns | Supported through `SessionWorker` and `SessionWorkerPool` |
 | OOP handles/export set | Supported | Supported |
 | Browser dictionaries/classes/protocols/methods/source | Supported | Supported through `Browser`, CLI, and explorer |
 | Generated wrappers | Supported | Supported for selected classes/methods |
@@ -103,10 +103,10 @@ test that should verify it.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add a reusable framework adapter crate with startup, `/`, `/health/local`, `/health/gemstone`, `SessionWorker` wiring, and CI smoke coverage. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add a reusable framework adapter crate with startup, `/`, `/health/local`, `/health/gemstone`, `SessionWorkerPool` wiring, and CI smoke coverage. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
-| P2 | Async and pooling | gemstone-py has async examples and FastAPI integration. | Add a bounded worker pool and async facade after GCI thread behavior is proven with live tests. |
+| P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
 
@@ -145,15 +145,16 @@ not the implementation language:
   dependencies; `examples/axum-service` is a checked Axum crate using
   `spawn_blocking` for GemStone calls; `examples/actix-service` is a checked
   Actix Web crate using `web::block` for GemStone calls. The installed CLI can
-  scaffold both `axum_service` and `actix_service`. `SessionWorker` now gives
-  web services a reusable dedicated-thread session lane. Reusable adapter
-  crates, a bounded pool, and an async facade remain future work.
+  scaffold `session_worker_pool`, `axum_service`, and `actix_service`.
+  `SessionWorkerPool` now gives web services a bounded set of reusable
+  dedicated-thread session lanes. Reusable adapter crates and an async facade
+  remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for
   explorer-integrated workflows and richer generated wrapper profile variants,
-  plus reusable Rust web adapter crates, a bounded worker pool, an async facade,
-  and richer explorer screens before its onboarding feels as complete as
+  plus reusable Rust web adapter crates, an async facade, and richer explorer
+  screens before its onboarding feels as complete as
   gemstone-py.
 
 ## How They Should Work Together

@@ -82,6 +82,7 @@ cargo run -p gemstone-rs --example quickstart
 cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
+cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example derive_mapping
