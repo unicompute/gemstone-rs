@@ -1417,6 +1417,13 @@ struct ScaffoldTemplate {
     description: &'static str,
     main_rs: &'static str,
     extra_dependencies: &'static str,
+    extra_files: &'static [ScaffoldFile],
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ScaffoldFile {
+    path: &'static str,
+    source: &'static str,
 }
 
 const EXAMPLES: &[ExampleInfo] = &[
@@ -1608,10 +1615,10 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "6",
         title: "Typed codegen",
         crates: "gemstone-rs::codegen, gemstone-rs-cli codegen/profile",
-        examples: "codegen_preview, codegen_workflow, generated_wrapper_app",
+        examples: "codegen_preview, codegen_workflow, codegen_discover, profile_codegen_workflow, generated_wrapper_app",
         docs: "docs/codegen.md, docs/profile-schema.md",
         gemstone_py_reference: "gemstone_py.codegen, typed_access/codegen_demo",
-        status: "Preview/diff/check/generate parity; live discovery still needs more depth",
+        status: "Preview/diff/check/generate and installed profile workflow parity; live discovery still needs more depth",
     },
     FeatureInfo {
         stream: "7",
@@ -1726,9 +1733,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Installed example experience",
         gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
-        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, derive mapping, generated wrappers, codegen workflow, standard HTTP, and Axum projects, but source-checkout live discovery examples still do not have installed templates.",
-        next_action: "Expand examples scaffold templates to codegen discovery, profile-driven generated wrappers, and explorer-integrated projects.",
-        verify_with: "gemstone-rs examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper --force",
+        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart, browser, BridgeRoot mapping, derive mapping, generated wrappers, codegen discovery, profile codegen, standard HTTP, and Axum projects, but explorer-integrated workflows still need installed templates.",
+        next_action: "Expand examples scaffold templates to explorer-integrated projects and richer generated wrapper profile variants.",
+        verify_with: "gemstone-rs examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen --force",
     },
     GapInfo {
         priority: "P2",
@@ -1756,6 +1763,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
 ];
 
+const NO_EXTRA_SCAFFOLD_FILES: &[ScaffoldFile] = &[];
+
 const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
     ScaffoldTemplate {
         name: "quickstart",
@@ -1764,6 +1773,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Login, evaluate 3 + 4, and round-trip a UserGlobals string.",
         main_rs: include_str!("../templates/quickstart.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "browser",
@@ -1772,6 +1782,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Browse dictionaries, protocols, methods, and Object>>printString source.",
         main_rs: include_str!("../templates/browser.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "bridge_root_mapping",
@@ -1780,6 +1791,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Store and read a typed Rust payload under GemStoneRsBridgeRoot.",
         main_rs: include_str!("../templates/bridge_root_mapping.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "derive_mapping",
@@ -1788,6 +1800,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Use #[derive(BridgeMapped)] with nested structs, vectors, maps, optionals, and symbol keys.",
         main_rs: include_str!("../templates/derive_mapping.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "codegen_preview",
@@ -1797,6 +1810,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
             "Preview generated Rust wrappers without writing files or connecting to GemStone.",
         main_rs: include_str!("../templates/codegen_preview.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "codegen_workflow",
@@ -1805,6 +1819,43 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Run config, preview, diff, check, and generate in one offline example.",
         main_rs: include_str!("../templates/codegen_workflow.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
+    },
+    ScaffoldTemplate {
+        name: "codegen_discover",
+        package_name: "gemstone-rs-codegen-discover",
+        title: "gemstone-rs Codegen Discovery",
+        description: "Discover a starter wrapper config from live GemStone classes.",
+        main_rs: include_str!("../templates/codegen_discover.rs"),
+        extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
+    },
+    ScaffoldTemplate {
+        name: "codegen_discover_mapping",
+        package_name: "gemstone-rs-codegen-discover-mapping",
+        title: "gemstone-rs Mapping Discovery",
+        description: "Discover a starter BridgeRoot mapping config from a live class.",
+        main_rs: include_str!("../templates/codegen_discover_mapping.rs"),
+        extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
+    },
+    ScaffoldTemplate {
+        name: "profile_codegen_workflow",
+        package_name: "gemstone-rs-profile-codegen-workflow",
+        title: "gemstone-rs Profile Codegen Workflow",
+        description: "Run profile-driven codegen explain, generate, and profile check from scaffolded config files.",
+        main_rs: include_str!("../templates/profile_codegen_workflow.rs"),
+        extra_dependencies: "",
+        extra_files: &[
+            ScaffoldFile {
+                path: "gemstone-rs.codegen",
+                source: include_str!("../templates/profile_codegen_workflow.codegen"),
+            },
+            ScaffoldFile {
+                path: "gemstone-rs.codegen-profiles.json",
+                source: include_str!("../templates/profile_codegen_workflow.codegen-profiles.json"),
+            },
+        ],
     },
     ScaffoldTemplate {
         name: "generated_wrapper_app",
@@ -1813,6 +1864,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Call Object>>printString through a generated-style Rust wrapper.",
         main_rs: include_str!("../templates/generated_wrapper_app.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "generated_mapping_app",
@@ -1821,6 +1873,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Use generated-style BridgeMapped structs stored under BridgeRoot.",
         main_rs: include_str!("../templates/generated_mapping_app.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "http_service",
@@ -1829,6 +1882,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         description: "Standard-library HTTP service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/http_service.rs"),
         extra_dependencies: "",
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
     ScaffoldTemplate {
         name: "axum_service",
@@ -1840,6 +1894,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 "#,
+        extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
 ];
 
@@ -2120,10 +2175,17 @@ fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
         "axum" | "framework" | "framework_adapter" | "framework-adapter" => "axum_service",
         "bridge" | "mapping" => "bridge_root_mapping",
         "codegen" => "codegen_workflow",
+        "discover" => "codegen_discover",
+        "discover-mapping" | "discover_mapping" | "mapping-discover" | "mapping_discover" => {
+            "codegen_discover_mapping"
+        }
         "derive" | "derive-mapping" => "derive_mapping",
         "generated-mapping" | "generated_mapping" => "generated_mapping_app",
         "generated-wrapper" | "generated_wrapper" | "wrapper" => "generated_wrapper_app",
         "http" | "http-service" | "http_service" => "http_service",
+        "profile" | "profiles" | "profile-codegen" | "profile_codegen" => {
+            "profile_codegen_workflow"
+        }
         other => other,
     };
     SCAFFOLD_TEMPLATES
@@ -2144,12 +2206,18 @@ fn scaffold_example_project(
     target: &Path,
     force: bool,
 ) -> Result<(), CliError> {
-    let files = [
+    let mut files = vec![
         target.join("Cargo.toml"),
         target.join("src").join("main.rs"),
         target.join("README.md"),
         target.join(".gitignore"),
     ];
+    files.extend(
+        template
+            .extra_files
+            .iter()
+            .map(|file| target.join(file.path)),
+    );
     if !force {
         if let Some(existing) = files.iter().find(|path| path.exists()) {
             return Err(CliError::Example(format!(
@@ -2164,6 +2232,9 @@ fn scaffold_example_project(
     write_scaffold_file(&files[1], template.main_rs, force)?;
     write_scaffold_file(&files[2], &scaffold_readme(template), force)?;
     write_scaffold_file(&files[3], "target/\n.env\n.env.gemstone-rs\n", force)?;
+    for file in template.extra_files {
+        write_scaffold_file(&target.join(file.path), file.source, force)?;
+    }
     Ok(())
 }
 
@@ -2173,6 +2244,11 @@ fn write_scaffold_file(path: &Path, source: &str, force: bool) -> Result<(), Cli
             "{} already exists; pass --force to overwrite scaffolded files",
             path.display()
         )));
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
     }
     fs::write(path, source)?;
     Ok(())
@@ -3925,6 +4001,9 @@ mod tests {
             "derive_mapping",
             "codegen_preview",
             "codegen_workflow",
+            "codegen_discover",
+            "codegen_discover_mapping",
+            "profile_codegen_workflow",
             "generated_wrapper_app",
             "generated_mapping_app",
             "http_service",
@@ -3951,6 +4030,14 @@ mod tests {
         assert_eq!(
             find_scaffold_template("framework").unwrap().name,
             "axum_service"
+        );
+        assert_eq!(
+            find_scaffold_template("discover").unwrap().name,
+            "codegen_discover"
+        );
+        assert_eq!(
+            find_scaffold_template("profiles").unwrap().name,
+            "profile_codegen_workflow"
         );
 
         let target =
@@ -3979,6 +4066,21 @@ mod tests {
             .to_string();
         assert!(err.contains("already exists"));
         scaffold_example_project(template, &target, true).unwrap();
+
+        let profile_target = target.with_file_name(format!(
+            "gemstone-rs-profile-scaffold-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&profile_target);
+        let profile_template = find_scaffold_template("profile_codegen_workflow").unwrap();
+        scaffold_example_project(profile_template, &profile_target, false).unwrap();
+        assert!(profile_target.join("gemstone-rs.codegen").exists());
+        assert!(profile_target
+            .join("gemstone-rs.codegen-profiles.json")
+            .exists());
+        let profile_main = fs::read_to_string(profile_target.join("src").join("main.rs")).unwrap();
+        assert!(profile_main.contains("profiles::load_file"));
+        let _ = fs::remove_dir_all(&profile_target);
         let _ = fs::remove_dir_all(&target);
     }
 

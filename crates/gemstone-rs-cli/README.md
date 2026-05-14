@@ -28,6 +28,9 @@ cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemst
 cargo run -p gemstone-rs-cli -- examples scaffold derive_mapping /tmp/gemstone-rs-derive-mapping --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-codegen-preview --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover /tmp/gemstone-rs-codegen-discover --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover_mapping /tmp/gemstone-rs-codegen-discover-mapping --force
+cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen-workflow --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-generated-mapping-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
@@ -123,9 +126,11 @@ or docs checks to print the exact command without compiling or connecting to a
 stone. `scaffold <name> [path]` writes a standalone Cargo project from an
 installed template. Current templates include `quickstart`, `browser`,
 `bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
+`codegen_discover`, `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
 `axum_service`; aliases include `bridge`, `mapping`, `derive`, `codegen`,
-`wrapper`, `framework`, `axum`, and `http`.
+`discover`, `profiles`, `wrapper`, `framework`, `axum`, and `http`.
+`profile_codegen_workflow` writes both codegen config files and Rust source.
 `map` is the gemstone-rs equivalent of
 `gemstone-examples plan3-map`: it ties Rust crates, examples, docs, and
 gemstone-py reference points together for each feature stream.

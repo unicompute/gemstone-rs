@@ -14,6 +14,7 @@ gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 ```
@@ -23,8 +24,9 @@ gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
 actions and verification commands. `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
-derive mapping, generated wrappers, codegen, standard HTTP, and Axum workflows.
-JSON output is intended for CI, docs checks, and editor tooling.
+derive mapping, generated wrappers, live discovery, profile-driven codegen,
+standard HTTP, and Axum workflows. JSON output is intended for CI, docs checks,
+and editor tooling.
 
 ## Streams
 
@@ -35,7 +37,7 @@ JSON output is intended for CI, docs checks, and editor tooling.
 | 3 | Browser and inspection | `gemstone-rs::browser`, CLI `browse`, `gemstone-rs-explorer` | `browser`, `tooling/cli-browser-walkthrough.md` | `docs/user-manual.md`, `docs/explorer.md` | `gemstone_py.inspection`, `python-gemstone-database-explorer` | API parity is growing; the Python explorer is still more mature. |
 | 4 | OOP and value handling | `Oop`, `Value`, export-set helpers | `oop_values` | `docs/user-manual.md`, `docs/performance-safety.md` | Managed OOP handles and typed access examples | Rust has an explicit ownership model; Python is easier for casual scripting. |
 | 5 | BridgeRoot object mapping | `gemstone-rs::bridge`, `gemstone-rs-macros` | `bridge_root_mapping`, `derive_mapping`, `generated_mapping_app` | `docs/object-mapping.md`, `docs/cookbook.md` | `SmalltalkBridge`, `PersistentRoot`, facade examples | Rust has typed mapping and derive; a transparent object model remains future work. |
-| 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, and generate parity; live discovery still needs more depth. |
+| 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `codegen_discover`, `profile_codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, generate, and profile workflow parity; live discovery still needs more depth. |
 | 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API; Python explorer remains the richer product reference. |
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command and webview workflow exists; embedded explorer UX needs polish. |
 | 9 | Rust web services | `gemstone-rs` examples plus installed Axum scaffold and planned adapters | `http_service`, `axum-service/README.md`, `examples scaffold axum_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Standard-library HTTP service and Axum scaffold exist; `gemstone-py` is still ahead for checked framework adapters. |

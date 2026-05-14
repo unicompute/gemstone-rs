@@ -39,6 +39,9 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold derive_mapping /tmp/gemstone-rs-scaffold-derive-mapping --force
 	cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-scaffold-codegen-preview --force
 	cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-scaffold-codegen-workflow --force
+	cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover /tmp/gemstone-rs-scaffold-codegen-discover --force
+	cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover_mapping /tmp/gemstone-rs-scaffold-codegen-discover-mapping --force
+	cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-scaffold-profile-codegen-workflow --force
 	cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-scaffold-generated-wrapper-app --force
 	cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-scaffold-generated-mapping-app --force
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force

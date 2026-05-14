@@ -632,6 +632,7 @@ cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
+cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper --force
 cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-axum-service --force
 ```

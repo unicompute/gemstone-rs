@@ -70,6 +70,7 @@ gemstone-rs examples show quickstart
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs doctor
@@ -203,6 +204,9 @@ cargo run -p gemstone-rs-cli -- examples scaffold bridge_root_mapping /tmp/gemst
 cargo run -p gemstone-rs-cli -- examples scaffold derive_mapping /tmp/gemstone-rs-derive-mapping --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_preview /tmp/gemstone-rs-codegen-preview --force
 cargo run -p gemstone-rs-cli -- examples scaffold codegen_workflow /tmp/gemstone-rs-codegen-workflow --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover /tmp/gemstone-rs-codegen-discover --force
+cargo run -p gemstone-rs-cli -- examples scaffold codegen_discover_mapping /tmp/gemstone-rs-codegen-discover-mapping --force
+cargo run -p gemstone-rs-cli -- examples scaffold profile_codegen_workflow /tmp/gemstone-rs-profile-codegen-workflow --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_wrapper_app /tmp/gemstone-rs-generated-wrapper-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold generated_mapping_app /tmp/gemstone-rs-generated-mapping-app --force
 cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
@@ -264,12 +268,16 @@ launches the selected Cargo example from a source checkout, and `--dry-run`
 prints the command without executing it. `examples scaffold <name> [path]`
 creates a standalone Cargo project from an installed template, including
 `quickstart`, `browser`, `bridge_root_mapping`, `derive_mapping`,
-`codegen_preview`, `codegen_workflow`, `generated_wrapper_app`,
-`generated_mapping_app`, `http_service`, and `axum_service`, so users can try
-gemstone-rs without keeping the repository checkout open. `examples map`
-mirrors the `gemstone-examples plan3-map` idea by showing which Rust crates,
-examples, and docs correspond to each feature stream and gemstone-py reference
-point. The JSON forms are used by tooling and are suitable for CI checks.
+`codegen_preview`, `codegen_workflow`, `codegen_discover`,
+`codegen_discover_mapping`, `profile_codegen_workflow`,
+`generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
+`axum_service`, so users can try gemstone-rs without keeping the repository
+checkout open. `profile_codegen_workflow` also writes
+`gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside
+`src/main.rs`. `examples map` mirrors the `gemstone-examples plan3-map` idea
+by showing which Rust crates, examples, and docs correspond to each feature
+stream and gemstone-py reference point. The JSON forms are used by tooling and
+are suitable for CI checks.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.

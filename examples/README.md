@@ -41,6 +41,7 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 ```
@@ -52,8 +53,10 @@ to GemStone, which makes it useful for CI and release docs checks. Use
 view across crates, examples, docs, and parity status. Use `gemstone-rs
 examples scaffold <name> [path]` when you installed the CLI and want a
 standalone Cargo project instead of a source-checkout example. Useful aliases
-include `bridge`, `mapping`, `derive`, `codegen`, `wrapper`, `framework`,
-`axum`, and `http`.
+include `bridge`, `mapping`, `derive`, `codegen`, `discover`, `profiles`,
+`wrapper`, `framework`, `axum`, and `http`. Some scaffolds write supporting
+project files as well as Rust source; `profile_codegen_workflow` includes
+`gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json`.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -68,6 +71,9 @@ sanity check after install.
 | Scaffold derive mapping | `gemstone-rs examples scaffold derive_mapping ./gemstone-rs-derive-mapping` | You want a standalone derive-mapping project from the installed CLI. |
 | Scaffold codegen preview | `gemstone-rs examples scaffold codegen_preview ./gemstone-rs-codegen-preview` | You want a standalone no-live codegen preview project from the installed CLI. |
 | Scaffold codegen workflow | `gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow` | You want a standalone no-live codegen workflow project from the installed CLI. |
+| Scaffold codegen discovery | `gemstone-rs examples scaffold codegen_discover ./gemstone-rs-codegen-discover` | You want a standalone live discovery project from the installed CLI. |
+| Scaffold mapping discovery | `gemstone-rs examples scaffold codegen_discover_mapping ./gemstone-rs-codegen-discover-mapping` | You want a standalone live mapping discovery project from the installed CLI. |
+| Scaffold profile codegen | `gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen` | You want a standalone profile-driven codegen project with config and profile files. |
 | Scaffold generated wrapper | `gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper` | You want a standalone generated-style wrapper app from the installed CLI. |
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
@@ -112,6 +118,7 @@ gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs-explorer --port 8787

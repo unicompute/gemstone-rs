@@ -110,6 +110,14 @@ cargo run -p gemstone-rs --example codegen_discover
 cargo run -p gemstone-rs --example codegen_discover_mapping
 ```
 
+Create installed standalone codegen projects:
+
+```bash
+gemstone-rs examples scaffold codegen_discover ./gemstone-rs-codegen-discover
+gemstone-rs examples scaffold codegen_discover_mapping ./gemstone-rs-codegen-discover-mapping
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
+```
+
 Run the generated mapping example:
 
 ```bash

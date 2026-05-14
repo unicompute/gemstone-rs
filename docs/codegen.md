@@ -156,6 +156,18 @@ cargo run -p gemstone-rs --example codegen_discover
 cargo run -p gemstone-rs --example codegen_discover_mapping
 ```
 
+From an installed CLI, scaffold standalone projects:
+
+```bash
+gemstone-rs examples scaffold codegen_discover ./gemstone-rs-codegen-discover
+gemstone-rs examples scaffold codegen_discover_mapping ./gemstone-rs-codegen-discover-mapping
+gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
+```
+
+`profile_codegen_workflow` writes `gemstone-rs.codegen` and
+`gemstone-rs.codegen-profiles.json` into the generated project, then the Rust
+program runs explain, generate, and profile check against those files.
+
 Preview without writing:
 
 ```bash

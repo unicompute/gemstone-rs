@@ -56,7 +56,7 @@ file.
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Not yet a core feature |
 | Web frameworks | FastAPI, Litestar, Django examples | Standard-library HTTP service example plus standalone Axum scaffold; checked adapters still planned |
-| Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate |
+| Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
 | VS Code extension | More complete product flow | Thin command/workbench layer over Rust CLI and explorer |
@@ -78,7 +78,7 @@ file.
 | Browser dictionaries/classes/protocols/methods/source | Supported | Supported through `Browser`, CLI, and explorer |
 | Generated wrappers | Supported | Supported for selected classes/methods |
 | Codegen diff/check/generate | Supported | Supported |
-| Live codegen discovery | Supported | Supported through CLI/API |
+| Live codegen discovery | Supported | Supported through CLI/API and installed scaffolds |
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
 | Rust HTTP service demo | Not applicable | Supported through `cargo run -p gemstone-rs --example http_service -- --port 3000` |
@@ -104,7 +104,7 @@ test that should verify it.
 | --- | --- | --- | --- |
 | P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Promote the Axum scaffold into a checked source example or adapter crate with startup, `/`, `/health/local`, `/health/gemstone`, and CI smoke coverage. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
-| P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to codegen discovery, profile-driven generated wrappers, and explorer-integrated projects. |
+| P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async and pooling | gemstone-py has async examples and FastAPI integration. | Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
@@ -132,9 +132,12 @@ not the implementation language:
   the matching Cargo example, with `--dry-run` for CI and documentation checks.
 - Installed project scaffolding: `gemstone-rs examples scaffold quickstart`,
   `browser`, `bridge_root_mapping`, `derive_mapping`, `codegen_preview`,
-  `codegen_workflow`, `generated_wrapper_app`, `generated_mapping_app`,
-  `http_service`, and `axum_service` create standalone Cargo projects from the
-  installed CLI, reducing the need for a source checkout.
+  `codegen_workflow`, `codegen_discover`, `codegen_discover_mapping`,
+  `profile_codegen_workflow`, `generated_wrapper_app`,
+  `generated_mapping_app`, `http_service`, and `axum_service` create
+  standalone Cargo projects from the installed CLI, reducing the need for a
+  source checkout. `profile_codegen_workflow` includes codegen config and
+  project profile files, not only Rust source.
 - Rust web service shape: `http_service` now gives a real HTTP example with
   `/`, `/health/local`, and `/health/gemstone` without adding framework
   dependencies; `axum_service` creates a standalone Axum project from the
@@ -142,10 +145,10 @@ not the implementation language:
   work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
-- Remaining gap: gemstone-rs still needs installed templates for live codegen
-  discovery, profile-driven generated wrappers, and explorer-integrated
-  projects, plus checked Rust web adapter crates and richer explorer screens
-  before its onboarding feels as complete as gemstone-py.
+- Remaining gap: gemstone-rs still needs installed templates for
+  explorer-integrated workflows and richer generated wrapper profile variants,
+  plus checked Rust web adapter crates and richer explorer screens before its
+  onboarding feels as complete as gemstone-py.
 
 ## How They Should Work Together
 

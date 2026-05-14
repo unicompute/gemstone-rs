@@ -1,0 +1,13 @@
+# gemstone-rs codegen config
+output = generated/gemstone_wrappers.rs
+class = Object
+method = Object>>printString | return=String | doc=Return the receiver printString.
+method = Object>>class
+
+mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.
+field = BookingDraft.name | type=String | key=name
+field = BookingDraft.amount | type=SmallInt | key=amount
+field = BookingDraft.currency | type=String | key=currency
+field = BookingDraft.tags | type=Vec<String> | key=tags
+field = BookingDraft.labels | type=BTreeMap<String, String> | key=labels | doc=String-keyed labels stored as a GemStone Dictionary.
+field = BookingDraft.note | type=Option<String> | key=note | doc=Optional note; missing or nil reads back as None.
