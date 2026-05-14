@@ -611,6 +611,16 @@ Axum service under `examples/axum-service` that uses
 `tokio::task::spawn_blocking`, and a checked Actix service under
 `examples/actix-service` that uses `actix_web::web::block`. That keeps the
 core workspace dependency-light while proving the async web-service shape.
+The newer `SessionWorker` API gives these services a reusable dedicated-thread
+session lane when opening a session per health request is not enough:
+
+```rust
+use gemstone_rs::{Config, SessionWorker, Value};
+
+let worker = SessionWorker::start(Config::from_env()?)?;
+assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
+worker.shutdown()?;
+```
 
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
@@ -628,6 +638,7 @@ cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example transactions
+cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps

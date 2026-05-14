@@ -32,6 +32,7 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples show quickstart
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
+	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
 	cargo run -p gemstone-rs-cli -- examples run http_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes

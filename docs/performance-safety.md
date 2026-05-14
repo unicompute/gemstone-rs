@@ -30,8 +30,9 @@ the thread that logged it in.
 
 For web servers:
 
-- use `spawn_blocking` for synchronous GemStone calls from async Rust
-- prefer one session per request until a proven session pool exists
+- use `SessionWorker` when you want a reusable dedicated session lane
+- use `spawn_blocking` or framework blocking helpers for simple per-request probes
+- prefer one session worker per lane until a proven bounded pool exists
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

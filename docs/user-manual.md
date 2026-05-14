@@ -42,6 +42,22 @@ session.logout()?;
 `Session` is deliberately not `Send` or `Sync`. Keep a session on the thread
 that logged it in.
 
+Use `SessionWorker` when an application server or async runtime needs shared
+access to a GemStone session lane without moving `Session` across threads. The
+worker logs in on a dedicated thread and serializes calls onto that thread:
+
+```rust
+use gemstone_rs::{Config, SessionWorker, Value};
+
+let worker = SessionWorker::start(Config::from_env()?)?;
+assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
+
+let printed = worker.perform_oop(gemstone_rs::Oop::from_smallint(7), "printString", &[])?;
+assert_eq!(worker.fetch_string(printed)?, "7");
+
+worker.shutdown()?;
+```
+
 ## Eval and Perform
 
 `eval` returns a marshalled `Value`:

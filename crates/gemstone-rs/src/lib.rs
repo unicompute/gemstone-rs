@@ -187,6 +187,20 @@
 //! }
 //! ```
 //!
+//! Use `SessionWorker` when a web service or async runtime needs to call
+//! GemStone without moving `Session` across threads:
+//!
+//! ```no_run
+//! use gemstone_rs::{Config, SessionWorker, Value};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let worker = SessionWorker::start(Config::from_env()?)?;
+//!     assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
+//!     worker.shutdown()?;
+//!     Ok(())
+//! }
+//! ```
+//!
 //! OOPs and values are explicit:
 //!
 //! ```no_run
@@ -249,6 +263,7 @@ pub mod bridge;
 pub mod browser;
 pub mod codegen;
 pub mod profiles;
+pub mod worker;
 
 pub use bridge::{
     BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,
@@ -269,6 +284,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::rc::Rc;
+pub use worker::SessionWorker;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -296,6 +312,8 @@ pub enum Error {
         expected: &'static str,
         actual: String,
     },
+    WorkerStopped,
+    WorkerPanicked,
     NegativeSize(i64),
     ArgumentCountTooLarge(usize),
 }
@@ -329,6 +347,8 @@ impl fmt::Display for Error {
                 f,
                 "field {field} expected GemStone value type {expected}, got {actual}"
             ),
+            Self::WorkerStopped => write!(f, "GemStone session worker is not running"),
+            Self::WorkerPanicked => write!(f, "GemStone session worker panicked"),
             Self::NegativeSize(size) => write!(f, "GemStone returned a negative size: {size}"),
             Self::ArgumentCountTooLarge(count) => {
                 write!(f, "too many GemStone selector arguments: {count}")
@@ -349,6 +369,8 @@ impl StdError for Error {
             | Self::IllegalOop { .. }
             | Self::UnexpectedType { .. }
             | Self::Mapping { .. }
+            | Self::WorkerStopped
+            | Self::WorkerPanicked
             | Self::NegativeSize(_)
             | Self::ArgumentCountTooLarge(_) => None,
         }
@@ -1202,6 +1224,18 @@ mod tests {
     }
 
     #[test]
+    fn session_worker_reports_login_errors_before_accepting_calls() {
+        let err = match SessionWorker::start(Config::default()) {
+            Ok(worker) => {
+                let _ = worker.shutdown();
+                panic!("expected missing credentials");
+            }
+            Err(err) => err,
+        };
+        assert!(matches!(err, Error::MissingEnvironment("GS_USERNAME")));
+    }
+
+    #[test]
     fn value_oop_accessors_are_explicit() {
         let oop = Oop::from_smallint(7);
         assert_eq!(Value::Oop(oop).as_oop(), Some(oop));
@@ -1309,6 +1343,36 @@ mod tests {
         };
         assert_eq!(session.eval("3 + 4")?, Value::SmallInt(7));
         session.logout()?;
+        Ok(())
+    }
+
+    #[test]
+    fn live_session_worker_eval_and_transaction_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
+        if required_env("GS_USERNAME").is_err() || required_env("GS_PASSWORD").is_err() {
+            return Ok(());
+        }
+
+        let worker = SessionWorker::start(Config::from_env()?)?;
+        assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
+
+        let seven = Oop::from_smallint(7);
+        let printed = worker.perform_oop(seven, "printString", &[])?;
+        assert_eq!(worker.fetch_string(printed)?, "7");
+
+        let key = live_key("GemStoneRsWorker");
+        let key_for_write = key.clone();
+        worker.transaction(move |session| {
+            let value = session.new_string("worker")?;
+            session.global_put(&key_for_write, value)
+        })?;
+        let stored = worker.global_get(&key)?;
+        assert_eq!(worker.fetch_string(stored)?, "worker");
+        worker.global_put(&key, Oop::NIL)?;
+        worker.commit()?;
+        worker.shutdown()?;
         Ok(())
     }
 

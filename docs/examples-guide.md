@@ -92,6 +92,7 @@ CLI binary is installed and runnable.
 | Browser API | `cargo run -p gemstone-rs --example browser` | Dictionaries, protocols, methods, and source. |
 | Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | Login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | Commit-on-success and abort-on-error transaction wrapper. |
+| Session worker | `cargo run -p gemstone-rs --example session_worker` | Dedicated-thread `SessionWorker` for web services and async runtimes. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
@@ -117,23 +118,24 @@ CLI binary is installed and runnable.
 3. `quickstart`
 4. `browser`
 5. `live_smoke_cookbook`
-6. `oop_values`
-7. `transactions`
-8. `bridge_root_mapping`
-9. `derive_mapping`
-10. `codegen_preview`
-11. `codegen_workflow`
-12. `generated_wrapper_app`
-13. `generated_mapping_app`
-14. `codegen_discover`
-15. `codegen_discover_mapping`
-16. `examples/codegen/`
-17. `examples/tooling/cli-browser-walkthrough.md`
-18. `examples/tooling/explorer.md`
-19. `examples/tooling/vscode-workbench.md`
-20. `http_service`
-21. `examples/axum-service/`
-22. `examples/actix-service/`
+6. `transactions`
+7. `session_worker`
+8. `oop_values`
+9. `bridge_root_mapping`
+10. `derive_mapping`
+11. `codegen_preview`
+12. `codegen_workflow`
+13. `generated_wrapper_app`
+14. `generated_mapping_app`
+15. `codegen_discover`
+16. `codegen_discover_mapping`
+17. `examples/codegen/`
+18. `examples/tooling/cli-browser-walkthrough.md`
+19. `examples/tooling/explorer.md`
+20. `examples/tooling/vscode-workbench.md`
+21. `http_service`
+22. `examples/axum-service/`
+23. `examples/actix-service/`
 
 ## Expected Output
 
@@ -300,5 +302,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- a reusable session-worker or framework adapter crate wired into CI
+- a bounded worker pool or framework adapter crate wired into CI
 - a richer class browser walkthrough with captured output

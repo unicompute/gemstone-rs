@@ -162,6 +162,7 @@ cargo run -p gemstone-rs --example quickstart
 cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example transactions
+cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example codegen_preview
@@ -279,7 +280,7 @@ creates a standalone Cargo project from an installed template, including
 `quickstart`, `browser`, `bridge_root_mapping`, `derive_mapping`,
 `codegen_preview`, `codegen_workflow`, `codegen_discover`,
 `codegen_discover_mapping`, `profile_codegen_workflow`,
-`generated_wrapper_app`, `generated_mapping_app`, `http_service`, and
+`generated_wrapper_app`, `generated_mapping_app`, `http_service`,
 `axum_service`, and `actix_service`, so users can try gemstone-rs without
 keeping the repository checkout open. `profile_codegen_workflow` also writes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside

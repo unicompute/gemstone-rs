@@ -88,6 +88,7 @@ sanity check after install.
 | Browser | `cargo run -p gemstone-rs --example browser` | You want dictionaries, protocols, methods, and method source. |
 | Live smoke cookbook | `cargo run -p gemstone-rs --example live_smoke_cookbook` | You want login, eval, global round-trip, perform, and transaction checks in one run. |
 | Transactions | `cargo run -p gemstone-rs --example transactions` | You want commit-on-success and abort-on-error behavior. |
+| Session worker | `cargo run -p gemstone-rs --example session_worker` | You want a dedicated-thread worker for web services and async runtimes. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
@@ -209,7 +210,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- a reusable session-worker or framework adapter crate wired into CI
+- a bounded worker pool or framework adapter crate wired into CI
 
 ## Scope
 

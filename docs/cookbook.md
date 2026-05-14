@@ -321,8 +321,22 @@ cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 ```
 
 The Axum route uses `tokio::task::spawn_blocking`; the Actix route uses
-`actix_web::web::block`. Reusable adapter crates and a session-worker
-abstraction remain planned.
+`actix_web::web::block`.
+
+Use `SessionWorker` when the application wants a reusable dedicated GemStone
+session lane instead of opening a new session inside each blocking route:
+
+```rust
+use gemstone_rs::{Config, SessionWorker, Value};
+
+let worker = SessionWorker::start(Config::from_env()?)?;
+assert_eq!(worker.eval("3 + 4")?, Value::SmallInt(7));
+worker.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
+Reusable adapter crates, a bounded worker pool, and an async facade remain
+planned.
 
 ## Recipe 20: Run the Local Explorer
 

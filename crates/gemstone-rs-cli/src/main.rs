@@ -1237,6 +1237,8 @@ fn add_error_hints(hints: &mut Vec<&'static str>, err: &GemStoneError) {
         | GemStoneError::IllegalOop { .. }
         | GemStoneError::UnexpectedType { .. }
         | GemStoneError::Mapping { .. }
+        | GemStoneError::WorkerStopped
+        | GemStoneError::WorkerPanicked
         | GemStoneError::NegativeSize(_)
         | GemStoneError::ArgumentCountTooLarge(_) => {}
         GemStoneError::MissingEnvironment(_) => add_hint(
@@ -1484,6 +1486,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Commit-on-success and abort-on-error behavior.",
     },
     ExampleInfo {
+        name: "session_worker",
+        title: "Session worker",
+        command: "cargo run -p gemstone-rs --example session_worker",
+        category: "web",
+        requires_live: true,
+        description: "Dedicated-thread SessionWorker for web services and async runtimes.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -1594,11 +1604,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "2",
         title: "Safe sessions and transactions",
-        crates: "gemstone-rs::Session, TransactionGuard",
-        examples: "quickstart, transactions, live_smoke_cookbook",
+        crates: "gemstone-rs::Session, SessionWorker, TransactionGuard",
+        examples: "quickstart, transactions, session_worker, live_smoke_cookbook",
         docs: "docs/user-manual.md, docs/cookbook.md",
         gemstone_py_reference: "GemStoneSession, SessionFacade, transaction policies",
-        status: "Core parity for sync eval/perform/commit/abort",
+        status: "Core parity for sync eval/perform/commit/abort plus a dedicated-thread worker for web/async callers",
     },
     FeatureInfo {
         stream: "3",
@@ -1657,11 +1667,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "gemstone-rs examples plus checked Axum/Actix services and installed scaffolds",
-        examples: "http_service, examples/axum-service, examples/actix-service, examples scaffold axum_service/actix_service",
+        crates: "gemstone-rs SessionWorker plus checked Axum/Actix services and installed scaffolds",
+        examples: "session_worker, http_service, examples/axum-service, examples/actix-service, examples scaffold axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Std HTTP, checked Axum/Actix services, and installed scaffolds exist; reusable framework adapters remain planned",
+        status: "Std HTTP, SessionWorker, checked Axum/Actix services, and installed scaffolds exist; reusable framework adapters remain planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1705,8 +1715,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Standard-library HTTP, checked Axum, and checked Actix examples exist; reusable adapters are still planned",
-        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and blocking GCI boundaries",
+        gemstone_rs: "Standard-library HTTP, SessionWorker, checked Axum, and checked Actix examples exist; reusable adapters are still planned",
+        recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and dedicated session-worker boundaries",
     },
     ComparisonInfo {
         topic: "Codegen and mapping",
@@ -1733,8 +1743,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs has standard-library HTTP, checked Axum/Actix services, and installed Axum/Actix scaffolds, but no reusable framework adapter crate or session-worker abstraction yet.",
-        next_action: "Add a reusable session-worker or framework adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
+        gemstone_rs_gap: "gemstone-rs has standard-library HTTP, SessionWorker, checked Axum/Actix services, and installed Axum/Actix scaffolds, but no reusable framework adapter crate or pool abstraction yet.",
+        next_action: "Add a reusable framework adapter crate with startup, /, /health/local, /health/gemstone, SessionWorker wiring, and CI smoke coverage.",
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
@@ -1757,8 +1767,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Async and pooling",
         gemstone_py_strength: "gemstone-py has async examples, FastAPI integration, and lifetime/GC tests around async behavior.",
-        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and has not yet introduced a worker/pool abstraction.",
-        next_action: "Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests.",
+        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and now has a single dedicated SessionWorker, but no bounded pool or async facade yet.",
+        next_action: "Add a bounded worker pool and async facade after GCI thread behavior is proven with live tests.",
         verify_with: "GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_",
     },
     GapInfo {
@@ -4004,6 +4014,10 @@ mod tests {
             .iter()
             .any(|feature| feature.title == "Rust web services"
                 && feature.status.contains("reusable framework adapters")));
+        assert!(FEATURE_MAP
+            .iter()
+            .any(|feature| feature.title == "Safe sessions and transactions"
+                && feature.crates.contains("SessionWorker")));
         assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
     }
 
@@ -4045,7 +4059,7 @@ mod tests {
             gap.priority == "P1"
                 && gap.area == "Web framework adapters"
                 && gap.gemstone_py_strength.contains("FastAPI")
-                && gap.next_action.contains("session-worker")
+                && gap.next_action.contains("framework adapter")
         }));
         assert!(GEMSTONE_PY_GAPS
             .iter()
