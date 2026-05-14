@@ -102,7 +102,7 @@ CLI binary is installed and runnable.
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | Terminal-only browse workflow. |
 | HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | Standard-library web service with `/`, `/health/local`, and `/health/gemstone`. |
-| Axum service sketch | `examples/axum-service/README.md` | Recommended web-service shape without adding workspace dependencies. |
+| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `/`, `/health/local`, and `/health/gemstone`. |
 
 ## Suggested Learning Order
 
@@ -126,7 +126,7 @@ CLI binary is installed and runnable.
 18. `examples/tooling/explorer.md`
 19. `examples/tooling/vscode-workbench.md`
 20. `http_service`
-21. `examples/axum-service/README.md`
+21. `examples/axum-service/`
 
 ## Expected Output
 
@@ -290,5 +290,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- a checked Axum or Actix framework adapter crate wired into CI
+- an Actix framework example or reusable session-worker adapter crate wired into CI
 - a richer class browser walkthrough with captured output

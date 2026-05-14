@@ -606,10 +606,10 @@ tooling testable outside VS Code.
 
 For web services, keep GemStone calls on a blocking worker and treat `Session`
 as thread-local. The repository now includes a standard-library HTTP service
-example with `/`, `/health/local`, and `/health/gemstone` routes, plus an Axum
-service sketch for the eventual framework adapter shape. That keeps the live
-service example runnable without adding Axum, Actix, Tokio, or serde to the core
-workspace.
+example with `/`, `/health/local`, and `/health/gemstone` routes, plus a
+checked Axum service under `examples/axum-service` that uses
+`tokio::task::spawn_blocking` for GemStone calls. That keeps the core workspace
+dependency-light while proving the async web-service shape.
 
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code

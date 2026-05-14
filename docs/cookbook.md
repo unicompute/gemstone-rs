@@ -313,7 +313,13 @@ The example uses only the Rust standard library. It proves the service shape and
 GemStone health-check flow without pulling web framework dependencies into the
 workspace. `gemstone-py` is still ahead for batteries-included FastAPI,
 Litestar, and Django adapters; `gemstone-rs` now has a direct Rust service
-smoke path while Axum or Actix adapters remain planned.
+smoke path and a checked Axum service outside the core workspace:
+
+```bash
+cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
+```
+
+Actix and reusable adapter crates remain planned.
 
 ## Recipe 20: Run the Local Explorer
 

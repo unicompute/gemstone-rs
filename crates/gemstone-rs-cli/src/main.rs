@@ -1641,11 +1641,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "9",
         title: "Rust web services",
-        crates: "gemstone-rs examples plus installed Axum scaffold and planned adapters",
-        examples: "http_service, axum-service/README.md, examples scaffold axum_service",
+        crates: "gemstone-rs examples plus checked Axum service and installed Axum scaffold",
+        examples: "http_service, examples/axum-service, examples scaffold axum_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Std HTTP service and Axum scaffold exist; gemstone-py is still ahead for checked framework adapters",
+        status: "Std HTTP service, checked Axum service, and Axum scaffold exist; gemstone-py is still ahead for broader framework adapters",
     },
     FeatureInfo {
         stream: "10",
@@ -1689,7 +1689,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Standard-library HTTP service example exists and an Axum scaffold can create a standalone project; Actix and deeper adapters are still planned",
+        gemstone_rs: "Standard-library HTTP service and checked Axum example exist; Actix and deeper adapters are still planned",
         recommendation: "Use gemstone-py today for mature framework adapters; use gemstone-rs to prove Rust service integration and GCI thread boundaries",
     },
     ComparisonInfo {
@@ -1717,9 +1717,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service and an installed Axum scaffold, but no maintained framework adapter crate or CI-built Axum/Actix example yet.",
-        next_action: "Promote the Axum scaffold into a checked source example or adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
-        verify_with: "gemstone-rs examples scaffold axum_service /tmp/gemstone-rs-axum-service --force",
+        gemstone_rs_gap: "gemstone-rs has a standard-library HTTP service, checked Axum service, and installed Axum scaffold, but no Actix example or reusable framework adapter crate yet.",
+        next_action: "Add an Actix example or reusable session-worker adapter crate with startup, /, /health/local, /health/gemstone, and CI smoke coverage.",
+        verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
     },
     GapInfo {
         priority: "P1",
@@ -3983,7 +3983,7 @@ mod tests {
             gap.priority == "P1"
                 && gap.area == "Web framework adapters"
                 && gap.gemstone_py_strength.contains("FastAPI")
-                && gap.next_action.contains("Axum")
+                && gap.next_action.contains("Actix")
         }));
         assert!(GEMSTONE_PY_GAPS
             .iter()

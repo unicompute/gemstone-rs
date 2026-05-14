@@ -47,6 +47,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-scaffold-axum-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes
+	cargo test --manifest-path examples/axum-service/Cargo.toml
+	cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample

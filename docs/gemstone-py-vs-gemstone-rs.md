@@ -55,7 +55,7 @@ file.
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Not yet a core feature |
-| Web frameworks | FastAPI, Litestar, Django examples | Standard-library HTTP service example plus standalone Axum scaffold; checked adapters still planned |
+| Web frameworks | FastAPI, Litestar, Django examples | Standard-library HTTP service plus checked Axum example; Actix and reusable adapters still planned |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -82,7 +82,7 @@ file.
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
 | Rust HTTP service demo | Not applicable | Supported through `cargo run -p gemstone-rs --example http_service -- --port 3000` |
-| Axum/Actix demo | Not applicable | Axum scaffold supported; checked Axum/Actix adapters still planned |
+| Axum/Actix demo | Not applicable | Axum service supported through `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes`; Actix still planned |
 | Installed examples index | `gemstone-examples hello`, `list`, `plan3-map` | `gemstone-rs hello`, `compare gemstone-py`, `examples list`, `map`, `show`, `run --dry-run`, `scaffold`, plus JSON for tooling |
 | Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
 | VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
@@ -102,7 +102,7 @@ test that should verify it.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Promote the Axum scaffold into a checked source example or adapter crate with startup, `/`, `/health/local`, `/health/gemstone`, and CI smoke coverage. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add an Actix example or reusable session-worker adapter crate with startup, `/`, `/health/local`, `/health/gemstone`, and CI smoke coverage. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async and pooling | gemstone-py has async examples and FastAPI integration. | Add an explicit session-worker or pool crate after GCI thread behavior is proven with live tests. |
@@ -140,15 +140,16 @@ not the implementation language:
   project profile files, not only Rust source.
 - Rust web service shape: `http_service` now gives a real HTTP example with
   `/`, `/health/local`, and `/health/gemstone` without adding framework
-  dependencies; `axum_service` creates a standalone Axum project from the
-  installed CLI. A checked adapter crate and CI smoke coverage remain future
-  work.
+  dependencies; `examples/axum-service` is a checked Axum crate using
+  `spawn_blocking` for GemStone calls; `axum_service` creates a standalone Axum
+  project from the installed CLI. Actix and reusable adapter crates remain
+  future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for
   explorer-integrated workflows and richer generated wrapper profile variants,
-  plus checked Rust web adapter crates and richer explorer screens before its
-  onboarding feels as complete as gemstone-py.
+  plus Actix/reusable Rust web adapter crates and richer explorer screens
+  before its onboarding feels as complete as gemstone-py.
 
 ## How They Should Work Together
 

@@ -1,19 +1,7 @@
-// Requires a live GemStone/S stone for GET /health/gemstone.
-//
-// Start:
-//
-// cargo run -- --host 127.0.0.1 --port 3000
-//
-// Then in another shell:
-//
-// curl -i http://127.0.0.1:3000/
-// curl -i http://127.0.0.1:3000/health/local
-// curl -i http://127.0.0.1:3000/health/gemstone
-
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use gemstone_rs::{Config, Session, Value};
 use serde_json::json;
-use std::{env, error::Error, net::SocketAddr};
+use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
@@ -26,13 +14,7 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/health/local", get(health_local))
-        .route("/health/gemstone", get(health_gemstone));
-
-    let addr: SocketAddr = format!("{}:{}", options.host, options.port).parse()?;
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(options.addr()).await?;
     println!(
         "gemstone-rs Axum service running at http://{}/",
         listener.local_addr()?
@@ -40,8 +22,15 @@ async fn main() -> AppResult<()> {
     println!("GET /");
     println!("GET /health/local");
     println!("GET /health/gemstone");
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app()).await?;
     Ok(())
+}
+
+fn app() -> Router {
+    Router::new()
+        .route("/", get(root))
+        .route("/health/local", get(health_local))
+        .route("/health/gemstone", get(health_gemstone))
 }
 
 async fn root() -> impl IntoResponse {
@@ -116,22 +105,69 @@ impl Options {
 
         Ok(Self { host, port, routes })
     }
+
+    fn addr(&self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
 }
 
 fn print_routes(options: &Options) {
     println!("gemstone-rs Axum service example");
-    println!("  bind: {}:{}", options.host, options.port);
+    println!("  bind: {}", options.addr());
     println!("  GET /");
     println!("  GET /health/local");
     println!("  GET /health/gemstone");
     println!();
     println!("Start:");
     println!(
-        "  cargo run -- --host {} --port {}",
+        "  cargo run --manifest-path examples/axum-service/Cargo.toml -- --host {} --port {}",
         options.host, options.port
     );
 }
 
 fn print_usage() {
-    println!("usage: cargo run -- [--host <host>] [--port <port>] [--routes]");
+    println!(
+        "usage: cargo run --manifest-path examples/axum-service/Cargo.toml -- [--host <host>] [--port <port>] [--routes]"
+    );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_defaults() {
+        let options = Options::parse([]).unwrap();
+        assert_eq!(
+            options,
+            Options {
+                host: "127.0.0.1".to_string(),
+                port: 3000,
+                routes: false
+            }
+        );
+        assert_eq!(options.addr(), "127.0.0.1:3000");
+    }
+
+    #[test]
+    fn parses_host_port_and_routes() {
+        let options = Options::parse([
+            "--host".to_string(),
+            "127.0.0.2".to_string(),
+            "--port".to_string(),
+            "3100".to_string(),
+            "--routes".to_string(),
+        ])
+        .unwrap();
+        assert_eq!(options.host, "127.0.0.2");
+        assert_eq!(options.port, 3100);
+        assert!(options.routes);
+        assert_eq!(options.addr(), "127.0.0.2:3100");
+    }
+
+    #[test]
+    fn rejects_unknown_option() {
+        let err = Options::parse(["--bad".to_string()]).unwrap_err();
+        assert!(err.to_string().contains("unknown option"));
+    }
 }

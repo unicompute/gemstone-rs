@@ -40,7 +40,7 @@ and editor tooling.
 | 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `codegen_discover`, `profile_codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, generate, and profile workflow parity; live discovery still needs more depth. |
 | 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API; Python explorer remains the richer product reference. |
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command and webview workflow exists; embedded explorer UX needs polish. |
-| 9 | Rust web services | `gemstone-rs` examples plus installed Axum scaffold and planned adapters | `http_service`, `axum-service/README.md`, `examples scaffold axum_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Standard-library HTTP service and Axum scaffold exist; `gemstone-py` is still ahead for checked framework adapters. |
+| 9 | Rust web services | `gemstone-rs` examples plus checked Axum service and installed Axum scaffold | `http_service`, `examples/axum-service`, `examples scaffold axum_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Standard-library HTTP service, checked Axum service, and Axum scaffold exist; `gemstone-py` is still ahead for broader framework adapters. |
 | 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
 | 11 | Shared native core | `gemstone-gci`, `gemstone-rs`, future `gemstone-py-native` wrapper | Shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Best long-term architecture; not wired into `gemstone-py-native` yet. |
 
@@ -52,7 +52,7 @@ BridgeRoot mapping, and CLI/explorer tooling that can run without Python in
 the process.
 
 `gemstone-py` remains stronger where Python already has mature product shape:
-checked web framework adapters, async examples, the database explorer, package
+broader web framework adapters, async examples, the database explorer, package
 extras, and broader release surfaces.
 
 The projects should converge by sharing the Rust native core underneath

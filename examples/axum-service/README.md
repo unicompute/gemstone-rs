@@ -1,16 +1,8 @@
 # Axum Service Example
 
-This is a Rust-native web-service sketch for teams that want `gemstone-rs` in
-an Axum application. It is intentionally kept outside the workspace so the core
-crate stays dependency-light.
-
-Start with the checked-in standard-library HTTP example when you want a
-dependency-free route shape first:
-
-```bash
-cargo run -p gemstone-rs --example http_service -- --routes
-cargo run -p gemstone-rs --example http_service -- --port 3000
-```
+This is a checked Rust-native Axum service for teams that want `gemstone-rs`
+inside an async web application. It is intentionally kept outside the main
+workspace so the core crate stays dependency-light.
 
 It exposes the same minimal contract used by the Python FastAPI/Litestar
 examples:
@@ -21,53 +13,41 @@ GET /health/local
 GET /health/gemstone
 ```
 
-Create a new service:
+Check the route map without starting a server:
 
 ```bash
-cargo new gemstone-rs-axum-demo
-cd gemstone-rs-axum-demo
-cargo add axum tokio --features tokio/full
-cargo add gemstone-rs
+cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 ```
 
-Use a short handler that opens a GemStone session for the request:
+Run the local service:
 
-```rust
-use axum::{routing::get, Json, Router};
-use gemstone_rs::{Config, Session, Value};
-use serde_json::json;
-
-#[tokio::main]
-async fn main() {
-    let app = Router::new()
-        .route("/", get(|| async { "gemstone-rs Axum demo" }))
-        .route("/health/gemstone", get(gemstone_health));
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn gemstone_health() -> Json<serde_json::Value> {
-    let result = tokio::task::spawn_blocking(|| -> gemstone_rs::Result<i64> {
-        let mut session = Session::login(Config::from_env()?)?;
-        let Value::SmallInt(value) = session.eval("3 + 4")? else {
-            return Ok(-1);
-        };
-        session.logout()?;
-        Ok(value)
-    })
-    .await
-    .unwrap();
-
-    match result {
-        Ok(value) => Json(json!({ "result": value })),
-        Err(err) => Json(json!({ "error": err.to_string() })),
-    }
-}
+```bash
+cargo run --manifest-path examples/axum-service/Cargo.toml -- --host 127.0.0.1 --port 3000
 ```
 
-Keep one important rule: treat each GemStone `Session` as thread-local and
-blocking. Use `spawn_blocking`, a worker thread, or an explicit session pool
-after GCI threading behavior is fully proven for your deployment.
+Then in another shell:
+
+```bash
+curl -i http://127.0.0.1:3000/
+curl -i http://127.0.0.1:3000/health/local
+curl -i http://127.0.0.1:3000/health/gemstone
+```
+
+The GemStone health route opens a session inside `tokio::task::spawn_blocking`
+and evaluates `3 + 4`. Keep that pattern unless you introduce a deliberate
+session worker or session pool for your deployment. Treat each GemStone
+`Session` as thread-local and blocking.
+
+Use the installed scaffold when you want to start a separate application:
+
+```bash
+gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
+```
+
+The dependency-free source-checkout service remains useful for checking the
+same route contract without Axum/Tokio:
+
+```bash
+cargo run -p gemstone-rs --example http_service -- --routes
+cargo run -p gemstone-rs --example http_service -- --port 3000
+```
