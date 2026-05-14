@@ -36,14 +36,17 @@ gemstone-rs examples list --json
 gemstone-rs examples map
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 ```
 
 From a source checkout, `gemstone-rs examples run <name>` can launch the
 selected Cargo example directly. Use `--dry-run` when you only want to verify
-the command that would run. `gemstone-rs examples map` is the Rust equivalent
-of `gemstone-examples plan3-map`: it groups crates, examples, docs, and
-gemstone-py reference points by feature stream. The same content is maintained
-in [feature-map.md](feature-map.md).
+the command that would run. From an installed CLI, `gemstone-rs examples
+scaffold <name> [path]` writes a standalone Cargo project from embedded
+templates. The first scaffold templates are `quickstart` and `http_service`.
+`gemstone-rs examples map` is the Rust equivalent of `gemstone-examples
+plan3-map`: it groups crates, examples, docs, and gemstone-py reference points
+by feature stream. The same content is maintained in [feature-map.md](feature-map.md).
 
 `gemstone-rs hello` is the no-live equivalent of `gemstone-examples hello`.
 Use it before configuring GemStone credentials when you only want to prove the
@@ -54,6 +57,8 @@ CLI binary is installed and runnable.
 | Feature | Command or path | What it demonstrates |
 | --- | --- | --- |
 | Hello CLI | `gemstone-rs hello` | Verifies the installed CLI without GemStone credentials. |
+| Scaffold quickstart | `gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart` | Creates a standalone Cargo quickstart project from the installed CLI. |
+| Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | Creates a standalone Rust HTTP health-service project from the installed CLI. |
 | First login | `cargo run -p gemstone-rs --example hello_gemstone` | Reads env config, logs in, prints a session id, and evaluates `3 + 4`. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | Eval, `global_put`, `global_get`, string fetch, cleanup. |
 | Eval only | `cargo run -p gemstone-rs --example eval` | Minimal `Session::eval` shape. |
@@ -188,6 +193,7 @@ gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 

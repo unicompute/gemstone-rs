@@ -91,6 +91,21 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             })?;
             run_example(example, dry_run, &extra_args)
         }
+        Command::ExamplesScaffold { name, path, force } => {
+            let template = find_scaffold_template(&name).ok_or_else(|| {
+                CliError::Example(format!(
+                    "scaffold template {name} not found; available templates: {}",
+                    scaffold_template_names()
+                ))
+            })?;
+            let target = path.unwrap_or_else(|| PathBuf::from(template.package_name));
+            scaffold_example_project(template, &target, force)?;
+            println!("wrote {}", target.display());
+            println!("next:");
+            println!("  cd {}", target.display());
+            println!("  cargo run");
+            Ok(())
+        }
         Command::Eval { source, env_file } => {
             apply_env_file_option(env_file.as_deref())?;
             let mut session = login()?;
@@ -1394,6 +1409,15 @@ struct GapInfo {
     verify_with: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ScaffoldTemplate {
+    name: &'static str,
+    package_name: &'static str,
+    title: &'static str,
+    description: &'static str,
+    main_rs: &'static str,
+}
+
 const EXAMPLES: &[ExampleInfo] = &[
     ExampleInfo {
         name: "hello",
@@ -1651,8 +1675,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Examples",
         gemstone_py: "gemstone-examples list, plan3-map, hello, quickstart, fastapi, litestar",
-        gemstone_rs: "gemstone-rs hello; examples list/map/show/run; Cargo examples from source checkout",
-        recommendation: "gemstone-py is ahead for installed runnable examples; gemstone-rs now has comparable discovery",
+        gemstone_rs: "gemstone-rs hello; examples list/map/show/run/scaffold; Cargo examples from source checkout",
+        recommendation: "gemstone-py is ahead for breadth; gemstone-rs now has comparable discovery and standalone project scaffolds",
     },
     ComparisonInfo {
         topic: "Web frameworks",
@@ -1701,9 +1725,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Installed example experience",
         gemstone_py_strength: "gemstone-examples launches installed examples without needing a source checkout.",
-        gemstone_rs_gap: "gemstone-rs examples run is strong for source checkouts, but installed users mostly get discovery and dry-run commands.",
-        next_action: "Add scaffold/copy commands that materialize runnable Cargo example projects from installed templates.",
-        verify_with: "gemstone-rs examples list; gemstone-rs examples run codegen_preview --dry-run",
+        gemstone_rs_gap: "gemstone-rs now scaffolds quickstart and HTTP service projects, but not every source-checkout example has an installed template yet.",
+        next_action: "Expand examples scaffold templates to codegen, browser, BridgeRoot mapping, and generated-wrapper projects.",
+        verify_with: "gemstone-rs examples scaffold quickstart /tmp/gemstone-rs-quickstart --force",
     },
     GapInfo {
         priority: "P2",
@@ -1728,6 +1752,23 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         gemstone_rs_gap: "gemstone-rs has crates/VSIX verification, but the full publish workflow is newer and less exercised.",
         next_action: "Run the full release workflow regularly and keep crates.io, Marketplace, GitHub Release assets, PDFs, and checksums verified.",
         verify_with: "scripts/publish_verify.sh <version>; scripts/verify_release_artifacts.py",
+    },
+];
+
+const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
+    ScaffoldTemplate {
+        name: "quickstart",
+        package_name: "gemstone-rs-quickstart",
+        title: "gemstone-rs Quickstart",
+        description: "Login, evaluate 3 + 4, and round-trip a UserGlobals string.",
+        main_rs: include_str!("../templates/quickstart.rs"),
+    },
+    ScaffoldTemplate {
+        name: "http_service",
+        package_name: "gemstone-rs-http-service",
+        title: "gemstone-rs HTTP Service",
+        description: "Standard-library HTTP service with /, /health/local, and /health/gemstone.",
+        main_rs: include_str!("../templates/http_service.rs"),
     },
 ];
 
@@ -2003,6 +2044,107 @@ fn run_example(
     }
 }
 
+fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
+    SCAFFOLD_TEMPLATES
+        .iter()
+        .find(|template| template.name.eq_ignore_ascii_case(name))
+}
+
+fn scaffold_template_names() -> String {
+    SCAFFOLD_TEMPLATES
+        .iter()
+        .map(|template| template.name)
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn scaffold_example_project(
+    template: &ScaffoldTemplate,
+    target: &Path,
+    force: bool,
+) -> Result<(), CliError> {
+    let files = [
+        target.join("Cargo.toml"),
+        target.join("src").join("main.rs"),
+        target.join("README.md"),
+        target.join(".gitignore"),
+    ];
+    if !force {
+        if let Some(existing) = files.iter().find(|path| path.exists()) {
+            return Err(CliError::Example(format!(
+                "{} already exists; pass --force to overwrite scaffolded files",
+                existing.display()
+            )));
+        }
+    }
+
+    fs::create_dir_all(target.join("src"))?;
+    write_scaffold_file(&files[0], &scaffold_cargo_toml(template), force)?;
+    write_scaffold_file(&files[1], template.main_rs, force)?;
+    write_scaffold_file(&files[2], &scaffold_readme(template), force)?;
+    write_scaffold_file(&files[3], "target/\n.env\n.env.gemstone-rs\n", force)?;
+    Ok(())
+}
+
+fn write_scaffold_file(path: &Path, source: &str, force: bool) -> Result<(), CliError> {
+    if path.exists() && !force {
+        return Err(CliError::Example(format!(
+            "{} already exists; pass --force to overwrite scaffolded files",
+            path.display()
+        )));
+    }
+    fs::write(path, source)?;
+    Ok(())
+}
+
+fn scaffold_cargo_toml(template: &ScaffoldTemplate) -> String {
+    format!(
+        r#"[package]
+name = "{}"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gemstone-rs = "{}"
+"#,
+        template.package_name,
+        env!("CARGO_PKG_VERSION")
+    )
+}
+
+fn scaffold_readme(template: &ScaffoldTemplate) -> String {
+    format!(
+        r#"# {}
+
+{}
+
+## Setup
+
+Set your GemStone/S environment first:
+
+```bash
+export GS_LIB=/opt/gemstone/product/lib
+export GS_STONE=gs64stone
+export GS_USERNAME=DataCurator
+export GS_PASSWORD=your-password
+```
+
+Then run:
+
+```bash
+cargo run
+```
+
+This project was generated by:
+
+```bash
+gemstone-rs examples scaffold {}
+```
+"#,
+        template.title, template.description, template.name
+    )
+}
+
 fn print_profile_list(path: &Path, project: &profiles::ProjectProfiles) {
     println!("profiles: {} ({})", path.display(), project.profiles.len());
     for profile in &project.profiles {
@@ -2130,6 +2272,11 @@ enum Command {
         name: String,
         dry_run: bool,
         extra_args: Vec<String>,
+    },
+    ExamplesScaffold {
+        name: String,
+        path: Option<PathBuf>,
+        force: bool,
     },
     Eval {
         source: String,
@@ -2464,16 +2611,17 @@ fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
         "hello" => parse_hello_command(&args[1..]),
         "show" => parse_examples_show_command(&args[1..]),
         "run" => parse_examples_run_command(&args[1..]),
+        "scaffold" | "copy" => parse_examples_scaffold_command(&args[1..]),
         "--json" => Ok(Command::ExamplesList {
             format: OutputFormat::Json,
         }),
         "-h" | "--help" => Err(CliError::usage(
-            "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+            "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...] | scaffold <name> [path] [--force]]",
         )),
         name => {
             if args.len() > 2 {
                 return Err(CliError::usage(
-                    "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+                    "expected: examples [list [--json] | map [--json] | hello [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...] | scaffold <name> [path] [--force]]",
                 ));
             }
             let format = if args.get(1).is_some_and(|arg| arg == "--json") {
@@ -2590,6 +2738,40 @@ fn parse_examples_run_command(args: &[String]) -> Result<Command, CliError> {
         name: name.ok_or_else(|| CliError::usage("missing example name"))?,
         dry_run,
         extra_args,
+    })
+}
+
+fn parse_examples_scaffold_command(args: &[String]) -> Result<Command, CliError> {
+    let mut name = None;
+    let mut path = None;
+    let mut force = false;
+    for arg in args {
+        match arg.as_str() {
+            "--force" => force = true,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: examples scaffold <name> [path] [--force]",
+                ));
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown examples scaffold option: {option}"
+                )));
+            }
+            value if name.is_none() => name = Some(value.to_string()),
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected examples scaffold argument: {value}"
+                )));
+            }
+        }
+    }
+
+    Ok(Command::ExamplesScaffold {
+        name: name.ok_or_else(|| CliError::usage("missing scaffold example name"))?,
+        path,
+        force,
     })
 }
 
@@ -3269,6 +3451,7 @@ fn usage() -> &'static str {
   gemstone-rs examples hello [--json]
   gemstone-rs examples show <name> [--json]
   gemstone-rs examples run <name> [--dry-run] [-- <args>...]
+  gemstone-rs examples scaffold <name> [path] [--force]
   gemstone-rs eval [--env-file <path>] <smalltalk>
   gemstone-rs browse dictionaries [--env-file <path>]
   gemstone-rs browse classes [dictionary] [--env-file <path>]
@@ -3572,6 +3755,21 @@ mod tests {
                 extra_args: vec!["--demo".to_string(), "value with spaces".to_string()],
             }
         );
+        assert_eq!(
+            parse_command(&args(&[
+                "examples",
+                "scaffold",
+                "quickstart",
+                "/tmp/gemstone-rs-quickstart",
+                "--force"
+            ]))
+            .unwrap(),
+            Command::ExamplesScaffold {
+                name: "quickstart".to_string(),
+                path: Some(PathBuf::from("/tmp/gemstone-rs-quickstart")),
+                force: true,
+            }
+        );
     }
 
     #[test]
@@ -3631,6 +3829,31 @@ mod tests {
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("less polished")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
+    }
+
+    #[test]
+    fn scaffold_writes_runnable_project_shape_and_refuses_overwrite() {
+        let target =
+            std::env::temp_dir().join(format!("gemstone-rs-scaffold-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&target);
+        let template = find_scaffold_template("quickstart").unwrap();
+
+        scaffold_example_project(template, &target, false).unwrap();
+        let cargo_toml = fs::read_to_string(target.join("Cargo.toml")).unwrap();
+        let main_rs = fs::read_to_string(target.join("src").join("main.rs")).unwrap();
+        let readme = fs::read_to_string(target.join("README.md")).unwrap();
+
+        assert!(cargo_toml.contains(r#"name = "gemstone-rs-quickstart""#));
+        assert!(cargo_toml.contains(r#"gemstone-rs = ""#));
+        assert!(main_rs.contains("Session::login(Config::from_env()?)"));
+        assert!(readme.contains("gemstone-rs examples scaffold quickstart"));
+
+        let err = scaffold_example_project(template, &target, false)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("already exists"));
+        scaffold_example_project(template, &target, true).unwrap();
+        let _ = fs::remove_dir_all(&target);
     }
 
     #[test]

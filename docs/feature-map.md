@@ -12,12 +12,14 @@ gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples map
 gemstone-rs examples map --json
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 ```
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
 guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
-actions and verification commands. JSON output is intended for CI, docs checks,
+actions and verification commands. `examples scaffold` creates standalone Cargo
+projects from installed templates. JSON output is intended for CI, docs checks,
 and editor tooling.
 
 ## Streams
@@ -44,8 +46,8 @@ BridgeRoot mapping, and CLI/explorer tooling that can run without Python in
 the process.
 
 `gemstone-py` remains stronger where Python already has mature product shape:
-web framework adapters, async examples, installed example launchers, the
-database explorer, package extras, and broader release surfaces.
+web framework adapters, async examples, broader installed example launchers,
+the database explorer, package extras, and broader release surfaces.
 
 The projects should converge by sharing the Rust native core underneath
 `gemstone-py-native`, while keeping the Python and Rust APIs idiomatic for

@@ -39,13 +39,16 @@ gemstone-rs examples list --json
 gemstone-rs examples map
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 ```
 
 `gemstone-rs examples run <name>` launches the selected Cargo example from a
 source checkout. `--dry-run` prints the command without compiling or connecting
 to GemStone, which makes it useful for CI and release docs checks. Use
 `gemstone-rs examples map` when you want the gemstone-py-style feature stream
-view across crates, examples, docs, and parity status.
+view across crates, examples, docs, and parity status. Use `gemstone-rs
+examples scaffold <name> [path]` when you installed the CLI and want a
+standalone Cargo project instead of a source-checkout example.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -54,6 +57,8 @@ sanity check after install.
 | Role | Command | Use it when |
 | --- | --- | --- |
 | Hello CLI | `gemstone-rs hello` | You want to verify the installed CLI without GemStone credentials. |
+| Scaffold quickstart | `gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart` | You want a standalone quickstart project from the installed CLI. |
+| Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
 | Quickstart | `cargo run -p gemstone-rs --example quickstart` | You want the smallest live read/write round trip. |
 | Eval | `cargo run -p gemstone-rs --example eval` | You want only the `Session::eval("3 + 4")` shape. |
@@ -92,6 +97,7 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs-explorer --port 8787
 ```
 

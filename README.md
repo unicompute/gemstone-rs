@@ -68,6 +68,7 @@ gemstone-rs examples list
 gemstone-rs examples map
 gemstone-rs examples show quickstart
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
@@ -193,6 +194,8 @@ cargo run -p gemstone-rs-cli -- examples list
 cargo run -p gemstone-rs-cli -- examples map
 cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
+cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
+cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-http-service --force
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
 cargo run -p gemstone-rs-cli -- browse dictionaries
 cargo run -p gemstone-rs-cli -- browse classes UserGlobals
@@ -247,7 +250,10 @@ command for each gap.
 `examples list` and `examples show <name>` provide an installed-CLI example
 index similar to `gemstone-examples list` in gemstone-py; `examples run <name>`
 launches the selected Cargo example from a source checkout, and `--dry-run`
-prints the command without executing it. `examples map` mirrors the
+prints the command without executing it. `examples scaffold <name> [path]`
+creates a standalone Cargo project from an installed template, starting with
+`quickstart` and `http_service`, so users can try gemstone-rs without keeping
+the repository checkout open. `examples map` mirrors the
 `gemstone-examples plan3-map` idea by showing which Rust crates, examples, and
 docs correspond to each feature stream and gemstone-py reference point. The
 JSON forms are used by tooling and are suitable for CI checks.
