@@ -17,7 +17,7 @@ talk to GemStone/S directly without keeping Python in the process.
 | Application library | `python -m pip install gemstone-py` | `cargo add gemstone-rs` |
 | Native acceleration | `python -m pip install "gemstone-py[fast]"` | Built into the Rust GCI path once `libgcirpc` is available |
 | Examples from source | `python -m pip install -e ".[examples]"` | `cargo run -p gemstone-rs --example quickstart` |
-| Example discovery/run | `gemstone-examples list` and launch commands | `gemstone-rs examples list`, `show`, and source-checkout `run` |
+| Example discovery/run | `gemstone-examples list`, `plan3-map`, and launch commands | `gemstone-rs examples list`, `map`, `show`, and source-checkout `run` |
 | CLI tooling | Python modules and examples | `cargo install gemstone-rs-cli` |
 | Local explorer | `python-gemstone-database-explorer` | `cargo install gemstone-rs-explorer` |
 | VS Code | `gemstone-py Workbench` | `gemstone-rs Workbench` |
@@ -43,7 +43,7 @@ file.
 | Python scripts and notebooks | gemstone-py | Lower friction for Python teams. |
 | Rust service or worker | gemstone-rs | Native Rust API, Rust errors, Rust ownership, Cargo distribution. |
 | Rust CLI tooling | gemstone-rs | CLI and explorer can run without Python. |
-| Example-driven onboarding | gemstone-py today, gemstone-rs catching up | gemstone-py has broader runnable examples; gemstone-rs now has an installed CLI example index and source-checkout runner. |
+| Example-driven onboarding | gemstone-py today, gemstone-rs catching up | gemstone-py has broader runnable examples; gemstone-rs now has an installed CLI example index, feature map, and source-checkout runner. |
 | VS Code database/codegen workflow | gemstone-py today, gemstone-rs later | gemstone-py has the more mature explorer; gemstone-rs has the cleaner Rust backend direction. |
 | Shared low-level bridge | gemstone-rs | The Rust API is the right place to isolate GCI safety and ownership. |
 
@@ -82,7 +82,7 @@ file.
 | FastAPI demo | Supported | Not applicable |
 | Litestar demo | Supported | Not applicable |
 | Axum/Actix demo | Not applicable | Axum sketch documented; full app example still planned |
-| Installed examples index | `gemstone-examples list` | `gemstone-rs examples list`, `show`, `run --dry-run`, plus JSON for VS Code |
+| Installed examples index | `gemstone-examples list`, `plan3-map` | `gemstone-rs examples list`, `map`, `show`, `run --dry-run`, plus JSON for tooling |
 | Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
 | VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
 
@@ -98,6 +98,9 @@ not the implementation language:
 
 - Installed discoverability: `gemstone-rs examples list` now mirrors the
   gemstone-py example map and gives VS Code structured JSON.
+- Feature stream map: `gemstone-rs examples map` mirrors
+  `gemstone-examples plan3-map`, but frames each stream in Rust crates,
+  examples, docs, and gemstone-py reference points.
 - Source-checkout launching: `gemstone-rs examples run <name>` now executes
   the matching Cargo example, with `--dry-run` for CI and documentation checks.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in

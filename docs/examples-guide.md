@@ -32,12 +32,16 @@ repository docs:
 gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
+gemstone-rs examples map
 gemstone-rs examples run codegen_preview --dry-run
 ```
 
 From a source checkout, `gemstone-rs examples run <name>` can launch the
 selected Cargo example directly. Use `--dry-run` when you only want to verify
-the command that would run.
+the command that would run. `gemstone-rs examples map` is the Rust equivalent
+of `gemstone-examples plan3-map`: it groups crates, examples, docs, and
+gemstone-py reference points by feature stream. The same content is maintained
+in [feature-map.md](feature-map.md).
 
 ## Example Map
 

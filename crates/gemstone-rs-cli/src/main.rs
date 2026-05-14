@@ -58,6 +58,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_examples_list(format);
             Ok(())
         }
+        Command::ExamplesMap { format } => {
+            print_feature_map(format);
+            Ok(())
+        }
         Command::ExamplesShow { name, format } => {
             let example = find_example(&name).ok_or_else(|| {
                 CliError::CodegenCheck(format!(
@@ -1353,6 +1357,17 @@ struct ExampleInfo {
     description: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct FeatureInfo {
+    stream: &'static str,
+    title: &'static str,
+    crates: &'static str,
+    examples: &'static str,
+    docs: &'static str,
+    gemstone_py_reference: &'static str,
+    status: &'static str,
+}
+
 const EXAMPLES: &[ExampleInfo] = &[
     ExampleInfo {
         name: "hello_gemstone",
@@ -1476,6 +1491,108 @@ const EXAMPLES: &[ExampleInfo] = &[
     },
 ];
 
+const FEATURE_MAP: &[FeatureInfo] = &[
+    FeatureInfo {
+        stream: "1",
+        title: "Runtime and GCI loading",
+        crates: "gemstone-gci, gemstone-rs::Config",
+        examples: "hello_gemstone, quickstart",
+        docs: "docs/setup-guide.md, docs/performance-safety.md",
+        gemstone_py_reference: "gemstone_py.native, native backend checks",
+        status: "Rust-native core; Python still has broader packaged backend docs",
+    },
+    FeatureInfo {
+        stream: "2",
+        title: "Safe sessions and transactions",
+        crates: "gemstone-rs::Session, TransactionGuard",
+        examples: "quickstart, transactions, live_smoke_cookbook",
+        docs: "docs/user-manual.md, docs/cookbook.md",
+        gemstone_py_reference: "GemStoneSession, SessionFacade, transaction policies",
+        status: "Core parity for sync eval/perform/commit/abort",
+    },
+    FeatureInfo {
+        stream: "3",
+        title: "Browser and inspection",
+        crates: "gemstone-rs::browser, gemstone-rs-cli browse, gemstone-rs-explorer",
+        examples: "browser, tooling/cli-browser-walkthrough.md",
+        docs: "docs/user-manual.md, docs/explorer.md",
+        gemstone_py_reference: "gemstone_py.inspection, python-gemstone-database-explorer",
+        status: "API parity growing; Python explorer is still more mature",
+    },
+    FeatureInfo {
+        stream: "4",
+        title: "OOP and value handling",
+        crates: "Oop, Value, export-set helpers",
+        examples: "oop_values",
+        docs: "docs/user-manual.md, docs/performance-safety.md",
+        gemstone_py_reference: "managed OOP handles and typed access examples",
+        status: "Explicit Rust ownership model; Python is easier for casual scripting",
+    },
+    FeatureInfo {
+        stream: "5",
+        title: "BridgeRoot object mapping",
+        crates: "gemstone-rs::bridge, gemstone-rs-macros",
+        examples: "bridge_root_mapping, derive_mapping, generated_mapping_app",
+        docs: "docs/object-mapping.md, docs/cookbook.md",
+        gemstone_py_reference: "SmalltalkBridge, PersistentRoot, facade examples",
+        status: "Rust has typed mapping and derive; transparent object model remains future work",
+    },
+    FeatureInfo {
+        stream: "6",
+        title: "Typed codegen",
+        crates: "gemstone-rs::codegen, gemstone-rs-cli codegen/profile",
+        examples: "codegen_preview, codegen_workflow, generated_wrapper_app",
+        docs: "docs/codegen.md, docs/profile-schema.md",
+        gemstone_py_reference: "gemstone_py.codegen, typed_access/codegen_demo",
+        status: "Preview/diff/check/generate parity; live discovery still needs more depth",
+    },
+    FeatureInfo {
+        stream: "7",
+        title: "Explorer workflow",
+        crates: "gemstone-rs-explorer",
+        examples: "tooling/explorer.md",
+        docs: "docs/explorer.md, docs/screenshots.md",
+        gemstone_py_reference: "python-gemstone-database-explorer",
+        status: "Useful local UI/API; Python explorer remains the richer product reference",
+    },
+    FeatureInfo {
+        stream: "8",
+        title: "VS Code workbench",
+        crates: "vscode-gemstone-rs-workbench",
+        examples: "tooling/vscode-workbench.md",
+        docs: "docs/vscode-workbench.md",
+        gemstone_py_reference: "gemstone-py Workbench",
+        status: "Command and webview workflow exists; needs more polished embedded explorer UX",
+    },
+    FeatureInfo {
+        stream: "9",
+        title: "Rust web services",
+        crates: "planned Axum/Actix adapters over gemstone-rs",
+        examples: "axum-service/README.md",
+        docs: "docs/examples-guide.md, docs/cookbook.md",
+        gemstone_py_reference: "FastAPI, Litestar, Django examples",
+        status: "Documented shape only; gemstone-py is ahead for web framework adapters",
+    },
+    FeatureInfo {
+        stream: "10",
+        title: "Release and verification",
+        crates: "scripts, Makefile, GitHub Actions",
+        examples: "release verification commands",
+        docs: "docs/release-checklist.md",
+        gemstone_py_reference: "PyPI/TestPyPI/native wheel/VSIX release tooling",
+        status: "Crates/VSIX verification path exists; Python release lane is more complete",
+    },
+    FeatureInfo {
+        stream: "11",
+        title: "Shared native core",
+        crates: "gemstone-gci, gemstone-rs, future gemstone-py-native wrapper",
+        examples: "shared-core integration plan",
+        docs: "docs/shared-core-integration.md",
+        gemstone_py_reference: "gemstone-py-native",
+        status: "Best long-term architecture; not wired into gemstone-py-native yet",
+    },
+];
+
 fn find_example(name: &str) -> Option<&'static ExampleInfo> {
     EXAMPLES.iter().find(|example| {
         example.name.eq_ignore_ascii_case(name) || example.title.eq_ignore_ascii_case(name)
@@ -1487,7 +1604,7 @@ fn print_examples_list(format: OutputFormat) {
         OutputFormat::Human => {
             println!("gemstone-rs examples");
             println!(
-                "Use `gemstone-rs examples show <name>` for details or `examples run <name>` from a source checkout."
+                "Use `gemstone-rs examples show <name>` for details, `examples run <name>` from a source checkout, or `examples map` for feature parity."
             );
             println!();
             for example in EXAMPLES {
@@ -1505,6 +1622,34 @@ fn print_examples_list(format: OutputFormat) {
                 .collect::<Vec<_>>()
                 .join(",");
             println!(r#"{{"examples":[{}]}}"#, examples);
+        }
+    }
+}
+
+fn print_feature_map(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-rs feature map");
+            println!("  Compare with gemstone-py: docs/gemstone-py-vs-gemstone-rs.md");
+            println!("  See also: docs/feature-map.md");
+            println!();
+            for feature in FEATURE_MAP {
+                println!("Stream {}: {}", feature.stream, feature.title);
+                println!("  Crates:   {}", feature.crates);
+                println!("  Examples: {}", feature.examples);
+                println!("  Docs:     {}", feature.docs);
+                println!("  gemstone-py reference: {}", feature.gemstone_py_reference);
+                println!("  Status:   {}", feature.status);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let features = FEATURE_MAP
+                .iter()
+                .map(feature_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(r#"{{"features":[{}]}}"#, features);
         }
     }
 }
@@ -1532,6 +1677,19 @@ fn example_json(example: &ExampleInfo) -> String {
         escape_json(example.category),
         example.requires_live,
         escape_json(example.description)
+    )
+}
+
+fn feature_json(feature: &FeatureInfo) -> String {
+    format!(
+        r#"{{"stream":"{}","title":"{}","crates":"{}","examples":"{}","docs":"{}","gemstonePyReference":"{}","status":"{}"}}"#,
+        escape_json(feature.stream),
+        escape_json(feature.title),
+        escape_json(feature.crates),
+        escape_json(feature.examples),
+        escape_json(feature.docs),
+        escape_json(feature.gemstone_py_reference),
+        escape_json(feature.status)
     )
 }
 
@@ -1695,6 +1853,9 @@ enum Command {
         force: bool,
     },
     ExamplesList {
+        format: OutputFormat,
+    },
+    ExamplesMap {
         format: OutputFormat,
     },
     ExamplesShow {
@@ -1972,18 +2133,19 @@ fn parse_examples_command(args: &[String]) -> Result<Command, CliError> {
     };
     match command {
         "list" => parse_examples_list_command(&args[1..]),
+        "map" | "feature-map" | "plan3-map" => parse_examples_map_command(&args[1..]),
         "show" => parse_examples_show_command(&args[1..]),
         "run" => parse_examples_run_command(&args[1..]),
         "--json" => Ok(Command::ExamplesList {
             format: OutputFormat::Json,
         }),
         "-h" | "--help" => Err(CliError::usage(
-            "expected: examples [list [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+            "expected: examples [list [--json] | map [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
         )),
         name => {
             if args.len() > 2 {
                 return Err(CliError::usage(
-                    "expected: examples [list [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
+                    "expected: examples [list [--json] | map [--json] | show <name> [--json] | run <name> [--dry-run] [-- <args>...]]",
                 ));
             }
             let format = if args.get(1).is_some_and(|arg| arg == "--json") {
@@ -2020,6 +2182,24 @@ fn parse_examples_list_command(args: &[String]) -> Result<Command, CliError> {
         }
     }
     Ok(Command::ExamplesList { format })
+}
+
+fn parse_examples_map_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage("expected: examples map [--json]"));
+            }
+            other => {
+                return Err(CliError::usage(format!(
+                    "unexpected examples map argument: {other}"
+                )))
+            }
+        }
+    }
+    Ok(Command::ExamplesMap { format })
 }
 
 fn parse_examples_show_command(args: &[String]) -> Result<Command, CliError> {
@@ -2755,6 +2935,7 @@ fn usage() -> &'static str {
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
   gemstone-rs examples list [--json]
+  gemstone-rs examples map [--json]
   gemstone-rs examples show <name> [--json]
   gemstone-rs examples run <name> [--dry-run] [-- <args>...]
   gemstone-rs eval [--env-file <path>] <smalltalk>
@@ -2960,6 +3141,18 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["examples", "map"])).unwrap(),
+            Command::ExamplesMap {
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["examples", "plan3-map", "--json"])).unwrap(),
+            Command::ExamplesMap {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["examples", "show", "quickstart"])).unwrap(),
             Command::ExamplesShow {
                 name: "quickstart".to_string(),
@@ -3017,6 +3210,21 @@ mod tests {
             example_run_command(workflow, &["--flag".to_string(), "two words".to_string()]),
             "cargo run -p gemstone-rs --example codegen_workflow -- --flag 'two words'"
         );
+    }
+
+    #[test]
+    fn feature_map_compares_rust_streams_with_gemstone_py() {
+        assert!(FEATURE_MAP
+            .iter()
+            .any(|feature| feature.title == "Typed codegen"
+                && feature
+                    .gemstone_py_reference
+                    .contains("gemstone_py.codegen")));
+        assert!(FEATURE_MAP
+            .iter()
+            .any(|feature| feature.title == "Rust web services"
+                && feature.status.contains("gemstone-py is ahead")));
+        assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
     }
 
     #[test]

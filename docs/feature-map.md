@@ -1,0 +1,45 @@
+# gemstone-rs Feature Map
+
+This map is the Rust equivalent of `gemstone-examples plan3-map` in
+`gemstone-py`: it ties each feature stream to the crates, examples, docs, and
+Python reference point that inspired it.
+
+Run it from the CLI:
+
+```bash
+gemstone-rs examples map
+gemstone-rs examples map --json
+```
+
+The JSON form is intended for CI, docs checks, and editor tooling.
+
+## Streams
+
+| Stream | Feature | Rust surface | Examples | Docs | gemstone-py reference | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Runtime and GCI loading | `gemstone-gci`, `gemstone-rs::Config` | `hello_gemstone`, `quickstart` | `docs/setup-guide.md`, `docs/performance-safety.md` | `gemstone_py.native`, native backend checks | Rust-native core; Python still has broader packaged backend docs. |
+| 2 | Safe sessions and transactions | `gemstone-rs::Session`, `TransactionGuard` | `quickstart`, `transactions`, `live_smoke_cookbook` | `docs/user-manual.md`, `docs/cookbook.md` | `GemStoneSession`, `SessionFacade`, transaction policies | Core parity for sync eval, perform, commit, and abort. |
+| 3 | Browser and inspection | `gemstone-rs::browser`, CLI `browse`, `gemstone-rs-explorer` | `browser`, `tooling/cli-browser-walkthrough.md` | `docs/user-manual.md`, `docs/explorer.md` | `gemstone_py.inspection`, `python-gemstone-database-explorer` | API parity is growing; the Python explorer is still more mature. |
+| 4 | OOP and value handling | `Oop`, `Value`, export-set helpers | `oop_values` | `docs/user-manual.md`, `docs/performance-safety.md` | Managed OOP handles and typed access examples | Rust has an explicit ownership model; Python is easier for casual scripting. |
+| 5 | BridgeRoot object mapping | `gemstone-rs::bridge`, `gemstone-rs-macros` | `bridge_root_mapping`, `derive_mapping`, `generated_mapping_app` | `docs/object-mapping.md`, `docs/cookbook.md` | `SmalltalkBridge`, `PersistentRoot`, facade examples | Rust has typed mapping and derive; a transparent object model remains future work. |
+| 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, and generate parity; live discovery still needs more depth. |
+| 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API; Python explorer remains the richer product reference. |
+| 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command and webview workflow exists; embedded explorer UX needs polish. |
+| 9 | Rust web services | Planned Axum/Actix adapters over `gemstone-rs` | `axum-service/README.md` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Documented shape only; `gemstone-py` is ahead for web framework adapters. |
+| 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
+| 11 | Shared native core | `gemstone-gci`, `gemstone-rs`, future `gemstone-py-native` wrapper | Shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Best long-term architecture; not wired into `gemstone-py-native` yet. |
+
+## What This Says Compared With gemstone-py
+
+`gemstone-rs` is strongest where Rust is naturally valuable: direct native
+GemStone access, explicit OOP/value handling, typed generated wrappers,
+BridgeRoot mapping, and CLI/explorer tooling that can run without Python in
+the process.
+
+`gemstone-py` remains stronger where Python already has mature product shape:
+web framework adapters, async examples, installed example launchers, the
+database explorer, package extras, and broader release surfaces.
+
+The projects should converge by sharing the Rust native core underneath
+`gemstone-py-native`, while keeping the Python and Rust APIs idiomatic for
+their respective users.

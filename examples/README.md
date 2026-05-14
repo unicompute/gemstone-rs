@@ -35,12 +35,15 @@ checkout open to discover examples:
 gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
+gemstone-rs examples map
 gemstone-rs examples run codegen_preview --dry-run
 ```
 
 `gemstone-rs examples run <name>` launches the selected Cargo example from a
 source checkout. `--dry-run` prints the command without compiling or connecting
-to GemStone, which makes it useful for CI and release docs checks.
+to GemStone, which makes it useful for CI and release docs checks. Use
+`gemstone-rs examples map` when you want the gemstone-py-style feature stream
+view across crates, examples, docs, and parity status.
 
 | Role | Command | Use it when |
 | --- | --- | --- |

@@ -13,6 +13,7 @@ cargo run -p gemstone-rs-cli -- doctor --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
+cargo run -p gemstone-rs-cli -- examples map
 cargo run -p gemstone-rs-cli -- examples show quickstart
 cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- eval --env-file .env.gemstone-rs "3 + 4"
@@ -87,6 +88,8 @@ the installed CLI:
 ```bash
 gemstone-rs examples list
 gemstone-rs examples list --json
+gemstone-rs examples map
+gemstone-rs examples map --json
 gemstone-rs examples show quickstart
 gemstone-rs examples run codegen_preview --dry-run
 ```
@@ -95,7 +98,9 @@ gemstone-rs examples run codegen_preview --dry-run
 stone, and what API surface it proves. `run` launches the selected Cargo
 example when you are in a `gemstone-rs` source checkout. Use `--dry-run` in CI
 or docs checks to print the exact command without compiling or connecting to a
-stone.
+stone. `map` is the gemstone-rs equivalent of `gemstone-examples plan3-map`:
+it ties Rust crates, examples, docs, and gemstone-py reference points together
+for each feature stream.
 
 The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 

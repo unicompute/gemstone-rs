@@ -8,6 +8,7 @@ This directory contains the human-facing guides for `gemstone-rs`.
 | --- | --- |
 | [Setup Guide](setup-guide.md) | You need Rust, GemStone environment variables, install commands, and first login checks. |
 | [Examples Guide](examples-guide.md) | You want to know which example to run for each feature. |
+| [Feature Map](feature-map.md) | You want the Rust equivalent of `gemstone-examples plan3-map`, with crates, examples, docs, and gemstone-py references. |
 | [User Manual](user-manual.md) | You want the main Rust API surface in one place. |
 | [Cookbook](cookbook.md) | You want task-focused recipes for sessions, transactions, browser calls, codegen, explorer, and VS Code. |
 | [gemstone-py vs gemstone-rs](gemstone-py-vs-gemstone-rs.md) | You want install paths, use cases, maturity, and feature differences between the Python and Rust projects. |

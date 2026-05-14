@@ -20,6 +20,8 @@ rust-check:
 examples-check:
 	cargo run -p gemstone-rs-cli -- examples list
 	cargo run -p gemstone-rs-cli -- examples list --json
+	cargo run -p gemstone-rs-cli -- examples map
+	cargo run -p gemstone-rs-cli -- examples map --json
 	cargo run -p gemstone-rs-cli -- examples show quickstart
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
