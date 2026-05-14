@@ -167,6 +167,12 @@ let pool = gemstone_rs_axum::pool_from_env(2)?;
 let app = gemstone_rs_axum::router_with_name(pool, "booking service");
 ```
 
+Use `gemstone_rs_axum::router_from_env_with_name(2, "booking service")` or
+`gemstone_rs_actix::scope_from_env_with_name(2, "booking service")` when the
+HTTP process should start before GemStone credentials are configured. `/` and
+`/health/local` keep working; `/health/gemstone` returns a `503` JSON error
+until the pool is available.
+
 Runtime environment:
 
 ```bash
@@ -196,6 +202,7 @@ cargo run -p gemstone-rs --example http_service -- --routes
 cargo run -p gemstone-rs --example codegen_discover
 cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
+python3 scripts/framework_route_smoke.py
 ```
 
 Additional walkthroughs:

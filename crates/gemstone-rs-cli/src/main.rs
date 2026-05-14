@@ -1679,7 +1679,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked services, and installed scaffolds exist; richer middleware remains planned",
+        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1751,8 +1751,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked services, and installed Axum/Actix scaffolds. It still needs richer framework middleware, request tracing, and live route smoke coverage.",
-        next_action: "Add middleware examples, request tracing, and live route smoke tests for the packaged Axum/Actix adapters.",
+        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and request tracing.",
+        next_action: "Add middleware examples, request tracing, and stricter live route smoke tests for the packaged Axum/Actix adapters.",
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {

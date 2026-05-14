@@ -14,6 +14,10 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! Use [`scope_from_env`] when the service should start before GemStone
+//! credentials are configured. `/health/gemstone` will report a `503` JSON
+//! error until the pool can be created.
 
 use actix_web::{http::StatusCode, web as actix, HttpResponse, Responder, Scope};
 use gemstone_rs::{web as gemstone_web, Config, Result, SessionWorkerPool};
@@ -24,17 +28,17 @@ pub const ROUTES: &[&str] = &["GET /", "GET /health/local", "GET /health/gemston
 /// Shared Actix state for the GemStone health scope.
 #[derive(Clone)]
 pub struct AppState {
-    /// Pool used by `/health/gemstone`.
-    pub pool: SessionWorkerPool,
+    /// Health backend used by `/health/gemstone`.
+    pub health: gemstone_web::HealthPool,
     /// Service label returned by `/`.
     pub service_name: String,
 }
 
 impl AppState {
     /// Build reusable route state.
-    pub fn new(pool: SessionWorkerPool, service_name: impl Into<String>) -> Self {
+    pub fn new(health: gemstone_web::HealthPool, service_name: impl Into<String>) -> Self {
         Self {
-            pool,
+            health,
             service_name: service_name.into(),
         }
     }
@@ -45,15 +49,41 @@ pub fn pool_from_env(workers: usize) -> Result<SessionWorkerPool> {
     SessionWorkerPool::start(Config::from_env()?, workers)
 }
 
+/// Build a health backend from `GS_*` environment variables without failing
+/// service startup.
+pub fn health_pool_from_env(workers: usize) -> gemstone_web::HealthPool {
+    gemstone_web::HealthPool::start_from_env(workers)
+}
+
 /// Build the default GemStone health scope.
 pub fn scope(pool: SessionWorkerPool) -> Scope {
     scope_with_name(pool, "gemstone-rs Actix service")
 }
 
+/// Build the default scope from environment, keeping local routes available
+/// even when GemStone is not configured yet.
+pub fn scope_from_env(workers: usize) -> Scope {
+    scope_from_env_with_name(workers, "gemstone-rs Actix service")
+}
+
+/// Build a named scope from environment, keeping local routes available even
+/// when GemStone is not configured yet.
+pub fn scope_from_env_with_name(workers: usize, service_name: impl Into<String>) -> Scope {
+    scope_with_health_pool(health_pool_from_env(workers), service_name)
+}
+
 /// Build the GemStone health scope with a custom service label.
 pub fn scope_with_name(pool: SessionWorkerPool, service_name: impl Into<String>) -> Scope {
+    scope_with_health_pool(gemstone_web::HealthPool::ready(pool), service_name)
+}
+
+/// Build the GemStone health scope with an already-created health backend.
+pub fn scope_with_health_pool(
+    health: gemstone_web::HealthPool,
+    service_name: impl Into<String>,
+) -> Scope {
     actix::scope("")
-        .app_data(actix::Data::new(AppState::new(pool, service_name)))
+        .app_data(actix::Data::new(AppState::new(health, service_name)))
         .route("/", actix::get().to(root))
         .route("/health/local", actix::get().to(health_local))
         .route("/health/gemstone", actix::get().to(health_gemstone))
@@ -71,8 +101,8 @@ pub async fn health_local() -> impl Responder {
 
 /// Live GemStone health route handler.
 pub async fn health_gemstone(state: actix::Data<AppState>) -> impl Responder {
-    let pool = state.pool.clone();
-    let response = match actix::block(move || gemstone_web::gemstone_health_response(&pool)).await {
+    let health = state.health.clone();
+    let response = match actix::block(move || health.gemstone_health_response()).await {
         Ok(response) => response,
         Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
     };
@@ -104,5 +134,13 @@ mod tests {
         let response = gemstone_web::JsonResponse::ok(r#"{"ok":true}"#.to_string());
         let actual = actix_response(response);
         assert_eq!(actual.status(), StatusCode::OK);
+    }
+
+    #[test]
+    fn unavailable_health_pool_is_supported() {
+        let _ = scope_with_health_pool(
+            gemstone_web::HealthPool::unavailable("missing test credentials"),
+            "test service",
+        );
     }
 }

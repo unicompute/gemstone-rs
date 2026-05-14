@@ -84,6 +84,7 @@ Highlights:
 - \`codegen explain --json\` and \`codegen explain-profile --json\` for structured Codegen summaries.
 - Shared \`profile check --json\` report model for CLI, explorer, and VS Code.
 - Packaged \`gemstone-rs-axum\` and \`gemstone-rs-actix\` adapter crates for Rust web services.
+- Graceful framework health startup and route smoke checks for Axum/Actix services.
 - Codegen/profile-check schemas and generated-wrapper compile smoke checks.
 - Explorer setup assistant for env, codegen config, project profiles, and strict setup flow.
 - Explorer project profile status table with Preview/Diff/Check/Generate actions.

@@ -108,6 +108,14 @@ sanity check after install.
 | Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | You want a checked Axum service using `gemstone-rs-axum`, `SessionWorkerPool`, and shared web health responses. |
 | Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | You want a checked Actix Web service using `gemstone-rs-actix`, `SessionWorkerPool`, and shared web health responses. |
 
+The Axum and Actix services can start before credentials are configured. They
+keep `/` and `/health/local` available and return a `503` JSON error from
+`/health/gemstone` until the GemStone pool is available:
+
+```bash
+python3 scripts/framework_route_smoke.py
+```
+
 ## Installed CLI Equivalents
 
 After publishing or installing from crates.io:

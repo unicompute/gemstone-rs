@@ -103,7 +103,7 @@ test that should verify it.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add middleware examples, request tracing, and live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add request tracing, middleware examples, and stricter live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
@@ -144,10 +144,11 @@ not the implementation language:
   `/health/local`, and `/health/gemstone` without adding framework
   dependencies. `gemstone-rs-axum` and `gemstone-rs-actix` now package the
   same route contract for framework users, and `examples/axum-service` plus
-  `examples/actix-service` are checked crates using those adapters. The
-  installed CLI can scaffold `session_worker_pool`, `axum_service`, and
-  `actix_service`. Richer framework middleware and an async facade remain
-  future work.
+  `examples/actix-service` are checked crates using those adapters. They can
+  start before credentials are configured and report `/health/gemstone` as a
+  `503` JSON error until the pool is available. The installed CLI can scaffold
+  `session_worker_pool`, `axum_service`, and `actix_service`. Richer framework
+  middleware and an async facade remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for

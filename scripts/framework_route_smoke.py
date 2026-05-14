@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Smoke test Axum and Actix example HTTP routes."""
+
+from __future__ import annotations
+
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass(frozen=True)
+class HttpResult:
+    status: int
+    body: str
+
+
+@dataclass(frozen=True)
+class Service:
+    name: str
+    manifest: Path
+
+
+SERVICES = [
+    Service("axum", ROOT / "examples/axum-service/Cargo.toml"),
+    Service("actix", ROOT / "examples/actix-service/Cargo.toml"),
+]
+
+
+def free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def http_get(url: str) -> HttpResult:
+    try:
+        with urllib.request.urlopen(url, timeout=2.0) as response:
+            return HttpResult(response.status, response.read().decode("utf-8"))
+    except urllib.error.HTTPError as err:
+        return HttpResult(err.code, err.read().decode("utf-8"))
+
+
+def wait_for_local_health(base_url: str, process: subprocess.Popen[str]) -> None:
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            output = process.stdout.read() if process.stdout else ""
+            raise AssertionError(f"service exited early with {process.returncode}\n{output}")
+        try:
+            result = http_get(f"{base_url}/health/local")
+            if result.status == 200 and json.loads(result.body).get("ok") is True:
+                return
+        except Exception:
+            pass
+        time.sleep(0.2)
+    raise AssertionError(f"timed out waiting for {base_url}/health/local")
+
+
+def assert_json(result: HttpResult, expected_status: int) -> dict:
+    if result.status != expected_status:
+        raise AssertionError(f"expected HTTP {expected_status}, got {result.status}: {result.body}")
+    try:
+        return json.loads(result.body)
+    except json.JSONDecodeError as err:
+        raise AssertionError(f"response is not JSON: {result.body}") from err
+
+
+def check_routes(service: Service) -> None:
+    port = free_port()
+    base_url = f"http://127.0.0.1:{port}"
+    command = [
+        "cargo",
+        "run",
+        "--manifest-path",
+        str(service.manifest),
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+        "--workers",
+        "1",
+    ]
+    process = subprocess.Popen(
+        command,
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    try:
+        wait_for_local_health(base_url, process)
+
+        root = assert_json(http_get(f"{base_url}/"), 200)
+        if "name" not in root or root.get("endpoints", {}).get("gemstone") != "/health/gemstone":
+            raise AssertionError(f"{service.name} root response is missing endpoint metadata: {root}")
+
+        local = assert_json(http_get(f"{base_url}/health/local"), 200)
+        if local.get("ok") is not True:
+            raise AssertionError(f"{service.name} local health is not ok: {local}")
+
+        gemstone = http_get(f"{base_url}/health/gemstone")
+        if os.environ.get("GS_RUN_LIVE_RUST") == "1":
+            body = assert_json(gemstone, 200)
+            if body.get("result") != 7:
+                raise AssertionError(f"{service.name} live health did not return 7: {body}")
+        elif gemstone.status == 200:
+            body = assert_json(gemstone, 200)
+            if body.get("result") != 7:
+                raise AssertionError(f"{service.name} health returned unexpected success: {body}")
+        else:
+            body = assert_json(gemstone, 503)
+            if "error" not in body:
+                raise AssertionError(f"{service.name} missing error body for unavailable health: {body}")
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+
+def main() -> int:
+    for service in SERVICES:
+        check_routes(service)
+        print(f"{service.name} framework route smoke passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

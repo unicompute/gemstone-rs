@@ -11,6 +11,10 @@
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! Use [`router_from_env`] when the service should start before GemStone
+//! credentials are configured. `/health/gemstone` will report a `503` JSON
+//! error until the pool can be created.
 
 use axum::{
     extract::State,
@@ -27,17 +31,17 @@ pub const ROUTES: &[&str] = &["GET /", "GET /health/local", "GET /health/gemston
 /// Shared Axum state for the GemStone health router.
 #[derive(Clone)]
 pub struct AppState {
-    /// Pool used by `/health/gemstone`.
-    pub pool: SessionWorkerPool,
+    /// Health backend used by `/health/gemstone`.
+    pub health: gemstone_web::HealthPool,
     /// Service label returned by `/`.
     pub service_name: String,
 }
 
 impl AppState {
     /// Build reusable route state.
-    pub fn new(pool: SessionWorkerPool, service_name: impl Into<String>) -> Self {
+    pub fn new(health: gemstone_web::HealthPool, service_name: impl Into<String>) -> Self {
         Self {
-            pool,
+            health,
             service_name: service_name.into(),
         }
     }
@@ -48,18 +52,44 @@ pub fn pool_from_env(workers: usize) -> Result<SessionWorkerPool> {
     SessionWorkerPool::start(Config::from_env()?, workers)
 }
 
+/// Build a health backend from `GS_*` environment variables without failing
+/// service startup.
+pub fn health_pool_from_env(workers: usize) -> gemstone_web::HealthPool {
+    gemstone_web::HealthPool::start_from_env(workers)
+}
+
 /// Build the default GemStone health router.
 pub fn router(pool: SessionWorkerPool) -> Router {
     router_with_name(pool, "gemstone-rs Axum service")
 }
 
+/// Build the default router from environment, keeping local routes available
+/// even when GemStone is not configured yet.
+pub fn router_from_env(workers: usize) -> Router {
+    router_from_env_with_name(workers, "gemstone-rs Axum service")
+}
+
+/// Build a named router from environment, keeping local routes available even
+/// when GemStone is not configured yet.
+pub fn router_from_env_with_name(workers: usize, service_name: impl Into<String>) -> Router {
+    router_with_health_pool(health_pool_from_env(workers), service_name)
+}
+
 /// Build the GemStone health router with a custom service label.
 pub fn router_with_name(pool: SessionWorkerPool, service_name: impl Into<String>) -> Router {
+    router_with_health_pool(gemstone_web::HealthPool::ready(pool), service_name)
+}
+
+/// Build the GemStone health router with an already-created health backend.
+pub fn router_with_health_pool(
+    health: gemstone_web::HealthPool,
+    service_name: impl Into<String>,
+) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/health/local", get(health_local))
         .route("/health/gemstone", get(health_gemstone))
-        .with_state(AppState::new(pool, service_name))
+        .with_state(AppState::new(health, service_name))
 }
 
 /// Root route handler.
@@ -74,11 +104,9 @@ pub async fn health_local() -> impl IntoResponse {
 
 /// Live GemStone health route handler.
 pub async fn health_gemstone(State(state): State<AppState>) -> impl IntoResponse {
-    let pool = state.pool.clone();
+    let health = state.health.clone();
     let response =
-        match tokio::task::spawn_blocking(move || gemstone_web::gemstone_health_response(&pool))
-            .await
-        {
+        match tokio::task::spawn_blocking(move || health.gemstone_health_response()).await {
             Ok(response) => response,
             Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
         };
@@ -111,5 +139,13 @@ mod tests {
     fn json_response_accepts_shared_response() {
         let response = gemstone_web::JsonResponse::ok(r#"{"ok":true}"#.to_string());
         let _ = json_response(response);
+    }
+
+    #[test]
+    fn unavailable_health_pool_is_supported() {
+        let _ = router_with_health_pool(
+            gemstone_web::HealthPool::unavailable("missing test credentials"),
+            "test service",
+        );
     }
 }

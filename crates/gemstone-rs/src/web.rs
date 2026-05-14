@@ -1,4 +1,5 @@
 use crate::{Config, Error, Result, Session, SessionWorkerPool, Value};
+use std::sync::Arc;
 
 pub const DEFAULT_SERVICE_NAME: &str = "gemstone-rs service";
 
@@ -59,6 +60,59 @@ pub fn gemstone_health_response_from_result(result: Result<i64>) -> JsonResponse
     match result {
         Ok(value) => JsonResponse::ok(format!(r#"{{"result":{value}}}"#)),
         Err(err) => JsonResponse::error(500, err.to_string()),
+    }
+}
+
+/// Cloneable health-check backend for web services.
+///
+/// `HealthPool` lets a service start even when GemStone credentials are not
+/// configured yet. Routes such as `/` and `/health/local` can still respond,
+/// while `/health/gemstone` reports a clear `503` JSON error until the backing
+/// pool is available.
+#[derive(Clone)]
+pub enum HealthPool {
+    Ready(SessionWorkerPool),
+    Unavailable(Arc<str>),
+}
+
+impl HealthPool {
+    pub fn ready(pool: SessionWorkerPool) -> Self {
+        Self::Ready(pool)
+    }
+
+    pub fn unavailable(message: impl Into<String>) -> Self {
+        Self::Unavailable(Arc::from(message.into()))
+    }
+
+    pub fn from_result(result: Result<SessionWorkerPool>) -> Self {
+        match result {
+            Ok(pool) => Self::ready(pool),
+            Err(err) => Self::unavailable(err.to_string()),
+        }
+    }
+
+    pub fn start_from_env(workers: usize) -> Self {
+        Self::from_result(
+            Config::from_env().and_then(|config| SessionWorkerPool::start(config, workers)),
+        )
+    }
+
+    pub fn is_ready(&self) -> bool {
+        matches!(self, Self::Ready(_))
+    }
+
+    pub fn unavailable_message(&self) -> Option<&str> {
+        match self {
+            Self::Ready(_) => None,
+            Self::Unavailable(message) => Some(message),
+        }
+    }
+
+    pub fn gemstone_health_response(&self) -> JsonResponse {
+        match self {
+            Self::Ready(pool) => gemstone_health_response(pool),
+            Self::Unavailable(message) => JsonResponse::error(503, message),
+        }
     }
 }
 
@@ -127,6 +181,20 @@ mod tests {
             gemstone_health_response_from_result(Err(Error::MissingEnvironment("GS_PASSWORD")));
         assert_eq!(response.status, 500);
         assert!(response.body.contains("GS_PASSWORD"));
+    }
+
+    #[test]
+    fn health_pool_reports_unavailable_without_panicking() {
+        let pool = HealthPool::from_result(Err(Error::MissingEnvironment("GS_USERNAME")));
+        assert!(!pool.is_ready());
+        assert_eq!(
+            pool.unavailable_message(),
+            Some("missing required GemStone environment variable GS_USERNAME")
+        );
+
+        let response = pool.gemstone_health_response();
+        assert_eq!(response.status, 503);
+        assert!(response.body.contains("GS_USERNAME"));
     }
 
     #[test]

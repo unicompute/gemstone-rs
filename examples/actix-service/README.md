@@ -34,10 +34,19 @@ curl -i http://127.0.0.1:3000/health/local
 curl -i http://127.0.0.1:3000/health/gemstone
 ```
 
-The service starts a bounded `SessionWorkerPool` and passes it to
-`gemstone_rs_actix::scope_with_name`. The adapter wraps the shared
-`gemstone_rs::web` response helper inside `actix_web::web::block`. Each
+The service starts through `gemstone_rs_actix::health_pool_from_env`, then
+passes that health backend to `gemstone_rs_actix::scope_with_health_pool`. That
+lets the server boot before credentials are configured: `/` and `/health/local`
+respond, while `/health/gemstone` returns a `503` JSON error until the pool is
+available. When the pool is ready, the adapter wraps the shared
+`gemstone_rs::web` response helper inside `actix_web::web::block`; each
 underlying GemStone `Session` stays pinned to one worker thread.
+
+Run the route smoke check:
+
+```bash
+python3 scripts/framework_route_smoke.py
+```
 
 Use the installed scaffold when you want to start a separate application:
 

@@ -24,10 +24,14 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
-    let pool = gemstone_rs_actix::pool_from_env(options.workers)?;
+    let health = gemstone_rs_actix::health_pool_from_env(options.workers);
+    if let Some(message) = health.unavailable_message() {
+        eprintln!("GemStone health unavailable at startup: {message}");
+    }
     let server = HttpServer::new(move || {
-        App::new().service(gemstone_rs_actix::scope_with_name(
-            pool.clone(),
+        let health = health.clone();
+        App::new().service(gemstone_rs_actix::scope_with_health_pool(
+            health,
             "gemstone-rs Actix service example",
         ))
     })

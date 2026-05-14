@@ -35,6 +35,9 @@ For web servers:
 - use `spawn_blocking` or framework blocking helpers for simple per-request probes
 - prefer a small `SessionWorkerPool` for web services and reuse
   `gemstone-rs-axum` or `gemstone-rs-actix` instead of copying handler code
+- use the adapter `*_from_env` helpers when the HTTP process should start
+  before GemStone credentials are configured; `/health/gemstone` will report
+  unavailable until the pool is ready
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

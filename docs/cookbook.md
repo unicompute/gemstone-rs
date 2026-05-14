@@ -324,6 +324,16 @@ The Axum and Actix services now start a bounded `SessionWorkerPool`, then use
 `gemstone-rs-axum` or `gemstone-rs-actix` to expose `/`, `/health/local`, and
 `/health/gemstone` without copying handler code.
 
+For local development, the framework examples use the non-failing health-pool
+startup path. The server can start before credentials are configured: `/` and
+`/health/local` stay available, while `/health/gemstone` returns a `503` JSON
+error until the stone is reachable. The route smoke script checks that behavior
+without needing a live stone:
+
+```bash
+python3 scripts/framework_route_smoke.py
+```
+
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:
 

@@ -11,7 +11,10 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
-    let pool = gemstone_rs_axum::pool_from_env(options.workers)?;
+    let health = gemstone_rs_axum::health_pool_from_env(options.workers);
+    if let Some(message) = health.unavailable_message() {
+        eprintln!("GemStone health unavailable at startup: {message}");
+    }
     let listener = tokio::net::TcpListener::bind(options.addr()).await?;
     println!(
         "gemstone-rs Axum service running at http://{}/",
@@ -22,7 +25,7 @@ async fn main() -> AppResult<()> {
     }
     axum::serve(
         listener,
-        gemstone_rs_axum::router_with_name(pool, "gemstone-rs Axum service example"),
+        gemstone_rs_axum::router_with_health_pool(health, "gemstone-rs Axum service example"),
     )
     .await?;
     Ok(())

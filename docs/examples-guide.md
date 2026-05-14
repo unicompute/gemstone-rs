@@ -113,6 +113,15 @@ CLI binary is installed and runnable.
 | Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `gemstone-rs-axum`, `SessionWorkerPool`, and shared `gemstone_rs::web` health responses. |
 | Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | Checked Actix route shape with `gemstone-rs-actix`, `SessionWorkerPool`, and shared `gemstone_rs::web` health responses. |
 
+The Axum and Actix services use the graceful health-pool startup path. They can
+start with missing credentials, serve `/` and `/health/local`, and return a
+`503` JSON error from `/health/gemstone` until the stone is configured. Verify
+the route contract with:
+
+```bash
+python3 scripts/framework_route_smoke.py
+```
+
 ## Suggested Learning Order
 
 1. `gemstone-rs hello`
