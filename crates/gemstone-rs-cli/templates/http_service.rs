@@ -13,7 +13,7 @@
 // curl -i http://127.0.0.1:3000/health/local
 // curl -i http://127.0.0.1:3000/health/gemstone
 
-use gemstone_rs::{Config, Session, Value};
+use gemstone_rs::{web, Config};
 use std::env;
 use std::error::Error;
 use std::io::{Error as IoError, ErrorKind, Read, Write};
@@ -132,25 +132,19 @@ fn handle_connection(stream: &mut TcpStream) -> Result<(), Box<dyn Error>> {
 
     let request = String::from_utf8_lossy(&buffer[..read]);
     let Some((method, path)) = parse_request_line(&request) else {
-        return write_json(stream, 400, r#"{"error":"bad request"}"#);
+        return write_response(stream, web::bad_request_response());
     };
     if method != "GET" {
-        return write_json(stream, 405, r#"{"error":"method not allowed"}"#);
+        return write_response(stream, web::method_not_allowed_response());
     }
 
-    match path {
-        "/" => write_json(
-            stream,
-            200,
-            r#"{"name":"gemstone-rs HTTP service example","endpoints":{"local":"/health/local","gemstone":"/health/gemstone"}}"#,
-        ),
-        "/health/local" => write_json(stream, 200, r#"{"ok":true}"#),
-        "/health/gemstone" => {
-            let (status, body) = gemstone_health_response();
-            write_json(stream, status, &body)
-        }
-        _ => write_json(stream, 404, r#"{"error":"not found"}"#),
-    }
+    let response = match path {
+        "/" => web::index_response("gemstone-rs HTTP service example"),
+        "/health/local" => web::local_health_response(),
+        "/health/gemstone" => web::gemstone_health_response_once(Config::from_env()?),
+        _ => web::not_found_response(),
+    };
+    write_response(stream, response)
 }
 
 fn parse_request_line(request: &str) -> Option<(&str, &str)> {
@@ -161,28 +155,8 @@ fn parse_request_line(request: &str) -> Option<(&str, &str)> {
     Some((method, path))
 }
 
-fn gemstone_health_response() -> (u16, String) {
-    match gemstone_health_value() {
-        Ok(value) => (200, format!(r#"{{"result":{value}}}"#)),
-        Err(err) => (
-            500,
-            format!(r#"{{"error":"{}"}}"#, json_escape(&err.to_string())),
-        ),
-    }
-}
-
-fn gemstone_health_value() -> Result<i64, Box<dyn Error>> {
-    let mut session = Session::login(Config::from_env()?)?;
-    let value = session.eval("3 + 4")?;
-    let Value::SmallInt(value) = value else {
-        return Err(invalid_input("GemStone health check returned a non-SmallInt value").into());
-    };
-    session.logout()?;
-    Ok(value)
-}
-
-fn write_json(stream: &mut TcpStream, status: u16, body: &str) -> Result<(), Box<dyn Error>> {
-    let reason = match status {
+fn write_response(stream: &mut TcpStream, response: web::JsonResponse) -> Result<(), Box<dyn Error>> {
+    let reason = match response.status {
         200 => "OK",
         400 => "Bad Request",
         404 => "Not Found",
@@ -191,25 +165,12 @@ fn write_json(stream: &mut TcpStream, status: u16, body: &str) -> Result<(), Box
         _ => "OK",
     };
     let response = format!(
-        "HTTP/1.1 {status} {reason}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-        body.len()
+        "HTTP/1.1 {} {reason}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        response.status,
+        response.body.len(),
+        response.body
     );
     stream.write_all(response.as_bytes())?;
     stream.flush()?;
     Ok(())
-}
-
-fn json_escape(value: &str) -> String {
-    let mut output = String::new();
-    for ch in value.chars() {
-        match ch {
-            '"' => output.push_str("\\\""),
-            '\\' => output.push_str("\\\\"),
-            '\n' => output.push_str("\\n"),
-            '\r' => output.push_str("\\r"),
-            '\t' => output.push_str("\\t"),
-            other => output.push(other),
-        }
-    }
-    output
 }

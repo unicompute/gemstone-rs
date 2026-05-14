@@ -320,8 +320,9 @@ cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 ```
 
-The Axum route uses `tokio::task::spawn_blocking`; the Actix route uses
-`actix_web::web::block`.
+The Axum and Actix services now start a bounded `SessionWorkerPool`, then wrap
+the shared `gemstone_rs::web` health response helper in framework-specific
+blocking calls.
 
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:
@@ -353,7 +354,9 @@ The installed CLI can also scaffold this shape:
 gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool
 ```
 
-Reusable adapter crates and an async facade remain planned.
+Reusable adapter crates and an async facade remain planned; the dependency-free
+`gemstone_rs::web` helpers are the shared response layer those adapters should
+wrap.
 
 ## Recipe 20: Run the Local Explorer
 

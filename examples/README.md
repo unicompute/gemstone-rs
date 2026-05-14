@@ -105,8 +105,8 @@ sanity check after install.
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | You want to prove sidebar browsing and codegen actions. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | You want a terminal-only class browser workflow. |
 | HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | You want a real Rust HTTP service shape without framework dependencies. |
-| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | You want a checked Axum route shape for a Rust web service. |
-| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | You want a checked Actix Web route shape for a Rust web service. |
+| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | You want a checked Axum service using `SessionWorkerPool` and shared web health responses. |
+| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | You want a checked Actix Web service using `SessionWorkerPool` and shared web health responses. |
 
 ## Installed CLI Equivalents
 

@@ -1,6 +1,11 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
-use gemstone_rs::{Config, Session, Value};
-use serde_json::json;
+use axum::{
+    extract::State,
+    http::{header, StatusCode},
+    response::IntoResponse,
+    routing::get,
+    Router,
+};
+use gemstone_rs::{web as gemstone_web, Config, SessionWorkerPool};
 use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
@@ -14,6 +19,7 @@ async fn main() -> AppResult<()> {
         return Ok(());
     }
 
+    let pool = SessionWorkerPool::start(Config::from_env()?, options.workers)?;
     let listener = tokio::net::TcpListener::bind(options.addr()).await?;
     println!(
         "gemstone-rs Axum service running at http://{}/",
@@ -22,60 +28,56 @@ async fn main() -> AppResult<()> {
     println!("GET /");
     println!("GET /health/local");
     println!("GET /health/gemstone");
-    axum::serve(listener, app()).await?;
+    axum::serve(listener, app(pool)).await?;
     Ok(())
 }
 
-fn app() -> Router {
+#[derive(Clone)]
+struct AppState {
+    pool: SessionWorkerPool,
+}
+
+fn app(pool: SessionWorkerPool) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/health/local", get(health_local))
         .route("/health/gemstone", get(health_gemstone))
+        .with_state(AppState { pool })
 }
 
 async fn root() -> impl IntoResponse {
-    Json(json!({
-        "name": "gemstone-rs Axum service example",
-        "endpoints": {
-            "local": "/health/local",
-            "gemstone": "/health/gemstone"
-        }
-    }))
+    json_response(gemstone_web::index_response(
+        "gemstone-rs Axum service example",
+    ))
 }
 
 async fn health_local() -> impl IntoResponse {
-    Json(json!({"ok": true}))
+    json_response(gemstone_web::local_health_response())
 }
 
-async fn health_gemstone() -> impl IntoResponse {
-    let result = tokio::task::spawn_blocking(gemstone_health_value).await;
-    match result {
-        Ok(Ok(value)) => (StatusCode::OK, Json(json!({"result": value}))),
-        Ok(Err(err)) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": err.to_string()})),
-        ),
-        Err(err) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": err.to_string()})),
-        ),
-    }
-}
-
-fn gemstone_health_value() -> AppResult<i64> {
-    let mut session = Session::login(Config::from_env()?)?;
-    let value = session.eval("3 + 4")?;
-    let Value::SmallInt(value) = value else {
-        return Err("GemStone health check returned a non-SmallInt value".into());
+async fn health_gemstone(State(state): State<AppState>) -> impl IntoResponse {
+    let pool = state.pool.clone();
+    let response = match tokio::task::spawn_blocking(move || {
+        gemstone_web::gemstone_health_response(&pool)
+    })
+    .await
+    {
+        Ok(response) => response,
+        Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
     };
-    session.logout()?;
-    Ok(value)
+    json_response(response)
+}
+
+fn json_response(response: gemstone_web::JsonResponse) -> impl IntoResponse {
+    let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    (status, [(header::CONTENT_TYPE, "application/json")], response.body)
 }
 
 #[derive(Debug, Eq, PartialEq)]
 struct Options {
     host: String,
     port: u16,
+    workers: usize,
     routes: bool,
 }
 
@@ -83,6 +85,7 @@ impl Options {
     fn parse(args: impl IntoIterator<Item = String>) -> AppResult<Self> {
         let mut host = "127.0.0.1".to_string();
         let mut port = 3000;
+        let mut workers = 2;
         let mut routes = false;
         let mut args = args.into_iter();
 
@@ -94,6 +97,12 @@ impl Options {
                 "--port" => {
                     port = args.next().ok_or("missing value after --port")?.parse()?;
                 }
+                "--workers" => {
+                    workers = args.next().ok_or("missing value after --workers")?.parse()?;
+                    if workers == 0 {
+                        return Err("--workers must be greater than zero".into());
+                    }
+                }
                 "--routes" => routes = true,
                 "-h" | "--help" => {
                     print_usage();
@@ -103,7 +112,12 @@ impl Options {
             }
         }
 
-        Ok(Self { host, port, routes })
+        Ok(Self {
+            host,
+            port,
+            workers,
+            routes,
+        })
     }
 
     fn addr(&self) -> String {
@@ -114,20 +128,21 @@ impl Options {
 fn print_routes(options: &Options) {
     println!("gemstone-rs Axum service example");
     println!("  bind: {}", options.addr());
+    println!("  workers: {}", options.workers);
     println!("  GET /");
     println!("  GET /health/local");
     println!("  GET /health/gemstone");
     println!();
     println!("Start:");
     println!(
-        "  cargo run --manifest-path examples/axum-service/Cargo.toml -- --host {} --port {}",
-        options.host, options.port
+        "  cargo run --manifest-path examples/axum-service/Cargo.toml -- --host {} --port {} --workers {}",
+        options.host, options.port, options.workers
     );
 }
 
 fn print_usage() {
     println!(
-        "usage: cargo run --manifest-path examples/axum-service/Cargo.toml -- [--host <host>] [--port <port>] [--routes]"
+        "usage: cargo run --manifest-path examples/axum-service/Cargo.toml -- [--host <host>] [--port <port>] [--workers <count>] [--routes]"
     );
 }
 
@@ -143,6 +158,7 @@ mod tests {
             Options {
                 host: "127.0.0.1".to_string(),
                 port: 3000,
+                workers: 2,
                 routes: false
             }
         );
@@ -156,13 +172,22 @@ mod tests {
             "127.0.0.2".to_string(),
             "--port".to_string(),
             "3100".to_string(),
+            "--workers".to_string(),
+            "3".to_string(),
             "--routes".to_string(),
         ])
         .unwrap();
         assert_eq!(options.host, "127.0.0.2");
         assert_eq!(options.port, 3100);
+        assert_eq!(options.workers, 3);
         assert!(options.routes);
         assert_eq!(options.addr(), "127.0.0.2:3100");
+    }
+
+    #[test]
+    fn rejects_zero_workers() {
+        let err = Options::parse(["--workers".to_string(), "0".to_string()]).unwrap_err();
+        assert!(err.to_string().contains("greater than zero"));
     }
 
     #[test]

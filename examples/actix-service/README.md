@@ -22,7 +22,7 @@ cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes
 Run the local service:
 
 ```bash
-cargo run --manifest-path examples/actix-service/Cargo.toml -- --host 127.0.0.1 --port 3000
+cargo run --manifest-path examples/actix-service/Cargo.toml -- --host 127.0.0.1 --port 3000 --workers 2
 ```
 
 Then in another shell:
@@ -33,10 +33,10 @@ curl -i http://127.0.0.1:3000/health/local
 curl -i http://127.0.0.1:3000/health/gemstone
 ```
 
-The GemStone health route opens a session inside `actix_web::web::block` and
-evaluates `3 + 4`. Keep that pattern unless you introduce a deliberate session
-worker or session pool for your deployment. Treat each GemStone `Session` as
-thread-local and blocking.
+The service starts a bounded `SessionWorkerPool` and the GemStone health route
+uses the shared `gemstone_rs::web` response helper inside
+`actix_web::web::block`. Each underlying GemStone `Session` stays pinned to one
+worker thread.
 
 Use the installed scaffold when you want to start a separate application:
 

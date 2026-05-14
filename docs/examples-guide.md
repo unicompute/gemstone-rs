@@ -110,8 +110,8 @@ CLI binary is installed and runnable.
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
 | CLI browser walkthrough | `examples/tooling/cli-browser-walkthrough.md` | Terminal-only browse workflow. |
 | HTTP service | `cargo run -p gemstone-rs --example http_service -- --routes` | Standard-library web service with `/`, `/health/local`, and `/health/gemstone`. |
-| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `/`, `/health/local`, and `/health/gemstone`. |
-| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | Checked Actix route shape with `/`, `/health/local`, and `/health/gemstone`. |
+| Axum service | `cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes` | Checked Axum route shape with `SessionWorkerPool` and shared `gemstone_rs::web` health responses. |
+| Actix service | `cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes` | Checked Actix route shape with `SessionWorkerPool` and shared `gemstone_rs::web` health responses. |
 
 ## Suggested Learning Order
 

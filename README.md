@@ -145,6 +145,18 @@ let methods = browser.methods("Object", "-- all --", false, "")?;
 let source = browser.source("Object", "printString", false, "")?;
 ```
 
+Web-service helpers are dependency-free and are reused by the standard HTTP,
+Axum, and Actix examples:
+
+```rust
+use gemstone_rs::{web, Config, SessionWorkerPool};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+let response = web::gemstone_health_response(&pool);
+assert_eq!(response.status, 200);
+pool.shutdown()?;
+```
+
 Runtime environment:
 
 ```bash

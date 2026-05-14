@@ -215,6 +215,21 @@
 //! }
 //! ```
 //!
+//! The `web` module provides dependency-free JSON health responses that Axum,
+//! Actix, standard-library HTTP servers, and other frameworks can wrap:
+//!
+//! ```no_run
+//! use gemstone_rs::{web, Config, SessionWorkerPool};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+//!     let response = web::gemstone_health_response(&pool);
+//!     assert_eq!(response.status, 200);
+//!     pool.shutdown()?;
+//!     Ok(())
+//! }
+//! ```
+//!
 //! OOPs and values are explicit:
 //!
 //! ```no_run
@@ -277,6 +292,7 @@ pub mod bridge;
 pub mod browser;
 pub mod codegen;
 pub mod profiles;
+pub mod web;
 pub mod worker;
 
 pub use bridge::{
