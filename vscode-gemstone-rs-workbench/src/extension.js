@@ -67,6 +67,8 @@ function activate(context) {
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
+  register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
+  register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
 
 function deactivate() {}
@@ -94,6 +96,7 @@ class GemStoneTreeProvider {
       return [
         node("Dictionaries", "dictionaries", vscode.TreeItemCollapsibleState.Collapsed),
         node("Codegen Config", "codegen", vscode.TreeItemCollapsibleState.Expanded),
+        node("Comparison", "comparison", vscode.TreeItemCollapsibleState.Expanded),
         node("Explorer", "explorer", vscode.TreeItemCollapsibleState.Collapsed),
       ];
     }
@@ -213,6 +216,13 @@ class GemStoneTreeProvider {
         actionNode("Clear Explorer Auth Token", "gemstoneRs.clearExplorerAuthToken"),
         actionNode("Launch Explorer", "gemstoneRs.launchExplorer"),
         actionNode("Open Explorer Webview", "gemstoneRs.openExplorerWebview"),
+      ];
+    }
+
+    if (element.type === "comparison") {
+      return [
+        actionNode("Compare with gemstone-py", "gemstoneRs.compareGemstonePyStatus"),
+        actionNode("Show All Comparison Status", "gemstoneRs.compareAllStatus"),
       ];
     }
 
@@ -1043,6 +1053,116 @@ async function runCodegenExplain(args, { title, sourcePath, openLabel }) {
   }
 }
 
+async function compareGemstonePyStatus() {
+  await runComparisonStatus("gemstone-py");
+}
+
+async function compareAllStatus() {
+  await runComparisonStatus("all");
+}
+
+async function runComparisonStatus(target) {
+  const result = await runCli(["compare", target, "--status", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(
+    result,
+    `gemstone-rs compare ${target} --status returned invalid JSON.`
+  );
+  if (!report) {
+    return;
+  }
+
+  const reportText = showComparisonStatusReport(result, report);
+  const message = comparisonStatusMessage(report);
+  const action = await vscode.window.showInformationMessage(
+    message,
+    "Copy Report",
+    "Copy JSON",
+    "Open Comparison Guide"
+  );
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+  } else if (action === "Copy JSON") {
+    await vscode.env.clipboard.writeText(`${JSON.stringify(report, null, 2)}\n`);
+  } else if (action === "Open Comparison Guide") {
+    await openComparisonGuide();
+  }
+}
+
+function showComparisonStatusReport(result, report) {
+  const reportText = formatComparisonStatusReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+  return reportText;
+}
+
+function formatComparisonStatusReport(result, report) {
+  const lines = [commandLine(result).trimEnd()];
+  if (report.comparison === "all" && Array.isArray(report.comparisons)) {
+    lines.push("gemstone-rs comparison status");
+    lines.push(`total: ${Number(report.totalBatches || 0)} batches, ${Number(report.hoursMin || 0)}-${Number(report.hoursMax || 0)} hours`);
+    lines.push("");
+    for (const entry of report.comparisons) {
+      appendComparisonStatusEntry(lines, entry);
+    }
+  } else {
+    lines.push("gemstone-rs status vs gemstone-py");
+    appendComparisonStatusEntry(lines, report);
+  }
+  if (result.stderr.trim()) {
+    lines.push("", result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function appendComparisonStatusEntry(lines, entry) {
+  const parity = entry.parity || {};
+  const remaining = entry.remaining || {};
+  const nextBatch = entry.nextBatch || {};
+  const topGap = entry.topGap || {};
+  const commands = entry.commands || {};
+  const projectLabel = entry.comparison === "gemstone-js" ? "gemstone-js" : "gemstone-rs";
+  lines.push(`${entry.comparison || "comparison"}`);
+  lines.push(`  answer: ${entry.answer || "-"}`);
+  lines.push(
+    `  parity: gemstone-py ${Number(parity.gemstonePyScore || 0)}/${Number(parity.maxScore || 0)}; ${projectLabel} ${Number(parity.projectScore || 0)}/${Number(parity.maxScore || 0)}; gap ${Number(parity.scoreGap || 0)}`
+  );
+  lines.push(
+    `  remaining: ${Number(remaining.totalBatches || 0)} batches, ${Number(remaining.hoursMin || 0)}-${Number(remaining.hoursMax || 0)} hours`
+  );
+  if (nextBatch.focus) {
+    lines.push(
+      `  next batch: ${nextBatch.number || "-"} ${nextBatch.focus} (${Number(nextBatch.hoursMin || 0)}-${Number(nextBatch.hoursMax || 0)} hours)`
+    );
+  }
+  if (topGap.area) {
+    lines.push(`  top gap: ${topGap.priority || "-"} ${topGap.area}`);
+    lines.push(`  next action: ${topGap.nextAction || "-"}`);
+  }
+  if (commands.scorecard || commands.parity || commands.batches) {
+    lines.push("  commands:");
+    if (commands.scorecard) {
+      lines.push(`    ${commands.scorecard}`);
+    }
+    if (commands.parity) {
+      lines.push(`    ${commands.parity}`);
+    }
+    if (commands.batches) {
+      lines.push(`    ${commands.batches}`);
+    }
+  }
+  lines.push("");
+}
+
+function comparisonStatusMessage(report) {
+  if (report.comparison === "all") {
+    return `Comparison status: ${Number(report.totalBatches || 0)} batches, ${Number(report.hoursMin || 0)}-${Number(report.hoursMax || 0)} hours.`;
+  }
+  const parity = report.parity || {};
+  const remaining = report.remaining || {};
+  return `gemstone-rs vs gemstone-py: ${Number(parity.projectScore || 0)}/${Number(parity.maxScore || 0)} parity, ${Number(remaining.totalBatches || 0)} batches remain.`;
+}
+
 function showCodegenExplainReport(result, title, report) {
   const reportText = formatCodegenExplainReport(result, title, report);
   output.clear();
@@ -1267,6 +1387,8 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.previewBridgeRoot",
     "gemstoneRs.listBridgeRootKeys",
     "gemstoneRs.openCodegenDocs",
+    "gemstoneRs.compareGemstonePyStatus",
+    "gemstoneRs.compareAllStatus",
   ]);
   if (!allowed.has(commandId)) {
     vscode.window.showWarningMessage(`Unsupported gemstone-rs webview command: ${commandId}`);
@@ -1573,6 +1695,11 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
     </div>
     <div class="group">
+      <h2>Comparison</h2>
+      <button data-command="gemstoneRs.compareGemstonePyStatus">Compare with gemstone-py</button>
+      <button data-command="gemstoneRs.compareAllStatus">Show All Comparison Status</button>
+    </div>
+    <div class="group">
       <h2>Live Inspector</h2>
       <button data-probe="/api/status">Explorer Status</button>
       <button data-probe="/api/setup/assistant">Setup Assistant</button>
@@ -1734,6 +1861,17 @@ async function openCodegenDocs() {
     await vscode.window.showTextDocument(document, { preview: true });
   } else {
     vscode.env.openExternal(vscode.Uri.parse("https://github.com/unicompute/gemstone-rs/tree/main/examples/codegen"));
+  }
+}
+
+async function openComparisonGuide() {
+  const cfg = settings();
+  const docsPath = resolvePath("docs/gemstone-py-vs-gemstone-rs.md", cfg.cwd);
+  if (fs.existsSync(docsPath)) {
+    const document = await vscode.workspace.openTextDocument(docsPath);
+    await vscode.window.showTextDocument(document, { preview: true });
+  } else {
+    vscode.env.openExternal(vscode.Uri.parse("https://github.com/unicompute/gemstone-rs/blob/main/docs/gemstone-py-vs-gemstone-rs.md"));
   }
 }
 

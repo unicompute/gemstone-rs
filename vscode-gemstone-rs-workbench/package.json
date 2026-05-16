@@ -73,7 +73,9 @@
     "onCommand:gemstoneRs.clearExplorerAuthToken",
     "onCommand:gemstoneRs.openExplorerWebview",
     "onCommand:gemstoneRs.openMethodSource",
-    "onCommand:gemstoneRs.openCodegenDocs"
+    "onCommand:gemstoneRs.openCodegenDocs",
+    "onCommand:gemstoneRs.compareGemstonePyStatus",
+    "onCommand:gemstoneRs.compareAllStatus"
   ],
   "contributes": {
     "viewsContainers": {
@@ -293,6 +295,14 @@
       {
         "command": "gemstoneRs.openCodegenDocs",
         "title": "GemStone RS: Open Codegen Docs"
+      },
+      {
+        "command": "gemstoneRs.compareGemstonePyStatus",
+        "title": "GemStone RS: Compare with gemstone-py"
+      },
+      {
+        "command": "gemstoneRs.compareAllStatus",
+        "title": "GemStone RS: Show All Comparison Status"
       }
     ],
     "menus": {

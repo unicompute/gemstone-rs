@@ -58,6 +58,8 @@ const requiredCommands = [
   "gemstoneRs.putBridgeRootBool",
   "gemstoneRs.generateExplorerAuthToken",
   "gemstoneRs.clearExplorerAuthToken",
+  "gemstoneRs.compareGemstonePyStatus",
+  "gemstoneRs.compareAllStatus",
 ];
 
 for (const command of requiredCommands) {
@@ -93,6 +95,10 @@ assert(
 assert(
   extensionSource.includes("data-command=\"gemstoneRs.codegenGenerate\""),
   "webview should expose generated-file actions"
+);
+assert(
+  extensionSource.includes("data-command=\"gemstoneRs.compareGemstonePyStatus\""),
+  "webview should expose comparison status actions"
 );
 assert(extensionSource.includes("handleExplorerWebviewMessage"), "webview should handle VS Code command messages");
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
@@ -164,6 +170,16 @@ assert(
   extensionSource.includes('"profile", "check", "--json"'),
   "profile checking should use JSON output"
 );
+assert(
+  extensionSource.includes('"compare", target, "--status", "--json"'),
+  "comparison status should use JSON output"
+);
+assert(
+  extensionSource.includes("formatComparisonStatusReport"),
+  "comparison status should render a readable summary"
+);
+assert(readme.includes("Compare with gemstone-py"), "README should mention gemstone-py comparison");
+assert(readme.includes("Show All Comparison Status"), "README should mention aggregate comparison status");
 assert(
   extensionSource.includes("Project profile freshness"),
   "profile checking should render a readable summary"

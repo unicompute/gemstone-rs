@@ -90,6 +90,11 @@ Selecting a method opens its source in an untitled Smalltalk editor.
 - Launch Explorer
 - Open Explorer Webview
 
+`Comparison` exposes:
+
+- Compare with gemstone-py
+- Show All Comparison Status
+
 ## Command Palette
 
 Commands:
@@ -142,6 +147,8 @@ Commands:
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
+- `GemStone RS: Compare with gemstone-py`
+- `GemStone RS: Show All Comparison Status`
 
 `GemStone RS: Verify Setup` and `GemStone RS: Doctor` both run the CLI
 `gemstone-rs doctor` report, so the workbench setup view and terminal setup
@@ -292,6 +299,13 @@ the configured root. The same shell can hand off to native VS Code commands for
 generated wrapper preview, diff, check, generate-with-confirmation, profile
 checks, docs, and opening the last generated output file reported by the
 explorer.
+
+The webview also exposes comparison status commands. `Compare with gemstone-py`
+runs `gemstone-rs compare gemstone-py --status --json` and renders the answer,
+parity score, remaining batch count, next batch, top gap, and follow-up CLI
+commands in the GemStone RS output panel. `Show All Comparison Status` renders
+the aggregate status for every comparison target, including the combined
+batch/hour estimate.
 
 The explorer page can load and save the selected codegen config file,
 posting the editor contents as the request body; saves still require the

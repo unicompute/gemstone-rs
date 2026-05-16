@@ -85,6 +85,8 @@ For a source checkout:
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
+- `GemStone RS: Compare with gemstone-py`
+- `GemStone RS: Show All Comparison Status`
 
 `Codegen Preview` opens generated Rust wrappers in an untitled Rust editor.
 `Codegen Diff` opens a generated diff. `Codegen Generate` shows that diff
@@ -160,6 +162,11 @@ the same safe template.
 and renders the env-file, GemStone configuration, GCI library, codegen config,
 and project profile checks in the GemStone RS output panel. Start the explorer
 first with `GemStone RS: Launch Explorer`.
+`Compare with gemstone-py` runs
+`gemstone-rs compare gemstone-py --status --json` and renders the current
+parity score, remaining batch count, next batch, and top gap without leaving
+VS Code. `Show All Comparison Status` runs the aggregate status for every
+comparison target, including the combined batch/hour estimate.
 
 ## Sidebar
 
@@ -180,6 +187,9 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Setup, Eval Smalltalk, Show Example Commands, Show/Copy/Write Environment
   Template, Launch Explorer, Open Explorer Webview, Generate Explorer Auth
   Token, and Clear Explorer Auth Token.
+- `Comparison` exposes the gemstone-py status report and the aggregate
+  comparison status report from the same CLI JSON contract used by release
+  verification.
 
 The tree uses the same settings as the command palette actions. If
 `gemstoneRs.useCargo` is true, commands run through the local checkout with
