@@ -1859,7 +1859,7 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         project_score: 4,
         leader: "gemstone-py",
         status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, and an embedded webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels.",
-        next_action: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
+        next_action: "Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -1892,8 +1892,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, codegen summaries/diffs, BridgeRoot keys, generated-file actions, and comparison status. They still need more polished live class browsing, screenshots, and richer BridgeRoot payload views.",
-        next_action: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, codegen summaries/diffs, generated output reads, BridgeRoot keys/values, generated-file actions, and comparison status. They still need more polished live class browsing, screenshots, generated-file editing, and browser fallback behavior.",
+        next_action: "Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -1934,9 +1934,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Explorer and VS Code visual polish",
-        hours_min: 6,
-        hours_max: 10,
-        outcome: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
+        hours_min: 5,
+        hours_max: 8,
+        outcome: "Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     BatchInfo {
@@ -5558,14 +5558,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (38, 66));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (37, 64));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 12,
-                hours_min: 80,
-                hours_max: 138,
+                hours_min: 79,
+                hours_max: 136,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5590,7 +5590,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":6,"hoursMin":38,"hoursMax":66}"#));
+            .contains(r#""remaining":{"totalBatches":6,"hoursMin":37,"hoursMax":64}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -5628,7 +5628,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("BridgeRoot payload views")));
+                && gap.next_action.contains("browser fallback behavior")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 

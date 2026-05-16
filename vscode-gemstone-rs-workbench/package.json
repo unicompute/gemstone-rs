@@ -52,6 +52,7 @@
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
     "onCommand:gemstoneRs.codegenExplain",
+    "onCommand:gemstoneRs.openGeneratedOutput",
     "onCommand:gemstoneRs.codegenGenerate",
     "onCommand:gemstoneRs.codegenPreviewProfile",
     "onCommand:gemstoneRs.codegenDiffProfile",
@@ -209,6 +210,10 @@
         "title": "GemStone RS: Codegen Explain"
       },
       {
+        "command": "gemstoneRs.openGeneratedOutput",
+        "title": "GemStone RS: Open Generated Output"
+      },
+      {
         "command": "gemstoneRs.codegenGenerate",
         "title": "GemStone RS: Codegen Generate"
       },
@@ -328,9 +333,14 @@
           "group": "navigation@4"
         },
         {
-          "command": "gemstoneRs.codegenGenerate",
+          "command": "gemstoneRs.openGeneratedOutput",
           "when": "view == gemstoneRsExplorer",
           "group": "navigation@5"
+        },
+        {
+          "command": "gemstoneRs.codegenGenerate",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@6"
         }
       ]
     },

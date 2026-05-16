@@ -34,6 +34,7 @@ const requiredCommands = [
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
   "gemstoneRs.codegenExplain",
+  "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
@@ -92,6 +93,9 @@ assert(extensionSource.includes("renderProfileStatus"), "webview should render p
 assert(extensionSource.includes("data-profile-action"), "webview profile status should expose row actions");
 assert(extensionSource.includes("runProfileProbe"), "webview profile actions should call explorer profile endpoints");
 assert(extensionSource.includes("renderCodegenExplain"), "webview should render codegen explain summaries");
+assert(extensionSource.includes("renderBridgeValue"), "webview should render BridgeRoot values as structured content");
+assert(extensionSource.includes("data-probe=\"/api/codegen/output\""), "webview should expose generated output reads");
+assert(extensionSource.includes("data-command=\"gemstoneRs.openGeneratedOutput\""), "webview should expose generated output file opens");
 assert(extensionSource.includes("renderDiff"), "webview should render generated diffs");
 assert(extensionSource.includes("renderSetupAssistant"), "webview should render setup assistant steps");
 assert(extensionSource.includes("renderBridgeKeys"), "webview should render BridgeRoot key summaries");
@@ -157,6 +161,7 @@ assert(readme.includes("Run Setup Assistant"), "README should mention setup assi
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Codegen Explain"), "README should mention codegen explain");
 assert(readme.includes("Codegen Explain Profile"), "README should mention profile codegen explain");
+assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");

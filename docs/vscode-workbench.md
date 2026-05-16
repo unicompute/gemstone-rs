@@ -189,7 +189,8 @@ checkout.
 3. Run `GemStone RS: Codegen Preview`.
 4. Run `GemStone RS: Codegen Diff`.
 5. Run `GemStone RS: Codegen Explain`.
-6. Run `GemStone RS: Codegen Generate`.
+6. Run `GemStone RS: Open Generated Output`.
+7. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -198,6 +199,8 @@ diff and asks before writing.
 generated test stubs, wrapper classes, selectors, return types, and
 BridgeRoot mappings in the output panel. Result actions can copy the summary,
 copy the raw JSON, open the JSON in an editor, or open the config file.
+`Open Generated Output` uses the same structured explain output to open the
+current generated wrapper file directly.
 
 When a project profile file is checked in, use the profile variants instead:
 `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`,
@@ -295,10 +298,11 @@ The embedded page now acts as the main IDE surface for the local explorer. The
 iframe remains the full browser UI, while the side inspector renders structured
 setup checks, project profile freshness tables with Preview/Diff/Check/Generate
 buttons, Codegen explain summaries, generated source, colorized diffs,
-BridgeRoot identity and key summaries, and comparison status cards. The same
-shell can hand off to native VS Code commands for generated wrapper preview,
-diff, check, generate-with-confirmation, profile checks, docs, and opening the
-last generated output file reported by the explorer.
+BridgeRoot identity, key, and value summaries, and comparison status cards. The
+same shell can hand off to native VS Code commands for generated wrapper
+preview, diff, check, opening the generated output file,
+generate-with-confirmation, profile checks, docs, and opening the last generated
+output file reported by the explorer.
 
 The webview also exposes comparison status commands. `Compare with gemstone-py`
 runs `gemstone-rs compare gemstone-py --status --json` and renders the answer,
@@ -364,6 +368,6 @@ make vscode-package
 ## Later Feature Work
 
 The embedded webview now covers the main read-only Codegen, profile, setup,
-comparison, and BridgeRoot inspection loops. Next work should polish live class
-browsing, richer BridgeRoot payload views, generated-file editing, screenshots,
-and browser fallback behavior for users who prefer the external explorer.
+comparison, generated-output, and BridgeRoot inspection loops. Next work should
+polish live class browsing, generated-file editing, screenshots, and browser
+fallback behavior for users who prefer the external explorer.

@@ -39,7 +39,7 @@ The home page is a small browser UI over the same JSON endpoints. It can:
 - run doctor/status checks
 - compare gemstone-rs with gemstone-py and show the remaining batch/hour
   estimate without opening the terminal
-- inspect BridgeRoot and list keys
+- inspect BridgeRoot, list keys, and render value payload summaries
 - run codegen sample/discover/preview/diff/check/generate from an editable
   config path
 - refresh a picker of known `.codegen` files and load one without typing the
@@ -58,7 +58,8 @@ The home page is a small browser UI over the same JSON endpoints. It can:
   `--allow-write`, accepts a POST body for larger configs, and validates the
   config before writing
 - render generated wrapper source, generated mapping config, colored unified
-  diff output, and a side-by-side diff in a dedicated detail pane
+  diff output, current generated output files, and a side-by-side diff in a
+  dedicated detail pane
 - remember the current browser fields locally across reloads
 - put/remove BridgeRoot values with explicit string/symbol key policy and
   string/small-int/bool value policy when `--allow-write` is enabled
@@ -215,6 +216,10 @@ type and GemStone class, then use:
 - `Preview` to inspect generated Rust wrappers without writing files
 - `Preview Profile` to inspect generated wrappers after resolving a named
   project profile
+- `Read Output` to load the currently committed generated output file named by
+  the config, without regenerating it
+- `Read Profile Output` to load the generated output file after resolving a
+  named project profile
 - `Diff` to compare generated output with the committed file; the detail pane
   shows both the exact unified diff and a side-by-side view for review
 - `Diff Profile` to compare generated output from a named project profile
@@ -231,7 +236,7 @@ The `Comparison Status` buttons call read-only local endpoints:
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **12 batches** and roughly
-  **80-138 hours**
+  **79-136 hours**
 
 Read-only endpoints:
 
@@ -249,6 +254,8 @@ curl -s 'http://127.0.0.1:8787/api/codegen/preview?config=examples/codegen/gemst
 curl -s 'http://127.0.0.1:8787/api/codegen/preview-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/diff-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
+curl -s 'http://127.0.0.1:8787/api/codegen/output?config=examples/codegen/gemstone-rs.codegen'
+curl -s 'http://127.0.0.1:8787/api/codegen/output-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/check?config=examples/codegen/gemstone-rs.codegen'
 curl -s 'http://127.0.0.1:8787/api/codegen/check-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json'
 curl -s 'http://127.0.0.1:8787/api/codegen/discover-mapping?mapped=BookingDraft&class=Object'
@@ -370,7 +377,7 @@ Expected shapes:
 ```json
 {"success":true,"name":"GemStoneRsBridgeRoot","oop":1234,"identityId":1}
 {"success":true,"root":"GemStoneRsBridgeRoot","keys":[{"printString":"BookingDraft"}]}
-{"oop":5678,"classOop":9012,"printString":"aDictionary(...)"}
+{"success":true,"root":"GemStoneRsBridgeRoot","key":"BookingDraft","keyType":"String","value":{"oop":5678,"classOop":9012,"printString":"aDictionary(...)"}}
 {"success":true,"config":"mapped = BookingDraft ..."}
 {"success":true,"root":"GemStoneRsBridgeRoot","key":"WorkbenchDraft","keyType":"String","valueType":"String","oop":3456}
 ```

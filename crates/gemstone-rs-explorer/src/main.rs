@@ -8,7 +8,7 @@ use std::env;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fs;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
@@ -334,6 +334,8 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
         "/api/codegen/discover-mapping" => codegen_discover_mapping_response(&route, config),
         "/api/codegen/preview" => codegen_preview_response(&route, config),
         "/api/codegen/preview-profile" => codegen_preview_profile_response(&route, config),
+        "/api/codegen/output" => codegen_output_response(&route, config),
+        "/api/codegen/output-profile" => codegen_output_profile_response(&route, config),
         "/api/codegen/explain" => codegen_explain_response(&route, config),
         "/api/codegen/explain-profile" => codegen_explain_profile_response(&route, config),
         "/api/codegen/diff" => codegen_diff_response(&route, config),
@@ -398,10 +400,19 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
             let key_type = bridge_key_type_query(route.query("key_type").as_deref());
             live_json(|session| {
-                let mut root = session.bridge_root_named(root_name)?;
-                let oop = root.get_oop_with_key_type(&key, key_type)?;
-                drop(root);
-                inspect_oop(session, oop)
+                let (root_name, oop) = {
+                    let mut root = session.bridge_root_named(root_name)?;
+                    let oop = root.get_oop_with_key_type(&key, key_type)?;
+                    (root.name().to_string(), oop)
+                };
+                let value = inspect_oop_value(session, oop)?;
+                Ok(format!(
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","value":{}}}"#,
+                    escape_json(&root_name),
+                    escape_json(&key),
+                    key_type.config_name(),
+                    value
+                ))
             })
         }
         "/api/bridge/put" => {
@@ -586,13 +597,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 6,
-        hours_min: 38,
-        hours_max: 66,
+        hours_min: 37,
+        hours_max: 64,
         next_number: 1,
         next_focus: "Explorer and VS Code visual polish",
-        next_hours_min: 6,
-        next_hours_max: 10,
-        next_outcome: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
+        next_hours_min: 5,
+        next_hours_max: 8,
+        next_outcome: "Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview.",
         next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -634,7 +645,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":80,"hoursMax":138,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":79,"hoursMax":136,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -936,6 +947,11 @@ fn environment_json() -> String {
 }
 
 fn inspect_oop(session: &mut Session, oop: Oop) -> gemstone_rs::Result<String> {
+    let value = inspect_oop_value(session, oop)?;
+    Ok(format!(r#"{{"success":true,"value":{value}}}"#))
+}
+
+fn inspect_oop_value(session: &mut Session, oop: Oop) -> gemstone_rs::Result<String> {
     let class = session.fetch_class(oop)?;
     let printed = session.perform_oop(oop, "printString", &[])?;
     let print_string = session.fetch_string(printed)?;
@@ -1609,6 +1625,93 @@ fn codegen_preview_profile_response(route: &Route, config: &ExplorerConfig) -> R
     }
 }
 
+fn codegen_output_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let path = codegen_config_path(route, config);
+    match codegen::Config::from_file(&path) {
+        Ok(config) => codegen_output_file_response(&path, &config),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_output_profile_response(route: &Route, config: &ExplorerConfig) -> Response {
+    let target = match codegen_profile_target(route, config) {
+        Ok(target) => target,
+        Err(response) => return response,
+    };
+    match codegen::Config::from_file(&target.config_path) {
+        Ok(config) => codegen_output_file_response_with_profile(
+            &target.config_path,
+            &config,
+            Some((&target.profile_name, &target.profile_file)),
+        ),
+        Err(err) => codegen_error_response(err),
+    }
+}
+
+fn codegen_output_file_response(config_path: &Path, config: &codegen::Config) -> Response {
+    codegen_output_file_response_with_profile(config_path, config, None)
+}
+
+fn codegen_output_file_response_with_profile(
+    config_path: &Path,
+    config: &codegen::Config,
+    profile: Option<(&str, &Path)>,
+) -> Response {
+    match fs::read_to_string(&config.output) {
+        Ok(source) => {
+            let profile_fields = profile
+                .map(|(profile_name, profile_file)| {
+                    format!(
+                        r#""profile":"{}","profileFile":"{}","#,
+                        escape_json(profile_name),
+                        escape_json(&profile_file.display().to_string())
+                    )
+                })
+                .unwrap_or_default();
+            Response::json(
+                200,
+                format!(
+                    r#"{{"success":true,{}"config":"{}","output":"{}","exists":true,"bytes":{},"source":"{}"}}"#,
+                    profile_fields,
+                    escape_json(&config_path.display().to_string()),
+                    escape_json(&config.output.display().to_string()),
+                    source.len(),
+                    escape_json(&source)
+                ),
+            )
+        }
+        Err(err) if err.kind() == io::ErrorKind::NotFound => {
+            let profile_fields = profile
+                .map(|(profile_name, profile_file)| {
+                    format!(
+                        r#""profile":"{}","profileFile":"{}","#,
+                        escape_json(profile_name),
+                        escape_json(&profile_file.display().to_string())
+                    )
+                })
+                .unwrap_or_default();
+            Response::json(
+                404,
+                format!(
+                    r#"{{"success":false,{}"config":"{}","output":"{}","exists":false,"bytes":0,"error":"generated output file does not exist"}}"#,
+                    profile_fields,
+                    escape_json(&config_path.display().to_string()),
+                    escape_json(&config.output.display().to_string())
+                ),
+            )
+        }
+        Err(err) => Response::json(
+            500,
+            format!(
+                r#"{{"success":false,"config":"{}","output":"{}","error":"{}"}}"#,
+                escape_json(&config_path.display().to_string()),
+                escape_json(&config.output.display().to_string()),
+                escape_json(&err.to_string())
+            ),
+        ),
+    }
+}
+
 fn codegen_explain_response(route: &Route, config: &ExplorerConfig) -> Response {
     let path = codegen_config_path(route, config);
     match codegen::Config::from_file(&path) {
@@ -2214,6 +2317,9 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 .compare-card p { margin: 0; }
 .compare-score { display: flex; flex-wrap: wrap; gap: 8px; }
 .compare-score span { border: 1px solid #30363d; border-radius: 999px; padding: 3px 7px; color: #c9d1d9; }
+.bridge-card { display: grid; gap: 6px; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin: 8px 0; background: #161b22; color: #e6edf3; }
+.bridge-card p { margin: 0; }
+.bridge-card code { color: #79c0ff; }
 @media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -2310,6 +2416,8 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button class="secondary" onclick="codegenExplainProfile()">Explain Profile</button>
 <button class="secondary" onclick="codegenPreview()">Preview</button>
 <button class="secondary" onclick="codegenPreviewProfile()">Preview Profile</button>
+<button class="secondary" onclick="codegenOutput()">Read Output</button>
+<button class="secondary" onclick="codegenOutputProfile()">Read Profile Output</button>
 <button class="secondary" onclick="codegenDiff()">Diff</button>
 <button class="secondary" onclick="codegenDiffProfile()">Diff Profile</button>
 <button class="secondary" onclick="codegenCheck()">Check</button>
@@ -2389,6 +2497,8 @@ function renderDetail(data) {
     detail.textContent = renderCodegenExplain(data.explain);
   } else if (typeof data.source === 'string') {
     detail.textContent = data.source;
+  } else if (data.value && typeof data.value === 'object') {
+    renderBridgeValue(data);
   } else if (typeof data.config === 'string') {
     detail.textContent = data.config;
   } else if (typeof data.error === 'string') {
@@ -2510,6 +2620,18 @@ function renderCodegenExplain(explain) {
     }
   }
   return lines.join('\n');
+}
+function renderBridgeValue(data) {
+  const value = data.value || {};
+  detail.className = 'detail profile-check';
+  detail.innerHTML = '<div class="pane-title">BridgeRoot Value</div>' +
+    '<div class="bridge-card">' +
+      '<p><strong>Root:</strong> ' + escapeHtml(data.root || '-') + '</p>' +
+      '<p><strong>Key:</strong> <code>' + escapeHtml(data.key || '-') + '</code> (' + escapeHtml(data.keyType || '-') + ')</p>' +
+      '<p><strong>OOP:</strong> ' + escapeHtml(value.oop || '-') + '</p>' +
+      '<p><strong>Class OOP:</strong> ' + escapeHtml(value.classOop || '-') + '</p>' +
+      '<p><strong>printString:</strong> ' + escapeHtml(value.printString || '-') + '</p>' +
+    '</div>';
 }
 function renderDiff(diff) {
   detail.className = 'detail diff';
@@ -2966,6 +3088,8 @@ async function discoverMappingConfig() {
 }
 function codegenPreview() { rememberCodegenConfig(); callApi('/api/codegen/preview?' + codegenQuery()); }
 function codegenPreviewProfile() { rememberCodegenConfig(); callApi('/api/codegen/preview-profile?' + profileCodegenQuery()); }
+function codegenOutput() { rememberCodegenConfig(); callApi('/api/codegen/output?' + codegenQuery()); }
+function codegenOutputProfile() { rememberCodegenConfig(); callApi('/api/codegen/output-profile?' + profileCodegenQuery()); }
 function codegenExplain() { rememberCodegenConfig(); callApi('/api/codegen/explain?' + codegenQuery()); }
 function codegenExplainProfile() { rememberCodegenConfig(); callApi('/api/codegen/explain-profile?' + profileCodegenQuery()); }
 function codegenDiff() { rememberCodegenConfig(); callApi('/api/codegen/diff?' + codegenQuery()); }
@@ -3384,8 +3508,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":38"#));
-        assert!(response.body.contains(r#""hoursMax":66"#));
+        assert!(response.body.contains(r#""hoursMin":37"#));
+        assert!(response.body.contains(r#""hoursMax":64"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Explorer and VS Code visual polish"));
         assert!(response
@@ -3402,8 +3526,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":80"#));
-        assert!(response.body.contains(r#""hoursMax":138"#));
+        assert!(response.body.contains(r#""hoursMin":79"#));
+        assert!(response.body.contains(r#""hoursMax":136"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3628,6 +3752,35 @@ mod tests {
         assert_eq!(diff.status, 200);
         assert!(diff.body.contains(r#""profile":"default""#));
         assert!(diff.body.contains(r#""upToDate":true"#));
+    }
+
+    #[test]
+    fn codegen_output_endpoints_read_current_generated_file() {
+        let root =
+            fs::canonicalize(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+        let config = ExplorerConfig {
+            codegen_root: root,
+            ..ExplorerConfig::default()
+        };
+
+        let output = handle_request(
+            "GET /api/codegen/output?config=examples/codegen/gemstone-rs.codegen HTTP/1.1",
+            &config,
+        );
+        assert_eq!(output.status, 200);
+        assert!(output.body.contains(r#""success":true"#));
+        assert!(output.body.contains(r#""exists":true"#));
+        assert!(output.body.contains("gemstone_wrappers.rs"));
+        assert!(output.body.contains("pub struct Object"));
+
+        let profile_output = handle_request(
+            "GET /api/codegen/output-profile?profile=default&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json HTTP/1.1",
+            &config,
+        );
+        assert_eq!(profile_output.status, 200);
+        assert!(profile_output.body.contains(r#""profile":"default""#));
+        assert!(profile_output.body.contains(r#""exists":true"#));
+        assert!(profile_output.body.contains("pub struct Object"));
     }
 
     #[test]

@@ -104,6 +104,16 @@ def run_one_smoke(auth_token: str | None) -> None:
         assert preview["success"] is True
         assert "pub struct Object" in preview["source"]
 
+        output = get_json(
+            f"{base}/api/codegen/output-profile"
+            f"{suffix}{separator}profile=default"
+            "&profile_file=examples/codegen/gemstone-rs.codegen-profiles.json"
+        )
+        assert output["success"] is True
+        assert output["exists"] is True
+        assert output["output"].endswith("gemstone_wrappers.rs")
+        assert "pub struct Object" in output["source"]
+
         mode = "auth" if auth_token else "open"
         print(f"explorer endpoint smoke checks passed on {base} ({mode})")
     finally:

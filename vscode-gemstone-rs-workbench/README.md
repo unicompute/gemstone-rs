@@ -136,10 +136,10 @@ The webview wraps the explorer in a workbench shell: the iframe remains the
 full browser UI, while the side inspector renders structured setup checks,
 project profile freshness tables with Preview/Diff/Check/Generate buttons,
 Codegen explain summaries, generated source, colorized diffs, BridgeRoot
-identity/key summaries, and comparison status cards. Workbench buttons can hand
-off to native VS Code commands for previewing wrappers, opening diffs,
-generating with confirmation, checking project profiles, opening docs, and
-opening generated output files.
+identity/key/value summaries, and comparison status cards. Workbench buttons
+can hand off to native VS Code commands for previewing wrappers, opening diffs,
+reading or opening generated output files, generating with confirmation,
+checking project profiles, and opening docs.
 If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
 `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` and all browser/webview URLs
 include the matching `token=` query parameter. Use `Generate Explorer Auth
@@ -184,7 +184,7 @@ Open the GemStone RS activity bar item to use the sidebar tree:
   Profile, Resolve Project Profile, Check Project Profiles, Generate Mapping Config, Preview
   BridgeRoot, List BridgeRoot Keys, Put BridgeRoot String, Put BridgeRoot
   Symbol, Put BridgeRoot SmallInt, Put BridgeRoot Bool, Remove BridgeRoot Key,
-  and Run Generated Mapping Example.
+  Run Generated Mapping Example, and Open Generated Output.
 - `Explorer` exposes Doctor, Verify Setup, Verify Live Setup, Verify Strict
   Setup, Eval Smalltalk, Show Example Commands, Show/Copy/Write Environment
   Template, Launch Explorer, Open Explorer Webview, Generate Explorer Auth

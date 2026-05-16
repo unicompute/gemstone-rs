@@ -45,6 +45,7 @@ function activate(context) {
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
   register(context, "gemstoneRs.codegenExplain", codegenExplain);
+  register(context, "gemstoneRs.openGeneratedOutput", openGeneratedOutput);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
   register(context, "gemstoneRs.codegenPreviewProfile", codegenPreviewProfile);
   register(context, "gemstoneRs.codegenDiffProfile", codegenDiffProfile);
@@ -180,6 +181,7 @@ class GemStoneTreeProvider {
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
         actionNode("Explain Config", "gemstoneRs.codegenExplain"),
+        actionNode("Open Generated Output", "gemstoneRs.openGeneratedOutput"),
         actionNode("Generate Wrappers", "gemstoneRs.codegenGenerate"),
         actionNode("Preview Profile Wrappers", "gemstoneRs.codegenPreviewProfile"),
         actionNode("Diff Profile Output", "gemstoneRs.codegenDiffProfile"),
@@ -869,6 +871,26 @@ async function codegenExplain() {
   });
 }
 
+async function openGeneratedOutput() {
+  const configPath = await askConfigPath();
+  if (!configPath) {
+    return;
+  }
+  const result = await runCli(["codegen", "explain", "--json", configPath], { allowFailure: true });
+  const report = parseJsonCommandResult(
+    result,
+    "gemstone-rs codegen explain returned invalid JSON."
+  );
+  if (!report) {
+    return;
+  }
+  if (!report.output) {
+    vscode.window.showWarningMessage("The codegen config did not report an output file.");
+    return;
+  }
+  await openPathInEditor(report.output);
+}
+
 async function codegenGenerate() {
   const configPath = await askConfigPath();
   if (!configPath) {
@@ -1378,6 +1400,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.codegenDiff",
     "gemstoneRs.codegenCheck",
     "gemstoneRs.codegenExplain",
+    "gemstoneRs.openGeneratedOutput",
     "gemstoneRs.codegenGenerate",
     "gemstoneRs.codegenPreviewProfile",
     "gemstoneRs.codegenDiffProfile",
@@ -1734,16 +1757,19 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <h2>Codegen</h2>
       <button data-probe="/api/codegen/explain">Explain Config</button>
       <button data-probe="/api/codegen/preview">Preview Generated Wrappers</button>
+      <button data-probe="/api/codegen/output">Read Generated Output</button>
       <button data-probe="/api/codegen/diff">Diff Generated Wrappers</button>
       <button data-probe="/api/codegen/check">Check Freshness</button>
       <button data-command="gemstoneRs.codegenPreview">Preview in Editor</button>
       <button data-command="gemstoneRs.codegenDiff">Diff in Editor</button>
+      <button data-command="gemstoneRs.openGeneratedOutput">Open Output File</button>
       <button data-command="gemstoneRs.codegenGenerate">Generate with Confirmation</button>
     </div>
     <div class="group">
       <h2>Profile Codegen</h2>
       <button data-probe="/api/codegen/explain-profile">Explain Profile</button>
       <button data-probe="/api/codegen/preview-profile">Preview Profile</button>
+      <button data-probe="/api/codegen/output-profile">Read Profile Output</button>
       <button data-probe="/api/codegen/diff-profile">Diff Profile</button>
       <button data-probe="/api/codegen/check-profile">Check Profile</button>
       <button data-command="gemstoneRs.codegenPreviewProfile">Preview Profile in Editor</button>
@@ -1843,6 +1869,8 @@ function renderProbeResult(parsed, ok) {
       setInspectorHtml(resultTitle('Codegen Config') + '<pre>' + escapeHtml(parsed.config) + '</pre>', !ok);
     } else if (Array.isArray(parsed.keys)) {
       renderBridgeKeys(parsed, ok);
+    } else if (parsed.value && typeof parsed.value === 'object') {
+      renderBridgeValue(parsed, ok);
     } else if (parsed.name && typeof parsed.oop !== 'undefined' && typeof parsed.identityId !== 'undefined') {
       renderBridgeRoot(parsed, ok);
     } else if (typeof parsed.error === 'string') {
@@ -1989,6 +2017,21 @@ function renderBridgeKeys(data, ok) {
   setInspectorHtml(
     resultTitle('BridgeRoot Keys', data.root || '-') +
     (rows ? '<div class="key-list">' + rows + '</div>' : '<p class="muted">No keys reported.</p>'),
+    !ok
+  );
+}
+
+function renderBridgeValue(data, ok) {
+  const value = data.value || {};
+  setInspectorHtml(
+    resultTitle('BridgeRoot Value', data.root || '-') +
+    '<div class="summary-grid">' +
+      metric('key', data.key || '-') +
+      metric('key type', data.keyType || '-') +
+      metric('oop', String(value.oop || '-')) +
+      metric('class oop', String(value.classOop || '-')) +
+    '</div>' +
+    '<p><strong>printString:</strong></p><pre>' + escapeHtml(value.printString || '-') + '</pre>',
     !ok
   );
 }

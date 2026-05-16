@@ -480,6 +480,7 @@ The local explorer and VS Code extension expose this workflow too:
 ```bash
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
+curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
@@ -487,7 +488,10 @@ curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 
 The explorer stays read-only unless started with `--allow-write`, so these
 BridgeRoot write endpoints are useful smoke tests without becoming accidental
-public write APIs.
+public write APIs. BridgeRoot reads now return a structured payload with the
+root name, key, key type, OOP, class OOP, and `printString`, so the browser and
+VS Code webview can render object values as inspection cards instead of raw
+JSON.
 
 In VS Code, use:
 
@@ -573,6 +577,10 @@ wrappers. A project-level profile check endpoint summarizes all profiles at
 once, including ok, stale, and error counts, so release tooling can fail before
 generated wrappers drift. In the browser, that report renders as a status table
 with direct Preview, Diff, Check, and Generate buttons for each profile.
+The explorer can also read the current generated output file directly through
+`/api/codegen/output` or `/api/codegen/output-profile`, which is useful when a
+reviewer wants to compare the committed wrapper with a preview or diff without
+regenerating anything.
 
 The same schema is available from the CLI, so profile files can be checked in
 CI:
@@ -616,8 +624,10 @@ The VS Code extension adds a GemStone RS sidebar:
 - methods
 - method source
 - BridgeRoot key listing
+- BridgeRoot value inspection
 - BridgeRoot put/remove smoke actions
 - codegen preview/diff/check/generate
+- generated output file opening
 - profile-driven codegen preview/diff/check/generate
 - explorer launch
 - embedded explorer webview
