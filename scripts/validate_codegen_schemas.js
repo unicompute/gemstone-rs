@@ -10,6 +10,7 @@ const schemaNames = [
   "gemstone-rs.codegen-explain.schema.json",
   "gemstone-rs.codegen-profiles.schema.json",
   "gemstone-rs.profile-check.schema.json",
+  "gemstone-rs.compare.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -86,7 +87,30 @@ const profileCheckOutput = childProcess.execFileSync(
 assertProfileCheck(JSON.parse(lastJsonLine(profileCheckOutput)));
 assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 
-console.log("gemstone-rs codegen schema checks passed");
+for (const args of [
+  ["compare", "gemstone-py", "--json"],
+  ["compare", "gemstone-js", "--gaps", "--json"],
+  ["compare", "all", "--json"],
+  ["compare", "all", "--gaps", "--json"],
+  ["compare", "all", "--next", "--json"],
+  ["compare", "all", "--totals", "--json"],
+  ["compare", "all", "--batches", "--json"],
+]) {
+  assertCompare(
+    JSON.parse(lastJsonLine(runGemstoneRs(args))),
+    `gemstone-rs ${args.join(" ")}`
+  );
+}
+
+console.log("gemstone-rs codegen and comparison schema checks passed");
+
+function runGemstoneRs(args) {
+  return childProcess.execFileSync("cargo", ["run", "-p", "gemstone-rs-cli", "--", ...args], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  });
+}
 
 function lastJsonLine(output) {
   const lines = output
@@ -94,7 +118,7 @@ function lastJsonLine(output) {
     .map((line) => line.trim())
     .filter(Boolean);
   const line = lines.reverse().find((candidate) => candidate.startsWith("{"));
-  assert(line, "expected a JSON line from codegen explain --json");
+  assert(line, "expected a JSON line from CLI command");
   return line;
 }
 
@@ -187,4 +211,113 @@ function assertProfileCheck(value) {
       `profiles[${index}].error`
     );
   }
+}
+
+function assertCompare(value, context) {
+  assert(["gemstone-py", "gemstone-js", "all"].includes(value.comparison), context);
+  assert(["summary", "gaps", "next", "totals", "batches"].includes(value.view), context);
+
+  if (value.comparison === "all") {
+    assert(Array.isArray(value.comparisons), `${context}: comparisons`);
+    assert(value.comparisons.length > 0, `${context}: comparisons should not be empty`);
+    if (value.view === "totals" || value.view === "batches") {
+      assertTotals(value, context);
+    }
+    for (const [index, comparison] of value.comparisons.entries()) {
+      assertCompareEntry(comparison, value.view, `${context}.comparisons[${index}]`);
+    }
+    return;
+  }
+
+  assertCompareEntry(value, value.view, context);
+}
+
+function assertCompareEntry(value, view, context) {
+  assert(["gemstone-py", "gemstone-js", "all"].includes(value.comparison), context);
+  switch (view) {
+    case "summary":
+      assert(Array.isArray(value.rows), `${context}: rows`);
+      assert(value.rows.length > 0, `${context}: rows should not be empty`);
+      for (const [index, row] of value.rows.entries()) {
+        assertCompareRow(row, value.comparison, `${context}.rows[${index}]`);
+      }
+      break;
+    case "gaps":
+      assert(Array.isArray(value.gaps), `${context}: gaps`);
+      assert(value.gaps.length > 0, `${context}: gaps should not be empty`);
+      for (const [index, gap] of value.gaps.entries()) {
+        assertCompareGap(gap, value.comparison, `${context}.gaps[${index}]`);
+      }
+      break;
+    case "next":
+      assertBatch(value.batch, `${context}.batch`);
+      assertGenericGap(value.gap, `${context}.gap`);
+      break;
+    case "totals":
+      assertTotals(value, context);
+      break;
+    case "batches":
+      assertTotals(value, context);
+      assert(Array.isArray(value.batches), `${context}: batches`);
+      assert.strictEqual(value.totalBatches, value.batches.length, `${context}: batch count`);
+      for (const [index, batch] of value.batches.entries()) {
+        assertBatch(batch, `${context}.batches[${index}]`);
+      }
+      break;
+    default:
+      throw new Error(`${context}: unknown compare view ${view}`);
+  }
+}
+
+function assertCompareRow(row, comparison, context) {
+  assert.strictEqual(typeof row.topic, "string", `${context}.topic`);
+  assert.strictEqual(typeof row.gemstonePy, "string", `${context}.gemstonePy`);
+  assert.strictEqual(typeof row.recommendation, "string", `${context}.recommendation`);
+  if (comparison === "gemstone-js") {
+    assert.strictEqual(typeof row.gemstoneJs, "string", `${context}.gemstoneJs`);
+  } else {
+    assert.strictEqual(typeof row.gemstoneRs, "string", `${context}.gemstoneRs`);
+  }
+}
+
+function assertCompareGap(gap, comparison, context) {
+  assert.strictEqual(typeof gap.priority, "string", `${context}.priority`);
+  assert.strictEqual(typeof gap.area, "string", `${context}.area`);
+  assert.strictEqual(typeof gap.gemstonePyStrength, "string", `${context}.gemstonePyStrength`);
+  assert.strictEqual(typeof gap.nextAction, "string", `${context}.nextAction`);
+  assert.strictEqual(typeof gap.verifyWith, "string", `${context}.verifyWith`);
+  if (comparison === "gemstone-js") {
+    assert.strictEqual(typeof gap.gemstoneJsGap, "string", `${context}.gemstoneJsGap`);
+  } else {
+    assert.strictEqual(typeof gap.gemstoneRsGap, "string", `${context}.gemstoneRsGap`);
+  }
+}
+
+function assertGenericGap(gap, context) {
+  assert.strictEqual(typeof gap.priority, "string", `${context}.priority`);
+  assert.strictEqual(typeof gap.area, "string", `${context}.area`);
+  assert.strictEqual(typeof gap.gemstonePyStrength, "string", `${context}.gemstonePyStrength`);
+  assert.strictEqual(typeof gap.project, "string", `${context}.project`);
+  assert.strictEqual(typeof gap.projectGap, "string", `${context}.projectGap`);
+  assert.strictEqual(typeof gap.nextAction, "string", `${context}.nextAction`);
+  assert.strictEqual(typeof gap.verifyWith, "string", `${context}.verifyWith`);
+}
+
+function assertTotals(value, context) {
+  assert.strictEqual(typeof value.totalBatches, "number", `${context}.totalBatches`);
+  assert.strictEqual(typeof value.hoursMin, "number", `${context}.hoursMin`);
+  assert.strictEqual(typeof value.hoursMax, "number", `${context}.hoursMax`);
+  assert(value.totalBatches >= 0, `${context}: totalBatches must be non-negative`);
+  assert(value.hoursMin >= 0, `${context}: hoursMin must be non-negative`);
+  assert(value.hoursMax >= value.hoursMin, `${context}: hoursMax must be >= hoursMin`);
+}
+
+function assertBatch(batch, context) {
+  assert.strictEqual(typeof batch.number, "number", `${context}.number`);
+  assert.strictEqual(typeof batch.focus, "string", `${context}.focus`);
+  assert.strictEqual(typeof batch.hoursMin, "number", `${context}.hoursMin`);
+  assert.strictEqual(typeof batch.hoursMax, "number", `${context}.hoursMax`);
+  assert.strictEqual(typeof batch.outcome, "string", `${context}.outcome`);
+  assert.strictEqual(typeof batch.verifyWith, "string", `${context}.verifyWith`);
+  assert(batch.hoursMax >= batch.hoursMin, `${context}: hoursMax must be >= hoursMin`);
 }

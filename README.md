@@ -353,10 +353,11 @@ the path appears to be arm64 or x86_64.
 `hello` is a no-GemStone sanity check similar to `gemstone-examples hello`; it
 prints the CLI version, target OS, target architecture, and executable path.
 `compare gemstone-py` prints the compact Rust/Python comparison from the
-comparison guide, with `--json` for tooling. Add `--gaps` when you want the
-actionable catch-up list: what gemstone-py already does better, what
-gemstone-rs still lacks, the next implementation action, and the verification
-command for each gap.
+comparison guide, with `--json` for tooling. The structured compare output is
+documented in `schemas/gemstone-rs.compare.schema.json` and covered by the
+schema validation script. Add `--gaps` when you want the actionable catch-up
+list: what gemstone-py already does better, what gemstone-rs still lacks, the
+next implementation action, and the verification command for each gap.
 `examples list` and `examples show <name>` provide an installed-CLI example
 index similar to `gemstone-examples list` in gemstone-py; `examples run <name>`
 launches the selected Cargo example from a source checkout, and `--dry-run`

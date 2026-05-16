@@ -344,6 +344,13 @@
           "*.gemstone-rs.profile-check.json"
         ],
         "url": "./schemas/gemstone-rs.profile-check.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.compare.json",
+          "*.gemstone-rs.compare.json"
+        ],
+        "url": "./schemas/gemstone-rs.compare.schema.json"
       }
     ],
     "configuration": {

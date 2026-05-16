@@ -131,7 +131,9 @@ single recommended next action, `--totals` for only the estimated batch/hour
 totals, and `--batches` for the detailed work batches. `compare all --totals`
 reports the combined **12-batch**, **86-151 hour** estimate across the Rust and
 TypeScript catch-up tracks. Add `--json` when an editor, CI job, or release
-script needs structured output.
+script needs structured output. The JSON shape is documented in
+`schemas/gemstone-rs.compare.schema.json` and checked by the repository schema
+validation script.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`

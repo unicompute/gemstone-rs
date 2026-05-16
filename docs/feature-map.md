@@ -48,7 +48,10 @@ TypeScript catch-up tracks.
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,
 standard HTTP, worker-pool, Axum, and Actix workflows. JSON output is intended for CI, docs
-checks, and editor tooling.
+checks, and editor tooling. Compare reports are covered by
+[`schemas/gemstone-rs.compare.schema.json`](../schemas/gemstone-rs.compare.schema.json),
+so release scripts and editor panels can validate the same summary, gap,
+next-action, totals, and batch-plan shapes that the CLI prints.
 
 ## Streams
 
