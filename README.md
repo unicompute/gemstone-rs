@@ -461,6 +461,8 @@ Open:
 ```text
 http://127.0.0.1:8787/
 http://127.0.0.1:8787/api/status
+http://127.0.0.1:8787/api/compare/gemstone-py/status
+http://127.0.0.1:8787/api/compare/all/status
 http://127.0.0.1:8787/api/browse/dictionaries
 http://127.0.0.1:8787/api/browse/classes?dictionary=UserGlobals
 http://127.0.0.1:8787/api/browse/protocols?class=Object
@@ -492,14 +494,15 @@ cargo run -p gemstone-rs-explorer -- --allow-eval
 ```
 
 The explorer uses standard-library HTTP only. The home page exposes the main
-browse, BridgeRoot, and codegen workflows directly, can load/save the selected
-codegen config file through a POST body when write mode is enabled, lists known
-`.codegen` files through a project-aware picker, keeps a local recent-config
-history, saves named local codegen profiles, exports/imports profile JSON,
-loads/saves project profile files with schema validation, renders
-generated source, generated config, profile-aware preview/diff/check/explain
-summaries, whole-project profile status, unified diff, and side-by-side diff
-output in a dedicated detail pane, remembers the current fields locally, and
+browse, BridgeRoot, codegen, and comparison-status workflows directly. It can
+load/save the selected codegen config file through a POST body when write mode
+is enabled, lists known `.codegen` files through a project-aware picker, keeps
+a local recent-config history, saves named local codegen profiles,
+exports/imports profile JSON, loads/saves project profile files with schema
+validation, renders generated source, generated config, profile-aware
+preview/diff/check/explain summaries, whole-project profile status, unified
+diff, side-by-side diff output, and the gemstone-rs vs gemstone-py batch
+status in a dedicated detail pane, remembers the current fields locally, and
 keeps the JSON endpoints stable for curl, VS Code, and automation.
 
 Generate endpoints are write-gated:

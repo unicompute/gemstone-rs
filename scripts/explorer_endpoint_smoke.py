@@ -76,6 +76,17 @@ def run_one_smoke(auth_token: str | None) -> None:
         assert status_code in {200, 500, 503}
         assert "connected" in status
 
+        comparison = get_json(f"{base}/api/compare/gemstone-py/status{suffix}")
+        assert comparison["comparison"] == "gemstone-py"
+        assert comparison["view"] == "status"
+        assert comparison["remaining"]["totalBatches"] == 6
+        assert comparison["parity"]["project"] == "gemstone-rs"
+
+        combined = get_json(f"{base}/api/compare/all/status{suffix}")
+        assert combined["comparison"] == "all"
+        assert combined["totalBatches"] == 12
+        assert len(combined["comparisons"]) == 2
+
         profiles = get_json(
             f"{base}/api/codegen/profiles/check"
             f"{suffix}{separator}profile_file=examples/codegen/gemstone-rs.codegen-profiles.json"

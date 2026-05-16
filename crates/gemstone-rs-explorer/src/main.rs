@@ -183,6 +183,8 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 env_write_response(&route, config)
             }
         }
+        "/api/compare/gemstone-py/status" => Response::json(200, gemstone_py_status_json(true)),
+        "/api/compare/all/status" => Response::json(200, all_status_json()),
         "/api/status" => live_json(|session| {
             let needs_commit = session.needs_commit()?;
             let in_transaction = session.in_transaction()?;
@@ -571,6 +573,138 @@ fn doctor_response(live: bool) -> Response {
             gci_json,
             live_json
         ),
+    )
+}
+
+fn gemstone_py_status_json(include_view: bool) -> String {
+    status_json(StatusJson {
+        comparison: "gemstone-py",
+        view: include_view.then_some("status"),
+        project_label: "gemstone-rs",
+        answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
+        gemstone_py_score: 30,
+        project_score: 25,
+        max_score: 35,
+        total_batches: 6,
+        hours_min: 44,
+        hours_max: 79,
+        next_number: 1,
+        next_focus: "Explorer and VS Code webview polish",
+        next_hours_min: 10,
+        next_hours_max: 18,
+        next_outcome: "Make the embedded explorer the main IDE surface for browsing, codegen preview/diff, and BridgeRoot inspection.",
+        next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
+        top_gap_priority: "P1",
+        top_gap_area: "Web framework adapters",
+        top_gap_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
+        top_gap_project_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and request tracing.",
+        top_gap_next_action: "Add middleware examples, request tracing, and stricter live route smoke tests for the packaged Axum/Actix adapters.",
+        top_gap_verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
+        command_target: "gemstone-py",
+    })
+}
+
+fn gemstone_js_status_json(include_view: bool) -> String {
+    status_json(StatusJson {
+        comparison: "gemstone-js",
+        view: include_view.then_some("status"),
+        project_label: "gemstone-js",
+        answer: "gemstone-py remains more mature for Python products and visual tooling; gemstone-js is the TypeScript/Node path when async JS services and npm packaging are the product boundary.",
+        gemstone_py_score: 32,
+        project_score: 21,
+        max_score: 35,
+        total_batches: 6,
+        hours_min: 42,
+        hours_max: 72,
+        next_number: 1,
+        next_focus: "Native publish confidence",
+        next_hours_min: 6,
+        next_hours_max: 10,
+        next_outcome: "Publish and verify gemstone-js plus @gemstone-js/native from a clean install across supported Node platforms.",
+        next_verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
+        top_gap_priority: "P1",
+        top_gap_area: "Published native confidence",
+        top_gap_strength: "gemstone-py has a working package/release lane and optional native acceleration path.",
+        top_gap_project_gap: "gemstone-js is alpha and depends on optional @gemstone-js/native plus Deno/Bun FFI starter paths that need broader live proof.",
+        top_gap_next_action: "Publish and verify gemstone-js plus @gemstone-js/native across supported Node platforms, then run npm verify and live smoke tests from a clean install.",
+        top_gap_verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
+        command_target: "gemstone-js",
+    })
+}
+
+fn all_status_json() -> String {
+    format!(
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":86,"hoursMax":151,"comparisons":[{},{}]}}"#,
+        gemstone_py_status_json(false),
+        gemstone_js_status_json(false)
+    )
+}
+
+#[derive(Clone, Copy, Debug)]
+struct StatusJson {
+    comparison: &'static str,
+    view: Option<&'static str>,
+    project_label: &'static str,
+    answer: &'static str,
+    gemstone_py_score: u8,
+    project_score: u8,
+    max_score: u8,
+    total_batches: u8,
+    hours_min: u8,
+    hours_max: u8,
+    next_number: u8,
+    next_focus: &'static str,
+    next_hours_min: u8,
+    next_hours_max: u8,
+    next_outcome: &'static str,
+    next_verify_with: &'static str,
+    top_gap_priority: &'static str,
+    top_gap_area: &'static str,
+    top_gap_strength: &'static str,
+    top_gap_project_gap: &'static str,
+    top_gap_next_action: &'static str,
+    top_gap_verify_with: &'static str,
+    command_target: &'static str,
+}
+
+fn status_json(status: StatusJson) -> String {
+    let view = status
+        .view
+        .map(|view| format!(r#","view":"{}""#, escape_json(view)))
+        .unwrap_or_default();
+    format!(
+        r#"{{"success":true,"comparison":"{}"{},"answer":"{}","remaining":{{"totalBatches":{},"hoursMin":{},"hoursMax":{}}},"parity":{{"gemstonePyScore":{},"project":"{}","projectScore":{},"maxScore":{},"scoreGap":{}}},"nextBatch":{{"number":{},"focus":"{}","hoursMin":{},"hoursMax":{},"outcome":"{}","verifyWith":"{}"}},"topGap":{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","project":"{}","projectGap":"{}","nextAction":"{}","verifyWith":"{}"}},"commands":{{"status":"gemstone-rs compare {} --status","scorecard":"gemstone-rs compare {} --scorecard","parity":"gemstone-rs compare {} --parity","batches":"gemstone-rs compare {} --batches","totals":"gemstone-rs compare {} --totals"}}}}"#,
+        escape_json(status.comparison),
+        view,
+        escape_json(status.answer),
+        status.total_batches,
+        status.hours_min,
+        status.hours_max,
+        status.gemstone_py_score,
+        escape_json(status.project_label),
+        status.project_score,
+        status.max_score,
+        status
+            .gemstone_py_score
+            .saturating_sub(status.project_score),
+        status.next_number,
+        escape_json(status.next_focus),
+        status.next_hours_min,
+        status.next_hours_max,
+        escape_json(status.next_outcome),
+        escape_json(status.next_verify_with),
+        escape_json(status.top_gap_priority),
+        escape_json(status.top_gap_area),
+        escape_json(status.top_gap_strength),
+        escape_json(status.project_label),
+        escape_json(status.top_gap_project_gap),
+        escape_json(status.top_gap_next_action),
+        escape_json(status.top_gap_verify_with),
+        escape_json(status.command_target),
+        escape_json(status.command_target),
+        escape_json(status.command_target),
+        escape_json(status.command_target),
+        escape_json(status.command_target)
     )
 }
 
@@ -2075,6 +2209,11 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 .profile-ok { color: #7ee787; }
 .profile-stale { color: #ffa657; }
 .profile-error { color: #ff7b72; }
+.compare-card { display: grid; gap: 6px; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin: 8px 0; background: #161b22; color: #e6edf3; }
+.compare-card h3 { margin: 0; color: #f0f6fc; font-size: 14px; }
+.compare-card p { margin: 0; }
+.compare-score { display: flex; flex-wrap: wrap; gap: 8px; }
+.compare-score span { border: 1px solid #30363d; border-radius: 999px; padding: 3px 7px; color: #c9d1d9; }
 @media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -2123,6 +2262,11 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <button onclick="callApi('/api/status')">Status</button>
 <button onclick="callApi('/api/bridge/root')">BridgeRoot</button>
 <button onclick="loadBridgeKeys()">Keys</button>
+</div>
+<h2>Comparison Status</h2>
+<div class="actions">
+<button class="secondary" onclick="compareGemstonePy()">Compare with gemstone-py</button>
+<button class="secondary" onclick="compareAll()">Show All Comparison Status</button>
 </div>
 <label>Env file path<input id="envFilePath" value=".env.gemstone-rs"></label>
 <div class="row">
@@ -2235,6 +2379,8 @@ async function callApi(path, options = {}) {
 function renderDetail(data) {
   if (typeof data.diff === 'string') {
     renderDiff(data.diff || 'No generated output changes.');
+  } else if (data.view === 'status' && (data.remaining || Array.isArray(data.comparisons))) {
+    renderComparisonStatus(data);
   } else if (Array.isArray(data.profiles) && typeof data.profileCount === 'number') {
     renderProfileCheck(data);
   } else if (Array.isArray(data.steps)) {
@@ -2250,6 +2396,36 @@ function renderDetail(data) {
   } else {
     detail.textContent = 'No generated source, config, or diff in this response.';
   }
+}
+function renderComparisonStatus(data) {
+  detail.className = 'detail profile-check';
+  const entries = Array.isArray(data.comparisons) ? data.comparisons : [data];
+  const cards = entries.map(entry => {
+    const parity = entry.parity || {};
+    const remaining = entry.remaining || {};
+    const nextBatch = entry.nextBatch || {};
+    const topGap = entry.topGap || {};
+    const commands = entry.commands || {};
+    const project = parity.project || topGap.project || 'gemstone-rs';
+    return '<div class="compare-card">' +
+      '<h3>' + escapeHtml(entry.comparison || 'comparison') + '</h3>' +
+      '<p>' + escapeHtml(entry.answer || '-') + '</p>' +
+      '<div class="compare-score">' +
+        '<span>gemstone-py ' + Number(parity.gemstonePyScore || 0) + '/' + Number(parity.maxScore || 0) + '</span>' +
+        '<span>' + escapeHtml(project) + ' ' + Number(parity.projectScore || 0) + '/' + Number(parity.maxScore || 0) + '</span>' +
+        '<span>gap ' + Number(parity.scoreGap || 0) + '</span>' +
+      '</div>' +
+      '<p><strong>Remaining:</strong> ' + Number(remaining.totalBatches || 0) + ' batches, ' + Number(remaining.hoursMin || 0) + '-' + Number(remaining.hoursMax || 0) + ' hours</p>' +
+      '<p><strong>Next batch:</strong> ' + escapeHtml(nextBatch.focus || '-') + ' (' + Number(nextBatch.hoursMin || 0) + '-' + Number(nextBatch.hoursMax || 0) + ' hours)</p>' +
+      '<p><strong>Top gap:</strong> ' + escapeHtml((topGap.priority || '-') + ' ' + (topGap.area || '-')) + '</p>' +
+      '<p><strong>Next action:</strong> ' + escapeHtml(topGap.nextAction || '-') + '</p>' +
+      '<p><strong>Commands:</strong><br>' + escapeHtml([commands.status, commands.scorecard, commands.parity, commands.batches].filter(Boolean).join('\n')) + '</p>' +
+    '</div>';
+  }).join('');
+  const total = data.comparison === 'all'
+    ? '<p><strong>Total:</strong> ' + Number(data.totalBatches || 0) + ' batches, ' + Number(data.hoursMin || 0) + '-' + Number(data.hoursMax || 0) + ' hours</p>'
+    : '';
+  detail.innerHTML = '<div class="pane-title">Comparison Status</div>' + total + cards;
 }
 function renderSetupAssistant(steps) {
   return steps.map(step => {
@@ -2467,6 +2643,12 @@ function putBridgeValue() {
 function removeBridgeValue() {
   if (!confirmWrite('Remove this key from BridgeRoot?')) return;
   callApi('/api/bridge/remove?' + bridgeQuery());
+}
+function compareGemstonePy() {
+  callApi('/api/compare/gemstone-py/status');
+}
+function compareAll() {
+  callApi('/api/compare/all/status');
 }
 async function showEnvTemplate() {
   await callApi('/api/env/sample');
@@ -3125,6 +3307,10 @@ mod tests {
         assert!(response.body.contains("profileJson"));
         assert!(response.body.contains("profileFile"));
         assert!(response.body.contains("importSummary"));
+        assert!(response.body.contains("Comparison Status"));
+        assert!(response.body.contains("compareGemstonePy()"));
+        assert!(response.body.contains("compareAll()"));
+        assert!(response.body.contains("renderComparisonStatus"));
         assert!(response.body.contains("configEditor"));
         assert!(response.body.contains("envFilePath"));
         assert!(response.body.contains("showEnvTemplate()"));
@@ -3173,6 +3359,8 @@ mod tests {
         assert!(response.body.contains("/api/setup/assistant"));
         assert!(response.body.contains("/api/env/sample"));
         assert!(response.body.contains("/api/env/write"));
+        assert!(response.body.contains("/api/compare/gemstone-py/status"));
+        assert!(response.body.contains("/api/compare/all/status"));
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
         assert!(response.body.contains("/api/codegen/configs"));
@@ -3184,6 +3372,42 @@ mod tests {
         assert!(response.body.contains("/api/codegen/check-profile"));
         assert!(response.body.contains("/api/codegen/generate-profile"));
         assert!(response.body.contains("/api/codegen/check"));
+    }
+
+    #[test]
+    fn compare_status_endpoint_reports_remaining_batches() {
+        let response = handle_request(
+            "GET /api/compare/gemstone-py/status HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""comparison":"gemstone-py""#));
+        assert!(response.body.contains(r#""view":"status""#));
+        assert!(response.body.contains(r#""totalBatches":6"#));
+        assert!(response.body.contains(r#""hoursMin":44"#));
+        assert!(response.body.contains(r#""hoursMax":79"#));
+        assert!(response.body.contains(r#""project":"gemstone-rs""#));
+        assert!(response
+            .body
+            .contains("Explorer and VS Code webview polish"));
+        assert!(response
+            .body
+            .contains("gemstone-rs compare gemstone-py --batches"));
+    }
+
+    #[test]
+    fn compare_all_status_endpoint_reports_combined_batches() {
+        let response = handle_request(
+            "GET /api/compare/all/status HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 200);
+        assert!(response.body.contains(r#""comparison":"all""#));
+        assert!(response.body.contains(r#""totalBatches":12"#));
+        assert!(response.body.contains(r#""hoursMin":86"#));
+        assert!(response.body.contains(r#""hoursMax":151"#));
+        assert!(response.body.contains(r#""comparison":"gemstone-py""#));
+        assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
 
     #[test]

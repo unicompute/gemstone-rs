@@ -37,6 +37,8 @@ The home page is a small browser UI over the same JSON endpoints. It can:
 - run a setup assistant that checks the env file, live configuration, GCI
   library, codegen config, and project profiles
 - run doctor/status checks
+- compare gemstone-rs with gemstone-py and show the remaining batch/hour
+  estimate without opening the terminal
 - inspect BridgeRoot and list keys
 - run codegen sample/discover/preview/diff/check/generate from an editable
   config path
@@ -223,9 +225,19 @@ type and GemStone class, then use:
 - `Generate Profile` to resolve a named project profile and write its wrappers
   when the explorer was started with `--allow-write`
 
+The `Comparison Status` buttons call read-only local endpoints:
+
+- `Compare with gemstone-py` renders the same short answer as
+  `gemstone-rs compare gemstone-py --status`
+- `Show All Comparison Status` renders the combined Rust/Python and
+  TypeScript/Python batch count, currently **12 batches** and roughly
+  **86-151 hours**
+
 Read-only endpoints:
 
 ```bash
+curl -s http://127.0.0.1:8787/api/compare/gemstone-py/status
+curl -s http://127.0.0.1:8787/api/compare/all/status
 curl -s http://127.0.0.1:8787/api/codegen/sample
 curl -s 'http://127.0.0.1:8787/api/codegen/configs?root=.'
 curl -s 'http://127.0.0.1:8787/api/codegen/profiles?profile_file=gemstone-rs.codegen-profiles.json'
