@@ -48,6 +48,9 @@ For web servers:
 - keep framework middleware smoke markers such as
   `x-gemstone-rs-example-middleware` in checked examples so adapter upgrades do
   not bypass application middleware
+- run `python3 scripts/framework_route_smoke.py --live` or
+  `make framework-live-smoke` in a credentialed environment before release when
+  web adapters must prove `/health/gemstone` returns `{"result":7}`
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

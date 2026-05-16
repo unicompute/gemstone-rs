@@ -666,6 +666,9 @@ also install a tiny framework middleware layer and expose it as
 `x-gemstone-rs-example-middleware: axum` or
 `x-gemstone-rs-example-middleware: actix`, so the smoke test proves packaged
 GemStone routes still compose with normal application middleware.
+Run `python3 scripts/framework_route_smoke.py --live` or set
+`GS_RUN_LIVE_RUST=1` in a credentialed environment when that same smoke test
+must require `/health/gemstone` to reach the stone and return `{"result":7}`.
 The newer `SessionWorker` API gives these services a reusable dedicated-thread
 session lane when opening a session per health request is not enough:
 

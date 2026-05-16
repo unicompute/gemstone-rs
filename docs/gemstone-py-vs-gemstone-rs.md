@@ -114,7 +114,7 @@ gemstone-rs compare all --batches
 ```
 
 `compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **12 batches**, roughly **79-136 hours**
+TypeScript/Python track and reports **12 batches**, roughly **78-134 hours**
 total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -139,7 +139,7 @@ coverage, explorer polish, and release lane depth.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add live route smoke coverage and broader production middleware patterns around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add broader production middleware patterns around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
@@ -169,11 +169,11 @@ gemstone-rs compare all --totals
 | 1 | Explorer and VS Code visual polish | 5-8 hours |
 | 2 | Object mapping maturity | 8-14 hours |
 | 3 | Codegen live discovery and generated tests | 8-14 hours |
-| 4 | Async facade and web middleware | 4-7 hours |
+| 4 | Async facade and web middleware | 3-5 hours |
 | 5 | Shared core with `gemstone-py-native` | 8-14 hours |
 | 6 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **37-64 hours** to bring `gemstone-rs` materially closer to
+Total: roughly **36-62 hours** to bring `gemstone-rs` materially closer to
 `gemstone-py` across product polish, generated-code confidence, async/web
 ergonomics, shared native-core integration, and release depth.
 
@@ -218,8 +218,10 @@ not the implementation language:
   headers for route smoke tests and proxy logs. The checked Axum and Actix
   services also emit framework middleware marker headers, and the smoke script
   asserts them. The installed CLI can scaffold `session_worker_pool`,
-  `axum_service`, and `actix_service`. Broader production middleware patterns,
-  live route smoke tests, and an async facade remain future work.
+  `axum_service`, and `actix_service`. A required live route smoke mode now
+  verifies `/health/gemstone` returns `{"result":7}` for both adapters when
+  credentials are available. Broader production middleware patterns and an
+  async facade remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import socket
@@ -36,6 +37,14 @@ SERVICES = [
     Service("axum", ROOT / "examples/axum-service/Cargo.toml", "axum"),
     Service("actix", ROOT / "examples/actix-service/Cargo.toml", "actix"),
 ]
+
+REQUIRED_LIVE_ENV = ("GS_USERNAME", "GS_PASSWORD")
+LIVE_ENV_HINTS = (
+    "GS_LIB_PATH or GS_LIB/GEMSTONE",
+    "GS_STONE or GS_STONE_NAME",
+    "GS_USERNAME",
+    "GS_PASSWORD",
+)
 
 
 def free_port() -> int:
@@ -120,7 +129,32 @@ def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None
         raise AssertionError(f"{service.name} middleware header mismatch: {middleware!r}")
 
 
-def check_routes(service: Service) -> None:
+def live_required(args: argparse.Namespace) -> bool:
+    return args.live or os.environ.get("GS_RUN_LIVE_RUST") == "1"
+
+
+def missing_live_environment() -> list[str]:
+    missing = [name for name in REQUIRED_LIVE_ENV if not os.environ.get(name)]
+    if not (os.environ.get("GS_LIB_PATH") or os.environ.get("GS_LIB") or os.environ.get("GEMSTONE")):
+        missing.append("GS_LIB_PATH or GS_LIB/GEMSTONE")
+    if not (os.environ.get("GS_STONE") or os.environ.get("GS_STONE_NAME")):
+        missing.append("GS_STONE or GS_STONE_NAME")
+    return missing
+
+
+def validate_live_environment() -> None:
+    missing = missing_live_environment()
+    if missing:
+        details = "\n  ".join(missing)
+        hints = "\n  ".join(LIVE_ENV_HINTS)
+        raise AssertionError(
+            "live framework route smoke requires GemStone environment values.\n"
+            f"Missing:\n  {details}\n"
+            f"Expected one of each:\n  {hints}"
+        )
+
+
+def check_routes(service: Service, *, require_live: bool) -> None:
     port = free_port()
     base_url = f"http://127.0.0.1:{port}"
     command = [
@@ -160,7 +194,7 @@ def check_routes(service: Service) -> None:
 
         gemstone = http_get(f"{base_url}/health/gemstone")
         assert_diagnostics(service, gemstone, "health.gemstone")
-        if os.environ.get("GS_RUN_LIVE_RUST") == "1":
+        if require_live:
             body = assert_json(gemstone, 200)
             if body.get("result") != 7:
                 raise AssertionError(f"{service.name} live health did not return 7: {body}")
@@ -182,9 +216,21 @@ def check_routes(service: Service) -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Require /health/gemstone to reach a live stone and return result=7.",
+    )
+    args = parser.parse_args()
+    require_live = live_required(args)
+    if require_live:
+        validate_live_environment()
+
     for service in SERVICES:
-        check_routes(service)
-        print(f"{service.name} framework route smoke passed")
+        check_routes(service, require_live=require_live)
+        mode = "live" if require_live else "local"
+        print(f"{service.name} framework route smoke passed ({mode})")
     return 0
 
 

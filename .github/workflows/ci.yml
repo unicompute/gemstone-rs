@@ -119,3 +119,13 @@ jobs:
           GS_NETLDI: ${{ secrets.GS_NETLDI }}
           GS_USERNAME: ${{ secrets.GS_USERNAME }}
           GS_PASSWORD: ${{ secrets.GS_PASSWORD }}
+      - run: python3 scripts/framework_route_smoke.py --live
+        env:
+          GS_RUN_LIVE_RUST: "1"
+          GS_LIB_PATH: ${{ secrets.GS_LIB_PATH }}
+          GS_STONE: ${{ secrets.GS_STONE }}
+          GS_STONE_NAME: ${{ secrets.GS_STONE_NAME }}
+          GS_HOST: ${{ secrets.GS_HOST }}
+          GS_NETLDI: ${{ secrets.GS_NETLDI }}
+          GS_USERNAME: ${{ secrets.GS_USERNAME }}
+          GS_PASSWORD: ${{ secrets.GS_PASSWORD }}

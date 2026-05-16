@@ -332,6 +332,7 @@ without needing a live stone:
 
 ```bash
 python3 scripts/framework_route_smoke.py
+GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
 ```
 
 The adapters also return `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
@@ -344,6 +345,9 @@ request, lifecycle, and handler duration that produced the response. It also
 asserts `x-gemstone-rs-example-middleware: axum` or
 `x-gemstone-rs-example-middleware: actix` from the checked services, proving
 the packaged routes still compose with normal framework middleware.
+In live mode the same script requires `/health/gemstone` to reach the stone and
+return `{"result":7}` for both adapters; the manual CI job runs that path with
+GemStone secrets.
 
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:

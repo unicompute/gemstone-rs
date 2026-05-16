@@ -136,6 +136,7 @@ the route contract with:
 
 ```bash
 python3 scripts/framework_route_smoke.py
+GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
 ```
 
 The same smoke check asserts diagnostic and request-trace headers from the
@@ -147,7 +148,9 @@ adapters: `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 framework-neutral way to confirm the packaged handler ran. The checked services
 also add `x-gemstone-rs-example-middleware: axum` or
 `x-gemstone-rs-example-middleware: actix`, and the smoke script asserts the
-marker so application middleware stays covered.
+marker so application middleware stays covered. Pass `--live` or set
+`GS_RUN_LIVE_RUST=1` when GemStone credentials are available and
+`/health/gemstone` should be required to return `{"result":7}`.
 
 ## Suggested Learning Order
 
@@ -364,5 +367,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- live route smoke examples for `gemstone-rs-axum` and `gemstone-rs-actix`
+- broader production middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
 - a richer class browser walkthrough with captured output

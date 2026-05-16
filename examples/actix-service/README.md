@@ -46,6 +46,7 @@ Run the route smoke check:
 
 ```bash
 python3 scripts/framework_route_smoke.py
+GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
 ```
 
 Responses include `x-gemstone-rs-adapter: actix`, an `x-gemstone-rs-route`
@@ -58,6 +59,10 @@ adds an Actix middleware marker, `x-gemstone-rs-example-middleware: actix`, so
 tests can verify application middleware still runs around the packaged adapter
 routes. Send `x-request-id` in a request when you want a proxy, smoke test, or
 log stream to correlate the response.
+
+Use `--live` or `GS_RUN_LIVE_RUST=1` when GemStone credentials are configured
+and `/health/gemstone` must return `{"result":7}` instead of accepting the
+readable unavailable-stone response.
 
 Use the installed scaffold when you want to start a separate application:
 

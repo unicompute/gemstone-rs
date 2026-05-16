@@ -118,6 +118,7 @@ keep `/` and `/health/local` available and return a `503` JSON error from
 
 ```bash
 python3 scripts/framework_route_smoke.py
+GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
 ```
 
 The smoke check also asserts `x-gemstone-rs-adapter`,
@@ -127,6 +128,8 @@ The smoke check also asserts `x-gemstone-rs-adapter`,
 `x-gemstone-rs-request-duration-us` diagnostic headers from the framework
 adapters. It also checks the application middleware marker
 `x-gemstone-rs-example-middleware` in the checked Axum and Actix services.
+Pass `--live` or set `GS_RUN_LIVE_RUST=1` when GemStone credentials are
+available and `/health/gemstone` must return `{"result":7}` for both adapters.
 
 ## Installed CLI Equivalents
 
@@ -242,7 +245,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- live route smoke examples for `gemstone-rs-axum` and `gemstone-rs-actix`
+- broader production middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
 
 ## Scope
 
