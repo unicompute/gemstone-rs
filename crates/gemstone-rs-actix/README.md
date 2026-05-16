@@ -41,6 +41,11 @@ Every adapter response also includes diagnostic headers:
 - `x-gemstone-rs-request-id`
 - `x-gemstone-rs-request-method`
 - `x-gemstone-rs-request-path`
+- `x-gemstone-rs-request-lifecycle: received,handled`
+- `x-gemstone-rs-request-duration-us`
 
 If the caller sends `x-request-id`, the adapter propagates that value into
 `x-gemstone-rs-request-id`; otherwise it generates an `actix-*` request id.
+`x-gemstone-rs-request-duration-us` measures the packaged adapter handler in
+microseconds, so route smoke tests and local proxies can assert request
+lifecycle behavior without adding framework-specific middleware.

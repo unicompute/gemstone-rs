@@ -42,6 +42,9 @@ For web servers:
   `x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
   `x-gemstone-rs-request-path` headers enabled in local services so route
   smoke tests and proxy logs can identify health paths and correlate requests
+- keep `x-gemstone-rs-request-lifecycle` and
+  `x-gemstone-rs-request-duration-us` enabled to verify the packaged handler
+  lifecycle and measure route-handler time without custom middleware
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

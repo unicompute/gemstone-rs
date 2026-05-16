@@ -1729,7 +1729,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, route and request-trace headers, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
+        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1773,7 +1773,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked examples, and request-trace headers exist",
+        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked examples, request-trace headers, and lifecycle-duration headers exist",
         recommendation: "Use gemstone-py today for the broadest framework coverage; use gemstone-rs when Rust services need direct GemStone health routes and bounded session-worker boundaries",
     },
     ComparisonInfo {
@@ -1834,8 +1834,8 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 5,
         project_score: 4,
         leader: "gemstone-py",
-        status: "gemstone-py has broader FastAPI, Litestar, and Django examples; gemstone-rs has shared health helpers, Axum/Actix adapters, request-trace headers, and stricter route smoke tests.",
-        next_action: "Add richer middleware examples, request lifecycle examples, and live route smoke tests for Axum and Actix.",
+        status: "gemstone-py has broader FastAPI, Litestar, and Django examples; gemstone-rs has shared health helpers, Axum/Actix adapters, request-trace headers, lifecycle-duration headers, and stricter route smoke tests.",
+        next_action: "Add richer middleware examples and live route smoke tests for Axum and Actix.",
     },
     ParityInfo {
         area: "Async and lifetime behavior",
@@ -1884,8 +1884,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route and request-trace headers, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and request lifecycle examples.",
-        next_action: "Add richer middleware examples, request lifecycle examples, and live route smoke tests for the packaged Axum/Actix adapters.",
+        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and live route smoke tests.",
+        next_action: "Add richer middleware examples and live route smoke tests for the packaged Axum/Actix adapters.",
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
@@ -1958,9 +1958,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 4,
         focus: "Async facade and web middleware",
-        hours_min: 6,
-        hours_max: 12,
-        outcome: "Layer a cautious async facade over SessionWorkerPool and add Axum/Actix middleware, tracing, and route smoke coverage.",
+        hours_min: 5,
+        hours_max: 9,
+        outcome: "Layer a cautious async facade over SessionWorkerPool and add richer Axum/Actix middleware examples plus live route smoke coverage.",
         verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
     },
     BatchInfo {
@@ -5558,14 +5558,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (40, 71));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (39, 68));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 12,
-                hours_min: 82,
-                hours_max: 143,
+                hours_min: 81,
+                hours_max: 140,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5590,7 +5590,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":6,"hoursMin":40,"hoursMax":71}"#));
+            .contains(r#""remaining":{"totalBatches":6,"hoursMin":39,"hoursMax":68}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)

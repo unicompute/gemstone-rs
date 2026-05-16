@@ -141,7 +141,10 @@ python3 scripts/framework_route_smoke.py
 The same smoke check asserts diagnostic and request-trace headers from the
 adapters: `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 `x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
-`x-gemstone-rs-request-path`.
+`x-gemstone-rs-request-path`. It also asserts the lifecycle headers
+`x-gemstone-rs-request-lifecycle: received,handled` and
+`x-gemstone-rs-request-duration-us`, which give tests and local proxies a
+framework-neutral way to confirm the packaged handler ran.
 
 ## Suggested Learning Order
 

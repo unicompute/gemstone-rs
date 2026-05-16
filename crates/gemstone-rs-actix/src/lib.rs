@@ -21,7 +21,10 @@
 
 use actix_web::{http::StatusCode, web as actix, HttpRequest, HttpResponse, Responder, Scope};
 use gemstone_rs::{web as gemstone_web, Config, Result, SessionWorkerPool};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::{
+    sync::atomic::{AtomicU64, Ordering},
+    time::Instant,
+};
 
 /// Adapter name exposed through diagnostic response headers.
 pub const ADAPTER_NAME: &str = "actix";
@@ -43,6 +46,15 @@ pub const REQUEST_METHOD_HEADER: &str = "x-gemstone-rs-request-method";
 
 /// Header reporting the request path used for route tracing.
 pub const REQUEST_PATH_HEADER: &str = "x-gemstone-rs-request-path";
+
+/// Header reporting the request lifecycle marker used by the adapter.
+pub const REQUEST_LIFECYCLE_HEADER: &str = "x-gemstone-rs-request-lifecycle";
+
+/// Stable lifecycle value emitted after an adapter route is handled.
+pub const REQUEST_LIFECYCLE_VALUE: &str = "received,handled";
+
+/// Header reporting the adapter route handler duration in microseconds.
+pub const REQUEST_DURATION_US_HEADER: &str = "x-gemstone-rs-request-duration-us";
 
 /// Route contract exposed by [`scope`] and [`scope_with_name`].
 pub const ROUTES: &[&str] = &["GET /", "GET /health/local", "GET /health/gemstone"];
@@ -174,6 +186,11 @@ pub fn actix_response_with_route_and_trace(
         .insert_header((REQUEST_ID_HEADER, trace.request_id))
         .insert_header((REQUEST_METHOD_HEADER, trace.method))
         .insert_header((REQUEST_PATH_HEADER, trace.path))
+        .insert_header((REQUEST_LIFECYCLE_HEADER, REQUEST_LIFECYCLE_VALUE))
+        .insert_header((
+            REQUEST_DURATION_US_HEADER,
+            trace.started_at.elapsed().as_micros().to_string(),
+        ))
         .body(response.body)
 }
 
@@ -186,6 +203,7 @@ pub struct RequestTrace {
     pub method: String,
     /// Request path observed by the adapter.
     pub path: String,
+    started_at: Instant,
 }
 
 impl RequestTrace {
@@ -205,6 +223,7 @@ impl RequestTrace {
             request_id,
             method: request.method().as_str().to_string(),
             path: request.path().to_string(),
+            started_at: Instant::now(),
         }
     }
 
@@ -214,6 +233,7 @@ impl RequestTrace {
             request_id: format!("actix-{}", NEXT_REQUEST_ID.fetch_add(1, Ordering::Relaxed)),
             method: method.into(),
             path: path.into(),
+            started_at: Instant::now(),
         }
     }
 }
@@ -233,6 +253,11 @@ mod tests {
         assert_eq!(REQUEST_ID_HEADER, "x-gemstone-rs-request-id");
         assert_eq!(REQUEST_METHOD_HEADER, "x-gemstone-rs-request-method");
         assert_eq!(REQUEST_PATH_HEADER, "x-gemstone-rs-request-path");
+        assert_eq!(REQUEST_LIFECYCLE_HEADER, "x-gemstone-rs-request-lifecycle");
+        assert_eq!(
+            REQUEST_DURATION_US_HEADER,
+            "x-gemstone-rs-request-duration-us"
+        );
     }
 
     #[test]
@@ -248,6 +273,28 @@ mod tests {
         assert!(trace.request_id.starts_with("actix-"));
         assert_eq!(trace.method, "GET");
         assert_eq!(trace.path, "/health/local");
+    }
+
+    #[test]
+    fn response_includes_lifecycle_headers() {
+        let response = actix_response_with_route_and_trace(
+            gemstone_web::JsonResponse::ok(r#"{"ok":true}"#.to_string()),
+            "health.local",
+            RequestTrace::generated("GET", "/health/local"),
+        );
+        assert_eq!(
+            response
+                .headers()
+                .get(REQUEST_LIFECYCLE_HEADER)
+                .and_then(|value| value.to_str().ok()),
+            Some(REQUEST_LIFECYCLE_VALUE)
+        );
+        let duration = response
+            .headers()
+            .get(REQUEST_DURATION_US_HEADER)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse::<u128>().ok());
+        assert!(duration.is_some());
     }
 
     #[test]

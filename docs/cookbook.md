@@ -336,9 +336,11 @@ python3 scripts/framework_route_smoke.py
 
 The adapters also return `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 `x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
-`x-gemstone-rs-request-path` headers. The smoke script asserts those headers
-so a proxy, load balancer, or test can distinguish the framework adapter,
-route, and request that handled the response.
+`x-gemstone-rs-request-path` headers, plus
+`x-gemstone-rs-request-lifecycle: received,handled` and
+`x-gemstone-rs-request-duration-us`. The smoke script asserts those headers so
+a proxy, load balancer, or test can distinguish the framework adapter, route,
+request, lifecycle, and handler duration that produced the response.
 
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:

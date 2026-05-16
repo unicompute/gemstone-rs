@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**12 batches**, roughly **82-143 hours** total. Use
+**12 batches**, roughly **81-140 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -203,11 +203,12 @@ until the pool is available.
 
 The framework adapters also emit `x-gemstone-rs-adapter`,
 `x-gemstone-rs-route`, `x-gemstone-rs-request-id`,
-`x-gemstone-rs-request-method`, and `x-gemstone-rs-request-path` headers so
-route smoke tests, proxies, and logs can identify which adapter, route, and
-request produced the response. If the caller sends `x-request-id`, the adapters
-propagate it into `x-gemstone-rs-request-id`; otherwise they generate a local
-adapter-scoped id.
+`x-gemstone-rs-request-method`, `x-gemstone-rs-request-path`,
+`x-gemstone-rs-request-lifecycle`, and
+`x-gemstone-rs-request-duration-us` headers so route smoke tests, proxies, and
+logs can identify which adapter, route, request, and handler lifecycle produced
+the response. If the caller sends `x-request-id`, the adapters propagate it into
+`x-gemstone-rs-request-id`; otherwise they generate a local adapter-scoped id.
 
 Runtime environment:
 

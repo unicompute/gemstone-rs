@@ -648,7 +648,11 @@ The framework services can start before credentials are configured: `/` and
 JSON error until the GemStone pool is available. A route smoke script checks
 that contract for both frameworks, including diagnostic and request-trace
 headers that identify the adapter, route, request id, method, and path that
-produced each response.
+produced each response. The adapters also emit
+`x-gemstone-rs-request-lifecycle: received,handled` and
+`x-gemstone-rs-request-duration-us`, giving proxy logs and tests a small
+framework-neutral lifecycle signal without requiring application-specific
+middleware.
 The newer `SessionWorker` API gives these services a reusable dedicated-thread
 session lane when opening a session per health request is not enough:
 

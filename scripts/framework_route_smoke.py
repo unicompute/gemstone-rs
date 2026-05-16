@@ -101,6 +101,20 @@ def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None
     }[route]
     if path != expected_path:
         raise AssertionError(f"{service.name} request path header mismatch: {path!r}")
+    lifecycle = result.headers.get("x-gemstone-rs-request-lifecycle")
+    if lifecycle != "received,handled":
+        raise AssertionError(f"{service.name} lifecycle header mismatch: {lifecycle!r}")
+    duration = result.headers.get("x-gemstone-rs-request-duration-us")
+    if duration is None:
+        raise AssertionError(f"{service.name} missing duration header")
+    try:
+        parsed_duration = int(duration)
+    except ValueError as err:
+        raise AssertionError(
+            f"{service.name} duration header is not an integer: {duration!r}"
+        ) from err
+    if parsed_duration < 0:
+        raise AssertionError(f"{service.name} duration header is negative: {duration!r}")
 
 
 def check_routes(service: Service) -> None:

@@ -122,8 +122,10 @@ python3 scripts/framework_route_smoke.py
 
 The smoke check also asserts `x-gemstone-rs-adapter`,
 `x-gemstone-rs-route`, `x-gemstone-rs-request-id`,
-`x-gemstone-rs-request-method`, and `x-gemstone-rs-request-path` diagnostic
-headers from the framework adapters.
+`x-gemstone-rs-request-method`, `x-gemstone-rs-request-path`,
+`x-gemstone-rs-request-lifecycle`, and
+`x-gemstone-rs-request-duration-us` diagnostic headers from the framework
+adapters.
 
 ## Installed CLI Equivalents
 

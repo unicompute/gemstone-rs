@@ -57,7 +57,7 @@ The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print both comparison tracks together; `compare all --batches`
-reports **12 batches** and roughly **82-143 hours** across the Rust and
+reports **12 batches** and roughly **81-140 hours** across the Rust and
 TypeScript catch-up tracks.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
@@ -81,7 +81,7 @@ prints.
 | 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `codegen_discover`, `profile_codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, generate, profiles, typed return helpers, and typed argument conversion; live discovery still needs more depth. |
 | 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API; Python explorer remains the richer product reference. |
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs, BridgeRoot keys, and comparison status. |
-| 9 | Rust web services | `gemstone-rs::web`, `gemstone-rs-axum`, `gemstone-rs-actix`, `SessionWorkerPool`, checked Axum/Actix services, and installed scaffolds | `session_worker`, `session_worker_pool`, `http_service`, `examples/axum-service`, `examples/actix-service`, `framework_route_smoke.py`, `examples scaffold session_worker_pool/axum_service/actix_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Shared JSON health helpers, standard-library HTTP, graceful health-pool startup, diagnostic and request-trace headers, packaged Axum/Actix adapters, checked services, and route smoke coverage exist; richer middleware remains planned. |
+| 9 | Rust web services | `gemstone-rs::web`, `gemstone-rs-axum`, `gemstone-rs-actix`, `SessionWorkerPool`, checked Axum/Actix services, and installed scaffolds | `session_worker`, `session_worker_pool`, `http_service`, `examples/axum-service`, `examples/actix-service`, `framework_route_smoke.py`, `examples scaffold session_worker_pool/axum_service/actix_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Shared JSON health helpers, standard-library HTTP, graceful health-pool startup, diagnostic, request-trace, lifecycle, and duration headers, packaged Axum/Actix adapters, checked services, and route smoke coverage exist; richer middleware remains planned. |
 | 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
 | 11 | Shared native core | `gemstone-gci`, `gemstone-rs`, future `gemstone-py-native` wrapper | Shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Best long-term architecture; not wired into `gemstone-py-native` yet. |
 
