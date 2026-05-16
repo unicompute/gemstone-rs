@@ -1452,6 +1452,16 @@ struct ScorecardInfo {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ParityInfo {
+    area: &'static str,
+    gemstone_py_score: u8,
+    project_score: u8,
+    leader: &'static str,
+    status: &'static str,
+    next_action: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ScaffoldTemplate {
     name: &'static str,
     package_name: &'static str,
@@ -1810,6 +1820,65 @@ const GEMSTONE_RS_STRENGTHS: &[&str] = &[
     "CLI, explorer, and VS Code workflows that exercise the Rust core directly.",
 ];
 
+const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
+    ParityInfo {
+        area: "Core sessions and GCI",
+        gemstone_py_score: 4,
+        project_score: 4,
+        leader: "tie",
+        status: "Both projects cover login, eval, perform, transactions, and live smoke tests; Rust is stricter about ownership and thread boundaries.",
+        next_action: "Keep live smoke tests aligned and expand multi-version GemStone coverage.",
+    },
+    ParityInfo {
+        area: "Web frameworks",
+        gemstone_py_score: 5,
+        project_score: 3,
+        leader: "gemstone-py",
+        status: "gemstone-py has broader FastAPI, Litestar, and Django examples; gemstone-rs has shared health helpers plus Axum and Actix adapters.",
+        next_action: "Add middleware, tracing, request lifecycle, and stricter live route smoke tests for Axum and Actix.",
+    },
+    ParityInfo {
+        area: "Async and lifetime behavior",
+        gemstone_py_score: 4,
+        project_score: 2,
+        leader: "gemstone-py",
+        status: "gemstone-py has async examples and FastAPI lifetime coverage; gemstone-rs uses SessionWorker and SessionWorkerPool but has no general async facade yet.",
+        next_action: "Layer a cautious async facade over SessionWorkerPool after GCI thread behavior is proven.",
+    },
+    ParityInfo {
+        area: "Codegen and object mapping",
+        gemstone_py_score: 4,
+        project_score: 4,
+        leader: "tie",
+        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, and derive support; gemstone-py remains the broader reference.",
+        next_action: "Improve live discovery, generated wrapper tests, relationship mapping, and transparent object-model experiments.",
+    },
+    ParityInfo {
+        area: "Explorer and VS Code",
+        gemstone_py_score: 5,
+        project_score: 3,
+        leader: "gemstone-py",
+        status: "The Python explorer is still the richer product reference; gemstone-rs has a useful explorer, VS Code commands, and an embedded webview.",
+        next_action: "Make the embedded explorer webview the primary IDE surface for browse, diff, codegen, and BridgeRoot inspection.",
+    },
+    ParityInfo {
+        area: "Release and install lane",
+        gemstone_py_score: 5,
+        project_score: 4,
+        leader: "gemstone-py",
+        status: "gemstone-py has more exercised PyPI/TestPyPI/native wheel/VSIX lanes; gemstone-rs has crates, VSIX, checksums, PDFs, and verification scripts.",
+        next_action: "Run full crates.io, Marketplace, GitHub Release, checksum, and live smoke verification regularly.",
+    },
+    ParityInfo {
+        area: "Shared native core",
+        gemstone_py_score: 3,
+        project_score: 5,
+        leader: "gemstone-rs",
+        status: "gemstone-rs owns the clean Rust GCI/session core that can become the shared implementation under gemstone-py-native.",
+        next_action: "Make gemstone-py-native a thin PyO3 adapter over gemstone-gci and gemstone-rs.",
+    },
+];
+
 const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     GapInfo {
         priority: "P1",
@@ -1973,6 +2042,65 @@ const GEMSTONE_JS_STRENGTHS: &[&str] = &[
     "Async-first API shape that fits Node services naturally.",
     "Manifest/decorator codegen with TypeScript type signatures and schema checks.",
     "npm-oriented doctor, examples, migrations, inspect, benchmarks, and package smoke tooling.",
+];
+
+const GEMSTONE_JS_PARITY: &[ParityInfo] = &[
+    ParityInfo {
+        area: "Core sessions and runtime",
+        gemstone_py_score: 4,
+        project_score: 3,
+        leader: "gemstone-py",
+        status: "gemstone-js has an async-first session surface and runtime discovery, but gemstone-py has the more proven package and live-project use.",
+        next_action: "Publish and verify clean-install native/runtime packages across supported Node platforms.",
+    },
+    ParityInfo {
+        area: "Web frameworks",
+        gemstone_py_score: 5,
+        project_score: 3,
+        leader: "gemstone-py",
+        status: "gemstone-py has first-class FastAPI, Litestar, and Django examples; gemstone-js has Express, Fastify, Fetch API, and Hono adapter direction.",
+        next_action: "Add end-to-end installed web examples and live route smoke tests.",
+    },
+    ParityInfo {
+        area: "Async service fit",
+        gemstone_py_score: 4,
+        project_score: 4,
+        leader: "tie",
+        status: "gemstone-js fits Node async services naturally; gemstone-py has broader async/lifetime examples today.",
+        next_action: "Expand request-scope teardown, pool, transaction, and framework adapter live tests.",
+    },
+    ParityInfo {
+        area: "Persistence helpers",
+        gemstone_py_score: 5,
+        project_score: 4,
+        leader: "gemstone-py",
+        status: "gemstone-js has persistent roots, migrations, ObjectLog, query helpers, and reduced-conflict wrappers, but less production mileage.",
+        next_action: "Add more clean-install persistence examples and live migration smoke tests.",
+    },
+    ParityInfo {
+        area: "Codegen",
+        gemstone_py_score: 4,
+        project_score: 4,
+        leader: "tie",
+        status: "gemstone-js has manifest/decorator codegen with TypeScript signatures; gemstone-py remains the broader reference.",
+        next_action: "Connect codegen to visual tooling and live discovery flows.",
+    },
+    ParityInfo {
+        area: "Visual tooling",
+        gemstone_py_score: 5,
+        project_score: 1,
+        leader: "gemstone-py",
+        status: "gemstone-py has the mature explorer and VS Code workbench; gemstone-js has CLI tooling but no visual explorer yet.",
+        next_action: "Build or reuse explorer/workbench concepts for TypeScript inspection and codegen.",
+    },
+    ParityInfo {
+        area: "Release and native confidence",
+        gemstone_py_score: 5,
+        project_score: 2,
+        leader: "gemstone-py",
+        status: "gemstone-js is alpha and needs more live native-platform proof before matching gemstone-py operational confidence.",
+        next_action: "Exercise npm package, native package, checksums, live smoke, and post-publish verification in CI.",
+    },
 ];
 
 const GEMSTONE_JS_BATCHES: &[BatchInfo] = &[
@@ -2260,6 +2388,13 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
         CompareView::Scorecard => print_scorecard(gemstone_py_scorecard_info(), format),
+        CompareView::Parity => print_parity(
+            "gemstone-rs parity vs gemstone-py",
+            "gemstone-py",
+            "gemstone-rs",
+            GEMSTONE_RS_PARITY,
+            format,
+        ),
         CompareView::Gaps => print_gemstone_py_gap_report(format),
         CompareView::Next => print_next_action(
             "gemstone-rs next action vs gemstone-py",
@@ -2291,6 +2426,13 @@ fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_js_comparison_summary(format),
         CompareView::Scorecard => print_scorecard(gemstone_js_scorecard_info(), format),
+        CompareView::Parity => print_parity(
+            "gemstone-js parity vs gemstone-py",
+            "gemstone-js",
+            "gemstone-js",
+            GEMSTONE_JS_PARITY,
+            format,
+        ),
         CompareView::Gaps => print_gemstone_js_gap_report(format),
         CompareView::Next => print_next_action(
             "gemstone-js next action vs gemstone-py",
@@ -2337,6 +2479,23 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
                     println!();
                     print_scorecard(gemstone_js_scorecard_info(), OutputFormat::Human);
                 }
+                CompareView::Parity => {
+                    print_parity(
+                        "gemstone-rs parity vs gemstone-py",
+                        "gemstone-py",
+                        "gemstone-rs",
+                        GEMSTONE_RS_PARITY,
+                        OutputFormat::Human,
+                    );
+                    println!();
+                    print_parity(
+                        "gemstone-js parity vs gemstone-py",
+                        "gemstone-js",
+                        "gemstone-js",
+                        GEMSTONE_JS_PARITY,
+                        OutputFormat::Human,
+                    );
+                }
                 _ => {
                     print_gemstone_py_comparison(view, OutputFormat::Human);
                     println!();
@@ -2380,6 +2539,13 @@ fn print_all_comparisons_json(view: CompareView) {
                 totals.hours_max,
                 scorecard_json_entry(gemstone_py_scorecard_info()),
                 scorecard_json_entry(gemstone_js_scorecard_info())
+            );
+        }
+        CompareView::Parity => {
+            println!(
+                r#"{{"comparison":"all","view":"parity","comparisons":[{},{}]}}"#,
+                parity_json_entry("gemstone-py", "gemstone-rs", GEMSTONE_RS_PARITY),
+                parity_json_entry("gemstone-js", "gemstone-js", GEMSTONE_JS_PARITY)
             );
         }
         CompareView::Gaps => {
@@ -2653,6 +2819,45 @@ fn print_scorecard_list(title: &str, values: &[&'static str]) {
     println!();
 }
 
+fn print_parity(
+    title: &str,
+    comparison: &str,
+    project_label: &str,
+    rows: &[ParityInfo],
+    format: OutputFormat,
+) {
+    let totals = parity_totals(rows);
+    match format {
+        OutputFormat::Human => {
+            println!("{title}");
+            println!(
+                "  Scores: gemstone-py {}/{}; {} {}/{}; gap {}",
+                totals.gemstone_py_score,
+                totals.max_score,
+                project_label,
+                totals.project_score,
+                totals.max_score,
+                totals.score_gap
+            );
+            println!();
+            for row in rows {
+                println!("{}", row.area);
+                println!("  gemstone-py: {}/5", row.gemstone_py_score);
+                println!("  {project_label}: {}/5", row.project_score);
+                println!("  Leader: {}", row.leader);
+                println!("  Status: {}", row.status);
+                println!("  Next action: {}", row.next_action);
+                println!();
+            }
+        }
+        OutputFormat::Json => println!(
+            r#"{{"comparison":"{}","view":"parity",{}}}"#,
+            escape_json(comparison),
+            parity_json_body(project_label, rows)
+        ),
+    }
+}
+
 fn comparison_json(row: &ComparisonInfo) -> String {
     format!(
         r#"{{"topic":"{}","gemstonePy":"{}","gemstoneRs":"{}","recommendation":"{}"}}"#,
@@ -2741,6 +2946,29 @@ fn scorecard_json_body(info: ScorecardInfo) -> String {
                 .expect("comparison gap reports must contain at least one gap"),
             info.project_label
         )
+    )
+}
+
+fn parity_json_entry(comparison: &str, project_label: &str, rows: &[ParityInfo]) -> String {
+    format!(
+        r#"{{"comparison":"{}",{}}}"#,
+        escape_json(comparison),
+        parity_json_body(project_label, rows)
+    )
+}
+
+fn parity_json_body(project_label: &str, rows: &[ParityInfo]) -> String {
+    let totals = parity_totals(rows);
+    let rows_json = rows
+        .iter()
+        .map(parity_row_json)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        r#""project":"{}","overall":{},"rows":[{}]"#,
+        escape_json(project_label),
+        parity_totals_json(totals),
+        rows_json
     )
 }
 
@@ -2914,6 +3142,48 @@ fn batch_totals_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
         batches.len(),
         min_hours,
         max_hours
+    )
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ParityTotals {
+    gemstone_py_score: u16,
+    project_score: u16,
+    max_score: u16,
+    score_gap: i16,
+}
+
+fn parity_totals(rows: &[ParityInfo]) -> ParityTotals {
+    let gemstone_py_score = rows
+        .iter()
+        .map(|row| u16::from(row.gemstone_py_score))
+        .sum();
+    let project_score = rows.iter().map(|row| u16::from(row.project_score)).sum();
+    let max_score = rows.len() as u16 * 5;
+    ParityTotals {
+        gemstone_py_score,
+        project_score,
+        max_score,
+        score_gap: gemstone_py_score as i16 - project_score as i16,
+    }
+}
+
+fn parity_totals_json(totals: ParityTotals) -> String {
+    format!(
+        r#"{{"gemstonePyScore":{},"projectScore":{},"maxScore":{},"scoreGap":{}}}"#,
+        totals.gemstone_py_score, totals.project_score, totals.max_score, totals.score_gap
+    )
+}
+
+fn parity_row_json(row: &ParityInfo) -> String {
+    format!(
+        r#"{{"area":"{}","gemstonePyScore":{},"projectScore":{},"leader":"{}","status":"{}","nextAction":"{}"}}"#,
+        escape_json(row.area),
+        row.gemstone_py_score,
+        row.project_score,
+        escape_json(row.leader),
+        escape_json(row.status),
+        escape_json(row.next_action)
     )
 }
 
@@ -3569,6 +3839,7 @@ enum OutputFormat {
 enum CompareView {
     Summary,
     Scorecard,
+    Parity,
     Gaps,
     Next,
     Totals,
@@ -3706,13 +3977,14 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
             "--scorecard" | "--matrix" | "--decision" => view = CompareView::Scorecard,
+            "--parity" | "--maturity" | "--readiness" => view = CompareView::Parity,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
             "--next" | "--next-action" => view = CompareView::Next,
             "--totals" | "--total" => view = CompareView::Totals,
             "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js|all [--scorecard|--gaps|--next|--totals|--batches] [--json]",
+                    "expected: compare gemstone-py|gemstone-js|all [--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -3725,6 +3997,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
                 target = Some("all");
             }
             "scorecard" | "matrix" | "decision" => view = CompareView::Scorecard,
+            "parity" | "maturity" | "readiness" => view = CompareView::Parity,
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
             "next" | "next-action" => view = CompareView::Next,
             "totals" | "total" => view = CompareView::Totals,
@@ -4610,7 +4883,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js|all [--scorecard|--gaps|--next|--totals|--batches] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js|all [--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -4795,6 +5068,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--parity", "--json"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Parity,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-py", "gaps"])).unwrap(),
             Command::CompareGemstonePy {
                 view: CompareView::Gaps,
@@ -4862,6 +5142,13 @@ mod tests {
             Command::CompareAll {
                 view: CompareView::Scorecard,
                 format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "all", "maturity", "--json"])).unwrap(),
+            Command::CompareAll {
+                view: CompareView::Parity,
+                format: OutputFormat::Json,
             }
         );
         assert_eq!(
@@ -5148,6 +5435,21 @@ mod tests {
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
             .contains(r#""remaining":{"totalBatches":6,"hoursMin":44,"hoursMax":79}"#));
+        assert_eq!(
+            parity_totals(GEMSTONE_RS_PARITY),
+            ParityTotals {
+                gemstone_py_score: 30,
+                project_score: 25,
+                max_score: 35,
+                score_gap: 5,
+            }
+        );
+        assert!(
+            !parity_json_entry("gemstone-py", "gemstone-rs", GEMSTONE_RS_PARITY)
+                .contains(r#""view":"#)
+        );
+        assert!(parity_json_body("gemstone-rs", GEMSTONE_RS_PARITY)
+            .contains(r#""project":"gemstone-rs""#));
     }
 
     #[test]

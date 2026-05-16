@@ -90,9 +90,11 @@ assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 for (const args of [
   ["compare", "gemstone-py", "--json"],
   ["compare", "gemstone-py", "--scorecard", "--json"],
+  ["compare", "gemstone-py", "--parity", "--json"],
   ["compare", "gemstone-js", "--gaps", "--json"],
   ["compare", "all", "--json"],
   ["compare", "all", "--scorecard", "--json"],
+  ["compare", "all", "--parity", "--json"],
   ["compare", "all", "--gaps", "--json"],
   ["compare", "all", "--next", "--json"],
   ["compare", "all", "--totals", "--json"],
@@ -217,7 +219,7 @@ function assertProfileCheck(value) {
 
 function assertCompare(value, context) {
   assert(["gemstone-py", "gemstone-js", "all"].includes(value.comparison), context);
-  assert(["summary", "scorecard", "gaps", "next", "totals", "batches"].includes(value.view), context);
+  assert(["summary", "scorecard", "parity", "gaps", "next", "totals", "batches"].includes(value.view), context);
 
   if (value.comparison === "all") {
     assert(Array.isArray(value.comparisons), `${context}: comparisons`);
@@ -247,6 +249,9 @@ function assertCompareEntry(value, view, context) {
     case "scorecard":
       assertScorecard(value, context);
       break;
+    case "parity":
+      assertParity(value, context);
+      break;
     case "gaps":
       assert(Array.isArray(value.gaps), `${context}: gaps`);
       assert(value.gaps.length > 0, `${context}: gaps should not be empty`);
@@ -271,6 +276,25 @@ function assertCompareEntry(value, view, context) {
       break;
     default:
       throw new Error(`${context}: unknown compare view ${view}`);
+  }
+}
+
+function assertParity(value, context) {
+  assert.strictEqual(typeof value.project, "string", `${context}.project`);
+  assert(value.overall && typeof value.overall === "object", `${context}.overall`);
+  assert.strictEqual(typeof value.overall.gemstonePyScore, "number", `${context}.overall.gemstonePyScore`);
+  assert.strictEqual(typeof value.overall.projectScore, "number", `${context}.overall.projectScore`);
+  assert.strictEqual(typeof value.overall.maxScore, "number", `${context}.overall.maxScore`);
+  assert.strictEqual(typeof value.overall.scoreGap, "number", `${context}.overall.scoreGap`);
+  assert(Array.isArray(value.rows), `${context}.rows`);
+  assert(value.rows.length > 0, `${context}.rows should not be empty`);
+  for (const [index, row] of value.rows.entries()) {
+    assert.strictEqual(typeof row.area, "string", `${context}.rows[${index}].area`);
+    assert.strictEqual(typeof row.gemstonePyScore, "number", `${context}.rows[${index}].gemstonePyScore`);
+    assert.strictEqual(typeof row.projectScore, "number", `${context}.rows[${index}].projectScore`);
+    assert.strictEqual(typeof row.leader, "string", `${context}.rows[${index}].leader`);
+    assert.strictEqual(typeof row.status, "string", `${context}.rows[${index}].status`);
+    assert.strictEqual(typeof row.nextAction, "string", `${context}.rows[${index}].nextAction`);
   }
 }
 

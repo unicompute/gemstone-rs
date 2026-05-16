@@ -98,6 +98,8 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --gaps --json
 gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --scorecard --json
+gemstone-rs compare gemstone-py --parity
+gemstone-rs compare gemstone-py --parity --json
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --next --json
 gemstone-rs compare gemstone-py --totals
@@ -121,6 +123,13 @@ Use `--scorecard` when you want the short decision answer instead of the full
 gap report. It summarizes where gemstone-py is stronger today, where
 gemstone-rs is stronger today, when to choose each project, how many batches
 remain, and the next recommended batch.
+
+Use `--parity` when you want a measured maturity view. It scores each area out
+of five and shows the current leader, status, and next action. The current
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 25/35**:
+Rust is at parity or ahead for core sessions, codegen/mapping, and the shared
+native-core direction; Python remains ahead for web frameworks, async/lifetime
+coverage, explorer polish, and release lane depth.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |

@@ -11,6 +11,9 @@
       "$ref": "#/$defs/singleScorecard"
     },
     {
+      "$ref": "#/$defs/singleParity"
+    },
+    {
       "$ref": "#/$defs/singleGaps"
     },
     {
@@ -27,6 +30,9 @@
     },
     {
       "$ref": "#/$defs/allScorecard"
+    },
+    {
+      "$ref": "#/$defs/allParity"
     },
     {
       "$ref": "#/$defs/allGaps"
@@ -112,6 +118,33 @@
         },
         "topGap": {
           "$ref": "#/$defs/genericGap"
+        }
+      }
+    },
+    "singleParity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison", "view", "project", "overall", "rows"],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "view": {
+          "const": "parity"
+        },
+        "project": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overall": {
+          "$ref": "#/$defs/parityOverall"
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/parityRow"
+          }
         }
       }
     },
@@ -256,6 +289,26 @@
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/scorecardEntry"
+          }
+        }
+      }
+    },
+    "allParity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison", "view", "comparisons"],
+      "properties": {
+        "comparison": {
+          "const": "all"
+        },
+        "view": {
+          "const": "parity"
+        },
+        "comparisons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/parityEntry"
           }
         }
       }
@@ -434,6 +487,30 @@
         }
       }
     },
+    "parityEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison", "project", "overall", "rows"],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "project": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overall": {
+          "$ref": "#/$defs/parityOverall"
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/parityRow"
+          }
+        }
+      }
+    },
     "gapEntry": {
       "type": "object",
       "additionalProperties": false,
@@ -520,6 +597,65 @@
           "$ref": "#/$defs/gemstoneJsRow"
         }
       ]
+    },
+    "parityOverall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gemstonePyScore", "projectScore", "maxScore", "scoreGap"],
+      "properties": {
+        "gemstonePyScore": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "projectScore": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "maxScore": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "scoreGap": {
+          "type": "integer"
+        }
+      }
+    },
+    "parityRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "area",
+        "gemstonePyScore",
+        "projectScore",
+        "leader",
+        "status",
+        "nextAction"
+      ],
+      "properties": {
+        "area": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gemstonePyScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "projectScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "leader": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nextAction": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "gemstoneRsRow": {
       "type": "object",

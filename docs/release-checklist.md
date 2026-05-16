@@ -21,8 +21,8 @@ Use this checklist for coordinated crate, VSIX, and GitHub releases.
   `/api/setup/assistant` checks in the output panel.
 - CI: schema copies and `codegen explain --json` output are validated by
   `scripts/validate_codegen_schemas.js`.
-- CI: `compare ... --json`, including the scorecard view, is validated against
-  the same structural contract documented in
+- CI: `compare ... --json`, including scorecard and parity views, is validated
+  against the same structural contract documented in
   `schemas/gemstone-rs.compare.schema.json`.
 - Examples: the generated-wrapper smoke crate now runs `cargo test`.
 
