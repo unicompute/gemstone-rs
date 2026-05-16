@@ -144,7 +144,10 @@ adapters: `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 `x-gemstone-rs-request-path`. It also asserts the lifecycle headers
 `x-gemstone-rs-request-lifecycle: received,handled` and
 `x-gemstone-rs-request-duration-us`, which give tests and local proxies a
-framework-neutral way to confirm the packaged handler ran.
+framework-neutral way to confirm the packaged handler ran. The checked services
+also add `x-gemstone-rs-example-middleware: axum` or
+`x-gemstone-rs-example-middleware: actix`, and the smoke script asserts the
+marker so application middleware stays covered.
 
 ## Suggested Learning Order
 
@@ -361,5 +364,5 @@ Project Profile, Check Project Profiles, and Open Docs actions.
 These are useful, but should wait until the corresponding APIs are stable:
 
 - a local explorer workflow with screenshots
-- richer middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
+- live route smoke examples for `gemstone-rs-axum` and `gemstone-rs-actix`
 - a richer class browser walkthrough with captured output

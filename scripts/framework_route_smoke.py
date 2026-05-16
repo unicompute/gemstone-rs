@@ -115,6 +115,9 @@ def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None
         ) from err
     if parsed_duration < 0:
         raise AssertionError(f"{service.name} duration header is negative: {duration!r}")
+    middleware = result.headers.get("x-gemstone-rs-example-middleware")
+    if middleware != service.adapter:
+        raise AssertionError(f"{service.name} middleware header mismatch: {middleware!r}")
 
 
 def check_routes(service: Service) -> None:

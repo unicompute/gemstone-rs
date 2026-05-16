@@ -340,7 +340,10 @@ The adapters also return `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 `x-gemstone-rs-request-lifecycle: received,handled` and
 `x-gemstone-rs-request-duration-us`. The smoke script asserts those headers so
 a proxy, load balancer, or test can distinguish the framework adapter, route,
-request, lifecycle, and handler duration that produced the response.
+request, lifecycle, and handler duration that produced the response. It also
+asserts `x-gemstone-rs-example-middleware: axum` or
+`x-gemstone-rs-example-middleware: actix` from the checked services, proving
+the packaged routes still compose with normal framework middleware.
 
 Use `SessionWorker` when the application wants a reusable dedicated GemStone
 session lane instead of opening a new session inside each blocking route:

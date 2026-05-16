@@ -651,8 +651,11 @@ headers that identify the adapter, route, request id, method, and path that
 produced each response. The adapters also emit
 `x-gemstone-rs-request-lifecycle: received,handled` and
 `x-gemstone-rs-request-duration-us`, giving proxy logs and tests a small
-framework-neutral lifecycle signal without requiring application-specific
-middleware.
+framework-neutral lifecycle signal. The checked Axum and Actix services now
+also install a tiny framework middleware layer and expose it as
+`x-gemstone-rs-example-middleware: axum` or
+`x-gemstone-rs-example-middleware: actix`, so the smoke test proves packaged
+GemStone routes still compose with normal application middleware.
 The newer `SessionWorker` API gives these services a reusable dedicated-thread
 session lane when opening a session per health request is not enough:
 

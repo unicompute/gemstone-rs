@@ -125,7 +125,8 @@ The smoke check also asserts `x-gemstone-rs-adapter`,
 `x-gemstone-rs-request-method`, `x-gemstone-rs-request-path`,
 `x-gemstone-rs-request-lifecycle`, and
 `x-gemstone-rs-request-duration-us` diagnostic headers from the framework
-adapters.
+adapters. It also checks the application middleware marker
+`x-gemstone-rs-example-middleware` in the checked Axum and Actix services.
 
 ## Installed CLI Equivalents
 
@@ -241,7 +242,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- richer middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
+- live route smoke examples for `gemstone-rs-axum` and `gemstone-rs-actix`
 
 ## Scope
 

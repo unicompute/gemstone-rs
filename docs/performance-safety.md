@@ -45,6 +45,9 @@ For web servers:
 - keep `x-gemstone-rs-request-lifecycle` and
   `x-gemstone-rs-request-duration-us` enabled to verify the packaged handler
   lifecycle and measure route-handler time without custom middleware
+- keep framework middleware smoke markers such as
+  `x-gemstone-rs-example-middleware` in checked examples so adapter upgrades do
+  not bypass application middleware
 - keep transaction boundaries explicit
 - do not share a live session between async tasks
 

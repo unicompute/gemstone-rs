@@ -1,4 +1,12 @@
+use axum::{
+    extract::Request,
+    http::{HeaderName, HeaderValue},
+    middleware::{self, Next},
+    response::Response,
+};
 use std::{env, error::Error};
+
+const EXAMPLE_MIDDLEWARE_HEADER: &str = "x-gemstone-rs-example-middleware";
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
@@ -25,10 +33,20 @@ async fn main() -> AppResult<()> {
     }
     axum::serve(
         listener,
-        gemstone_rs_axum::router_with_health_pool(health, "gemstone-rs Axum service example"),
+        gemstone_rs_axum::router_with_health_pool(health, "gemstone-rs Axum service example")
+            .layer(middleware::from_fn(example_middleware)),
     )
     .await?;
     Ok(())
+}
+
+async fn example_middleware(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    response.headers_mut().insert(
+        HeaderName::from_static(EXAMPLE_MIDDLEWARE_HEADER),
+        HeaderValue::from_static("axum"),
+    );
+    response
 }
 
 #[derive(Debug, Eq, PartialEq)]

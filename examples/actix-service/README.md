@@ -53,9 +53,11 @@ value of `root`, `health.local`, or `health.gemstone`, and request trace
 headers: `x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
 `x-gemstone-rs-request-path`. Lifecycle headers
 `x-gemstone-rs-request-lifecycle: received,handled` and
-`x-gemstone-rs-request-duration-us` are also emitted. Send `x-request-id` in a
-request when you want a proxy, smoke test, or log stream to correlate the
-response.
+`x-gemstone-rs-request-duration-us` are also emitted. The checked example also
+adds an Actix middleware marker, `x-gemstone-rs-example-middleware: actix`, so
+tests can verify application middleware still runs around the packaged adapter
+routes. Send `x-request-id` in a request when you want a proxy, smoke test, or
+log stream to correlate the response.
 
 Use the installed scaffold when you want to start a separate application:
 

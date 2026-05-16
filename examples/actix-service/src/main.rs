@@ -1,8 +1,10 @@
-use actix_web::{App, HttpServer};
+use actix_web::{middleware::DefaultHeaders, App, HttpServer};
 use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
+
+const EXAMPLE_MIDDLEWARE_HEADER: &str = "x-gemstone-rs-example-middleware";
 
 #[actix_web::main]
 async fn main() -> AppResult<()> {
@@ -18,10 +20,12 @@ async fn main() -> AppResult<()> {
     }
     let server = HttpServer::new(move || {
         let health = health.clone();
-        App::new().service(gemstone_rs_actix::scope_with_health_pool(
-            health,
-            "gemstone-rs Actix service example",
-        ))
+        App::new()
+            .wrap(DefaultHeaders::new().add((EXAMPLE_MIDDLEWARE_HEADER, "actix")))
+            .service(gemstone_rs_actix::scope_with_health_pool(
+                health,
+                "gemstone-rs Actix service example",
+            ))
     })
     .bind(options.addr())?;
 

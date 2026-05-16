@@ -231,7 +231,7 @@ The `Comparison Status` buttons call read-only local endpoints:
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **12 batches** and roughly
-  **81-140 hours**
+  **80-138 hours**
 
 Read-only endpoints:
 
