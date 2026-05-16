@@ -2219,6 +2219,12 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
             "gemstone-rs",
             format,
         ),
+        CompareView::Totals => print_batch_totals(
+            "gemstone-rs remaining work vs gemstone-py",
+            "gemstone-py",
+            GEMSTONE_RS_BATCHES,
+            format,
+        ),
         CompareView::Batches => print_batch_plan(
             "gemstone-rs remaining batches vs gemstone-py",
             "gemstone-py",
@@ -2243,6 +2249,12 @@ fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
             "gemstone-js",
             format,
         ),
+        CompareView::Totals => print_batch_totals(
+            "gemstone-js remaining work vs gemstone-py",
+            "gemstone-js",
+            GEMSTONE_JS_BATCHES,
+            format,
+        ),
         CompareView::Batches => print_batch_plan(
             "gemstone-js catch-up batches vs gemstone-py",
             "gemstone-js",
@@ -2258,7 +2270,7 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
     match format {
         OutputFormat::Human => {
             println!("all gemstone comparison reports");
-            if view == CompareView::Batches {
+            if matches!(view, CompareView::Batches | CompareView::Totals) {
                 let totals = all_batch_totals();
                 println!(
                     "  Combined total: {} batches, roughly {}-{} hours",
@@ -2266,9 +2278,14 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
                 );
             }
             println!();
-            print_gemstone_py_comparison(view, OutputFormat::Human);
-            println!();
-            print_gemstone_js_comparison(view, OutputFormat::Human);
+            match view {
+                CompareView::Totals => print_all_comparison_totals_human(),
+                _ => {
+                    print_gemstone_py_comparison(view, OutputFormat::Human);
+                    println!();
+                    print_gemstone_js_comparison(view, OutputFormat::Human);
+                }
+            }
         }
         OutputFormat::Json => print_all_comparisons_json(view),
     }
@@ -2333,6 +2350,17 @@ fn print_all_comparisons_json(view: CompareView) {
                     GEMSTONE_JS_GAPS,
                     "gemstone-js"
                 )
+            );
+        }
+        CompareView::Totals => {
+            let totals = all_batch_totals();
+            println!(
+                r#"{{"comparison":"all","view":"totals","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                totals.total_batches,
+                totals.hours_min,
+                totals.hours_max,
+                batch_totals_json_entry("gemstone-py", GEMSTONE_RS_BATCHES),
+                batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             );
         }
         CompareView::Batches => {
@@ -2644,6 +2672,57 @@ fn batch_plan_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
         min_hours,
         max_hours,
         rows
+    )
+}
+
+fn print_batch_totals(title: &str, comparison: &str, batches: &[BatchInfo], format: OutputFormat) {
+    let (min_hours, max_hours) = total_batch_hours(batches);
+    match format {
+        OutputFormat::Human => {
+            println!("{title}");
+            println!(
+                "  Total: {} batches, roughly {}-{} hours",
+                batches.len(),
+                min_hours,
+                max_hours
+            );
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"comparison":"{}","view":"totals","totalBatches":{},"hoursMin":{},"hoursMax":{}}}"#,
+                escape_json(comparison),
+                batches.len(),
+                min_hours,
+                max_hours
+            );
+        }
+    }
+}
+
+fn print_all_comparison_totals_human() {
+    print_batch_totals(
+        "gemstone-rs remaining work vs gemstone-py",
+        "gemstone-py",
+        GEMSTONE_RS_BATCHES,
+        OutputFormat::Human,
+    );
+    println!();
+    print_batch_totals(
+        "gemstone-js remaining work vs gemstone-py",
+        "gemstone-js",
+        GEMSTONE_JS_BATCHES,
+        OutputFormat::Human,
+    );
+}
+
+fn batch_totals_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
+    let (min_hours, max_hours) = total_batch_hours(batches);
+    format!(
+        r#"{{"comparison":"{}","totalBatches":{},"hoursMin":{},"hoursMax":{}}}"#,
+        escape_json(comparison),
+        batches.len(),
+        min_hours,
+        max_hours
     )
 }
 
@@ -3290,6 +3369,7 @@ enum CompareView {
     Summary,
     Gaps,
     Next,
+    Totals,
     Batches,
 }
 
@@ -3425,10 +3505,11 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             "--json" => format = OutputFormat::Json,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
             "--next" | "--next-action" => view = CompareView::Next,
+            "--totals" | "--total" => view = CompareView::Totals,
             "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js|all [--gaps|--next|--batches] [--json]",
+                    "expected: compare gemstone-py|gemstone-js|all [--gaps|--next|--totals|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -3442,6 +3523,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             }
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
             "next" | "next-action" => view = CompareView::Next,
+            "totals" | "total" => view = CompareView::Totals,
             "batches" | "batch-plan" | "work" => view = CompareView::Batches,
             value if value.starts_with('-') => {
                 return Err(CliError::usage(format!("unknown compare option: {value}")));
@@ -4324,7 +4406,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js|all [--gaps|--next|--batches] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js|all [--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -4523,6 +4605,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--totals"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Totals,
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-js"])).unwrap(),
             Command::CompareGemstoneJs {
                 view: CompareView::Summary,
@@ -4562,6 +4651,13 @@ mod tests {
             Command::CompareAll {
                 view: CompareView::Batches,
                 format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "all", "totals", "--json"])).unwrap(),
+            Command::CompareAll {
+                view: CompareView::Totals,
+                format: OutputFormat::Json,
             }
         );
     }
@@ -4830,6 +4926,8 @@ mod tests {
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
             .contains(r#""totalBatches":6"#));
+        assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
+            .contains(r#""hoursMax":72"#));
     }
 
     #[test]

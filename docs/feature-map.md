@@ -11,12 +11,15 @@ gemstone-rs hello
 gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
+gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
+gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --next
+gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 gemstone-rs examples map
 gemstone-rs examples map --json
@@ -35,6 +38,7 @@ guide. `compare gemstone-js` prints the TypeScript/Python comparison from
 [gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--gaps`
 forms print remaining parity gaps with next actions and verification commands.
 The `--next` forms print the first recommended batch and top priority gap.
+The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print both comparison tracks together; `compare all --batches`

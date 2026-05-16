@@ -98,9 +98,12 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --gaps --json
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --next --json
+gemstone-rs compare gemstone-py --totals
+gemstone-rs compare gemstone-py --totals --json
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-py --batches --json
 gemstone-rs compare all --next
+gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 ```
 
@@ -135,6 +138,8 @@ The batch plan is also available from the CLI:
 ```bash
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-py --batches --json
+gemstone-rs compare gemstone-py --totals
+gemstone-rs compare all --totals
 ```
 
 | Batch | Work | Estimate |

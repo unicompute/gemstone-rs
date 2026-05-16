@@ -67,12 +67,15 @@ gemstone-rs hello
 gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
+gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
+gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --next
+gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 gemstone-rs env sample
 gemstone-rs env write
@@ -99,8 +102,9 @@ gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 gemstone-rs-explorer --help
 ```
 
-`gemstone-rs compare all --batches` summarizes both active comparison tracks
-as **12 batches**, roughly **86-151 hours** total, with per-track verification
+`gemstone-rs compare all --totals` prints only the combined estimate:
+**12 batches**, roughly **86-151 hours** total. Use
+`gemstone-rs compare all --batches` for the per-batch detail and verification
 commands.
 
 For VS Code, install the workbench from the Marketplace:
@@ -249,6 +253,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --next
 cargo run -p gemstone-rs-cli -- compare gemstone-py --next --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py --totals
+cargo run -p gemstone-rs-cli -- compare gemstone-py --totals --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js
@@ -257,6 +263,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --next
 cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
+cargo run -p gemstone-rs-cli -- compare gemstone-js --totals
+cargo run -p gemstone-rs-cli -- compare gemstone-js --totals --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- compare all
@@ -265,6 +273,8 @@ cargo run -p gemstone-rs-cli -- compare all --gaps
 cargo run -p gemstone-rs-cli -- compare all --gaps --json
 cargo run -p gemstone-rs-cli -- compare all --next
 cargo run -p gemstone-rs-cli -- compare all --next --json
+cargo run -p gemstone-rs-cli -- compare all --totals
+cargo run -p gemstone-rs-cli -- compare all --totals --json
 cargo run -p gemstone-rs-cli -- compare all --batches
 cargo run -p gemstone-rs-cli -- compare all --batches --json
 cargo run -p gemstone-rs-cli -- env sample

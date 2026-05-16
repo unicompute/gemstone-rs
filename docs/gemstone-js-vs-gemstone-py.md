@@ -97,12 +97,15 @@ From the `gemstone-rs` checkout:
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
+gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
 gemstone-rs compare gemstone-js --json
 gemstone-rs compare gemstone-js --gaps --json
 gemstone-rs compare gemstone-js --next --json
+gemstone-rs compare gemstone-js --totals --json
 gemstone-rs compare gemstone-js --batches --json
 gemstone-rs compare all --next
+gemstone-rs compare all --totals
 gemstone-rs compare all --next --json
 ```
 
