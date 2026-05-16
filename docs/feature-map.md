@@ -9,6 +9,7 @@ Run it from the CLI:
 ```bash
 gemstone-rs hello
 gemstone-rs compare gemstone-py
+gemstone-rs compare gemstone-py --status
 gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --parity
 gemstone-rs compare gemstone-py --gaps
@@ -16,12 +17,14 @@ gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
+gemstone-rs compare gemstone-js --status
 gemstone-rs compare gemstone-js --scorecard
 gemstone-rs compare gemstone-js --parity
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --status
 gemstone-rs compare all --scorecard
 gemstone-rs compare all --parity
 gemstone-rs compare all --next
@@ -41,7 +44,9 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
 guide. `compare gemstone-js` prints the TypeScript/Python comparison from
-[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--scorecard`
+[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--status`
+forms give the shortest answer with the direct recommendation, parity score,
+remaining batch count, next batch, top gap, and follow-up commands. The `--scorecard`
 forms print the shortest decision view: when to use each project, current
 strengths, the remaining batch count, the next batch, and the top gap. The
 `--parity` forms print area-by-area maturity scores for API, web, async,
@@ -60,8 +65,9 @@ derive mapping, generated wrappers, live discovery, profile-driven codegen,
 standard HTTP, worker-pool, Axum, and Actix workflows. JSON output is intended for CI, docs
 checks, and editor tooling. Compare reports are covered by
 [`schemas/gemstone-rs.compare.schema.json`](../schemas/gemstone-rs.compare.schema.json),
-so release scripts and editor panels can validate the same summary, scorecard,
-parity, gap, next-action, totals, and batch-plan shapes that the CLI prints.
+so release scripts and editor panels can validate the same summary, status,
+scorecard, parity, gap, next-action, totals, and batch-plan shapes that the CLI
+prints.
 
 ## Streams
 

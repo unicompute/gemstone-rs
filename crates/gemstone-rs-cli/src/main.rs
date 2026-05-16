@@ -2387,6 +2387,12 @@ fn print_hello(format: OutputFormat) {
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
+        CompareView::Status => print_status(
+            "gemstone-rs status vs gemstone-py",
+            gemstone_py_scorecard_info(),
+            GEMSTONE_RS_PARITY,
+            format,
+        ),
         CompareView::Scorecard => print_scorecard(gemstone_py_scorecard_info(), format),
         CompareView::Parity => print_parity(
             "gemstone-rs parity vs gemstone-py",
@@ -2425,6 +2431,12 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
 fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_js_comparison_summary(format),
+        CompareView::Status => print_status(
+            "gemstone-js status vs gemstone-py",
+            gemstone_js_scorecard_info(),
+            GEMSTONE_JS_PARITY,
+            format,
+        ),
         CompareView::Scorecard => print_scorecard(gemstone_js_scorecard_info(), format),
         CompareView::Parity => print_parity(
             "gemstone-js parity vs gemstone-py",
@@ -2474,6 +2486,27 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
             println!();
             match view {
                 CompareView::Totals => print_all_comparison_totals_human(),
+                CompareView::Status => {
+                    let totals = all_batch_totals();
+                    println!(
+                        "Combined remaining work: {} batches, roughly {}-{} hours",
+                        totals.total_batches, totals.hours_min, totals.hours_max
+                    );
+                    println!();
+                    print_status(
+                        "gemstone-rs status vs gemstone-py",
+                        gemstone_py_scorecard_info(),
+                        GEMSTONE_RS_PARITY,
+                        OutputFormat::Human,
+                    );
+                    println!();
+                    print_status(
+                        "gemstone-js status vs gemstone-py",
+                        gemstone_js_scorecard_info(),
+                        GEMSTONE_JS_PARITY,
+                        OutputFormat::Human,
+                    );
+                }
                 CompareView::Scorecard => {
                     print_scorecard(gemstone_py_scorecard_info(), OutputFormat::Human);
                     println!();
@@ -2528,6 +2561,17 @@ fn print_all_comparisons_json(view: CompareView) {
                         .collect::<Vec<_>>()
                         .join(",")
                 )
+            );
+        }
+        CompareView::Status => {
+            let totals = all_batch_totals();
+            println!(
+                r#"{{"comparison":"all","view":"status","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                totals.total_batches,
+                totals.hours_min,
+                totals.hours_max,
+                status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY),
+                status_json_entry(gemstone_js_scorecard_info(), GEMSTONE_JS_PARITY)
             );
         }
         CompareView::Scorecard => {
@@ -2819,6 +2863,62 @@ fn print_scorecard_list(title: &str, values: &[&'static str]) {
     println!();
 }
 
+fn print_status(
+    title: &str,
+    info: ScorecardInfo,
+    parity_rows: &[ParityInfo],
+    format: OutputFormat,
+) {
+    let (hours_min, hours_max) = total_batch_hours(info.batches);
+    let parity = parity_totals(parity_rows);
+    let next_batch = info
+        .batches
+        .first()
+        .expect("comparison batch plans must contain at least one batch");
+    let top_gap = info
+        .gaps
+        .first()
+        .expect("comparison gap reports must contain at least one gap");
+
+    match format {
+        OutputFormat::Human => {
+            println!("{title}");
+            println!("  Answer: {}", info.answer);
+            println!(
+                "  Parity: gemstone-py {}/{}; {} {}/{}; gap {}",
+                parity.gemstone_py_score,
+                parity.max_score,
+                info.project_label,
+                parity.project_score,
+                parity.max_score,
+                parity.score_gap
+            );
+            println!(
+                "  Remaining work: {} batches, roughly {}-{} hours",
+                info.batches.len(),
+                hours_min,
+                hours_max
+            );
+            println!(
+                "  Next batch: {}. {} ({}-{} hours)",
+                next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
+            );
+            println!("  Top gap: {} {}", top_gap.priority, top_gap.area);
+            println!("  Next action: {}", top_gap.next_action);
+            println!();
+            println!("Commands:");
+            println!("  gemstone-rs compare {} --scorecard", info.comparison);
+            println!("  gemstone-rs compare {} --parity", info.comparison);
+            println!("  gemstone-rs compare {} --batches", info.comparison);
+        }
+        OutputFormat::Json => println!(
+            r#"{{"comparison":"{}","view":"status",{}}}"#,
+            escape_json(info.comparison),
+            status_json_body(info, parity_rows)
+        ),
+    }
+}
+
 fn print_parity(
     title: &str,
     comparison: &str,
@@ -2946,6 +3046,45 @@ fn scorecard_json_body(info: ScorecardInfo) -> String {
                 .expect("comparison gap reports must contain at least one gap"),
             info.project_label
         )
+    )
+}
+
+fn status_json_entry(info: ScorecardInfo, parity_rows: &[ParityInfo]) -> String {
+    format!(
+        r#"{{"comparison":"{}",{}}}"#,
+        escape_json(info.comparison),
+        status_json_body(info, parity_rows)
+    )
+}
+
+fn status_json_body(info: ScorecardInfo, parity_rows: &[ParityInfo]) -> String {
+    format!(
+        r#""answer":"{}","remaining":{},"parity":{},"nextBatch":{},"topGap":{},"commands":{}"#,
+        escape_json(info.answer),
+        remaining_json(info.batches),
+        parity_totals_json(parity_totals(parity_rows)),
+        batch_json(
+            info.batches
+                .first()
+                .expect("comparison batch plans must contain at least one batch")
+        ),
+        generic_gap_json(
+            info.gaps
+                .first()
+                .expect("comparison gap reports must contain at least one gap"),
+            info.project_label
+        ),
+        status_commands_json(info.comparison)
+    )
+}
+
+fn status_commands_json(comparison: &str) -> String {
+    format!(
+        r#"{{"scorecard":"gemstone-rs compare {} --scorecard","parity":"gemstone-rs compare {} --parity","batches":"gemstone-rs compare {} --batches","totals":"gemstone-rs compare {} --totals"}}"#,
+        escape_json(comparison),
+        escape_json(comparison),
+        escape_json(comparison),
+        escape_json(comparison)
     )
 }
 
@@ -3838,6 +3977,7 @@ enum OutputFormat {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CompareView {
     Summary,
+    Status,
     Scorecard,
     Parity,
     Gaps,
@@ -3976,6 +4116,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
+            "--status" | "--brief" | "--answer" => view = CompareView::Status,
             "--scorecard" | "--matrix" | "--decision" => view = CompareView::Scorecard,
             "--parity" | "--maturity" | "--readiness" => view = CompareView::Parity,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
@@ -3984,7 +4125,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js|all [--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]",
+                    "expected: compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -3996,6 +4137,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             "all" | "everything" if target.is_none() => {
                 target = Some("all");
             }
+            "status" | "brief" | "answer" => view = CompareView::Status,
             "scorecard" | "matrix" | "decision" => view = CompareView::Scorecard,
             "parity" | "maturity" | "readiness" => view = CompareView::Parity,
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
@@ -4883,7 +5025,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js|all [--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -5068,6 +5210,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--status", "--json"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Status,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-py", "--parity", "--json"])).unwrap(),
             Command::CompareGemstonePy {
                 view: CompareView::Parity,
@@ -5141,6 +5290,13 @@ mod tests {
             parse_command(&args(&["compare", "all", "scorecard"])).unwrap(),
             Command::CompareAll {
                 view: CompareView::Scorecard,
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "all", "brief"])).unwrap(),
+            Command::CompareAll {
+                view: CompareView::Status,
                 format: OutputFormat::Human,
             }
         );
@@ -5435,6 +5591,14 @@ mod tests {
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
             .contains(r#""remaining":{"totalBatches":6,"hoursMin":44,"hoursMax":79}"#));
+        assert!(
+            !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
+                .contains(r#""view":"#)
+        );
+        assert!(
+            status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
+                .contains(r#""scoreGap":5"#)
+        );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {

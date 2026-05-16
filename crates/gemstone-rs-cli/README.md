@@ -14,6 +14,8 @@ cargo run -p gemstone-rs-cli -- hello
 cargo run -p gemstone-rs-cli -- hello --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py
 cargo run -p gemstone-rs-cli -- compare gemstone-py --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py --status
+cargo run -p gemstone-rs-cli -- compare gemstone-py --status --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --scorecard
 cargo run -p gemstone-rs-cli -- compare gemstone-py --scorecard --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --parity
@@ -28,6 +30,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js
 cargo run -p gemstone-rs-cli -- compare gemstone-js --json
+cargo run -p gemstone-rs-cli -- compare gemstone-js --status
+cargo run -p gemstone-rs-cli -- compare gemstone-js --status --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard
 cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --parity
@@ -42,6 +46,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- compare all
 cargo run -p gemstone-rs-cli -- compare all --json
+cargo run -p gemstone-rs-cli -- compare all --status
+cargo run -p gemstone-rs-cli -- compare all --status --json
 cargo run -p gemstone-rs-cli -- compare all --scorecard
 cargo run -p gemstone-rs-cli -- compare all --scorecard --json
 cargo run -p gemstone-rs-cli -- compare all --parity
@@ -140,8 +146,9 @@ Rust/Python comparison, while `compare gemstone-js` prints the
 TypeScript/Python comparison. `compare all` prints both comparison tracks in
 one run. Add `--gaps` for the prioritized catch-up report, `--next` for the
 single recommended next action, `--totals` for only the estimated batch/hour
-totals, `--batches` for the detailed work batches, `--scorecard` for the
-short decision view, and `--parity` for area-by-area maturity scores.
+totals, `--batches` for the detailed work batches, `--status` for the shortest
+answer with parity and batch count, `--scorecard` for the decision view, and
+`--parity` for area-by-area maturity scores.
 `compare all --totals` reports the combined
 **12-batch**, **86-151 hour** estimate across the Rust and TypeScript catch-up
 tracks. Add `--json` when an editor, CI job, or release script needs

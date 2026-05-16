@@ -96,6 +96,8 @@ The CLI can print the remaining gemstone-py parity gaps directly:
 ```bash
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --gaps --json
+gemstone-rs compare gemstone-py --status
+gemstone-rs compare gemstone-py --status --json
 gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --scorecard --json
 gemstone-rs compare gemstone-py --parity
@@ -119,8 +121,12 @@ The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
 test that should verify it.
 
-Use `--scorecard` when you want the short decision answer instead of the full
-gap report. It summarizes where gemstone-py is stronger today, where
+Use `--status` when you want the shortest answer. It combines the direct
+recommendation, parity score, remaining batch count, next batch, top gap, and
+follow-up commands in one report.
+
+Use `--scorecard` when you want the decision answer instead of the full gap
+report. It summarizes where gemstone-py is stronger today, where
 gemstone-rs is stronger today, when to choose each project, how many batches
 remain, and the next recommended batch.
 

@@ -89,10 +89,12 @@ assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
+  ["compare", "gemstone-py", "--status", "--json"],
   ["compare", "gemstone-py", "--scorecard", "--json"],
   ["compare", "gemstone-py", "--parity", "--json"],
   ["compare", "gemstone-js", "--gaps", "--json"],
   ["compare", "all", "--json"],
+  ["compare", "all", "--status", "--json"],
   ["compare", "all", "--scorecard", "--json"],
   ["compare", "all", "--parity", "--json"],
   ["compare", "all", "--gaps", "--json"],
@@ -219,7 +221,7 @@ function assertProfileCheck(value) {
 
 function assertCompare(value, context) {
   assert(["gemstone-py", "gemstone-js", "all"].includes(value.comparison), context);
-  assert(["summary", "scorecard", "parity", "gaps", "next", "totals", "batches"].includes(value.view), context);
+  assert(["summary", "status", "scorecard", "parity", "gaps", "next", "totals", "batches"].includes(value.view), context);
 
   if (value.comparison === "all") {
     assert(Array.isArray(value.comparisons), `${context}: comparisons`);
@@ -245,6 +247,9 @@ function assertCompareEntry(value, view, context) {
       for (const [index, row] of value.rows.entries()) {
         assertCompareRow(row, value.comparison, `${context}.rows[${index}]`);
       }
+      break;
+    case "status":
+      assertStatus(value, context);
       break;
     case "scorecard":
       assertScorecard(value, context);
@@ -276,6 +281,22 @@ function assertCompareEntry(value, view, context) {
       break;
     default:
       throw new Error(`${context}: unknown compare view ${view}`);
+  }
+}
+
+function assertStatus(value, context) {
+  assert.strictEqual(typeof value.answer, "string", `${context}.answer`);
+  assertTotals(value.remaining, `${context}.remaining`);
+  assert(value.parity && typeof value.parity === "object", `${context}.parity`);
+  assert.strictEqual(typeof value.parity.gemstonePyScore, "number", `${context}.parity.gemstonePyScore`);
+  assert.strictEqual(typeof value.parity.projectScore, "number", `${context}.parity.projectScore`);
+  assert.strictEqual(typeof value.parity.maxScore, "number", `${context}.parity.maxScore`);
+  assert.strictEqual(typeof value.parity.scoreGap, "number", `${context}.parity.scoreGap`);
+  assertBatch(value.nextBatch, `${context}.nextBatch`);
+  assertGenericGap(value.topGap, `${context}.topGap`);
+  assert(value.commands && typeof value.commands === "object", `${context}.commands`);
+  for (const field of ["scorecard", "parity", "batches", "totals"]) {
+    assert.strictEqual(typeof value.commands[field], "string", `${context}.commands.${field}`);
   }
 }
 

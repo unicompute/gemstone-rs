@@ -8,6 +8,9 @@
       "$ref": "#/$defs/singleSummary"
     },
     {
+      "$ref": "#/$defs/singleStatus"
+    },
+    {
       "$ref": "#/$defs/singleScorecard"
     },
     {
@@ -27,6 +30,9 @@
     },
     {
       "$ref": "#/$defs/allSummary"
+    },
+    {
+      "$ref": "#/$defs/allStatus"
     },
     {
       "$ref": "#/$defs/allScorecard"
@@ -69,6 +75,47 @@
           "items": {
             "$ref": "#/$defs/summaryRow"
           }
+        }
+      }
+    },
+    "singleStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "view",
+        "answer",
+        "remaining",
+        "parity",
+        "nextBatch",
+        "topGap",
+        "commands"
+      ],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "view": {
+          "const": "status"
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remaining": {
+          "$ref": "#/$defs/remaining"
+        },
+        "parity": {
+          "$ref": "#/$defs/parityOverall"
+        },
+        "nextBatch": {
+          "$ref": "#/$defs/batch"
+        },
+        "topGap": {
+          "$ref": "#/$defs/genericGap"
+        },
+        "commands": {
+          "$ref": "#/$defs/statusCommands"
         }
       }
     },
@@ -257,6 +304,42 @@
         }
       }
     },
+    "allStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "view",
+        "totalBatches",
+        "hoursMin",
+        "hoursMax",
+        "comparisons"
+      ],
+      "properties": {
+        "comparison": {
+          "const": "all"
+        },
+        "view": {
+          "const": "status"
+        },
+        "totalBatches": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMin": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMax": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "comparisons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/statusEntry"
+          }
+        }
+      }
+    },
     "allScorecard": {
       "type": "object",
       "additionalProperties": false,
@@ -439,6 +522,43 @@
           "items": {
             "$ref": "#/$defs/summaryRow"
           }
+        }
+      }
+    },
+    "statusEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "answer",
+        "remaining",
+        "parity",
+        "nextBatch",
+        "topGap",
+        "commands"
+      ],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "remaining": {
+          "$ref": "#/$defs/remaining"
+        },
+        "parity": {
+          "$ref": "#/$defs/parityOverall"
+        },
+        "nextBatch": {
+          "$ref": "#/$defs/batch"
+        },
+        "topGap": {
+          "$ref": "#/$defs/genericGap"
+        },
+        "commands": {
+          "$ref": "#/$defs/statusCommands"
         }
       }
     },
@@ -827,6 +947,29 @@
         },
         "hoursMax": {
           "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "statusCommands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scorecard", "parity", "batches", "totals"],
+      "properties": {
+        "scorecard": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "batches": {
+          "type": "string",
+          "minLength": 1
+        },
+        "totals": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
