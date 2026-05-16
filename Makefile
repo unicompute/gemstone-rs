@@ -24,12 +24,16 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps --json
+	cargo run -p gemstone-rs-cli -- compare gemstone-py --next
+	cargo run -p gemstone-rs-cli -- compare gemstone-py --next --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-js
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
+	cargo run -p gemstone-rs-cli -- compare gemstone-js --next
+	cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 	cargo run -p gemstone-rs-cli -- examples list

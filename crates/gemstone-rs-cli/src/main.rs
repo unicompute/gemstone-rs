@@ -2206,6 +2206,15 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
         CompareView::Gaps => print_gemstone_py_gap_report(format),
+        CompareView::Next => print_next_action(
+            "gemstone-rs next action vs gemstone-py",
+            "gemstone-py",
+            "docs/gemstone-py-vs-gemstone-rs.md",
+            GEMSTONE_RS_BATCHES,
+            GEMSTONE_PY_GAPS,
+            "gemstone-rs",
+            format,
+        ),
         CompareView::Batches => print_batch_plan(
             "gemstone-rs remaining batches vs gemstone-py",
             "gemstone-py",
@@ -2221,6 +2230,15 @@ fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_js_comparison_summary(format),
         CompareView::Gaps => print_gemstone_js_gap_report(format),
+        CompareView::Next => print_next_action(
+            "gemstone-js next action vs gemstone-py",
+            "gemstone-js",
+            "docs/gemstone-js-vs-gemstone-py.md",
+            GEMSTONE_JS_BATCHES,
+            GEMSTONE_JS_GAPS,
+            "gemstone-js",
+            format,
+        ),
         CompareView::Batches => print_batch_plan(
             "gemstone-js catch-up batches vs gemstone-py",
             "gemstone-js",
@@ -2392,6 +2410,50 @@ fn js_gap_json(gap: &GapInfo) -> String {
     )
 }
 
+fn print_next_action(
+    title: &str,
+    comparison: &str,
+    guide: &str,
+    batches: &[BatchInfo],
+    gaps: &[GapInfo],
+    project_label: &str,
+    format: OutputFormat,
+) {
+    let Some(batch) = batches.first() else {
+        return;
+    };
+    let Some(gap) = gaps.first() else {
+        return;
+    };
+    match format {
+        OutputFormat::Human => {
+            println!("{title}");
+            println!("  Full guide: {guide}");
+            println!();
+            println!(
+                "Next batch: {}. {} ({}-{} hours)",
+                batch.number, batch.focus, batch.hours_min, batch.hours_max
+            );
+            println!("  Outcome: {}", batch.outcome);
+            println!("  Verify with: {}", batch.verify_with);
+            println!();
+            println!("Top gap: {} {}", gap.priority, gap.area);
+            println!("  gemstone-py strength: {}", gap.gemstone_py_strength);
+            println!("  {project_label} gap: {}", gap.gemstone_rs_gap);
+            println!("  Next action: {}", gap.next_action);
+            println!("  Verify with: {}", gap.verify_with);
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"comparison":"{}","view":"next","batch":{},"gap":{}}}"#,
+                escape_json(comparison),
+                batch_json(batch),
+                generic_gap_json(gap, project_label)
+            );
+        }
+    }
+}
+
 fn print_batch_plan(
     title: &str,
     comparison: &str,
@@ -2455,6 +2517,19 @@ fn batch_json(batch: &BatchInfo) -> String {
         batch.hours_max,
         escape_json(batch.outcome),
         escape_json(batch.verify_with)
+    )
+}
+
+fn generic_gap_json(gap: &GapInfo, project_label: &str) -> String {
+    format!(
+        r#"{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","project":"{}","projectGap":"{}","nextAction":"{}","verifyWith":"{}"}}"#,
+        escape_json(gap.priority),
+        escape_json(gap.area),
+        escape_json(gap.gemstone_py_strength),
+        escape_json(project_label),
+        escape_json(gap.gemstone_rs_gap),
+        escape_json(gap.next_action),
+        escape_json(gap.verify_with)
     )
 }
 
@@ -3045,6 +3120,7 @@ enum OutputFormat {
 enum CompareView {
     Summary,
     Gaps,
+    Next,
     Batches,
 }
 
@@ -3179,10 +3255,11 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
+            "--next" | "--next-action" => view = CompareView::Next,
             "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js [--gaps|--batches] [--json]",
+                    "expected: compare gemstone-py|gemstone-js [--gaps|--next|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -3192,6 +3269,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
                 target = Some("gemstone-js");
             }
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
+            "next" | "next-action" => view = CompareView::Next,
             "batches" | "batch-plan" | "work" => view = CompareView::Batches,
             value if value.starts_with('-') => {
                 return Err(CliError::usage(format!("unknown compare option: {value}")));
@@ -4073,7 +4151,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js [--gaps|--batches] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js [--gaps|--next|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -4265,6 +4343,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--next"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Next,
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-js"])).unwrap(),
             Command::CompareGemstoneJs {
                 view: CompareView::Summary,
@@ -4275,6 +4360,13 @@ mod tests {
             parse_command(&args(&["compare", "js", "--gaps", "--json"])).unwrap(),
             Command::CompareGemstoneJs {
                 view: CompareView::Gaps,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "js", "next", "--json"])).unwrap(),
+            Command::CompareGemstoneJs {
+                view: CompareView::Next,
                 format: OutputFormat::Json,
             }
         );
@@ -4531,6 +4623,9 @@ mod tests {
             .iter()
             .any(|batch| batch.focus.contains("Visual tooling")));
         assert!(batch_json(&GEMSTONE_JS_BATCHES[0]).contains(r#""hoursMax":10"#));
+        assert!(generic_gap_json(&GEMSTONE_JS_GAPS[0], "gemstone-js")
+            .contains(r#""project":"gemstone-js""#));
+        assert!(!generic_gap_json(&GEMSTONE_PY_GAPS[0], "gemstone-rs").contains(r#""view":"#));
     }
 
     #[test]

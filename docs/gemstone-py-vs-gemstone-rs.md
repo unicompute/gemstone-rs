@@ -96,6 +96,8 @@ The CLI can print the remaining gemstone-py parity gaps directly:
 ```bash
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --gaps --json
+gemstone-rs compare gemstone-py --next
+gemstone-rs compare gemstone-py --next --json
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-py --batches --json
 ```
@@ -112,6 +114,13 @@ test that should verify it.
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
+
+Use `--next` when you only want the first recommended implementation step:
+
+```bash
+gemstone-rs compare gemstone-py --next
+gemstone-rs compare gemstone-py --next --json
+```
 
 ## Remaining Work Batches
 

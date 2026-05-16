@@ -96,9 +96,11 @@ From the `gemstone-rs` checkout:
 ```bash
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
+gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --batches
 gemstone-rs compare gemstone-js --json
 gemstone-rs compare gemstone-js --gaps --json
+gemstone-rs compare gemstone-js --next --json
 gemstone-rs compare gemstone-js --batches --json
 ```
 
