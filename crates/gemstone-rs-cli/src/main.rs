@@ -44,6 +44,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_gemstone_py_comparison(view, format);
             Ok(())
         }
+        Command::CompareGemstoneJs { view, format } => {
+            print_gemstone_js_comparison(view, format);
+            Ok(())
+        }
         Command::Doctor {
             live,
             strict,
@@ -1402,6 +1406,14 @@ struct ComparisonInfo {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct JsComparisonInfo {
+    topic: &'static str,
+    gemstone_py: &'static str,
+    gemstone_js: &'static str,
+    recommendation: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct GapInfo {
     priority: &'static str,
     area: &'static str,
@@ -1797,6 +1809,100 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
 ];
 
+const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
+    JsComparisonInfo {
+        topic: "Best fit",
+        gemstone_py: "Python applications, scripts, notebooks, data tooling, FastAPI/Litestar/Django services, and Python-first teams",
+        gemstone_js: "TypeScript/JavaScript services, CLIs, Node-based tooling, web adapters, and teams already using npm workflows",
+        recommendation: "Choose gemstone-py for Python products; choose gemstone-js for async TypeScript applications that need direct GemStone access",
+    },
+    JsComparisonInfo {
+        topic: "Install path",
+        gemstone_py: "PyPI package with optional native acceleration through gemstone-py[fast]",
+        gemstone_js: "npm package shape with optional @gemstone-js/native; local package is 0.1.0-alpha.0 and requires Node >=24",
+        recommendation: "Use gemstone-py for the more stable published path today; use gemstone-js when npm distribution is the product boundary",
+    },
+    JsComparisonInfo {
+        topic: "API style",
+        gemstone_py: "Sync and async Python APIs, explicit sessions, managed OOP handles, and Pythonic converters",
+        gemstone_js: "Async-first Session API, AsyncDisposable support, typed OOP helpers, managed handles, request scopes, pools, and converter registry",
+        recommendation: "gemstone-js is naturally stronger for async JavaScript services; gemstone-py is easier for Python scripting",
+    },
+    JsComparisonInfo {
+        topic: "Web frameworks",
+        gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
+        gemstone_js: "Express, Fastify, Fetch API, and Hono adapters delegate request teardown through a shared scope layer",
+        recommendation: "Both are credible for web services; pick the framework ecosystem your application already uses",
+    },
+    JsComparisonInfo {
+        topic: "Persistence helpers",
+        gemstone_py: "Persistent roots, collection helpers, migrations, object log, reduced-conflict helpers, and typed access examples",
+        gemstone_js: "PersistentRoot, GsDict, OrderedCollection, GStore, migrations, ObjectLog, reduced-conflict wrappers, and query helpers",
+        recommendation: "gemstone-js has caught up surprisingly well in surface area, but gemstone-py has more live-project maturity",
+    },
+    JsComparisonInfo {
+        topic: "Codegen",
+        gemstone_py: "Python codegen and typed-access demos",
+        gemstone_js: "Manifest/decorator-driven TypeScript codegen with schemas, arity checks, typed signatures, and generated examples",
+        recommendation: "Use gemstone-js when TypeScript types and decorator scanning matter; gemstone-py remains the broader reference implementation",
+    },
+    JsComparisonInfo {
+        topic: "Tooling",
+        gemstone_py: "Database explorer, VS Code workbench, examples CLI, native wheel publishing, PyPI/TestPyPI verification",
+        gemstone_js: "Doctor, examples CLI, inspect CLI, bootstrap, migrations CLI, benchmarks, checksums, and API-contract checks",
+        recommendation: "gemstone-py has the stronger visual tooling; gemstone-js has strong package/CI-oriented developer tooling",
+    },
+    JsComparisonInfo {
+        topic: "Native/runtime layer",
+        gemstone_py: "Python native path is already integrated with release tooling",
+        gemstone_js: "Node native package, Deno/Bun FFI starters, mock runtime, and library discovery via GS_LIB_PATH/GS_LIB/GEMSTONE",
+        recommendation: "gemstone-js needs more live native-platform proof before it matches gemstone-py operational confidence",
+    },
+];
+
+const GEMSTONE_JS_GAPS: &[GapInfo] = &[
+    GapInfo {
+        priority: "P1",
+        area: "Published native confidence",
+        gemstone_py_strength: "gemstone-py has a working package/release lane and optional native acceleration path.",
+        gemstone_rs_gap: "gemstone-js is alpha and depends on optional @gemstone-js/native plus Deno/Bun FFI starter paths that need broader live proof.",
+        next_action: "Publish and verify gemstone-js plus @gemstone-js/native across supported Node platforms, then run npm verify and live smoke tests from a clean install.",
+        verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
+    },
+    GapInfo {
+        priority: "P1",
+        area: "Visual tooling",
+        gemstone_py_strength: "gemstone-py has python-gemstone-database-explorer and a more mature VS Code workbench flow.",
+        gemstone_rs_gap: "gemstone-js has inspect/doctor/examples CLIs but no equivalent visual database explorer or VS Code workbench yet.",
+        next_action: "Build a gemstone-js explorer/workbench layer or reuse the Rust/Python explorer concepts for TypeScript codegen and inspection workflows.",
+        verify_with: "npm run inspect; npm run examples; browser smoke for the future explorer",
+    },
+    GapInfo {
+        priority: "P1",
+        area: "Installed examples",
+        gemstone_py_strength: "gemstone-py has a mature examples guide and installed example runner.",
+        gemstone_rs_gap: "gemstone-js has gemstone-js-examples and a catalog, but needs more end-to-end installed-package examples with live GemStone credentials.",
+        next_action: "Add clean-install example smoke tests for quickstart, codegen, migrations, web adapters, and persistence helpers.",
+        verify_with: "npm run examples:check; gemstone-js-examples --json",
+    },
+    GapInfo {
+        priority: "P2",
+        area: "Live coverage",
+        gemstone_py_strength: "gemstone-py has broader live GemStone testing across sync, async, framework, lifetime, and native behavior.",
+        gemstone_rs_gap: "gemstone-js has a live test entry point, but more runtime/platform combinations and framework-adapter live flows are needed.",
+        next_action: "Add scheduled/manual live CI for login, eval, performWith, pools, request scopes, migrations, query helpers, and all web adapters.",
+        verify_with: "GS_RUN_LIVE=1 npm run test:live",
+    },
+    GapInfo {
+        priority: "P2",
+        area: "Documentation polish",
+        gemstone_py_strength: "gemstone-py has a broader article/docs/PDF/release documentation set.",
+        gemstone_rs_gap: "gemstone-js docs are extensive but need a polished article, release checklist, and comparison docs equivalent to gemstone-py.",
+        next_action: "Add a Medium-style article, release checklist, PDF docs, and a clear gemstone-js vs gemstone-py guide.",
+        verify_with: "npm run pack:check; docs link check when available",
+    },
+];
+
 const NO_EXTRA_SCAFFOLD_FILES: &[ScaffoldFile] = &[];
 
 const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
@@ -1991,6 +2097,13 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     }
 }
 
+fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
+    match view {
+        CompareView::Summary => print_gemstone_js_comparison_summary(format),
+        CompareView::Gaps => print_gemstone_js_gap_report(format),
+    }
+}
+
 fn print_gemstone_py_comparison_summary(format: OutputFormat) {
     match format {
         OutputFormat::Human => {
@@ -2049,6 +2162,64 @@ fn print_gemstone_py_gap_report(format: OutputFormat) {
     }
 }
 
+fn print_gemstone_js_comparison_summary(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-js vs gemstone-py");
+            println!("  Full guide: docs/gemstone-js-vs-gemstone-py.md");
+            println!("  Gap report: gemstone-rs compare gemstone-js --gaps");
+            println!();
+            for row in GEMSTONE_JS_COMPARISON {
+                println!("{}", row.topic);
+                println!("  gemstone-py: {}", row.gemstone_py);
+                println!("  gemstone-js: {}", row.gemstone_js);
+                println!("  Recommendation: {}", row.recommendation);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let rows = GEMSTONE_JS_COMPARISON
+                .iter()
+                .map(js_comparison_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(
+                r#"{{"comparison":"gemstone-js","view":"summary","rows":[{}]}}"#,
+                rows
+            );
+        }
+    }
+}
+
+fn print_gemstone_js_gap_report(format: OutputFormat) {
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-js gaps vs gemstone-py");
+            println!("  Full guide: docs/gemstone-js-vs-gemstone-py.md");
+            println!();
+            for gap in GEMSTONE_JS_GAPS {
+                println!("{} {}", gap.priority, gap.area);
+                println!("  gemstone-py strength: {}", gap.gemstone_py_strength);
+                println!("  gemstone-js gap: {}", gap.gemstone_rs_gap);
+                println!("  Next action: {}", gap.next_action);
+                println!("  Verify with: {}", gap.verify_with);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let gaps = GEMSTONE_JS_GAPS
+                .iter()
+                .map(js_gap_json)
+                .collect::<Vec<_>>()
+                .join(",");
+            println!(
+                r#"{{"comparison":"gemstone-js","view":"gaps","gaps":[{}]}}"#,
+                gaps
+            );
+        }
+    }
+}
+
 fn comparison_json(row: &ComparisonInfo) -> String {
     format!(
         r#"{{"topic":"{}","gemstonePy":"{}","gemstoneRs":"{}","recommendation":"{}"}}"#,
@@ -2059,9 +2230,31 @@ fn comparison_json(row: &ComparisonInfo) -> String {
     )
 }
 
+fn js_comparison_json(row: &JsComparisonInfo) -> String {
+    format!(
+        r#"{{"topic":"{}","gemstonePy":"{}","gemstoneJs":"{}","recommendation":"{}"}}"#,
+        escape_json(row.topic),
+        escape_json(row.gemstone_py),
+        escape_json(row.gemstone_js),
+        escape_json(row.recommendation)
+    )
+}
+
 fn gap_json(gap: &GapInfo) -> String {
     format!(
         r#"{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","gemstoneRsGap":"{}","nextAction":"{}","verifyWith":"{}"}}"#,
+        escape_json(gap.priority),
+        escape_json(gap.area),
+        escape_json(gap.gemstone_py_strength),
+        escape_json(gap.gemstone_rs_gap),
+        escape_json(gap.next_action),
+        escape_json(gap.verify_with)
+    )
+}
+
+fn js_gap_json(gap: &GapInfo) -> String {
+    format!(
+        r#"{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","gemstoneJsGap":"{}","nextAction":"{}","verifyWith":"{}"}}"#,
         escape_json(gap.priority),
         escape_json(gap.area),
         escape_json(gap.gemstone_py_strength),
@@ -2478,6 +2671,10 @@ enum Command {
         view: CompareView,
         format: OutputFormat,
     },
+    CompareGemstoneJs {
+        view: CompareView,
+        format: OutputFormat,
+    },
     Doctor {
         live: bool,
         strict: bool,
@@ -2782,18 +2979,21 @@ fn parse_hello_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
     let mut format = OutputFormat::Human;
     let mut view = CompareView::Summary;
-    let mut target_seen = false;
+    let mut target: Option<&str> = None;
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py [--gaps] [--json]",
+                    "expected: compare gemstone-py|gemstone-js [--gaps] [--json]",
                 ));
             }
-            "gemstone-py" | "gemstone_py" | "py" if !target_seen => {
-                target_seen = true;
+            "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
+                target = Some("gemstone-py");
+            }
+            "gemstone-js" | "gemstone_js" | "js" if target.is_none() => {
+                target = Some("gemstone-js");
             }
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
             value if value.starts_with('-') => {
@@ -2801,13 +3001,16 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             }
             value => {
                 return Err(CliError::usage(format!(
-                    "unknown comparison target: {value}; expected gemstone-py"
+                    "unknown comparison target: {value}; expected gemstone-py or gemstone-js"
                 )))
             }
         }
     }
 
-    Ok(Command::CompareGemstonePy { view, format })
+    match target.unwrap_or("gemstone-py") {
+        "gemstone-js" => Ok(Command::CompareGemstoneJs { view, format }),
+        _ => Ok(Command::CompareGemstonePy { view, format }),
+    }
 }
 
 fn parse_format_only_command(
@@ -3673,7 +3876,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py [--gaps] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js [--gaps] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -3855,6 +4058,20 @@ mod tests {
             Command::CompareGemstonePy {
                 view: CompareView::Gaps,
                 format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "gemstone-js"])).unwrap(),
+            Command::CompareGemstoneJs {
+                view: CompareView::Summary,
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "js", "--gaps", "--json"])).unwrap(),
+            Command::CompareGemstoneJs {
+                view: CompareView::Gaps,
+                format: OutputFormat::Json,
             }
         );
     }
@@ -4071,6 +4288,23 @@ mod tests {
                 && row.gemstone_py.contains("FastAPI")
                 && row.gemstone_rs.contains("packaged Axum/Actix adapters")));
         assert!(comparison_json(&GEMSTONE_PY_COMPARISON[0]).contains(r#""gemstonePy":"#));
+    }
+
+    #[test]
+    fn comparison_rows_include_clear_gemstone_js_gaps() {
+        assert!(GEMSTONE_JS_COMPARISON.iter().any(|row| {
+            row.topic == "Web frameworks"
+                && row.gemstone_py.contains("FastAPI")
+                && row.gemstone_js.contains("Express")
+        }));
+        assert!(GEMSTONE_JS_GAPS.iter().any(|gap| {
+            gap.priority == "P1"
+                && gap.area == "Visual tooling"
+                && gap.gemstone_py_strength.contains("database-explorer")
+                && gap.next_action.contains("explorer")
+        }));
+        assert!(js_comparison_json(&GEMSTONE_JS_COMPARISON[0]).contains(r#""gemstoneJs":"#));
+        assert!(js_gap_json(&GEMSTONE_JS_GAPS[0]).contains(r#""gemstoneJsGap":"#));
     }
 
     #[test]

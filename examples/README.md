@@ -135,6 +135,7 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-js --gaps
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen

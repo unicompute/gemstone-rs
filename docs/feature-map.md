@@ -10,6 +10,8 @@ Run it from the CLI:
 gemstone-rs hello
 gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-js
+gemstone-rs compare gemstone-js --gaps
 gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -23,8 +25,10 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
-guide. `compare gemstone-py --gaps` prints the remaining parity gaps with next
-actions and verification commands. `examples scaffold` creates standalone Cargo
+guide. `compare gemstone-js` prints the TypeScript/Python comparison from
+[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--gaps`
+forms print remaining parity gaps with next actions and verification commands.
+`examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,
 standard HTTP, worker-pool, Axum, and Actix workflows. JSON output is intended for CI, docs
