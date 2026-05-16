@@ -86,8 +86,8 @@ file.
 | Rust HTTP service demo | Not applicable | Supported through `cargo run -p gemstone-rs --example http_service -- --port 3000` |
 | Axum/Actix demo | Not applicable | Axum and Actix services supported through `gemstone-rs-axum`, `gemstone-rs-actix`, `examples/axum-service`, and `examples/actix-service` |
 | Installed examples index | `gemstone-examples hello`, `list`, `plan3-map` | `gemstone-rs hello`, `compare gemstone-py`, `examples list`, `map`, `show`, `run --dry-run`, `scaffold`, plus JSON for tooling |
-| Database explorer | Mature Python app | Rust explorer has browser UI and local API; still less polished |
-| VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and embedded explorer webview |
+| Database explorer | Mature Python app | Rust explorer has browser UI, local API, profile status, codegen diff/explain, BridgeRoot, and comparison workflows; still less polished |
+| VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and an embedded explorer webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels |
 
 ## Actionable Gap Report
 
@@ -114,7 +114,7 @@ gemstone-rs compare all --batches
 ```
 
 `compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **12 batches**, roughly **86-151 hours**
+TypeScript/Python track and reports **12 batches**, roughly **82-143 hours**
 total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -132,7 +132,7 @@ remain, and the next recommended batch.
 
 Use `--parity` when you want a measured maturity view. It scores each area out
 of five and shows the current leader, status, and next action. The current
-Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 26/35**:
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 27/35**:
 Rust is at parity or ahead for core sessions, codegen/mapping, and the shared
 native-core direction; Python remains ahead for web frameworks, async/lifetime
 coverage, explorer polish, and release lane depth.
@@ -140,7 +140,7 @@ coverage, explorer polish, and release lane depth.
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
 | P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add richer middleware examples, request lifecycle examples, and live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
-| P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
+| P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
@@ -166,14 +166,14 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Explorer and VS Code webview polish | 10-18 hours |
+| 1 | Explorer and VS Code visual polish | 6-10 hours |
 | 2 | Object mapping maturity | 8-14 hours |
 | 3 | Codegen live discovery and generated tests | 8-14 hours |
 | 4 | Async facade and web middleware | 6-12 hours |
 | 5 | Shared core with `gemstone-py-native` | 8-14 hours |
 | 6 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **44-79 hours** to bring `gemstone-rs` materially closer to
+Total: roughly **40-71 hours** to bring `gemstone-rs` materially closer to
 `gemstone-py` across product polish, generated-code confidence, async/web
 ergonomics, shared native-core integration, and release depth.
 

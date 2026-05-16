@@ -1711,7 +1711,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/explorer.md",
         docs: "docs/explorer.md, docs/screenshots.md",
         gemstone_py_reference: "python-gemstone-database-explorer",
-        status: "Useful local UI/API; Python explorer remains the richer product reference",
+        status: "Useful local UI/API with profile status, codegen diff/explain, BridgeRoot, and comparison workflows; Python explorer remains the richer product reference",
     },
     FeatureInfo {
         stream: "8",
@@ -1720,7 +1720,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/vscode-workbench.md",
         docs: "docs/vscode-workbench.md",
         gemstone_py_reference: "gemstone-py Workbench",
-        status: "Command and webview workflow exists; needs more polished embedded explorer UX",
+        status: "Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs, BridgeRoot keys, and comparison status",
     },
     FeatureInfo {
         stream: "9",
@@ -1785,7 +1785,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Explorer and VS Code",
         gemstone_py: "More mature database explorer and workbench product flow",
-        gemstone_rs: "Local explorer, command workbench, embedded webview, and CLI-backed codegen workflow",
+        gemstone_rs: "Local explorer, command workbench, embedded webview with structured setup/profile/codegen/diff/BridgeRoot panels, and CLI-backed codegen workflow",
         recommendation: "Python explorer remains the product reference; Rust explorer is the backend proving ground",
     },
     ComparisonInfo {
@@ -1856,10 +1856,10 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
     ParityInfo {
         area: "Explorer and VS Code",
         gemstone_py_score: 5,
-        project_score: 3,
+        project_score: 4,
         leader: "gemstone-py",
-        status: "The Python explorer is still the richer product reference; gemstone-rs has a useful explorer, VS Code commands, and an embedded webview.",
-        next_action: "Make the embedded explorer webview the primary IDE surface for browse, diff, codegen, and BridgeRoot inspection.",
+        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, and an embedded webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels.",
+        next_action: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -1892,8 +1892,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer has useful endpoints and a local UI, but less polished browsing, diff, and BridgeRoot flows.",
-        next_action: "Make the embedded explorer webview the primary IDE surface for dictionaries, classes, methods, codegen, and BridgeRoot inspection.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, codegen summaries/diffs, BridgeRoot keys, generated-file actions, and comparison status. They still need more polished live class browsing, screenshots, and richer BridgeRoot payload views.",
+        next_action: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -1933,10 +1933,10 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
 const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
-        focus: "Explorer and VS Code webview polish",
-        hours_min: 10,
-        hours_max: 18,
-        outcome: "Make the embedded explorer the main IDE surface for browsing, codegen preview/diff, and BridgeRoot inspection.",
+        focus: "Explorer and VS Code visual polish",
+        hours_min: 6,
+        hours_max: 10,
+        outcome: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     BatchInfo {
@@ -5558,14 +5558,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (44, 79));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (40, 71));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 12,
-                hours_min: 86,
-                hours_max: 151,
+                hours_min: 82,
+                hours_max: 143,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5590,22 +5590,22 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":6,"hoursMin":44,"hoursMax":79}"#));
+            .contains(r#""remaining":{"totalBatches":6,"hoursMin":40,"hoursMax":71}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
         );
         assert!(
             status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
-                .contains(r#""scoreGap":4"#)
+                .contains(r#""scoreGap":3"#)
         );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {
                 gemstone_py_score: 30,
-                project_score: 26,
+                project_score: 27,
                 max_score: 35,
-                score_gap: 4,
+                score_gap: 3,
             }
         );
         assert!(
@@ -5627,7 +5627,8 @@ mod tests {
         assert!(GEMSTONE_PY_GAPS
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
-                && gap.gemstone_rs_gap.contains("less polished")));
+                && gap.gemstone_rs_gap.contains("structured setup checks")
+                && gap.next_action.contains("BridgeRoot payload views")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 

@@ -1660,8 +1660,30 @@ a { color: var(--vscode-textLink-foreground); }
 .group h2 { color: var(--vscode-descriptionForeground); font-size: 11px; font-weight: 600; letter-spacing: 0; margin: 0 0 2px; text-transform: uppercase; }
 .field { display: grid; gap: 3px; color: var(--vscode-descriptionForeground); font-size: 11px; }
 .field input { width: 100%; border: 1px solid var(--vscode-input-border, transparent); background: var(--vscode-input-background); color: var(--vscode-input-foreground); border-radius: 4px; padding: 5px 6px; }
-.inspector { min-height: 160px; max-height: 34vh; overflow: auto; white-space: pre-wrap; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px; background: var(--vscode-editorWidget-background); color: var(--vscode-editorWidget-foreground); font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: 11px; }
+.inspector { min-height: 160px; max-height: 34vh; overflow: auto; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px; background: var(--vscode-editorWidget-background); color: var(--vscode-editorWidget-foreground); font-size: 11px; }
+.inspector pre { margin: 0; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
 .inspector.error { color: var(--vscode-errorForeground); }
+.inspector.rich { white-space: normal; }
+.result-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; color: var(--vscode-foreground); font-size: 12px; font-weight: 700; }
+.muted { color: var(--vscode-descriptionForeground); }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin: 8px 0; }
+.metric { border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 6px; background: var(--vscode-editor-background); }
+.metric strong { display: block; color: var(--vscode-foreground); font-size: 13px; }
+.metric span { color: var(--vscode-descriptionForeground); }
+.profile-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.profile-table th, .profile-table td { border: 1px solid var(--vscode-panel-border); padding: 5px; text-align: left; vertical-align: top; }
+.profile-table th { color: var(--vscode-descriptionForeground); font-weight: 600; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.status-pill { display: inline-block; border-radius: 999px; padding: 1px 6px; font-weight: 700; }
+.status-ok { color: var(--vscode-testing-iconPassed); }
+.status-stale { color: var(--vscode-testing-iconQueued); }
+.status-error { color: var(--vscode-errorForeground); }
+.diff-line { display: block; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; }
+.diff-add { color: var(--vscode-gitDecoration-addedResourceForeground); }
+.diff-remove { color: var(--vscode-gitDecoration-deletedResourceForeground); }
+.diff-meta { color: var(--vscode-descriptionForeground); }
+.key-list { display: grid; gap: 4px; margin: 8px 0 0; }
+.key-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
 .content { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; }
 .iframe-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--vscode-panel-border); overflow-x: auto; }
 iframe { display: block; width: 100%; height: 100%; border: 0; background: white; }
@@ -1727,7 +1749,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.codegenPreviewProfile">Preview Profile in Editor</button>
       <button data-command="gemstoneRs.codegenGenerateProfile">Generate Profile with Confirmation</button>
     </div>
-    <pre id="inspector" class="inspector">Use the inspector buttons to query the running explorer. The iframe remains the full explorer UI.</pre>
+    <div id="inspector" class="inspector"><pre>Use the inspector buttons to query the running explorer. The iframe remains the full explorer UI.</pre></div>
   </aside>
   <main class="content">
     <div class="iframe-tabs">
@@ -1778,7 +1800,228 @@ function apiUrl(path) {
 
 function setInspector(text, isError) {
   inspector.className = isError ? 'inspector error' : 'inspector';
-  inspector.textContent = text;
+  inspector.innerHTML = '<pre>' + escapeHtml(text) + '</pre>';
+}
+
+function setInspectorHtml(html, isError) {
+  inspector.className = isError ? 'inspector rich error' : 'inspector rich';
+  inspector.innerHTML = html;
+}
+
+function recordOutputPath(parsed) {
+  if (!parsed || typeof parsed !== 'object') return;
+  if (typeof parsed.output === 'string') {
+    lastOutputFile = parsed.output;
+  }
+  if (parsed.explain && typeof parsed.explain.output === 'string') {
+    lastOutputFile = parsed.explain.output;
+  }
+  if (Array.isArray(parsed.profiles)) {
+    const firstOutput = parsed.profiles.find(profile => profile && typeof profile.output === 'string');
+    if (firstOutput) lastOutputFile = firstOutput.output;
+  }
+}
+
+function renderProbeResult(parsed, ok) {
+  if (typeof parsed === 'string') {
+    setInspector(parsed, !ok);
+  } else if (parsed && typeof parsed === 'object') {
+    recordOutputPath(parsed);
+    if (Array.isArray(parsed.profiles) && typeof parsed.profileCount === 'number') {
+      renderProfileStatus(parsed, ok);
+    } else if (parsed.view === 'status' && (parsed.remaining || Array.isArray(parsed.comparisons))) {
+      renderComparisonStatus(parsed, ok);
+    } else if (Array.isArray(parsed.steps)) {
+      renderSetupAssistant(parsed, ok);
+    } else if (parsed.explain && typeof parsed.explain === 'object') {
+      renderCodegenExplain(parsed.explain, ok);
+    } else if (typeof parsed.diff === 'string') {
+      renderDiff(parsed.diff || 'No generated output changes.', ok);
+    } else if (typeof parsed.source === 'string') {
+      setInspectorHtml(resultTitle('Generated Source') + '<pre>' + escapeHtml(parsed.source) + '</pre>', !ok);
+    } else if (typeof parsed.config === 'string') {
+      setInspectorHtml(resultTitle('Codegen Config') + '<pre>' + escapeHtml(parsed.config) + '</pre>', !ok);
+    } else if (Array.isArray(parsed.keys)) {
+      renderBridgeKeys(parsed, ok);
+    } else if (parsed.name && typeof parsed.oop !== 'undefined' && typeof parsed.identityId !== 'undefined') {
+      renderBridgeRoot(parsed, ok);
+    } else if (typeof parsed.error === 'string') {
+      setInspectorHtml(resultTitle('Explorer Error') + '<pre>' + escapeHtml(parsed.error) + '</pre>', true);
+    } else {
+      renderJsonResult(parsed, ok);
+    }
+  } else {
+    setInspector(String(parsed), !ok);
+  }
+}
+
+function resultTitle(title, extra) {
+  return '<div class="result-title"><span>' + escapeHtml(title) + '</span><span class="muted">' + escapeHtml(extra || '') + '</span></div>';
+}
+
+function metric(label, value) {
+  return '<div class="metric"><strong>' + escapeHtml(value) + '</strong><span>' + escapeHtml(label) + '</span></div>';
+}
+
+function renderProfileStatus(data, ok) {
+  const profiles = Array.isArray(data.profiles) ? data.profiles : [];
+  const rows = profiles.map(profile => {
+    const name = profile.name || '(unnamed)';
+    const status = profile.ok ? 'ok' : (profile.error ? 'error' : 'stale');
+    const statusClass = profile.ok ? 'status-ok' : (profile.error ? 'status-error' : 'status-stale');
+    return '<tr>' +
+      '<td><strong>' + escapeHtml(name) + '</strong></td>' +
+      '<td><span class="status-pill ' + statusClass + '">' + escapeHtml(status) + '</span></td>' +
+      '<td>' + escapeHtml(profile.config || '-') + '</td>' +
+      '<td>' + escapeHtml(profile.output || '-') + '</td>' +
+      '<td>' + escapeHtml('exists=' + Boolean(profile.exists) + ' upToDate=' + Boolean(profile.upToDate)) + (profile.error ? '<br><span class="status-error">' + escapeHtml(profile.error) + '</span>' : '') + '</td>' +
+      '<td><div class="profile-actions">' +
+        profileActionButton(name, 'preview') +
+        profileActionButton(name, 'diff') +
+        profileActionButton(name, 'check') +
+        profileActionButton(name, 'generate') +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+  const table = rows
+    ? '<table class="profile-table"><thead><tr><th>Profile</th><th>Status</th><th>Config</th><th>Output</th><th>Freshness</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table>'
+    : '<p class="muted">No project profiles reported.</p>';
+  setInspectorHtml(
+    resultTitle('Project Profile Status', data.profileFile || data.path || '-') +
+    '<div class="summary-grid">' +
+      metric('ok', Number(data.okCount || 0)) +
+      metric('stale', Number(data.staleCount || 0)) +
+      metric('errors', Number(data.errorCount || 0)) +
+      metric('total', Number(data.profileCount || profiles.length)) +
+    '</div>' +
+    table,
+    !ok
+  );
+  inspector.querySelectorAll('button[data-profile-action]').forEach(button => {
+    button.addEventListener('click', () => runProfileProbe(button.dataset.profile, button.dataset.profileAction));
+  });
+}
+
+function profileActionButton(profile, action) {
+  return '<button data-profile-action="' + escapeHtml(action) + '" data-profile="' + escapeHtml(profile) + '">' + escapeHtml(action) + '</button>';
+}
+
+function runProfileProbe(profile, action) {
+  const pathByAction = {
+    preview: '/api/codegen/preview-profile',
+    diff: '/api/codegen/diff-profile',
+    check: '/api/codegen/check-profile',
+    generate: '/api/codegen/generate-profile'
+  };
+  const path = pathByAction[action];
+  if (!path) return;
+  const url = new URL(path, state.baseUrl + '/');
+  url.searchParams.set('profile', profile);
+  probe(url.pathname + url.search);
+}
+
+function renderCodegenExplain(explain, ok) {
+  const classes = Array.isArray(explain.classes) ? explain.classes : [];
+  const mapped = Array.isArray(explain.mapped) ? explain.mapped : [];
+  const classRows = classes.map(cls => {
+    const methods = Array.isArray(cls.methods) ? cls.methods : [];
+    return '<tr><td><strong>' + escapeHtml(cls.name || cls.className || '-') + '</strong></td><td>' + methods.length + '</td><td>' + escapeHtml(methods.map(method => method.selector).join(', ') || '-') + '</td></tr>';
+  }).join('');
+  const mappedRows = mapped.map(entry => {
+    const fields = Array.isArray(entry.fields) ? entry.fields : [];
+    return '<tr><td><strong>' + escapeHtml(entry.name || '-') + '</strong></td><td>' + fields.length + '</td><td>' + escapeHtml(fields.map(field => field.name + ':' + field.type).join(', ') || '-') + '</td></tr>';
+  }).join('');
+  setInspectorHtml(
+    resultTitle('Codegen Explain', explain.output || '-') +
+    '<div class="summary-grid">' +
+      metric('classes', classes.length) +
+      metric('mappings', mapped.length) +
+      metric('test stubs', (explain.testStubs || []).length) +
+    '</div>' +
+    '<p><strong>Output:</strong> ' + escapeHtml(explain.output || '-') + '</p>' +
+    '<p><strong>Test stubs:</strong> ' + escapeHtml((explain.testStubs || []).join(', ') || '-') + '</p>' +
+    '<table class="profile-table"><thead><tr><th>Class</th><th>Methods</th><th>Selectors</th></tr></thead><tbody>' + classRows + '</tbody></table>' +
+    '<table class="profile-table"><thead><tr><th>Mapped Type</th><th>Fields</th><th>Field Types</th></tr></thead><tbody>' + mappedRows + '</tbody></table>',
+    !ok
+  );
+}
+
+function renderDiff(diff, ok) {
+  const lines = diff.split('\\n').map(line => {
+    let cls = 'diff-line';
+    if (line.startsWith('+') && !line.startsWith('+++')) cls += ' diff-add';
+    else if (line.startsWith('-') && !line.startsWith('---')) cls += ' diff-remove';
+    else if (line.startsWith('@@') || line.startsWith('diff ') || line.startsWith('---') || line.startsWith('+++')) cls += ' diff-meta';
+    return '<span class="' + cls + '">' + escapeHtml(line || ' ') + '</span>';
+  }).join('');
+  setInspectorHtml(resultTitle('Generated Diff') + lines, !ok);
+}
+
+function renderSetupAssistant(data, ok) {
+  const rows = (data.steps || []).map(step => {
+    const good = Boolean(step.ok);
+    return '<tr><td><span class="status-pill ' + (good ? 'status-ok' : 'status-error') + '">' + (good ? 'ok' : 'needs attention') + '</span></td><td><strong>' + escapeHtml(step.name || '-') + '</strong></td><td>' + escapeHtml(step.detail || '-') + '</td><td>' + escapeHtml(step.action || '-') + '</td></tr>';
+  }).join('');
+  setInspectorHtml(
+    resultTitle('Setup Assistant') +
+    '<table class="profile-table"><thead><tr><th>Status</th><th>Step</th><th>Detail</th><th>Action</th></tr></thead><tbody>' + rows + '</tbody></table>',
+    !ok
+  );
+}
+
+function renderBridgeRoot(data, ok) {
+  setInspectorHtml(
+    resultTitle('BridgeRoot') +
+    '<div class="summary-grid">' +
+      metric('name', data.name || '-') +
+      metric('oop', String(data.oop || '-')) +
+      metric('identity id', String(data.identityId || '-')) +
+    '</div>',
+    !ok
+  );
+}
+
+function renderBridgeKeys(data, ok) {
+  const keys = Array.isArray(data.keys) ? data.keys : [];
+  const rows = keys.map(key =>
+    '<div class="key-row"><span><strong>' + escapeHtml(key.printString || '-') + '</strong><br><span class="muted">oop=' + escapeHtml(key.oop || '-') + ' class=' + escapeHtml(key.classOop || '-') + '</span></span><span class="muted">identity=' + escapeHtml(key.identityId || '-') + '</span></div>'
+  ).join('');
+  setInspectorHtml(
+    resultTitle('BridgeRoot Keys', data.root || '-') +
+    (rows ? '<div class="key-list">' + rows + '</div>' : '<p class="muted">No keys reported.</p>'),
+    !ok
+  );
+}
+
+function renderComparisonStatus(data, ok) {
+  const entries = Array.isArray(data.comparisons) ? data.comparisons : [data];
+  const cards = entries.map(entry => {
+    const parity = entry.parity || {};
+    const remaining = entry.remaining || {};
+    const nextBatch = entry.nextBatch || {};
+    const topGap = entry.topGap || {};
+    return '<div class="metric">' +
+      '<strong>' + escapeHtml(entry.comparison || 'comparison') + '</strong>' +
+      '<p>' + escapeHtml(entry.answer || '-') + '</p>' +
+      '<p>Parity: gemstone-py ' + Number(parity.gemstonePyScore || 0) + '/' + Number(parity.maxScore || 0) + '; ' + escapeHtml(parity.project || topGap.project || 'gemstone-rs') + ' ' + Number(parity.projectScore || 0) + '/' + Number(parity.maxScore || 0) + '; gap ' + Number(parity.scoreGap || 0) + '</p>' +
+      '<p>Remaining: ' + Number(remaining.totalBatches || 0) + ' batches, ' + Number(remaining.hoursMin || 0) + '-' + Number(remaining.hoursMax || 0) + ' hours</p>' +
+      '<p>Next: ' + escapeHtml(nextBatch.focus || '-') + '</p>' +
+      '<p>Top gap: ' + escapeHtml((topGap.priority || '-') + ' ' + (topGap.area || '-')) + '</p>' +
+    '</div>';
+  }).join('');
+  setInspectorHtml(resultTitle('Comparison Status') + cards, !ok);
+}
+
+function renderJsonResult(data, ok) {
+  setInspectorHtml(resultTitle(data.success === false ? 'Explorer Response' : 'Explorer JSON') + '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>', !ok || data.success === false);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 async function probe(path) {
@@ -1794,13 +2037,7 @@ async function probe(path) {
     } catch {
       parsed = text;
     }
-    if (parsed && typeof parsed === 'object' && parsed.output) {
-      lastOutputFile = parsed.output;
-    }
-    if (parsed && typeof parsed === 'object' && parsed.explain && parsed.explain.output) {
-      lastOutputFile = parsed.explain.output;
-    }
-    setInspector(typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2), !response.ok);
+    renderProbeResult(parsed, response.ok);
   } catch (error) {
     setInspector('Could not reach explorer at ' + state.baseUrl + '\\n' + error.message + '\\n\\nRun GemStone RS: Launch Explorer first.', true);
   }

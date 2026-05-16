@@ -292,13 +292,13 @@ running, the webview will show a connection error and the output panel will show
 the URL to start.
 
 The embedded page now acts as the main IDE surface for the local explorer. The
-iframe remains the full browser UI, while the side inspector can query explorer
-status, run setup checks, inspect project profile freshness, preview Codegen
-JSON, inspect diffs, check generated freshness, and inspect BridgeRoot keys for
-the configured root. The same shell can hand off to native VS Code commands for
-generated wrapper preview, diff, check, generate-with-confirmation, profile
-checks, docs, and opening the last generated output file reported by the
-explorer.
+iframe remains the full browser UI, while the side inspector renders structured
+setup checks, project profile freshness tables with Preview/Diff/Check/Generate
+buttons, Codegen explain summaries, generated source, colorized diffs,
+BridgeRoot identity and key summaries, and comparison status cards. The same
+shell can hand off to native VS Code commands for generated wrapper preview,
+diff, check, generate-with-confirmation, profile checks, docs, and opening the
+last generated output file reported by the explorer.
 
 The webview also exposes comparison status commands. `Compare with gemstone-py`
 runs `gemstone-rs compare gemstone-py --status --json` and renders the answer,
@@ -363,7 +363,7 @@ make vscode-package
 
 ## Later Feature Work
 
-The first embedded webview is available. Next work should make the webview more
-IDE-like: generate wrapper diffs before writing, edit codegen selections,
-inspect BridgeRoot payloads visually, and keep browser fallback behavior for
-users who prefer the external explorer.
+The embedded webview now covers the main read-only Codegen, profile, setup,
+comparison, and BridgeRoot inspection loops. Next work should polish live class
+browsing, richer BridgeRoot payload views, generated-file editing, screenshots,
+and browser fallback behavior for users who prefer the external explorer.

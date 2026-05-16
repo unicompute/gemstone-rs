@@ -88,6 +88,15 @@ assert(
   extensionSource.includes("data-probe=\"/api/codegen/profiles/check\""),
   "webview should expose profile status"
 );
+assert(extensionSource.includes("renderProfileStatus"), "webview should render profile status as structured content");
+assert(extensionSource.includes("data-profile-action"), "webview profile status should expose row actions");
+assert(extensionSource.includes("runProfileProbe"), "webview profile actions should call explorer profile endpoints");
+assert(extensionSource.includes("renderCodegenExplain"), "webview should render codegen explain summaries");
+assert(extensionSource.includes("renderDiff"), "webview should render generated diffs");
+assert(extensionSource.includes("renderSetupAssistant"), "webview should render setup assistant steps");
+assert(extensionSource.includes("renderBridgeKeys"), "webview should render BridgeRoot key summaries");
+assert(extensionSource.includes("profile-table"), "webview should include profile/status tables");
+assert(extensionSource.includes("status-pill"), "webview should include status badges");
 assert(
   extensionSource.includes("data-probe=\"/api/bridge/root\""),
   "webview should expose BridgeRoot inspection"

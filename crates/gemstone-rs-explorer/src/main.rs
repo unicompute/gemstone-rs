@@ -583,16 +583,16 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_label: "gemstone-rs",
         answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
         gemstone_py_score: 30,
-        project_score: 26,
+        project_score: 27,
         max_score: 35,
         total_batches: 6,
-        hours_min: 44,
-        hours_max: 79,
+        hours_min: 40,
+        hours_max: 71,
         next_number: 1,
-        next_focus: "Explorer and VS Code webview polish",
-        next_hours_min: 10,
-        next_hours_max: 18,
-        next_outcome: "Make the embedded explorer the main IDE surface for browsing, codegen preview/diff, and BridgeRoot inspection.",
+        next_focus: "Explorer and VS Code visual polish",
+        next_hours_min: 6,
+        next_hours_max: 10,
+        next_outcome: "Polish live class browsing, generated-file editing, screenshots, and richer BridgeRoot payload views inside the embedded webview.",
         next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -634,7 +634,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":86,"hoursMax":151,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":82,"hoursMax":143,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -3384,12 +3384,10 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":44"#));
-        assert!(response.body.contains(r#""hoursMax":79"#));
+        assert!(response.body.contains(r#""hoursMin":40"#));
+        assert!(response.body.contains(r#""hoursMax":71"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
-        assert!(response
-            .body
-            .contains("Explorer and VS Code webview polish"));
+        assert!(response.body.contains("Explorer and VS Code visual polish"));
         assert!(response
             .body
             .contains("gemstone-rs compare gemstone-py --batches"));
@@ -3404,8 +3402,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":86"#));
-        assert!(response.body.contains(r#""hoursMax":151"#));
+        assert!(response.body.contains(r#""hoursMin":82"#));
+        assert!(response.body.contains(r#""hoursMax":143"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }

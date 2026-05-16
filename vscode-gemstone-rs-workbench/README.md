@@ -133,11 +133,13 @@ default `GemStoneRsBridgeRoot`.
 terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
 The webview wraps the explorer in a workbench shell: the iframe remains the
-full browser UI, while the side inspector can query explorer status, setup
-checks, project profile freshness, Codegen preview/diff/check JSON, and
-BridgeRoot keys. Workbench buttons can hand off to native VS Code commands for
-previewing wrappers, opening diffs, generating with confirmation, checking
-project profiles, opening docs, and opening generated output files.
+full browser UI, while the side inspector renders structured setup checks,
+project profile freshness tables with Preview/Diff/Check/Generate buttons,
+Codegen explain summaries, generated source, colorized diffs, BridgeRoot
+identity/key summaries, and comparison status cards. Workbench buttons can hand
+off to native VS Code commands for previewing wrappers, opening diffs,
+generating with confirmation, checking project profiles, opening docs, and
+opening generated output files.
 If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
 `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` and all browser/webview URLs
 include the matching `token=` query parameter. Use `Generate Explorer Auth
