@@ -1424,6 +1424,16 @@ struct GapInfo {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct BatchInfo {
+    number: u8,
+    focus: &'static str,
+    hours_min: u8,
+    hours_max: u8,
+    outcome: &'static str,
+    verify_with: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ScaffoldTemplate {
     name: &'static str,
     package_name: &'static str,
@@ -1809,6 +1819,57 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
 ];
 
+const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
+    BatchInfo {
+        number: 1,
+        focus: "Explorer and VS Code webview polish",
+        hours_min: 10,
+        hours_max: 18,
+        outcome: "Make the embedded explorer the main IDE surface for browsing, codegen preview/diff, and BridgeRoot inspection.",
+        verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
+    },
+    BatchInfo {
+        number: 2,
+        focus: "Object mapping maturity",
+        hours_min: 8,
+        hours_max: 14,
+        outcome: "Improve nested object/array/dictionary read-back, relationship examples, identity-cache behavior, and mapping diagnostics.",
+        verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
+    },
+    BatchInfo {
+        number: 3,
+        focus: "Codegen live discovery and generated tests",
+        hours_min: 8,
+        hours_max: 14,
+        outcome: "Discover richer GemStone class/method metadata, generate typed wrappers/tests, and improve explain/diff output for editors.",
+        verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
+    },
+    BatchInfo {
+        number: 4,
+        focus: "Async facade and web middleware",
+        hours_min: 6,
+        hours_max: 12,
+        outcome: "Layer a cautious async facade over SessionWorkerPool and add Axum/Actix middleware, tracing, and route smoke coverage.",
+        verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
+    },
+    BatchInfo {
+        number: 5,
+        focus: "Shared core with gemstone-py-native",
+        hours_min: 8,
+        hours_max: 14,
+        outcome: "Make gemstone-py-native a thin PyO3 adapter over gemstone-gci/gemstone-rs so Python and Rust share the native bridge.",
+        verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+    },
+    BatchInfo {
+        number: 6,
+        focus: "Release and live CI hardening",
+        hours_min: 4,
+        hours_max: 7,
+        outcome: "Exercise crates.io, Marketplace, GitHub Release assets, PDFs, checksums, and manual/scheduled live GemStone workflows.",
+        verify_with: "scripts/publish_verify.sh <version>; scripts/verify_release_artifacts.py",
+    },
+];
+
 const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
     JsComparisonInfo {
         topic: "Best fit",
@@ -1857,6 +1918,57 @@ const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
         gemstone_py: "Python native path is already integrated with release tooling",
         gemstone_js: "Node native package, Deno/Bun FFI starters, mock runtime, and library discovery via GS_LIB_PATH/GS_LIB/GEMSTONE",
         recommendation: "gemstone-js needs more live native-platform proof before it matches gemstone-py operational confidence",
+    },
+];
+
+const GEMSTONE_JS_BATCHES: &[BatchInfo] = &[
+    BatchInfo {
+        number: 1,
+        focus: "Native publish confidence",
+        hours_min: 6,
+        hours_max: 10,
+        outcome: "Publish and verify gemstone-js plus @gemstone-js/native from a clean install across supported Node platforms.",
+        verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
+    },
+    BatchInfo {
+        number: 2,
+        focus: "Visual tooling",
+        hours_min: 10,
+        hours_max: 18,
+        outcome: "Add explorer/workbench flows for inspect, browse, TypeScript codegen, and persistent roots.",
+        verify_with: "npm run inspect; npm run examples; browser smoke for the future explorer",
+    },
+    BatchInfo {
+        number: 3,
+        focus: "Installed examples",
+        hours_min: 5,
+        hours_max: 8,
+        outcome: "Add clean-install examples for quickstart, web adapters, migrations, codegen, and persistence helpers.",
+        verify_with: "npm run examples:check; gemstone-js-examples --json",
+    },
+    BatchInfo {
+        number: 4,
+        focus: "Live CI",
+        hours_min: 8,
+        hours_max: 14,
+        outcome: "Cover Node, Deno, Bun, framework adapters, pools, transactions, migrations, and query helpers against a real stone.",
+        verify_with: "GS_RUN_LIVE=1 npm run test:live",
+    },
+    BatchInfo {
+        number: 5,
+        focus: "Documentation and release polish",
+        hours_min: 5,
+        hours_max: 8,
+        outcome: "Add a Medium-style article, PDF docs, release checklist, checksums, and npm post-publish verification.",
+        verify_with: "npm run pack:check; docs link check when available",
+    },
+    BatchInfo {
+        number: 6,
+        focus: "Cross-project alignment",
+        hours_min: 8,
+        hours_max: 14,
+        outcome: "Align gemstone-js concepts with gemstone-py and gemstone-rs explorers, codegen, persistent roots, and live smoke workflows.",
+        verify_with: "gemstone-js comparison checklist plus clean-install smoke scripts",
     },
 ];
 
@@ -2094,6 +2206,14 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
         CompareView::Gaps => print_gemstone_py_gap_report(format),
+        CompareView::Batches => print_batch_plan(
+            "gemstone-rs remaining batches vs gemstone-py",
+            "gemstone-py",
+            "batches",
+            "docs/gemstone-py-vs-gemstone-rs.md",
+            GEMSTONE_RS_BATCHES,
+            format,
+        ),
     }
 }
 
@@ -2101,6 +2221,14 @@ fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_js_comparison_summary(format),
         CompareView::Gaps => print_gemstone_js_gap_report(format),
+        CompareView::Batches => print_batch_plan(
+            "gemstone-js catch-up batches vs gemstone-py",
+            "gemstone-js",
+            "batches",
+            "docs/gemstone-js-vs-gemstone-py.md",
+            GEMSTONE_JS_BATCHES,
+            format,
+        ),
     }
 }
 
@@ -2261,6 +2389,72 @@ fn js_gap_json(gap: &GapInfo) -> String {
         escape_json(gap.gemstone_rs_gap),
         escape_json(gap.next_action),
         escape_json(gap.verify_with)
+    )
+}
+
+fn print_batch_plan(
+    title: &str,
+    comparison: &str,
+    view: &str,
+    guide: &str,
+    batches: &[BatchInfo],
+    format: OutputFormat,
+) {
+    let (min_hours, max_hours) = total_batch_hours(batches);
+    match format {
+        OutputFormat::Human => {
+            println!("{title}");
+            println!("  Full guide: {guide}");
+            println!(
+                "  Total: {} batches, roughly {}-{} hours",
+                batches.len(),
+                min_hours,
+                max_hours
+            );
+            println!();
+            for batch in batches {
+                println!(
+                    "Batch {}: {} ({}-{} hours)",
+                    batch.number, batch.focus, batch.hours_min, batch.hours_max
+                );
+                println!("  Outcome: {}", batch.outcome);
+                println!("  Verify with: {}", batch.verify_with);
+                println!();
+            }
+        }
+        OutputFormat::Json => {
+            let rows = batches.iter().map(batch_json).collect::<Vec<_>>().join(",");
+            println!(
+                r#"{{"comparison":"{}","view":"{}","totalBatches":{},"hoursMin":{},"hoursMax":{},"batches":[{}]}}"#,
+                escape_json(comparison),
+                escape_json(view),
+                batches.len(),
+                min_hours,
+                max_hours,
+                rows
+            );
+        }
+    }
+}
+
+fn total_batch_hours(batches: &[BatchInfo]) -> (u16, u16) {
+    batches.iter().fold((0, 0), |(min, max), batch| {
+        (
+            min + u16::from(batch.hours_min),
+            max + u16::from(batch.hours_max),
+        )
+    })
+}
+
+fn batch_json(batch: &BatchInfo) -> String {
+    format!(
+        r#"{{"number":{},"focus":"{}","hoursMin":{},"hoursMax":{},"outcome":"{}","verifyWith":"{}"}}"#,
+        batch.number,
+        escape_json(batch.focus),
+        batch.hours_min,
+        batch.hours_max,
+        escape_json(batch.outcome),
+        escape_json(batch.verify_with)
     )
 }
 
@@ -2851,6 +3045,7 @@ enum OutputFormat {
 enum CompareView {
     Summary,
     Gaps,
+    Batches,
 }
 
 fn parse_command(args: &[String]) -> Result<Command, CliError> {
@@ -2984,9 +3179,10 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
+            "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js [--gaps] [--json]",
+                    "expected: compare gemstone-py|gemstone-js [--gaps|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -2996,6 +3192,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
                 target = Some("gemstone-js");
             }
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
+            "batches" | "batch-plan" | "work" => view = CompareView::Batches,
             value if value.starts_with('-') => {
                 return Err(CliError::usage(format!("unknown compare option: {value}")));
             }
@@ -3876,7 +4073,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js [--gaps] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js [--gaps|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -4061,6 +4258,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--batches"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Batches,
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-js"])).unwrap(),
             Command::CompareGemstoneJs {
                 view: CompareView::Summary,
@@ -4071,6 +4275,13 @@ mod tests {
             parse_command(&args(&["compare", "js", "--gaps", "--json"])).unwrap(),
             Command::CompareGemstoneJs {
                 view: CompareView::Gaps,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "js", "batches", "--json"])).unwrap(),
+            Command::CompareGemstoneJs {
+                view: CompareView::Batches,
                 format: OutputFormat::Json,
             }
         );
@@ -4305,6 +4516,21 @@ mod tests {
         }));
         assert!(js_comparison_json(&GEMSTONE_JS_COMPARISON[0]).contains(r#""gemstoneJs":"#));
         assert!(js_gap_json(&GEMSTONE_JS_GAPS[0]).contains(r#""gemstoneJsGap":"#));
+    }
+
+    #[test]
+    fn comparison_batch_plans_are_actionable() {
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
+        assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (44, 79));
+        assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
+        assert!(GEMSTONE_RS_BATCHES
+            .iter()
+            .any(|batch| batch.focus.contains("Shared core")));
+        assert!(GEMSTONE_JS_BATCHES
+            .iter()
+            .any(|batch| batch.focus.contains("Visual tooling")));
+        assert!(batch_json(&GEMSTONE_JS_BATCHES[0]).contains(r#""hoursMax":10"#));
     }
 
     #[test]

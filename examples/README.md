@@ -38,6 +38,7 @@ gemstone-rs examples show quickstart
 gemstone-rs examples list --json
 gemstone-rs examples map
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-py --batches
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
@@ -135,7 +136,9 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs codegen check examples/codegen/gemstone-rs.codegen
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js --gaps
+gemstone-rs compare gemstone-js --batches
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen

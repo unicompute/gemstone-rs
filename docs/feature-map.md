@@ -10,8 +10,10 @@ Run it from the CLI:
 gemstone-rs hello
 gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
+gemstone-rs compare gemstone-js --batches
 gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -28,6 +30,8 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 guide. `compare gemstone-js` prints the TypeScript/Python comparison from
 [gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--gaps`
 forms print remaining parity gaps with next actions and verification commands.
+The `--batches` forms answer how much work remains, including batch counts,
+hour ranges, outcomes, and verification commands.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,

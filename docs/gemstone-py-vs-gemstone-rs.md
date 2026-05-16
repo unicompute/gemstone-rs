@@ -96,6 +96,8 @@ The CLI can print the remaining gemstone-py parity gaps directly:
 ```bash
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --gaps --json
+gemstone-rs compare gemstone-py --batches
+gemstone-rs compare gemstone-py --batches --json
 ```
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -110,6 +112,28 @@ test that should verify it.
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
+
+## Remaining Work Batches
+
+The batch plan is also available from the CLI:
+
+```bash
+gemstone-rs compare gemstone-py --batches
+gemstone-rs compare gemstone-py --batches --json
+```
+
+| Batch | Work | Estimate |
+| --- | --- | ---: |
+| 1 | Explorer and VS Code webview polish | 10-18 hours |
+| 2 | Object mapping maturity | 8-14 hours |
+| 3 | Codegen live discovery and generated tests | 8-14 hours |
+| 4 | Async facade and web middleware | 6-12 hours |
+| 5 | Shared core with `gemstone-py-native` | 8-14 hours |
+| 6 | Release and live CI hardening | 4-7 hours |
+
+Total: roughly **44-79 hours** to bring `gemstone-rs` materially closer to
+`gemstone-py` across product polish, generated-code confidence, async/web
+ergonomics, shared native-core integration, and release depth.
 
 ## Current Gap Analysis
 

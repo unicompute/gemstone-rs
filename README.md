@@ -66,8 +66,10 @@ gemstone-rs --help
 gemstone-rs hello
 gemstone-rs compare gemstone-py
 gemstone-rs compare gemstone-py --gaps
+gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
+gemstone-rs compare gemstone-js --batches
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -237,10 +239,14 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py
 cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
+cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js
 cargo run -p gemstone-rs-cli -- compare gemstone-js --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
+cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
+cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
