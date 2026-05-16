@@ -120,8 +120,10 @@ keep `/` and `/health/local` available and return a `503` JSON error from
 python3 scripts/framework_route_smoke.py
 ```
 
-The smoke check also asserts `x-gemstone-rs-adapter` and
-`x-gemstone-rs-route` diagnostic headers from the framework adapters.
+The smoke check also asserts `x-gemstone-rs-adapter`,
+`x-gemstone-rs-route`, `x-gemstone-rs-request-id`,
+`x-gemstone-rs-request-method`, and `x-gemstone-rs-request-path` diagnostic
+headers from the framework adapters.
 
 ## Installed CLI Equivalents
 

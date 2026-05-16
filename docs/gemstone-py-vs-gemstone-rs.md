@@ -55,7 +55,7 @@ file.
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
-| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, and checked Axum/Actix examples |
+| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, checked Axum/Actix examples, and request-trace headers |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, typed argument conversion, typed return helpers, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -132,14 +132,14 @@ remain, and the next recommended batch.
 
 Use `--parity` when you want a measured maturity view. It scores each area out
 of five and shows the current leader, status, and next action. The current
-Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 25/35**:
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 26/35**:
 Rust is at parity or ahead for core sessions, codegen/mapping, and the shared
 native-core direction; Python remains ahead for web frameworks, async/lifetime
 coverage, explorer polish, and release lane depth.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add request tracing, middleware examples, and stricter live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add richer middleware examples, request lifecycle examples, and live route smoke coverage around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Make the embedded Rust explorer webview the primary IDE surface for browsing, codegen, diff, and BridgeRoot inspection. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
@@ -214,9 +214,10 @@ not the implementation language:
   `examples/actix-service` are checked crates using those adapters. They can
   start before credentials are configured and report `/health/gemstone` as a
   `503` JSON error until the pool is available. They also emit diagnostic
-  adapter and route headers for route smoke tests and proxy logs. The installed
-  CLI can scaffold `session_worker_pool`, `axum_service`, and `actix_service`.
-  Richer framework middleware and an async facade remain future work.
+  adapter, route, request id, method, and path headers for route smoke tests
+  and proxy logs. The installed CLI can scaffold `session_worker_pool`,
+  `axum_service`, and `actix_service`. Richer framework middleware and an
+  async facade remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for

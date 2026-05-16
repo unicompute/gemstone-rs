@@ -138,8 +138,10 @@ the route contract with:
 python3 scripts/framework_route_smoke.py
 ```
 
-The same smoke check asserts diagnostic headers from the adapters:
-`x-gemstone-rs-adapter` and `x-gemstone-rs-route`.
+The same smoke check asserts diagnostic and request-trace headers from the
+adapters: `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
+`x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
+`x-gemstone-rs-request-path`.
 
 ## Suggested Learning Order
 

@@ -1729,7 +1729,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, diagnostic headers, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
+        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, route and request-trace headers, packaged Axum/Actix adapters, checked services, installed scaffolds, and route smoke coverage exist; richer middleware remains planned",
     },
     FeatureInfo {
         stream: "10",
@@ -1773,7 +1773,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Web frameworks",
         gemstone_py: "FastAPI, Litestar, and Django examples are first-class",
-        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, and checked Axum/Actix examples exist",
+        gemstone_rs: "Shared gemstone_rs::web health helpers, standard-library HTTP, SessionWorkerPool, packaged Axum/Actix adapters, checked examples, and request-trace headers exist",
         recommendation: "Use gemstone-py today for the broadest framework coverage; use gemstone-rs when Rust services need direct GemStone health routes and bounded session-worker boundaries",
     },
     ComparisonInfo {
@@ -1832,10 +1832,10 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
     ParityInfo {
         area: "Web frameworks",
         gemstone_py_score: 5,
-        project_score: 3,
+        project_score: 4,
         leader: "gemstone-py",
-        status: "gemstone-py has broader FastAPI, Litestar, and Django examples; gemstone-rs has shared health helpers plus Axum and Actix adapters.",
-        next_action: "Add middleware, tracing, request lifecycle, and stricter live route smoke tests for Axum and Actix.",
+        status: "gemstone-py has broader FastAPI, Litestar, and Django examples; gemstone-rs has shared health helpers, Axum/Actix adapters, request-trace headers, and stricter route smoke tests.",
+        next_action: "Add richer middleware examples, request lifecycle examples, and live route smoke tests for Axum and Actix.",
     },
     ParityInfo {
         area: "Async and lifetime behavior",
@@ -1884,8 +1884,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Web framework adapters",
         gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and request tracing.",
-        next_action: "Add middleware examples, request tracing, and stricter live route smoke tests for the packaged Axum/Actix adapters.",
+        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route and request-trace headers, packaged Axum/Actix adapters, checked services, route smoke coverage, and installed Axum/Actix scaffolds. It still needs richer framework middleware and request lifecycle examples.",
+        next_action: "Add richer middleware examples, request lifecycle examples, and live route smoke tests for the packaged Axum/Actix adapters.",
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
@@ -5597,15 +5597,15 @@ mod tests {
         );
         assert!(
             status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
-                .contains(r#""scoreGap":5"#)
+                .contains(r#""scoreGap":4"#)
         );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {
                 gemstone_py_score: 30,
-                project_score: 25,
+                project_score: 26,
                 max_score: 35,
-                score_gap: 5,
+                score_gap: 4,
             }
         );
         assert!(

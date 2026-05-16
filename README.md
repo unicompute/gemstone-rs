@@ -201,10 +201,13 @@ HTTP process should start before GemStone credentials are configured. `/` and
 `/health/local` keep working; `/health/gemstone` returns a `503` JSON error
 until the pool is available.
 
-The framework adapters also emit `x-gemstone-rs-adapter` and
-`x-gemstone-rs-route` headers so route smoke tests, proxies, and logs can
-identify whether `root`, `health.local`, or `health.gemstone` produced the
-response.
+The framework adapters also emit `x-gemstone-rs-adapter`,
+`x-gemstone-rs-route`, `x-gemstone-rs-request-id`,
+`x-gemstone-rs-request-method`, and `x-gemstone-rs-request-path` headers so
+route smoke tests, proxies, and logs can identify which adapter, route, and
+request produced the response. If the caller sends `x-request-id`, the adapters
+propagate it into `x-gemstone-rs-request-id`; otherwise they generate a local
+adapter-scoped id.
 
 Runtime environment:
 

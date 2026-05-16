@@ -44,9 +44,10 @@ def free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def http_get(url: str) -> HttpResult:
+def http_get(url: str, request_id: str = "gemstone-rs-smoke") -> HttpResult:
+    request = urllib.request.Request(url, headers={"X-Request-Id": request_id})
     try:
-        with urllib.request.urlopen(url, timeout=2.0) as response:
+        with urllib.request.urlopen(request, timeout=2.0) as response:
             headers = {key.lower(): value for key, value in response.headers.items()}
             return HttpResult(response.status, response.read().decode("utf-8"), headers)
     except urllib.error.HTTPError as err:
@@ -86,6 +87,20 @@ def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None
     actual_route = result.headers.get("x-gemstone-rs-route")
     if actual_route != route:
         raise AssertionError(f"{service.name} route header mismatch: {actual_route!r}")
+    request_id = result.headers.get("x-gemstone-rs-request-id")
+    if request_id != "gemstone-rs-smoke":
+        raise AssertionError(f"{service.name} request id header mismatch: {request_id!r}")
+    method = result.headers.get("x-gemstone-rs-request-method")
+    if method != "GET":
+        raise AssertionError(f"{service.name} request method header mismatch: {method!r}")
+    path = result.headers.get("x-gemstone-rs-request-path")
+    expected_path = {
+        "root": "/",
+        "health.local": "/health/local",
+        "health.gemstone": "/health/gemstone",
+    }[route]
+    if path != expected_path:
+        raise AssertionError(f"{service.name} request path header mismatch: {path!r}")
 
 
 def check_routes(service: Service) -> None:

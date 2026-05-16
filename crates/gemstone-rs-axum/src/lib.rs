@@ -17,13 +17,15 @@
 //! error until the pool can be created.
 
 use axum::{
+    extract::OriginalUri,
     extract::State,
-    http::{header, HeaderName, StatusCode},
-    response::IntoResponse,
+    http::{header, HeaderMap, HeaderName, HeaderValue, Method, StatusCode},
+    response::{IntoResponse, Response},
     routing::get,
     Router,
 };
 use gemstone_rs::{web as gemstone_web, Config, Result, SessionWorkerPool};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Adapter name exposed through diagnostic response headers.
 pub const ADAPTER_NAME: &str = "axum";
@@ -34,8 +36,22 @@ pub const ADAPTER_HEADER: &str = "x-gemstone-rs-adapter";
 /// Header reporting which route handler produced the response.
 pub const ROUTE_HEADER: &str = "x-gemstone-rs-route";
 
+/// Incoming request id header accepted by the tracing helpers.
+pub const INCOMING_REQUEST_ID_HEADER: &str = "x-request-id";
+
+/// Header reporting the request id used for route tracing.
+pub const REQUEST_ID_HEADER: &str = "x-gemstone-rs-request-id";
+
+/// Header reporting the request method used for route tracing.
+pub const REQUEST_METHOD_HEADER: &str = "x-gemstone-rs-request-method";
+
+/// Header reporting the request path used for route tracing.
+pub const REQUEST_PATH_HEADER: &str = "x-gemstone-rs-request-path";
+
 /// Route contract exposed by [`router`] and [`router_with_name`].
 pub const ROUTES: &[&str] = &["GET /", "GET /health/local", "GET /health/gemstone"];
+
+static NEXT_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
 
 /// Shared Axum state for the GemStone health router.
 #[derive(Clone)]
@@ -102,28 +118,54 @@ pub fn router_with_health_pool(
 }
 
 /// Root route handler.
-pub async fn root(State(state): State<AppState>) -> impl IntoResponse {
-    json_response_with_route(gemstone_web::index_response(&state.service_name), "root")
+pub async fn root(
+    State(state): State<AppState>,
+    method: Method,
+    OriginalUri(uri): OriginalUri,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    json_response_with_route_and_trace(
+        gemstone_web::index_response(&state.service_name),
+        "root",
+        RequestTrace::from_parts(&method, uri.path(), &headers),
+    )
 }
 
 /// Local process health route handler.
-pub async fn health_local() -> impl IntoResponse {
-    json_response_with_route(gemstone_web::local_health_response(), "health.local")
+pub async fn health_local(
+    method: Method,
+    OriginalUri(uri): OriginalUri,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    json_response_with_route_and_trace(
+        gemstone_web::local_health_response(),
+        "health.local",
+        RequestTrace::from_parts(&method, uri.path(), &headers),
+    )
 }
 
 /// Live GemStone health route handler.
-pub async fn health_gemstone(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn health_gemstone(
+    State(state): State<AppState>,
+    method: Method,
+    OriginalUri(uri): OriginalUri,
+    headers: HeaderMap,
+) -> impl IntoResponse {
     let health = state.health.clone();
     let response =
         match tokio::task::spawn_blocking(move || health.gemstone_health_response()).await {
             Ok(response) => response,
             Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
         };
-    json_response_with_route(response, "health.gemstone")
+    json_response_with_route_and_trace(
+        response,
+        "health.gemstone",
+        RequestTrace::from_parts(&method, uri.path(), &headers),
+    )
 }
 
 /// Convert a shared gemstone-rs JSON response into an Axum response tuple.
-pub fn json_response(response: gemstone_web::JsonResponse) -> impl IntoResponse {
+pub fn json_response(response: gemstone_web::JsonResponse) -> Response {
     json_response_with_route(response, "generic")
 }
 
@@ -132,9 +174,19 @@ pub fn json_response(response: gemstone_web::JsonResponse) -> impl IntoResponse 
 pub fn json_response_with_route(
     response: gemstone_web::JsonResponse,
     route: &'static str,
-) -> impl IntoResponse {
+) -> Response {
+    json_response_with_route_and_trace(response, route, RequestTrace::generated("GET", "/"))
+}
+
+/// Convert a shared gemstone-rs JSON response into an Axum response with
+/// diagnostic adapter and request trace headers.
+pub fn json_response_with_route_and_trace(
+    response: gemstone_web::JsonResponse,
+    route: &'static str,
+    trace: RequestTrace,
+) -> Response {
     let status = StatusCode::from_u16(response.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    (
+    let mut response = (
         status,
         [
             (header::CONTENT_TYPE, "application/json"),
@@ -143,6 +195,66 @@ pub fn json_response_with_route(
         ],
         response.body,
     )
+        .into_response();
+    trace.insert_headers(response.headers_mut());
+    response
+}
+
+/// Request trace metadata emitted as response headers.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RequestTrace {
+    /// Request id propagated from `x-request-id`, or generated locally.
+    pub request_id: String,
+    /// HTTP method observed by the adapter.
+    pub method: String,
+    /// Request path observed by the adapter.
+    pub path: String,
+}
+
+impl RequestTrace {
+    /// Build request trace metadata from Axum request parts.
+    pub fn from_parts(method: &Method, path: &str, headers: &HeaderMap) -> Self {
+        let request_id = headers
+            .get(INCOMING_REQUEST_ID_HEADER)
+            .or_else(|| headers.get(REQUEST_ID_HEADER))
+            .and_then(|value| value.to_str().ok())
+            .filter(|value| !value.trim().is_empty())
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| format!("axum-{}", NEXT_REQUEST_ID.fetch_add(1, Ordering::Relaxed)));
+        Self {
+            request_id,
+            method: method.as_str().to_string(),
+            path: path.to_string(),
+        }
+    }
+
+    /// Build generated trace metadata for generic response conversions.
+    pub fn generated(method: impl Into<String>, path: impl Into<String>) -> Self {
+        Self {
+            request_id: format!("axum-{}", NEXT_REQUEST_ID.fetch_add(1, Ordering::Relaxed)),
+            method: method.into(),
+            path: path.into(),
+        }
+    }
+
+    fn insert_headers(&self, headers: &mut HeaderMap) {
+        headers.insert(
+            HeaderName::from_static(REQUEST_ID_HEADER),
+            header_value(&self.request_id),
+        );
+        headers.insert(
+            HeaderName::from_static(REQUEST_METHOD_HEADER),
+            header_value(&self.method),
+        );
+        headers.insert(
+            HeaderName::from_static(REQUEST_PATH_HEADER),
+            header_value(&self.path),
+        );
+    }
+}
+
+fn header_value(value: &str) -> HeaderValue {
+    HeaderValue::from_str(value).unwrap_or_else(|_| HeaderValue::from_static("invalid"))
 }
 
 #[cfg(test)]
@@ -157,12 +269,28 @@ mod tests {
         );
         assert_eq!(ADAPTER_HEADER, "x-gemstone-rs-adapter");
         assert_eq!(ROUTE_HEADER, "x-gemstone-rs-route");
+        assert_eq!(REQUEST_ID_HEADER, "x-gemstone-rs-request-id");
+        assert_eq!(REQUEST_METHOD_HEADER, "x-gemstone-rs-request-method");
+        assert_eq!(REQUEST_PATH_HEADER, "x-gemstone-rs-request-path");
     }
 
     #[test]
     fn json_response_accepts_shared_response() {
         let response = gemstone_web::JsonResponse::ok(r#"{"ok":true}"#.to_string());
         let _ = json_response(response);
+    }
+
+    #[test]
+    fn request_trace_propagates_request_id() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            INCOMING_REQUEST_ID_HEADER,
+            HeaderValue::from_static("smoke-123"),
+        );
+        let trace = RequestTrace::from_parts(&Method::GET, "/health/local", &headers);
+        assert_eq!(trace.request_id, "smoke-123");
+        assert_eq!(trace.method, "GET");
+        assert_eq!(trace.path, "/health/local");
     }
 
     #[test]

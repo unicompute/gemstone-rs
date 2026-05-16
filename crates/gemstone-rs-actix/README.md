@@ -38,3 +38,9 @@ Every adapter response also includes diagnostic headers:
 
 - `x-gemstone-rs-adapter: actix`
 - `x-gemstone-rs-route: root`, `health.local`, or `health.gemstone`
+- `x-gemstone-rs-request-id`
+- `x-gemstone-rs-request-method`
+- `x-gemstone-rs-request-path`
+
+If the caller sends `x-request-id`, the adapter propagates that value into
+`x-gemstone-rs-request-id`; otherwise it generates an `actix-*` request id.
