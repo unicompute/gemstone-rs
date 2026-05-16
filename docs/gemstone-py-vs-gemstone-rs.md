@@ -104,6 +104,10 @@ gemstone-rs compare all --next
 gemstone-rs compare all --batches
 ```
 
+`compare all --batches` combines this Rust/Python track with the
+TypeScript/Python track and reports **12 batches**, roughly **86-151 hours**
+total.
+
 The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
 test that should verify it.

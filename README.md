@@ -99,6 +99,10 @@ gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 gemstone-rs-explorer --help
 ```
 
+`gemstone-rs compare all --batches` summarizes both active comparison tracks
+as **12 batches**, roughly **86-151 hours** total, with per-track verification
+commands.
+
 For VS Code, install the workbench from the Marketplace:
 
 ```text

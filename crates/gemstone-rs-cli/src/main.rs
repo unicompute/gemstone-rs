@@ -2258,6 +2258,13 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
     match format {
         OutputFormat::Human => {
             println!("all gemstone comparison reports");
+            if view == CompareView::Batches {
+                let totals = all_batch_totals();
+                println!(
+                    "  Combined total: {} batches, roughly {}-{} hours",
+                    totals.total_batches, totals.hours_min, totals.hours_max
+                );
+            }
             println!();
             print_gemstone_py_comparison(view, OutputFormat::Human);
             println!();
@@ -2329,8 +2336,12 @@ fn print_all_comparisons_json(view: CompareView) {
             );
         }
         CompareView::Batches => {
+            let totals = all_batch_totals();
             println!(
-                r#"{{"comparison":"all","view":"batches","comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"batches","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                totals.total_batches,
+                totals.hours_min,
+                totals.hours_max,
                 batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES),
                 batch_plan_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             );
@@ -2634,6 +2645,23 @@ fn batch_plan_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
         max_hours,
         rows
     )
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct BatchTotals {
+    total_batches: usize,
+    hours_min: u16,
+    hours_max: u16,
+}
+
+fn all_batch_totals() -> BatchTotals {
+    let (rs_min, rs_max) = total_batch_hours(GEMSTONE_RS_BATCHES);
+    let (js_min, js_max) = total_batch_hours(GEMSTONE_JS_BATCHES);
+    BatchTotals {
+        total_batches: GEMSTONE_RS_BATCHES.len() + GEMSTONE_JS_BATCHES.len(),
+        hours_min: rs_min + js_min,
+        hours_max: rs_max + js_max,
+    }
 }
 
 fn total_batch_hours(batches: &[BatchInfo]) -> (u16, u16) {
@@ -4775,6 +4803,14 @@ mod tests {
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
         assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (44, 79));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
+        assert_eq!(
+            all_batch_totals(),
+            BatchTotals {
+                total_batches: 12,
+                hours_min: 86,
+                hours_max: 151,
+            }
+        );
         assert!(GEMSTONE_RS_BATCHES
             .iter()
             .any(|batch| batch.focus.contains("Shared core")));

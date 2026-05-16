@@ -108,4 +108,5 @@ gemstone-rs compare all --next --json
 
 Use the JSON form when an editor, release script, or dashboard needs to render
 the comparison. Use `compare all` when you want the TypeScript/Python and
-Rust/Python tracks in one report.
+Rust/Python tracks in one report. `compare all --batches` includes the combined
+**12-batch**, **86-151 hour** estimate for both tracks.

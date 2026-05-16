@@ -37,7 +37,9 @@ forms print remaining parity gaps with next actions and verification commands.
 The `--next` forms print the first recommended batch and top priority gap.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
-same flags to print both comparison tracks together.
+same flags to print both comparison tracks together; `compare all --batches`
+reports **12 batches** and roughly **86-151 hours** across the Rust and
+TypeScript catch-up tracks.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,

@@ -122,8 +122,9 @@ Rust/Python comparison, while `compare gemstone-js` prints the
 TypeScript/Python comparison. `compare all` prints both comparison tracks in
 one run. Add `--gaps` for the prioritized catch-up report, `--next` for the
 single recommended next action, and `--batches` for the estimated work batches
-and hours. Add `--json` when an editor, CI job, or release script needs
-structured output.
+and hours. `compare all --batches` includes the combined **12-batch**,
+**86-151 hour** estimate across the Rust and TypeScript catch-up tracks. Add
+`--json` when an editor, CI job, or release script needs structured output.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`
