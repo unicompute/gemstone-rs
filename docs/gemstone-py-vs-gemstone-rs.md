@@ -100,6 +100,8 @@ gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --next --json
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-py --batches --json
+gemstone-rs compare all --next
+gemstone-rs compare all --batches
 ```
 
 The report is intentionally action-oriented. Each row names the gemstone-py

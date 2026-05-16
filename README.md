@@ -72,6 +72,8 @@ gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --next
+gemstone-rs compare all --batches
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -253,6 +255,14 @@ cargo run -p gemstone-rs-cli -- compare gemstone-js --next
 cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
+cargo run -p gemstone-rs-cli -- compare all
+cargo run -p gemstone-rs-cli -- compare all --json
+cargo run -p gemstone-rs-cli -- compare all --gaps
+cargo run -p gemstone-rs-cli -- compare all --gaps --json
+cargo run -p gemstone-rs-cli -- compare all --next
+cargo run -p gemstone-rs-cli -- compare all --next --json
+cargo run -p gemstone-rs-cli -- compare all --batches
+cargo run -p gemstone-rs-cli -- compare all --batches --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list

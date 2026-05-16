@@ -36,6 +36,14 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
+	cargo run -p gemstone-rs-cli -- compare all
+	cargo run -p gemstone-rs-cli -- compare all --json
+	cargo run -p gemstone-rs-cli -- compare all --gaps
+	cargo run -p gemstone-rs-cli -- compare all --gaps --json
+	cargo run -p gemstone-rs-cli -- compare all --next
+	cargo run -p gemstone-rs-cli -- compare all --next --json
+	cargo run -p gemstone-rs-cli -- compare all --batches
+	cargo run -p gemstone-rs-cli -- compare all --batches --json
 	cargo run -p gemstone-rs-cli -- examples list
 	cargo run -p gemstone-rs-cli -- examples list --json
 	cargo run -p gemstone-rs-cli -- examples map

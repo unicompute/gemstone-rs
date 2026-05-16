@@ -28,6 +28,14 @@ cargo run -p gemstone-rs-cli -- compare gemstone-js --next
 cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
+cargo run -p gemstone-rs-cli -- compare all
+cargo run -p gemstone-rs-cli -- compare all --json
+cargo run -p gemstone-rs-cli -- compare all --gaps
+cargo run -p gemstone-rs-cli -- compare all --gaps --json
+cargo run -p gemstone-rs-cli -- compare all --next
+cargo run -p gemstone-rs-cli -- compare all --next --json
+cargo run -p gemstone-rs-cli -- compare all --batches
+cargo run -p gemstone-rs-cli -- compare all --batches --json
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
@@ -111,10 +119,11 @@ shells where you do not want to source the file globally.
 `gemstone-examples hello` from gemstone-py and prints the CLI version, target
 OS, target architecture, and executable path. `compare gemstone-py` prints the
 Rust/Python comparison, while `compare gemstone-js` prints the
-TypeScript/Python comparison. Add `--gaps` for the prioritized catch-up report
-`--next` for the single recommended next action, and `--batches` for the
-estimated work batches and hours. Add `--json` when an editor, CI job, or
-release script needs structured output.
+TypeScript/Python comparison. `compare all` prints both comparison tracks in
+one run. Add `--gaps` for the prioritized catch-up report, `--next` for the
+single recommended next action, and `--batches` for the estimated work batches
+and hours. Add `--json` when an editor, CI job, or release script needs
+structured output.
 
 `doctor` is the first command to run on a new machine. Without `--live`, it
 checks environment and GCI library resolution, including whether `libgcirpc`

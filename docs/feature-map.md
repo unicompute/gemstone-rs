@@ -16,6 +16,8 @@ gemstone-rs compare gemstone-js
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --next
+gemstone-rs compare all --batches
 gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -34,7 +36,8 @@ guide. `compare gemstone-js` prints the TypeScript/Python comparison from
 forms print remaining parity gaps with next actions and verification commands.
 The `--next` forms print the first recommended batch and top priority gap.
 The `--batches` forms answer how much work remains, including batch counts,
-hour ranges, outcomes, and verification commands.
+hour ranges, outcomes, and verification commands. Use `compare all` with the
+same flags to print both comparison tracks together.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,

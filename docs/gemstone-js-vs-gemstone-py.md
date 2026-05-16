@@ -102,7 +102,10 @@ gemstone-rs compare gemstone-js --json
 gemstone-rs compare gemstone-js --gaps --json
 gemstone-rs compare gemstone-js --next --json
 gemstone-rs compare gemstone-js --batches --json
+gemstone-rs compare all --next
+gemstone-rs compare all --next --json
 ```
 
 Use the JSON form when an editor, release script, or dashboard needs to render
-the comparison.
+the comparison. Use `compare all` when you want the TypeScript/Python and
+Rust/Python tracks in one report.
