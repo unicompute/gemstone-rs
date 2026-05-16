@@ -8,6 +8,9 @@
       "$ref": "#/$defs/singleSummary"
     },
     {
+      "$ref": "#/$defs/singleScorecard"
+    },
+    {
       "$ref": "#/$defs/singleGaps"
     },
     {
@@ -21,6 +24,9 @@
     },
     {
       "$ref": "#/$defs/allSummary"
+    },
+    {
+      "$ref": "#/$defs/allScorecard"
     },
     {
       "$ref": "#/$defs/allGaps"
@@ -57,6 +63,55 @@
           "items": {
             "$ref": "#/$defs/summaryRow"
           }
+        }
+      }
+    },
+    "singleScorecard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "view",
+        "answer",
+        "gemstonePyUseWhen",
+        "projectUseWhen",
+        "gemstonePyStrengths",
+        "projectStrengths",
+        "remaining",
+        "nextBatch",
+        "topGap"
+      ],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "view": {
+          "const": "scorecard"
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gemstonePyUseWhen": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "projectUseWhen": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "gemstonePyStrengths": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "projectStrengths": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "remaining": {
+          "$ref": "#/$defs/remaining"
+        },
+        "nextBatch": {
+          "$ref": "#/$defs/batch"
+        },
+        "topGap": {
+          "$ref": "#/$defs/genericGap"
         }
       }
     },
@@ -165,6 +220,42 @@
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/summaryEntry"
+          }
+        }
+      }
+    },
+    "allScorecard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "view",
+        "totalBatches",
+        "hoursMin",
+        "hoursMax",
+        "comparisons"
+      ],
+      "properties": {
+        "comparison": {
+          "const": "all"
+        },
+        "view": {
+          "const": "scorecard"
+        },
+        "totalBatches": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMin": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMax": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "comparisons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/scorecardEntry"
           }
         }
       }
@@ -295,6 +386,51 @@
           "items": {
             "$ref": "#/$defs/summaryRow"
           }
+        }
+      }
+    },
+    "scorecardEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison",
+        "answer",
+        "gemstonePyUseWhen",
+        "projectUseWhen",
+        "gemstonePyStrengths",
+        "projectStrengths",
+        "remaining",
+        "nextBatch",
+        "topGap"
+      ],
+      "properties": {
+        "comparison": {
+          "$ref": "#/$defs/comparisonName"
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gemstonePyUseWhen": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "projectUseWhen": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "gemstonePyStrengths": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "projectStrengths": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "remaining": {
+          "$ref": "#/$defs/remaining"
+        },
+        "nextBatch": {
+          "$ref": "#/$defs/batch"
+        },
+        "topGap": {
+          "$ref": "#/$defs/genericGap"
         }
       }
     },
@@ -542,6 +678,22 @@
         }
       }
     },
+    "remaining": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["totalBatches", "hoursMin", "hoursMax"],
+      "properties": {
+        "totalBatches": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMin": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "hoursMax": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
     "batch": {
       "type": "object",
       "additionalProperties": false,
@@ -567,6 +719,14 @@
         "verifyWith": {
           "type": "string"
         }
+      }
+    },
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
       }
     },
     "nonNegativeInteger": {

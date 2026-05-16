@@ -9,15 +9,18 @@ Run it from the CLI:
 ```bash
 gemstone-rs hello
 gemstone-rs compare gemstone-py
+gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
+gemstone-rs compare gemstone-js --scorecard
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --scorecard
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches
@@ -35,7 +38,9 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
 guide. `compare gemstone-js` prints the TypeScript/Python comparison from
-[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--gaps`
+[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--scorecard`
+forms print the shortest decision view: when to use each project, current
+strengths, the remaining batch count, the next batch, and the top gap. The `--gaps`
 forms print remaining parity gaps with next actions and verification commands.
 The `--next` forms print the first recommended batch and top priority gap.
 The `--totals` forms print only the batch/hour totals for planning and CI.
@@ -50,8 +55,8 @@ derive mapping, generated wrappers, live discovery, profile-driven codegen,
 standard HTTP, worker-pool, Axum, and Actix workflows. JSON output is intended for CI, docs
 checks, and editor tooling. Compare reports are covered by
 [`schemas/gemstone-rs.compare.schema.json`](../schemas/gemstone-rs.compare.schema.json),
-so release scripts and editor panels can validate the same summary, gap,
-next-action, totals, and batch-plan shapes that the CLI prints.
+so release scripts and editor panels can validate the same summary, scorecard,
+gap, next-action, totals, and batch-plan shapes that the CLI prints.
 
 ## Streams
 

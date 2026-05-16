@@ -89,8 +89,10 @@ assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
+  ["compare", "gemstone-py", "--scorecard", "--json"],
   ["compare", "gemstone-js", "--gaps", "--json"],
   ["compare", "all", "--json"],
+  ["compare", "all", "--scorecard", "--json"],
   ["compare", "all", "--gaps", "--json"],
   ["compare", "all", "--next", "--json"],
   ["compare", "all", "--totals", "--json"],
@@ -215,7 +217,7 @@ function assertProfileCheck(value) {
 
 function assertCompare(value, context) {
   assert(["gemstone-py", "gemstone-js", "all"].includes(value.comparison), context);
-  assert(["summary", "gaps", "next", "totals", "batches"].includes(value.view), context);
+  assert(["summary", "scorecard", "gaps", "next", "totals", "batches"].includes(value.view), context);
 
   if (value.comparison === "all") {
     assert(Array.isArray(value.comparisons), `${context}: comparisons`);
@@ -242,6 +244,9 @@ function assertCompareEntry(value, view, context) {
         assertCompareRow(row, value.comparison, `${context}.rows[${index}]`);
       }
       break;
+    case "scorecard":
+      assertScorecard(value, context);
+      break;
     case "gaps":
       assert(Array.isArray(value.gaps), `${context}: gaps`);
       assert(value.gaps.length > 0, `${context}: gaps should not be empty`);
@@ -267,6 +272,25 @@ function assertCompareEntry(value, view, context) {
     default:
       throw new Error(`${context}: unknown compare view ${view}`);
   }
+}
+
+function assertScorecard(value, context) {
+  assert.strictEqual(typeof value.answer, "string", `${context}.answer`);
+  for (const field of [
+    "gemstonePyUseWhen",
+    "projectUseWhen",
+    "gemstonePyStrengths",
+    "projectStrengths",
+  ]) {
+    assert(Array.isArray(value[field]), `${context}.${field}`);
+    assert(value[field].length > 0, `${context}.${field} should not be empty`);
+    for (const [index, item] of value[field].entries()) {
+      assert.strictEqual(typeof item, "string", `${context}.${field}[${index}]`);
+    }
+  }
+  assertTotals(value.remaining, `${context}.remaining`);
+  assertBatch(value.nextBatch, `${context}.nextBatch`);
+  assertGenericGap(value.topGap, `${context}.topGap`);
 }
 
 function assertCompareRow(row, comparison, context) {

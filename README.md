@@ -65,15 +65,18 @@ The CLI binary installed by `gemstone-rs-cli` is named `gemstone-rs`:
 gemstone-rs --help
 gemstone-rs hello
 gemstone-rs compare gemstone-py
+gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
 gemstone-rs compare gemstone-js
+gemstone-rs compare gemstone-js --scorecard
 gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --scorecard
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches
@@ -104,8 +107,9 @@ gemstone-rs-explorer --help
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
 **12 batches**, roughly **86-151 hours** total. Use
-`gemstone-rs compare all --batches` for the per-batch detail and verification
-commands.
+`gemstone-rs compare gemstone-py --scorecard` for the shortest Rust/Python
+decision view, or `gemstone-rs compare all --batches` for the per-batch detail
+and verification commands.
 
 For VS Code, install the workbench from the Marketplace:
 
@@ -249,6 +253,8 @@ cargo run -p gemstone-rs-cli -- hello
 cargo run -p gemstone-rs-cli -- hello --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py
 cargo run -p gemstone-rs-cli -- compare gemstone-py --json
+cargo run -p gemstone-rs-cli -- compare gemstone-py --scorecard
+cargo run -p gemstone-rs-cli -- compare gemstone-py --scorecard --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --next
@@ -259,6 +265,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js
 cargo run -p gemstone-rs-cli -- compare gemstone-js --json
+cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard
+cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
 cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
 cargo run -p gemstone-rs-cli -- compare gemstone-js --next
@@ -269,6 +277,8 @@ cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- compare all
 cargo run -p gemstone-rs-cli -- compare all --json
+cargo run -p gemstone-rs-cli -- compare all --scorecard
+cargo run -p gemstone-rs-cli -- compare all --scorecard --json
 cargo run -p gemstone-rs-cli -- compare all --gaps
 cargo run -p gemstone-rs-cli -- compare all --gaps --json
 cargo run -p gemstone-rs-cli -- compare all --next

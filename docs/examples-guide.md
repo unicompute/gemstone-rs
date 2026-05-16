@@ -34,6 +34,7 @@ gemstone-rs examples list
 gemstone-rs examples show quickstart
 gemstone-rs examples list --json
 gemstone-rs examples map
+gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
@@ -42,6 +43,7 @@ gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --scorecard
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches
@@ -255,6 +257,7 @@ gemstone-rs bridge sample-config BookingDraft
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain --json examples/codegen/gemstone-rs.codegen
 gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.codegen-profiles.json
+gemstone-rs compare gemstone-py --scorecard
 gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
@@ -263,6 +266,7 @@ gemstone-rs compare gemstone-js --gaps
 gemstone-rs compare gemstone-js --next
 gemstone-rs compare gemstone-js --totals
 gemstone-rs compare gemstone-js --batches
+gemstone-rs compare all --scorecard
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches

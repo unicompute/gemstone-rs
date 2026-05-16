@@ -1438,6 +1438,20 @@ struct BatchInfo {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ScorecardInfo {
+    title: &'static str,
+    comparison: &'static str,
+    answer: &'static str,
+    gemstone_py_use_when: &'static [&'static str],
+    project_use_when: &'static [&'static str],
+    gemstone_py_strengths: &'static [&'static str],
+    project_strengths: &'static [&'static str],
+    batches: &'static [BatchInfo],
+    gaps: &'static [GapInfo],
+    project_label: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ScaffoldTemplate {
     name: &'static str,
     package_name: &'static str,
@@ -1772,6 +1786,30 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     },
 ];
 
+const GEMSTONE_PY_USE_WHEN: &[&str] = &[
+    "You are building Python applications, notebooks, scripts, or web services.",
+    "You want the broadest current examples across FastAPI, Litestar, Django, async, docs, and packaging.",
+    "You need the mature Python database explorer and PyPI/TestPyPI release path today.",
+];
+
+const GEMSTONE_RS_USE_WHEN: &[&str] = &[
+    "You are building Rust services, CLIs, workers, or local tooling that should talk to GemStone without Python.",
+    "You want compile-time checked generated wrappers, typed return helpers, and explicit OOP/value handling.",
+    "You want the Rust GCI core that can eventually be shared underneath gemstone-py-native.",
+];
+
+const GEMSTONE_PY_STRENGTHS: &[&str] = &[
+    "Mature Python package and optional native acceleration install path.",
+    "Broader web framework examples and async workflow coverage.",
+    "Richer database explorer and public docs/release surfaces.",
+];
+
+const GEMSTONE_RS_STRENGTHS: &[&str] = &[
+    "Direct Rust API over GemStone/S with no Python process required.",
+    "Typed codegen, BridgeRoot object mapping, derive support, and compile-time wrapper checks.",
+    "CLI, explorer, and VS Code workflows that exercise the Rust core directly.",
+];
+
 const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     GapInfo {
         priority: "P1",
@@ -1923,6 +1961,18 @@ const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
         gemstone_js: "Node native package, Deno/Bun FFI starters, mock runtime, and library discovery via GS_LIB_PATH/GS_LIB/GEMSTONE",
         recommendation: "gemstone-js needs more live native-platform proof before it matches gemstone-py operational confidence",
     },
+];
+
+const GEMSTONE_JS_USE_WHEN: &[&str] = &[
+    "You are building Node, TypeScript, or JavaScript services that should keep GemStone access in the JS runtime.",
+    "You want async-first APIs, npm packaging, and TypeScript-generated signatures.",
+    "You are willing to work with a newer alpha surface while native package confidence matures.",
+];
+
+const GEMSTONE_JS_STRENGTHS: &[&str] = &[
+    "Async-first API shape that fits Node services naturally.",
+    "Manifest/decorator codegen with TypeScript type signatures and schema checks.",
+    "npm-oriented doctor, examples, migrations, inspect, benchmarks, and package smoke tooling.",
 ];
 
 const GEMSTONE_JS_BATCHES: &[BatchInfo] = &[
@@ -2209,6 +2259,7 @@ fn print_hello(format: OutputFormat) {
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
+        CompareView::Scorecard => print_scorecard(gemstone_py_scorecard_info(), format),
         CompareView::Gaps => print_gemstone_py_gap_report(format),
         CompareView::Next => print_next_action(
             "gemstone-rs next action vs gemstone-py",
@@ -2239,6 +2290,7 @@ fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
 fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_js_comparison_summary(format),
+        CompareView::Scorecard => print_scorecard(gemstone_js_scorecard_info(), format),
         CompareView::Gaps => print_gemstone_js_gap_report(format),
         CompareView::Next => print_next_action(
             "gemstone-js next action vs gemstone-py",
@@ -2280,6 +2332,11 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
             println!();
             match view {
                 CompareView::Totals => print_all_comparison_totals_human(),
+                CompareView::Scorecard => {
+                    print_scorecard(gemstone_py_scorecard_info(), OutputFormat::Human);
+                    println!();
+                    print_scorecard(gemstone_js_scorecard_info(), OutputFormat::Human);
+                }
                 _ => {
                     print_gemstone_py_comparison(view, OutputFormat::Human);
                     println!();
@@ -2312,6 +2369,17 @@ fn print_all_comparisons_json(view: CompareView) {
                         .collect::<Vec<_>>()
                         .join(",")
                 )
+            );
+        }
+        CompareView::Scorecard => {
+            let totals = all_batch_totals();
+            println!(
+                r#"{{"comparison":"all","view":"scorecard","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                totals.total_batches,
+                totals.hours_min,
+                totals.hours_max,
+                scorecard_json_entry(gemstone_py_scorecard_info()),
+                scorecard_json_entry(gemstone_js_scorecard_info())
             );
         }
         CompareView::Gaps => {
@@ -2406,6 +2474,21 @@ fn print_gemstone_py_comparison_summary(format: OutputFormat) {
     }
 }
 
+fn gemstone_py_scorecard_info() -> ScorecardInfo {
+    ScorecardInfo {
+        title: "gemstone-rs scorecard vs gemstone-py",
+        comparison: "gemstone-py",
+        answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
+        gemstone_py_use_when: GEMSTONE_PY_USE_WHEN,
+        project_use_when: GEMSTONE_RS_USE_WHEN,
+        gemstone_py_strengths: GEMSTONE_PY_STRENGTHS,
+        project_strengths: GEMSTONE_RS_STRENGTHS,
+        batches: GEMSTONE_RS_BATCHES,
+        gaps: GEMSTONE_PY_GAPS,
+        project_label: "gemstone-rs",
+    }
+}
+
 fn print_gemstone_py_gap_report(format: OutputFormat) {
     match format {
         OutputFormat::Human => {
@@ -2464,6 +2547,21 @@ fn print_gemstone_js_comparison_summary(format: OutputFormat) {
     }
 }
 
+fn gemstone_js_scorecard_info() -> ScorecardInfo {
+    ScorecardInfo {
+        title: "gemstone-js scorecard vs gemstone-py",
+        comparison: "gemstone-js",
+        answer: "gemstone-py remains more mature for Python products and visual tooling; gemstone-js is the TypeScript/Node path when async JS services and npm packaging are the product boundary.",
+        gemstone_py_use_when: GEMSTONE_PY_USE_WHEN,
+        project_use_when: GEMSTONE_JS_USE_WHEN,
+        gemstone_py_strengths: GEMSTONE_PY_STRENGTHS,
+        project_strengths: GEMSTONE_JS_STRENGTHS,
+        batches: GEMSTONE_JS_BATCHES,
+        gaps: GEMSTONE_JS_GAPS,
+        project_label: "gemstone-js",
+    }
+}
+
 fn print_gemstone_js_gap_report(format: OutputFormat) {
     match format {
         OutputFormat::Human => {
@@ -2491,6 +2589,68 @@ fn print_gemstone_js_gap_report(format: OutputFormat) {
             );
         }
     }
+}
+
+fn print_scorecard(info: ScorecardInfo, format: OutputFormat) {
+    let (hours_min, hours_max) = total_batch_hours(info.batches);
+    let next_batch = info
+        .batches
+        .first()
+        .expect("comparison batch plans must contain at least one batch");
+    let top_gap = info
+        .gaps
+        .first()
+        .expect("comparison gap reports must contain at least one gap");
+
+    match format {
+        OutputFormat::Human => {
+            println!("{}", info.title);
+            println!("  Answer: {}", info.answer);
+            println!(
+                "  Remaining work: {} batches, roughly {}-{} hours",
+                info.batches.len(),
+                hours_min,
+                hours_max
+            );
+            println!();
+            print_scorecard_list("Use gemstone-py when", info.gemstone_py_use_when);
+            print_scorecard_list(
+                &format!("Use {} when", info.project_label),
+                info.project_use_when,
+            );
+            print_scorecard_list(
+                "gemstone-py is stronger today at",
+                info.gemstone_py_strengths,
+            );
+            print_scorecard_list(
+                &format!("{} is stronger today at", info.project_label),
+                info.project_strengths,
+            );
+            println!(
+                "Next batch: {}. {} ({}-{} hours)",
+                next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
+            );
+            println!("  Outcome: {}", next_batch.outcome);
+            println!("  Verify with: {}", next_batch.verify_with);
+            println!();
+            println!("Top gap: {} {}", top_gap.priority, top_gap.area);
+            println!("  Next action: {}", top_gap.next_action);
+            println!("  Verify with: {}", top_gap.verify_with);
+        }
+        OutputFormat::Json => println!(
+            r#"{{"comparison":"{}","view":"scorecard",{}}}"#,
+            escape_json(info.comparison),
+            scorecard_json_body(info)
+        ),
+    }
+}
+
+fn print_scorecard_list(title: &str, values: &[&'static str]) {
+    println!("{title}:");
+    for value in values {
+        println!("  - {value}");
+    }
+    println!();
 }
 
 fn comparison_json(row: &ComparisonInfo) -> String {
@@ -2550,6 +2710,37 @@ fn gap_report_json_entry(comparison: &str, gaps: String) -> String {
         r#"{{"comparison":"{}","gaps":[{}]}}"#,
         escape_json(comparison),
         gaps
+    )
+}
+
+fn scorecard_json_entry(info: ScorecardInfo) -> String {
+    format!(
+        r#"{{"comparison":"{}",{}}}"#,
+        escape_json(info.comparison),
+        scorecard_json_body(info)
+    )
+}
+
+fn scorecard_json_body(info: ScorecardInfo) -> String {
+    format!(
+        r#""answer":"{}","gemstonePyUseWhen":[{}],"projectUseWhen":[{}],"gemstonePyStrengths":[{}],"projectStrengths":[{}],"remaining":{},"nextBatch":{},"topGap":{}"#,
+        escape_json(info.answer),
+        json_hint_array(info.gemstone_py_use_when),
+        json_hint_array(info.project_use_when),
+        json_hint_array(info.gemstone_py_strengths),
+        json_hint_array(info.project_strengths),
+        remaining_json(info.batches),
+        batch_json(
+            info.batches
+                .first()
+                .expect("comparison batch plans must contain at least one batch")
+        ),
+        generic_gap_json(
+            info.gaps
+                .first()
+                .expect("comparison gap reports must contain at least one gap"),
+            info.project_label
+        )
     )
 }
 
@@ -2720,6 +2911,16 @@ fn batch_totals_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
     format!(
         r#"{{"comparison":"{}","totalBatches":{},"hoursMin":{},"hoursMax":{}}}"#,
         escape_json(comparison),
+        batches.len(),
+        min_hours,
+        max_hours
+    )
+}
+
+fn remaining_json(batches: &[BatchInfo]) -> String {
+    let (min_hours, max_hours) = total_batch_hours(batches);
+    format!(
+        r#"{{"totalBatches":{},"hoursMin":{},"hoursMax":{}}}"#,
         batches.len(),
         min_hours,
         max_hours
@@ -3367,6 +3568,7 @@ enum OutputFormat {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum CompareView {
     Summary,
+    Scorecard,
     Gaps,
     Next,
     Totals,
@@ -3503,13 +3705,14 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
     for arg in args {
         match arg.as_str() {
             "--json" => format = OutputFormat::Json,
+            "--scorecard" | "--matrix" | "--decision" => view = CompareView::Scorecard,
             "--gaps" | "--gap-report" | "--roadmap" => view = CompareView::Gaps,
             "--next" | "--next-action" => view = CompareView::Next,
             "--totals" | "--total" => view = CompareView::Totals,
             "--batches" | "--batch-plan" | "--work" => view = CompareView::Batches,
             "-h" | "--help" => {
                 return Err(CliError::usage(
-                    "expected: compare gemstone-py|gemstone-js|all [--gaps|--next|--totals|--batches] [--json]",
+                    "expected: compare gemstone-py|gemstone-js|all [--scorecard|--gaps|--next|--totals|--batches] [--json]",
                 ));
             }
             "gemstone-py" | "gemstone_py" | "py" if target.is_none() => {
@@ -3521,6 +3724,7 @@ fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
             "all" | "everything" if target.is_none() => {
                 target = Some("all");
             }
+            "scorecard" | "matrix" | "decision" => view = CompareView::Scorecard,
             "gaps" | "gap-report" | "roadmap" => view = CompareView::Gaps,
             "next" | "next-action" => view = CompareView::Next,
             "totals" | "total" => view = CompareView::Totals,
@@ -4406,7 +4610,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
-  gemstone-rs compare gemstone-py|gemstone-js|all [--gaps|--next|--totals|--batches] [--json]
+  gemstone-rs compare gemstone-py|gemstone-js|all [--scorecard|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
   gemstone-rs env write [path] [--force]
@@ -4584,6 +4788,13 @@ mod tests {
             }
         );
         assert_eq!(
+            parse_command(&args(&["compare", "gemstone-py", "--scorecard", "--json"])).unwrap(),
+            Command::CompareGemstonePy {
+                view: CompareView::Scorecard,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
             parse_command(&args(&["compare", "gemstone-py", "gaps"])).unwrap(),
             Command::CompareGemstonePy {
                 view: CompareView::Gaps,
@@ -4644,6 +4855,13 @@ mod tests {
             Command::CompareAll {
                 view: CompareView::Next,
                 format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["compare", "all", "scorecard"])).unwrap(),
+            Command::CompareAll {
+                view: CompareView::Scorecard,
+                format: OutputFormat::Human,
             }
         );
         assert_eq!(
@@ -4928,6 +5146,8 @@ mod tests {
             .contains(r#""totalBatches":6"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
+        assert!(scorecard_json_entry(gemstone_py_scorecard_info())
+            .contains(r#""remaining":{"totalBatches":6,"hoursMin":44,"hoursMax":79}"#));
     }
 
     #[test]
