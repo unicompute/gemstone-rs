@@ -343,6 +343,206 @@ pub fn char_oop(value: char) -> u64 {
     Oop::from_char(value).raw()
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeSmokeStep {
+    pub name: &'static str,
+    pub ok: bool,
+    pub detail: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeSmokeReport {
+    pub dry_run: bool,
+    pub contract_version: u16,
+    pub steps: Vec<PyNativeSmokeStep>,
+}
+
+impl PyNativeSmokeReport {
+    pub fn ok(&self) -> bool {
+        self.steps.iter().all(|step| step.ok)
+    }
+}
+
+pub fn smoke_dry_run_report() -> PyNativeSmokeReport {
+    let mut steps = Vec::new();
+    smoke_contract_steps(&mut steps);
+    PyNativeSmokeReport {
+        dry_run: true,
+        contract_version: capabilities().contract_version,
+        steps,
+    }
+}
+
+pub fn smoke_live_report() -> PyNativeSmokeReport {
+    let mut steps = Vec::new();
+    smoke_contract_steps(&mut steps);
+    smoke_live_steps(&mut steps);
+    PyNativeSmokeReport {
+        dry_run: false,
+        contract_version: capabilities().contract_version,
+        steps,
+    }
+}
+
+fn smoke_contract_steps(steps: &mut Vec<PyNativeSmokeStep>) {
+    let capabilities = capabilities();
+    push_smoke_step(
+        steps,
+        "capabilities",
+        capabilities.contract_version == 1
+            && capabilities.operations.contains(&"eval")
+            && capabilities.operations.contains(&"perform")
+            && capabilities.operations.contains(&"global_put"),
+        format!(
+            "contract_version={} operations={}",
+            capabilities.contract_version,
+            capabilities.operations.len()
+        ),
+    );
+    push_smoke_step(
+        steps,
+        "oop_constants",
+        nil_oop() == Oop::NIL.raw()
+            && bool_oop(true) == Oop::TRUE.raw()
+            && bool_oop(false) == Oop::FALSE.raw()
+            && smallint_oop(7) == Oop::from_smallint(7).raw()
+            && char_oop('A') == Oop::from_char('A').raw(),
+        "nil/true/false/smallint/char constants match gemstone-rs Oop helpers",
+    );
+    push_smoke_step(
+        steps,
+        "value_conversion",
+        PyNativeValue::from(Value::SmallInt(7)) == PyNativeValue::SmallInt(7)
+            && PyNativeValue::from(Value::Oop(Oop(1234))).raw_oop() == Some(1234)
+            && PyNativeValue::Symbol("abc".to_string())
+                .to_value()
+                .is_none(),
+        "plain Value <-> PyNativeValue conversion is stable",
+    );
+    let config_error = PyNativeConfig::default().into_config().unwrap_err();
+    let config_info = PyNativeErrorInfo::from_error(&config_error);
+    push_smoke_step(
+        steps,
+        "config_error_mapping",
+        matches!(config_error, Error::MissingConfig("username"))
+            && config_info.kind == PyNativeErrorKind::MissingConfig,
+        config_error.to_string(),
+    );
+    let oop_error = Error::IllegalOop { operation: "eval" };
+    let oop_info = PyNativeErrorInfo::from_error(&oop_error);
+    push_smoke_step(
+        steps,
+        "structured_error_mapping",
+        oop_info.kind == PyNativeErrorKind::IllegalOop && oop_info.operation == Some("eval"),
+        oop_error.to_string(),
+    );
+}
+
+fn smoke_live_steps(steps: &mut Vec<PyNativeSmokeStep>) {
+    let config = match PyNativeConfig::from_env() {
+        Ok(config) => {
+            let summary = config.redacted_summary();
+            push_smoke_step(
+                steps,
+                "config_from_env",
+                true,
+                format!(
+                    "stone={} host={} user={} password_set={}",
+                    summary.stone, summary.host, summary.username, summary.password_set
+                ),
+            );
+            config
+        }
+        Err(err) => {
+            push_smoke_step(steps, "config_from_env", false, err.to_string());
+            return;
+        }
+    };
+
+    let mut session = match PyNativeSession::login(config) {
+        Ok(session) => {
+            push_smoke_step(
+                steps,
+                "login",
+                true,
+                format!("session_id={}", session.session_id()),
+            );
+            session
+        }
+        Err(err) => {
+            push_smoke_step(steps, "login", false, err.to_string());
+            return;
+        }
+    };
+
+    push_result_step(
+        steps,
+        "eval_3_plus_4",
+        session
+            .eval("3 + 4")
+            .map(|value| (value == PyNativeValue::SmallInt(7), format!("{value:?}"))),
+    );
+    push_result_step(
+        steps,
+        "perform_print_string",
+        session
+            .perform_values(PyNativeValue::SmallInt(7), "printString", &[])
+            .and_then(|printed| {
+                let raw = printed.raw_oop().ok_or(Error::UnexpectedType {
+                    expected: "Oop",
+                    actual: format!("{printed:?}"),
+                })?;
+                session.fetch_string(raw)
+            })
+            .map(|value| (value == "7", value)),
+    );
+
+    let key = format!("GemStoneRsPyNative{}", std::process::id());
+    let global_round_trip = session
+        .global_put_value(&key, PyNativeValue::String("shared core".to_string()))
+        .and_then(|_| session.commit())
+        .and_then(|_| session.global_get(&key))
+        .and_then(|oop| session.fetch_string(oop))
+        .map(|value| (value == "shared core", value));
+    push_result_step(steps, "global_string_round_trip", global_round_trip);
+
+    let cleanup = session
+        .global_put_raw(&key, nil_oop())
+        .and_then(|_| session.commit())
+        .map(|_| (true, format!("{key}=nil")));
+    push_result_step(steps, "cleanup", cleanup);
+
+    push_result_step(
+        steps,
+        "logout",
+        session.logout().map(|_| (true, "logged out".to_string())),
+    );
+}
+
+fn push_result_step(
+    steps: &mut Vec<PyNativeSmokeStep>,
+    name: &'static str,
+    result: Result<(bool, String)>,
+) {
+    match result {
+        Ok((ok, detail)) => push_smoke_step(steps, name, ok, detail),
+        Err(err) => push_smoke_step(steps, name, false, err.to_string()),
+    }
+}
+
+fn push_smoke_step(
+    steps: &mut Vec<PyNativeSmokeStep>,
+    name: &'static str,
+    ok: bool,
+    detail: impl Into<String>,
+) {
+    steps.push(PyNativeSmokeStep {
+        name,
+        ok,
+        detail: detail.into(),
+    });
+}
+
 pub struct PyNativeSession {
     session: Session,
 }
