@@ -87,6 +87,8 @@ const profileCheckOutput = childProcess.execFileSync(
 );
 assertProfileCheck(JSON.parse(lastJsonLine(profileCheckOutput)));
 assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
+const pyNativeFixture = readJson("examples/py-native/gemstone-rs.py-native.json");
+assertPyNativeCapabilities(pyNativeFixture);
 const pyNativeOutput = childProcess.execFileSync(
   "cargo",
   ["run", "-p", "gemstone-rs-cli", "--", "py-native", "capabilities", "--json"],
@@ -96,7 +98,13 @@ const pyNativeOutput = childProcess.execFileSync(
     stdio: ["ignore", "pipe", "inherit"],
   }
 );
-assertPyNativeCapabilities(JSON.parse(lastJsonLine(pyNativeOutput)));
+const pyNativeCapabilities = JSON.parse(lastJsonLine(pyNativeOutput));
+assertPyNativeCapabilities(pyNativeCapabilities);
+assert.deepStrictEqual(
+  pyNativeCapabilities,
+  pyNativeFixture,
+  "py-native capabilities output drifted from examples/py-native/gemstone-rs.py-native.json"
+);
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],

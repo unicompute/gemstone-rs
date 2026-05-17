@@ -68,7 +68,10 @@ gemstone-rs py-native capabilities --json
 
 The JSON output is covered by
 [`schemas/gemstone-rs.py-native.schema.json`](../schemas/gemstone-rs.py-native.schema.json)
-and the VS Code workbench packages the same schema for editor validation.
+and the VS Code workbench packages the same schema for editor validation. A
+checked-in fixture lives at
+[`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json)
+so downstream wrapper CI can diff the contract without requiring a live stone.
 
 Run the dry-run contract check from a source checkout when you also want to
 exercise the example binary:

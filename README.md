@@ -106,6 +106,9 @@ gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 gemstone-rs-explorer --help
 ```
 
+The py-native JSON fixture is checked in at
+`examples/py-native/gemstone-rs.py-native.json` for downstream wrapper CI.
+
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
 **1 batch**, roughly **6-10 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with

@@ -104,6 +104,8 @@ codegen-check:
 	cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 
 schema-check:
+	cargo run -p gemstone-rs-cli -- py-native capabilities --json > /tmp/gemstone-rs.py-native.json
+	diff -u examples/py-native/gemstone-rs.py-native.json /tmp/gemstone-rs.py-native.json
 	node scripts/validate_codegen_schemas.js
 
 profile-check:
