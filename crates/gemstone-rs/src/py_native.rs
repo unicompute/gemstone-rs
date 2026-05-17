@@ -350,6 +350,17 @@ pub struct PyNativeSmokeStep {
     pub detail: String,
 }
 
+impl PyNativeSmokeStep {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","ok":{},"detail":"{}"}}"#,
+            json_escape(self.name),
+            if self.ok { "true" } else { "false" },
+            json_escape(&self.detail)
+        )
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PyNativeSmokeReport {
     pub dry_run: bool,
@@ -360,6 +371,22 @@ pub struct PyNativeSmokeReport {
 impl PyNativeSmokeReport {
     pub fn ok(&self) -> bool {
         self.steps.iter().all(|step| step.ok)
+    }
+
+    pub fn to_json(&self) -> String {
+        let steps = self
+            .steps
+            .iter()
+            .map(PyNativeSmokeStep::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"ok":{},"dryRun":{},"contractVersion":{},"steps":[{}]}}"#,
+            if self.ok() { "true" } else { "false" },
+            if self.dry_run { "true" } else { "false" },
+            self.contract_version,
+            steps
+        )
     }
 }
 
@@ -541,6 +568,22 @@ fn push_smoke_step(
         ok,
         detail: detail.into(),
     });
+}
+
+fn json_escape(value: &str) -> String {
+    let mut escaped = String::new();
+    for ch in value.chars() {
+        match ch {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            ch if ch.is_control() => escaped.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => escaped.push(ch),
+        }
+    }
+    escaped
 }
 
 pub struct PyNativeSession {
@@ -765,5 +808,29 @@ mod tests {
         assert!(report.operations.contains(&"eval"));
         assert!(report.operations.contains(&"perform"));
         assert!(report.operations.contains(&"add_to_export_set"));
+    }
+
+    #[test]
+    fn smoke_report_json_is_stable_and_shared() {
+        let report = smoke_dry_run_report();
+        let json = report.to_json();
+        assert!(json.contains(r#""ok":true"#));
+        assert!(json.contains(r#""dryRun":true"#));
+        assert!(json.contains(r#""contractVersion":1"#));
+        assert!(json.contains(r#""name":"value_conversion""#));
+        assert!(json.contains(r#""detail":"plain Value <-> PyNativeValue conversion is stable""#));
+    }
+
+    #[test]
+    fn smoke_step_json_escapes_details() {
+        let step = PyNativeSmokeStep {
+            name: "quoted",
+            ok: false,
+            detail: "a\"b\\c\n".to_string(),
+        };
+        assert_eq!(
+            step.to_json(),
+            r#"{"name":"quoted","ok":false,"detail":"a\"b\\c\n"}"#
+        );
     }
 }

@@ -2650,26 +2650,7 @@ fn print_py_native_smoke_human(report: &py_native::PyNativeSmokeReport) {
 }
 
 fn print_py_native_smoke_json(report: &py_native::PyNativeSmokeReport) {
-    let steps_json = report
-        .steps
-        .iter()
-        .map(|step| {
-            format!(
-                r#"{{"name":"{}","ok":{},"detail":"{}"}}"#,
-                escape_json(step.name),
-                if step.ok { "true" } else { "false" },
-                escape_json(&step.detail)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    println!(
-        r#"{{"ok":{},"dryRun":{},"contractVersion":{},"steps":[{}]}}"#,
-        if report.ok() { "true" } else { "false" },
-        if report.dry_run { "true" } else { "false" },
-        report.contract_version,
-        steps_json
-    );
+    println!("{}", report.to_json());
 }
 
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
