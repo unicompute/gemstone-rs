@@ -235,9 +235,12 @@ type and GemStone class, then use:
 The VS Code webview wraps the same page with native handoff actions. It can run
 live browse probes from the side inspector, open method source in a VS Code
 editor, open the configured codegen/profile files, open the generated output
-file reported by codegen explain/check/profile status, and offer Launch
-Explorer/Open Browser/Copy URL fallbacks when the loopback explorer is not
-running.
+file reported by codegen explain/check/profile status, render generated wrapper
+source in an editable webview textarea, open that text as an untitled VS Code
+draft, and save edited generated output back to the configured output path after
+a confirmation prompt. The save path is constrained to the configured checkout
+or workspace. The webview also offers Launch Explorer/Open Browser/Copy URL
+fallbacks when the loopback explorer is not running.
 
 The `Comparison Status` buttons call read-only local endpoints:
 
@@ -245,7 +248,7 @@ The `Comparison Status` buttons call read-only local endpoints:
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **12 batches** and roughly
-  **76-131 hours**
+  **74-128 hours**
 
 Read-only endpoints:
 
@@ -399,5 +402,5 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- short GIFs showing profile import, codegen preview, and BridgeRoot checks
-- deeper generated-file editing inside the VS Code webview
+- short GIFs showing profile import, editable generated output, and BridgeRoot checks
+- richer BridgeRoot inspection and value drill-downs inside the VS Code webview

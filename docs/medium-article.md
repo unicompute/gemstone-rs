@@ -646,7 +646,9 @@ For a source checkout:
 The embedded webview now gives the explorer a more IDE-like loop: it can browse
 live dictionaries, classes, protocols, methods, and source from the side
 inspector; open method source in a VS Code editor; open configured codegen and
-profile files; open generated wrapper output; and warn with Launch Explorer,
+profile files; preview or read generated wrappers in an editable pane; open the
+current generated text as a VS Code draft; save edited generated output back to
+the configured file after a confirmation prompt; and warn with Launch Explorer,
 Open Browser, and Copy URL fallbacks when the loopback explorer is not running.
 The extension stays thin. The Rust CLI remains the contract, which keeps the
 tooling testable outside VS Code.

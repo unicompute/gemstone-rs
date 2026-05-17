@@ -69,14 +69,20 @@ From the `Codegen Config` tree:
 2. Run `Diff Generated Output`.
 3. Run `Check Freshness`.
 4. Run `Explain Config`.
-5. Run `Generate Wrappers`.
-6. Run `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`, `Codegen Explain Profile`, or `Codegen Generate Profile` when you want a checked-in project profile to supply the config path.
-7. Run `Open Codegen Docs`.
+5. Run `Open Generated Output` when you want to edit the checked-in wrappers.
+6. Run `Generate Wrappers`.
+7. Run `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`, `Codegen Explain Profile`, or `Codegen Generate Profile` when you want a checked-in project profile to supply the config path.
+8. Run `Open Codegen Docs`.
 
 `Generate Wrappers` shows the generated diff before writing if output would
 change.
 `Explain Config` renders the structured classes, methods, mapped fields, and
 generated test stubs from `codegen explain --json`.
+The embedded webview also has `Preview/Edit Generated Wrappers`,
+`Read/Edit Generated Output`, `Preview/Edit Profile`, and `Read/Edit Profile
+Output`. Those actions render generated Rust wrappers in an editable pane, with
+buttons to open the output file, open the current text as an untitled draft, or
+save the edited text back to the output path after confirmation.
 
 ## Explorer Walkthrough
 
@@ -131,4 +137,6 @@ output, or side-by-side diff output, and the page remembers the current fields
 locally across reloads. Config saves use a POST body, so the editor can handle
 realistic config files instead of being limited by URL length.
 Workbench buttons can open the current codegen config, project profile file,
-and generated output directly in VS Code for review or edits.
+and generated output directly in VS Code for review or edits. The webview save
+path is intentionally constrained to the configured checkout or active
+workspace.

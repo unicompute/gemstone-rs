@@ -102,6 +102,12 @@ assert(extensionSource.includes("renderCodegenExplain"), "webview should render 
 assert(extensionSource.includes("renderBridgeValue"), "webview should render BridgeRoot values as structured content");
 assert(extensionSource.includes("data-probe=\"/api/codegen/output\""), "webview should expose generated output reads");
 assert(extensionSource.includes("data-command=\"gemstoneRs.openGeneratedOutput\""), "webview should expose generated output file opens");
+assert(extensionSource.includes("renderGeneratedSource"), "webview should render generated output in an editable panel");
+assert(extensionSource.includes("generatedSourceEditor"), "webview should include an editable generated-source textarea");
+assert(extensionSource.includes("saveGeneratedOutput"), "webview should save edited generated output through VS Code");
+assert(extensionSource.includes("saveGeneratedOutputFromWebview"), "extension should handle generated output saves");
+assert(extensionSource.includes("generatedOutputSaved"), "webview should report generated output save status");
+assert(extensionSource.includes("isPathInside"), "generated output saves should stay inside the configured checkout");
 assert(extensionSource.includes("renderDiff"), "webview should render generated diffs");
 assert(extensionSource.includes("renderSetupAssistant"), "webview should render setup assistant steps");
 assert(extensionSource.includes("renderBridgeKeys"), "webview should render BridgeRoot key summaries");

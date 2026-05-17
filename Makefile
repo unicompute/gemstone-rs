@@ -141,6 +141,7 @@ release-artifact-check:
 
 screenshots:
 	python3 scripts/capture_explorer_screenshots.py
+	python3 scripts/capture_workbench_screenshot.py
 
 package-gci:
 	cargo package -p gemstone-gci --no-verify

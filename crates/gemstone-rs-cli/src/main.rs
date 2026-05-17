@@ -1859,7 +1859,7 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         project_score: 4,
         leader: "gemstone-py",
         status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, and an embedded webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels.",
-        next_action: "Deepen generated-file editing and screenshot/GIF coverage inside the embedded webview.",
+        next_action: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -1892,8 +1892,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, generated output reads, BridgeRoot keys/values, open-file actions, browser fallback prompts, and comparison status. They still need deeper generated-file editing and screenshot/GIF coverage.",
-        next_action: "Deepen generated-file editing and screenshot/GIF coverage inside the embedded webview.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot keys/values, open-file actions, browser fallback prompts, and comparison status. They still need Marketplace/GitHub stills or short GIFs that show the refreshed workflow.",
+        next_action: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -1934,9 +1934,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Explorer and VS Code visual polish",
-        hours_min: 4,
-        hours_max: 6,
-        outcome: "Deepen generated-file editing and screenshot/GIF coverage inside the embedded webview.",
+        hours_min: 2,
+        hours_max: 3,
+        outcome: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     BatchInfo {
@@ -5558,14 +5558,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (34, 59));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (32, 56));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 12,
-                hours_min: 76,
-                hours_max: 131,
+                hours_min: 74,
+                hours_max: 128,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5590,7 +5590,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":6,"hoursMin":34,"hoursMax":59}"#));
+            .contains(r#""remaining":{"totalBatches":6,"hoursMin":32,"hoursMax":56}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -5628,7 +5628,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("generated-file editing")));
+                && gap.next_action.contains("Marketplace/GitHub")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 

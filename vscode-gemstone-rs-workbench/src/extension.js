@@ -1372,7 +1372,9 @@ function openExplorerWebview() {
       retainContextWhenHidden: true,
     }
   );
-  panel.webview.onDidReceiveMessage((message) => handleExplorerWebviewMessage(message, url));
+  panel.webview.onDidReceiveMessage((message) =>
+    handleExplorerWebviewMessage(message, url, panel.webview)
+  );
   panel.webview.html = explorerWebviewHtml(url, cfg);
   output.clear();
   output.appendLine(`Opened gemstone-rs Explorer webview for ${url}`);
@@ -1381,7 +1383,7 @@ function openExplorerWebview() {
   probeExplorerHealth(url);
 }
 
-async function handleExplorerWebviewMessage(message, url) {
+async function handleExplorerWebviewMessage(message, url, webview) {
   if (!message || typeof message !== "object") {
     return;
   }
@@ -1407,9 +1409,68 @@ async function handleExplorerWebviewMessage(message, url) {
     }
     return;
   }
+  if (message.command === "saveGeneratedOutput") {
+    await saveGeneratedOutputFromWebview(
+      String(message.path || ""),
+      String(message.content || ""),
+      webview
+    );
+    return;
+  }
   if (message.command === "runWorkbenchCommand") {
     await runWorkbenchCommand(String(message.id || ""));
   }
+}
+
+async function saveGeneratedOutputFromWebview(filePath, content, webview) {
+  const cfg = settings();
+  const trimmedPath = filePath.trim();
+  if (!trimmedPath) {
+    vscode.window.showWarningMessage("No generated output path is available to save.");
+    webview?.postMessage({ command: "generatedOutputSaved", ok: false, error: "missing output path" });
+    return;
+  }
+
+  const fullPath = path.resolve(resolvePath(trimmedPath, cfg.cwd));
+  const root = path.resolve(cfg.cwd);
+  if (!isPathInside(fullPath, root)) {
+    const message = `Refusing to save outside the configured checkout: ${fullPath}`;
+    vscode.window.showErrorMessage(message);
+    webview?.postMessage({ command: "generatedOutputSaved", ok: false, path: fullPath, error: message });
+    return;
+  }
+
+  const choice = await vscode.window.showWarningMessage(
+    `Save edited generated output to ${path.relative(root, fullPath) || fullPath}?`,
+    { modal: true },
+    "Save"
+  );
+  if (choice !== "Save") {
+    webview?.postMessage({ command: "generatedOutputSaved", ok: false, path: fullPath, error: "save cancelled" });
+    return;
+  }
+
+  try {
+    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.promises.writeFile(fullPath, content, "utf8");
+    const document = await vscode.workspace.openTextDocument(fullPath);
+    await vscode.window.showTextDocument(document, { preview: false });
+    vscode.window.showInformationMessage(`Saved generated output: ${path.relative(root, fullPath) || fullPath}`);
+    webview?.postMessage({
+      command: "generatedOutputSaved",
+      ok: true,
+      path: fullPath,
+      bytes: Buffer.byteLength(content, "utf8"),
+    });
+  } catch (error) {
+    vscode.window.showErrorMessage(`Could not save generated output: ${error.message}`);
+    webview?.postMessage({ command: "generatedOutputSaved", ok: false, path: fullPath, error: error.message });
+  }
+}
+
+function isPathInside(filePath, root) {
+  const relative = path.relative(root, filePath);
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 async function probeExplorerHealth(url) {
@@ -1758,6 +1819,8 @@ a { color: var(--vscode-textLink-foreground); }
 .browse-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; align-items: center; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
 .browse-row button { padding: 3px 6px; }
 .source-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.source-editor { width: 100%; min-height: 360px; box-sizing: border-box; resize: vertical; font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size); color: var(--vscode-editor-foreground); background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px; }
+.save-state { color: var(--vscode-descriptionForeground); margin-top: 6px; }
 .content { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; }
 .iframe-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--vscode-panel-border); overflow-x: auto; }
 iframe { display: block; width: 100%; height: 100%; border: 0; background: white; }
@@ -1821,8 +1884,8 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
     <div class="group">
       <h2>Codegen</h2>
       <button data-probe="/api/codegen/explain">Explain Config</button>
-      <button data-probe="/api/codegen/preview">Preview Generated Wrappers</button>
-      <button data-probe="/api/codegen/output">Read Generated Output</button>
+      <button data-probe="/api/codegen/preview">Preview/Edit Generated Wrappers</button>
+      <button data-probe="/api/codegen/output">Read/Edit Generated Output</button>
       <button data-probe="/api/codegen/diff">Diff Generated Wrappers</button>
       <button data-probe="/api/codegen/check">Check Freshness</button>
       <button data-command="gemstoneRs.codegenPreview">Preview in Editor</button>
@@ -1834,8 +1897,8 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
     <div class="group">
       <h2>Profile Codegen</h2>
       <button data-probe="/api/codegen/explain-profile">Explain Profile</button>
-      <button data-probe="/api/codegen/preview-profile">Preview Profile</button>
-      <button data-probe="/api/codegen/output-profile">Read Profile Output</button>
+      <button data-probe="/api/codegen/preview-profile">Preview/Edit Profile</button>
+      <button data-probe="/api/codegen/output-profile">Read/Edit Profile Output</button>
       <button data-probe="/api/codegen/diff-profile">Diff Profile</button>
       <button data-probe="/api/codegen/check-profile">Check Profile</button>
       <button data-command="gemstoneRs.codegenPreviewProfile">Preview Profile in Editor</button>
@@ -1964,10 +2027,12 @@ function renderProbeResult(parsed, ok) {
       renderCodegenExplain(parsed.explain, ok);
     } else if (typeof parsed.diff === 'string') {
       renderDiff(parsed.diff || 'No generated output changes.', ok);
-    } else if (typeof parsed.source === 'string') {
-      renderBrowseSource(parsed, ok);
+    } else if (typeof parsed.source === 'string' && typeof parsed.output === 'string') {
+      renderGeneratedSource(parsed, ok);
     } else if (typeof parsed.config === 'string') {
       setInspectorHtml(resultTitle('Codegen Config') + '<pre>' + escapeHtml(parsed.config) + '</pre>', !ok);
+    } else if (typeof parsed.source === 'string') {
+      renderBrowseSource(parsed, ok);
     } else if (Array.isArray(parsed.keys)) {
       renderBridgeKeys(parsed, ok);
     } else if (parsed.value && typeof parsed.value === 'object') {
@@ -2084,6 +2149,55 @@ function renderDiff(diff, ok) {
     return '<span class="' + cls + '">' + escapeHtml(line || ' ') + '</span>';
   }).join('');
   setInspectorHtml(resultTitle('Generated Diff') + lines, !ok);
+}
+
+function renderGeneratedSource(data, ok) {
+  const outputPath = data.output || lastOutputFile || '';
+  const title = data.profile ? 'Profile Generated Output' : 'Generated Output';
+  const source = data.source || '';
+  if (outputPath) lastOutputFile = outputPath;
+  setInspectorHtml(
+    resultTitle(title, outputPath || 'no output path') +
+    '<div class="source-actions">' +
+      '<button data-open-generated-file>Open Output File</button>' +
+      '<button data-open-generated-draft>Open Editable Draft</button>' +
+      '<button data-save-generated-output' + (outputPath ? '' : ' disabled') + '>Save Edited Output</button>' +
+    '</div>' +
+    '<textarea id="generatedSourceEditor" class="source-editor" spellcheck="false">' + escapeHtml(source) + '</textarea>' +
+    '<div id="generatedSaveState" class="save-state">Edit the generated wrappers here, then save to the configured output file or open a draft editor.</div>',
+    !ok
+  );
+  const editor = document.getElementById('generatedSourceEditor');
+  const saveState = document.getElementById('generatedSaveState');
+  inspector.querySelector('[data-open-generated-file]')?.addEventListener('click', () => {
+    if (!outputPath) {
+      saveState.textContent = 'No output file has been reported yet.';
+      return;
+    }
+    vscode.postMessage({ command: 'openPath', path: outputPath });
+  });
+  inspector.querySelector('[data-open-generated-draft]')?.addEventListener('click', () => {
+    vscode.postMessage({
+      command: 'openDocument',
+      language: 'rust',
+      content: editor.value
+    });
+  });
+  inspector.querySelector('[data-save-generated-output]')?.addEventListener('click', () => {
+    if (!outputPath) {
+      saveState.textContent = 'No output file has been reported yet.';
+      return;
+    }
+    saveState.textContent = 'Waiting for VS Code save confirmation...';
+    vscode.postMessage({
+      command: 'saveGeneratedOutput',
+      path: outputPath,
+      content: editor.value
+    });
+  });
+  editor.addEventListener('input', () => {
+    saveState.textContent = 'Edited in webview. Save writes the configured generated output file.';
+  });
 }
 
 function renderSetupAssistant(data, ok) {
@@ -2286,6 +2400,18 @@ document.querySelector('[data-open-last]').addEventListener('click', () => {
     return;
   }
   vscode.postMessage({ command: 'openPath', path: lastOutputFile });
+});
+
+window.addEventListener('message', event => {
+  const message = event.data || {};
+  if (message.command !== 'generatedOutputSaved') return;
+  const saveState = document.getElementById('generatedSaveState');
+  if (!saveState) return;
+  if (message.ok) {
+    saveState.textContent = 'Saved ' + Number(message.bytes || 0) + ' bytes to ' + (message.path || 'generated output') + '.';
+  } else {
+    saveState.textContent = 'Save did not complete: ' + (message.error || 'unknown error');
+  }
 });
 </script>
 </body>

@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**12 batches**, roughly **76-131 hours** total. Use
+**12 batches**, roughly **74-128 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -600,8 +600,9 @@ codegen init/discover/preview/diff/check/explain/generate, launch explorer,
 and open an embedded explorer webview. The GemStone RS activity bar view
 browses dictionaries, classes, protocols, methods, and the configured codegen
 actions. `Codegen Explain` renders the structured classes, selectors, mapped
-fields, and generated test stubs. `Codegen Generate` shows the generated diff
-before writing files.
+fields, and generated test stubs. The embedded webview can now preview, edit,
+open, and save generated wrapper output through VS Code with a confirmation
+prompt. `Codegen Generate` still shows the generated diff before writing files.
 
 ## Threading
 
@@ -683,6 +684,7 @@ process.
 
 The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
 recent config history, named local profiles, diff detail, local field
-persistence, project profile file load/save, and webview paths are now wired.
-Next explorer work should add short GIFs, deeper saved selection workflows, and
-more BridgeRoot inspection actions over the stable local API.
+persistence, project profile file load/save, editable generated-output webview,
+and browser fallback paths are now wired. Next explorer work should add short
+Marketplace/GitHub GIFs and more BridgeRoot inspection actions over the stable
+local API.

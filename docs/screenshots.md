@@ -24,6 +24,13 @@ Then refresh the screenshot:
 make screenshots
 ```
 
+The target writes:
+
+```text
+docs/assets/explorer-home.png
+docs/assets/workbench-codegen-edit-flow.png
+```
+
 The target starts:
 
 ```bash
@@ -57,6 +64,24 @@ python3 scripts/capture_explorer_screenshots.py --check
 The screenshot path does not require GemStone credentials because the explorer
 home page renders before live endpoints are called. Live browse/codegen data
 still requires the normal `GS_*` environment.
+
+## Workbench Marketplace Images
+
+When the VS Code webview changes, refresh `docs/assets/explorer-home.png` and
+`docs/assets/workbench-codegen-edit-flow.png`, then capture any additional
+Marketplace/GitHub GIFs from VS Code with the same visible flow:
+
+1. Run `GemStone RS: Launch Explorer`.
+2. Run `GemStone RS: Open Explorer Webview`.
+3. Click `Preview/Edit Generated Wrappers`.
+4. Show the generated-source editor with `Open Output File`, `Open Editable
+   Draft`, and `Save Edited Output`.
+5. Capture a still screenshot or short GIF for the Marketplace listing.
+
+The committed still image shows the embedded explorer, the Codegen panel, and
+the editable generated-output pane so users can see the review/edit/save loop
+without reading the command list. Use a short GIF when you want to show the
+confirmation prompt and editor handoff.
 
 ## After Capture
 

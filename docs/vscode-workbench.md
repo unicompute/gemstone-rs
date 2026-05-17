@@ -10,6 +10,8 @@ Marketplace:
 https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workbench
 ```
 
+![gemstone-rs Workbench codegen edit flow](assets/workbench-codegen-edit-flow.png)
+
 ## Setup
 
 For installed CLI tools:
@@ -206,6 +208,20 @@ directly from settings, which is useful from the webview and command palette.
 `Open Generated Output` uses the same structured explain output to open the
 current generated wrapper file directly.
 
+Inside `GemStone RS: Open Explorer Webview`, the Codegen buttons use the same
+config/profile settings but keep the review loop in one pane. `Preview/Edit
+Generated Wrappers`, `Read/Edit Generated Output`, `Preview/Edit Profile`, and
+`Read/Edit Profile Output` render generated Rust source in an editable webview
+textarea. From there you can:
+
+- open the configured generated output file in a normal VS Code editor
+- open the current webview text as an untitled editable draft
+- save the edited text back to the generated output file after a confirmation
+
+The save handler refuses paths outside `gemstoneRs.checkoutPath` or the active
+workspace, so an accidental config path cannot overwrite files elsewhere on the
+machine.
+
 When a project profile file is checked in, use the profile variants instead:
 `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`,
 `Codegen Explain Profile`, and `Codegen Generate Profile`. They prompt for a
@@ -305,7 +321,8 @@ previews, project profile freshness tables with Preview/Diff/Check/Generate
 buttons, Codegen explain summaries, generated source, colorized diffs,
 BridgeRoot identity, key, and value summaries, and comparison status cards. The
 same shell can hand off to native VS Code commands for generated wrapper
-preview, diff, check, opening config/profile/generated files,
+preview, diff, check, opening config/profile/generated files, editing generated
+source in the webview, saving edited generated output with confirmation,
 generate-with-confirmation, profile checks, docs, and opening the last generated
 output file reported by the explorer. If the explorer is not running, the
 webview prompts with Launch Explorer, Open Browser, and Copy URL fallback
@@ -374,7 +391,7 @@ make vscode-package
 
 ## Later Feature Work
 
-The embedded webview now covers the main read-only Codegen, profile, setup,
-comparison, generated-output, BridgeRoot inspection, live browsing, source
-preview, and open-file loops. Next work should deepen generated-file editing
-and screenshot/GIF coverage.
+The embedded webview now covers the main Codegen, profile, setup, comparison,
+generated-output editing, BridgeRoot inspection, live browsing, source preview,
+and open-file loops. Next visual polish should focus on Marketplace/GitHub GIF
+coverage and richer BridgeRoot inspection actions.

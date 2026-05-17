@@ -597,13 +597,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 6,
-        hours_min: 34,
-        hours_max: 59,
+        hours_min: 32,
+        hours_max: 56,
         next_number: 1,
         next_focus: "Explorer and VS Code visual polish",
-        next_hours_min: 4,
-        next_hours_max: 6,
-        next_outcome: "Deepen generated-file editing and screenshot/GIF coverage inside the embedded webview.",
+        next_hours_min: 2,
+        next_hours_max: 3,
+        next_outcome: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
         next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -645,7 +645,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":76,"hoursMax":131,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":74,"hoursMax":128,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -3544,8 +3544,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":34"#));
-        assert!(response.body.contains(r#""hoursMax":59"#));
+        assert!(response.body.contains(r#""hoursMin":32"#));
+        assert!(response.body.contains(r#""hoursMax":56"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Explorer and VS Code visual polish"));
         assert!(response
@@ -3562,8 +3562,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":76"#));
-        assert!(response.body.contains(r#""hoursMax":131"#));
+        assert!(response.body.contains(r#""hoursMin":74"#));
+        assert!(response.body.contains(r#""hoursMax":128"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }

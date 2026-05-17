@@ -9,6 +9,8 @@ and VS Code provides command palette actions, output panels, and generated-file
 previews. The GemStone RS activity bar view also exposes a browsable tree for
 dictionaries, classes, protocols, methods, and codegen actions.
 
+![gemstone-rs Workbench codegen edit flow](https://raw.githubusercontent.com/unicompute/gemstone-rs/main/docs/assets/workbench-codegen-edit-flow.png)
+
 ## Setup
 
 For an installed CLI:
@@ -142,12 +144,15 @@ The webview wraps the explorer in a workbench shell: the iframe remains the
 full browser UI, while the side inspector renders structured setup checks,
 live dictionary/class/protocol/method browsing, method source previews, project
 profile freshness tables with Preview/Diff/Check/Generate buttons, Codegen
-explain summaries, generated source, colorized diffs, BridgeRoot
+explain summaries, editable generated source, colorized diffs, BridgeRoot
 identity/key/value summaries, and comparison status cards. Workbench buttons
 can hand off to native VS Code commands for previewing wrappers, opening diffs,
 opening config/profile/generated files, generating with confirmation, checking
-project profiles, and opening docs. If the explorer is not running, the webview
-offers Launch Explorer, Open Browser, and Copy URL fallbacks.
+project profiles, and opening docs. Generated wrapper preview/output responses
+open in a webview editor with `Open Output File`, `Open Editable Draft`, and
+`Save Edited Output`; saves stay inside the configured checkout and ask for
+confirmation before writing. If the explorer is not running, the webview offers
+Launch Explorer, Open Browser, and Copy URL fallbacks.
 If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
 `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` and all browser/webview URLs
 include the matching `token=` query parameter. Use `Generate Explorer Auth
