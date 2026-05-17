@@ -78,6 +78,7 @@
     "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs",
     "onCommand:gemstoneRs.validatePyNativeContract",
+    "onCommand:gemstoneRs.validatePyNativeSmokeFixture",
     "onCommand:gemstoneRs.runPyNativeSmoke",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
@@ -318,6 +319,10 @@
         "title": "GemStone RS: Validate py-native Contract"
       },
       {
+        "command": "gemstoneRs.validatePyNativeSmokeFixture",
+        "title": "GemStone RS: Validate py-native Smoke Fixture"
+      },
+      {
         "command": "gemstoneRs.runPyNativeSmoke",
         "title": "GemStone RS: Run py-native Smoke"
       },
@@ -454,6 +459,11 @@
           "type": "string",
           "default": "examples/py-native/gemstone-rs.py-native.json",
           "description": "Default py-native contract fixture checked by gemstone-rs py-native check."
+        },
+        "gemstoneRs.pyNativeSmokeFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native-smoke.json",
+          "description": "Default py-native smoke fixture checked by gemstone-rs py-native check-smoke."
         },
         "gemstoneRs.bridgeRoot": {
           "type": "string",

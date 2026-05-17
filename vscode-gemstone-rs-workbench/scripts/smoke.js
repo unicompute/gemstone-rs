@@ -41,6 +41,7 @@ const requiredCommands = [
   "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.validatePyNativeContract",
+  "gemstoneRs.validatePyNativeSmokeFixture",
   "gemstoneRs.runPyNativeSmoke",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
@@ -182,6 +183,7 @@ assert(readme.includes("Open Codegen Config"), "README should mention opening th
 assert(readme.includes("Open Project Profiles"), "README should mention opening project profiles");
 assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
 assert(readme.includes("Validate py-native Contract"), "README should mention py-native contract validation");
+assert(readme.includes("Validate py-native Smoke Fixture"), "README should mention py-native smoke fixture validation");
 assert(readme.includes("Run py-native Smoke"), "README should mention py-native smoke");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
@@ -210,6 +212,10 @@ assert(
   "py-native contract validation should use JSON output"
 );
 assert(
+  extensionSource.includes('"py-native", "check-smoke", fixturePath, "--json"'),
+  "py-native smoke fixture validation should use JSON output"
+);
+assert(
   extensionSource.includes('"py-native", "smoke", ...mode.args, "--json"'),
   "py-native smoke should use JSON output"
 );
@@ -220,6 +226,10 @@ assert(
 assert(
   extensionSource.includes("pyNativeFixture"),
   "Workbench should expose a py-native fixture setting"
+);
+assert(
+  extensionSource.includes("pyNativeSmokeFixture"),
+  "Workbench should expose a py-native smoke fixture setting"
 );
 assert(
   extensionSource.includes('"compare", target, "--status", "--json"'),
@@ -303,6 +313,10 @@ assert(
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.bridgeRoot"],
   "package.json should expose gemstoneRs.bridgeRoot"
+);
+assert(
+  packageJson.contributes.configuration.properties["gemstoneRs.pyNativeSmokeFixture"],
+  "package.json should expose gemstoneRs.pyNativeSmokeFixture"
 );
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

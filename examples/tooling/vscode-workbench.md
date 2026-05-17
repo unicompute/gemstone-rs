@@ -72,7 +72,11 @@ From the `Codegen Config` tree:
 5. Run `Open Generated Output` when you want to edit the checked-in wrappers.
 6. Run `Generate Wrappers`.
 7. Run `Codegen Preview Profile`, `Codegen Diff Profile`, `Codegen Check Profile`, `Codegen Explain Profile`, or `Codegen Generate Profile` when you want a checked-in project profile to supply the config path.
-8. Run `Open Codegen Docs`.
+8. Run `Validate py-native Contract` or `Validate py-native Smoke Fixture`
+   before adapter work that depends on checked-in Rust contract fixtures.
+9. Run `Run py-native Smoke` when you want dry-run or live adapter smoke output
+   in the VS Code output panel.
+10. Run `Open Codegen Docs`.
 
 `Generate Wrappers` shows the generated diff before writing if output would
 change.
@@ -83,6 +87,10 @@ The embedded webview also has `Preview/Edit Generated Wrappers`,
 Output`. Those actions render generated Rust wrappers in an editable pane, with
 buttons to open the output file, open the current text as an untitled draft, or
 save the edited text back to the output path after confirmation.
+The py-native actions call `gemstone-rs py-native check --json`,
+`gemstone-rs py-native check-smoke --json`, and
+`gemstone-rs py-native smoke --json`, so VS Code uses the same adapter contract
+and smoke reports as terminal and CI workflows.
 
 ## Explorer Walkthrough
 
