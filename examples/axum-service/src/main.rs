@@ -7,6 +7,10 @@ use axum::{
 use std::{env, error::Error};
 
 const EXAMPLE_MIDDLEWARE_HEADER: &str = "x-gemstone-rs-example-middleware";
+const SERVICE_HEADER: &str = "x-gemstone-rs-service";
+const SERVICE_VERSION_HEADER: &str = "x-gemstone-rs-service-version";
+const CACHE_CONTROL_HEADER: &str = "cache-control";
+const CONTENT_TYPE_OPTIONS_HEADER: &str = "x-content-type-options";
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
@@ -42,9 +46,26 @@ async fn main() -> AppResult<()> {
 
 async fn example_middleware(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
-    response.headers_mut().insert(
+    let headers = response.headers_mut();
+    headers.insert(
         HeaderName::from_static(EXAMPLE_MIDDLEWARE_HEADER),
         HeaderValue::from_static("axum"),
+    );
+    headers.insert(
+        HeaderName::from_static(SERVICE_HEADER),
+        HeaderValue::from_static("gemstone-rs-axum-service"),
+    );
+    headers.insert(
+        HeaderName::from_static(SERVICE_VERSION_HEADER),
+        HeaderValue::from_static(env!("CARGO_PKG_VERSION")),
+    );
+    headers.insert(
+        HeaderName::from_static(CACHE_CONTROL_HEADER),
+        HeaderValue::from_static("no-store"),
+    );
+    headers.insert(
+        HeaderName::from_static(CONTENT_TYPE_OPTIONS_HEADER),
+        HeaderValue::from_static("nosniff"),
     );
     response
 }

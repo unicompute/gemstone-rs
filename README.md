@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**12 batches**, roughly **78-134 hours** total. Use
+**12 batches**, roughly **77-133 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -207,12 +207,14 @@ The framework adapters also emit `x-gemstone-rs-adapter`,
 `x-gemstone-rs-request-lifecycle`, and
 `x-gemstone-rs-request-duration-us` headers so route smoke tests, proxies, and
 logs can identify which adapter, route, request, and handler lifecycle produced
-the response. The checked Axum and Actix services also add
-`x-gemstone-rs-example-middleware: axum` or
-`x-gemstone-rs-example-middleware: actix`, proving packaged routes still compose
-with normal framework middleware. If the caller sends `x-request-id`, the
-adapters propagate it into `x-gemstone-rs-request-id`; otherwise they generate
-a local adapter-scoped id.
+the response. The checked Axum and Actix services also add application-level
+middleware headers: `x-gemstone-rs-example-middleware`,
+`x-gemstone-rs-service`, `x-gemstone-rs-service-version`,
+`cache-control: no-store`, and `x-content-type-options: nosniff`. That proves
+packaged routes still compose with normal framework middleware and shows a
+small production-style cache/security/header policy. If the caller sends
+`x-request-id`, the adapters propagate it into `x-gemstone-rs-request-id`;
+otherwise they generate a local adapter-scoped id.
 
 Runtime environment:
 

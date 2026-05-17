@@ -343,8 +343,11 @@ The adapters also return `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,
 a proxy, load balancer, or test can distinguish the framework adapter, route,
 request, lifecycle, and handler duration that produced the response. It also
 asserts `x-gemstone-rs-example-middleware: axum` or
-`x-gemstone-rs-example-middleware: actix` from the checked services, proving
-the packaged routes still compose with normal framework middleware.
+`x-gemstone-rs-example-middleware: actix`, `x-gemstone-rs-service`,
+`x-gemstone-rs-service-version`, `cache-control: no-store`, and
+`x-content-type-options: nosniff` from the checked services. That proves the
+packaged routes still compose with normal framework middleware and gives the
+examples a small production-style cache/security header policy.
 In live mode the same script requires `/health/gemstone` to reach the stone and
 return `{"result":7}` for both adapters; the manual CI job runs that path with
 GemStone secrets.

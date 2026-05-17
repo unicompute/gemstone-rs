@@ -662,10 +662,12 @@ produced each response. The adapters also emit
 `x-gemstone-rs-request-lifecycle: received,handled` and
 `x-gemstone-rs-request-duration-us`, giving proxy logs and tests a small
 framework-neutral lifecycle signal. The checked Axum and Actix services now
-also install a tiny framework middleware layer and expose it as
-`x-gemstone-rs-example-middleware: axum` or
-`x-gemstone-rs-example-middleware: actix`, so the smoke test proves packaged
-GemStone routes still compose with normal application middleware.
+also install a tiny framework middleware layer and expose
+`x-gemstone-rs-example-middleware`, `x-gemstone-rs-service`,
+`x-gemstone-rs-service-version`, `cache-control: no-store`, and
+`x-content-type-options: nosniff`, so the smoke test proves packaged GemStone
+routes still compose with normal application middleware and a small
+production-style cache/security policy.
 Run `python3 scripts/framework_route_smoke.py --live` or set
 `GS_RUN_LIVE_RUST=1` in a credentialed environment when that same smoke test
 must require `/health/gemstone` to reach the stone and return `{"result":7}`.

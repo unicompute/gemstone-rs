@@ -10,7 +10,19 @@
 // curl -i http://127.0.0.1:3000/health/local
 // curl -i http://127.0.0.1:3000/health/gemstone
 
+use axum::{
+    extract::Request,
+    http::{HeaderName, HeaderValue},
+    middleware::{self, Next},
+    response::Response,
+};
 use std::{env, error::Error};
+
+const EXAMPLE_MIDDLEWARE_HEADER: &str = "x-gemstone-rs-example-middleware";
+const SERVICE_HEADER: &str = "x-gemstone-rs-service";
+const SERVICE_VERSION_HEADER: &str = "x-gemstone-rs-service-version";
+const CACHE_CONTROL_HEADER: &str = "cache-control";
+const CONTENT_TYPE_OPTIONS_HEADER: &str = "x-content-type-options";
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
@@ -37,10 +49,37 @@ async fn main() -> AppResult<()> {
     }
     axum::serve(
         listener,
-        gemstone_rs_axum::router_with_health_pool(health, "gemstone-rs Axum service example"),
+        gemstone_rs_axum::router_with_health_pool(health, "gemstone-rs Axum service example")
+            .layer(middleware::from_fn(example_middleware)),
     )
     .await?;
     Ok(())
+}
+
+async fn example_middleware(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        HeaderName::from_static(EXAMPLE_MIDDLEWARE_HEADER),
+        HeaderValue::from_static("axum"),
+    );
+    headers.insert(
+        HeaderName::from_static(SERVICE_HEADER),
+        HeaderValue::from_static("gemstone-rs-axum-service"),
+    );
+    headers.insert(
+        HeaderName::from_static(SERVICE_VERSION_HEADER),
+        HeaderValue::from_static(env!("CARGO_PKG_VERSION")),
+    );
+    headers.insert(
+        HeaderName::from_static(CACHE_CONTROL_HEADER),
+        HeaderValue::from_static("no-store"),
+    );
+    headers.insert(
+        HeaderName::from_static(CONTENT_TYPE_OPTIONS_HEADER),
+        HeaderValue::from_static("nosniff"),
+    );
+    response
 }
 
 #[derive(Debug, Eq, PartialEq)]

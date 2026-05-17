@@ -10,11 +10,17 @@
 // curl -i http://127.0.0.1:3000/health/local
 // curl -i http://127.0.0.1:3000/health/gemstone
 
-use actix_web::{App, HttpServer};
+use actix_web::{middleware::DefaultHeaders, App, HttpServer};
 use std::{env, error::Error};
 
 type AppError = Box<dyn Error + Send + Sync>;
 type AppResult<T> = Result<T, AppError>;
+
+const EXAMPLE_MIDDLEWARE_HEADER: &str = "x-gemstone-rs-example-middleware";
+const SERVICE_HEADER: &str = "x-gemstone-rs-service";
+const SERVICE_VERSION_HEADER: &str = "x-gemstone-rs-service-version";
+const CACHE_CONTROL_HEADER: &str = "cache-control";
+const CONTENT_TYPE_OPTIONS_HEADER: &str = "x-content-type-options";
 
 #[actix_web::main]
 async fn main() -> AppResult<()> {
@@ -30,10 +36,19 @@ async fn main() -> AppResult<()> {
     }
     let server = HttpServer::new(move || {
         let health = health.clone();
-        App::new().service(gemstone_rs_actix::scope_with_health_pool(
-            health,
-            "gemstone-rs Actix service example",
-        ))
+        App::new()
+            .wrap(
+                DefaultHeaders::new()
+                    .add((EXAMPLE_MIDDLEWARE_HEADER, "actix"))
+                    .add((SERVICE_HEADER, "gemstone-rs-actix-service"))
+                    .add((SERVICE_VERSION_HEADER, env!("CARGO_PKG_VERSION")))
+                    .add((CACHE_CONTROL_HEADER, "no-store"))
+                    .add((CONTENT_TYPE_OPTIONS_HEADER, "nosniff")),
+            )
+            .service(gemstone_rs_actix::scope_with_health_pool(
+                health,
+                "gemstone-rs Actix service example",
+            ))
     })
     .bind(options.addr())?;
 

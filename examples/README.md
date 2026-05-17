@@ -127,9 +127,13 @@ The smoke check also asserts `x-gemstone-rs-adapter`,
 `x-gemstone-rs-request-lifecycle`, and
 `x-gemstone-rs-request-duration-us` diagnostic headers from the framework
 adapters. It also checks the application middleware marker
-`x-gemstone-rs-example-middleware` in the checked Axum and Actix services.
-Pass `--live` or set `GS_RUN_LIVE_RUST=1` when GemStone credentials are
-available and `/health/gemstone` must return `{"result":7}` for both adapters.
+`x-gemstone-rs-example-middleware`, `x-gemstone-rs-service`,
+`x-gemstone-rs-service-version`, `cache-control: no-store`, and
+`x-content-type-options: nosniff` in the checked Axum and Actix services. That
+keeps application middleware and a small production-style cache/security policy
+covered. Pass `--live` or set `GS_RUN_LIVE_RUST=1` when GemStone credentials
+are available and `/health/gemstone` must return `{"result":7}` for both
+adapters.
 
 ## Installed CLI Equivalents
 
@@ -245,7 +249,7 @@ diff after generate: clean
 Good later additions, once the corresponding surfaces are stable:
 
 - a local explorer workflow with screenshots
-- broader production middleware examples for `gemstone-rs-axum` and `gemstone-rs-actix`
+- broader framework coverage and richer real-application middleware examples
 
 ## Scope
 

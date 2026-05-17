@@ -55,7 +55,7 @@ file.
 | Native bridge | PyO3 extension path | Rust GCI crate and safe API |
 | Sync API | Mature | Initial safe API |
 | Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
-| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, checked Axum/Actix examples, request-trace, lifecycle-duration, and middleware marker headers |
+| Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, checked Axum/Actix examples, request-trace, lifecycle-duration, and production-style service/cache/security middleware headers |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, typed argument conversion, typed return helpers, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
 | Local explorer | More mature Python app | Minimal Rust explorer proving the API |
@@ -114,7 +114,7 @@ gemstone-rs compare all --batches
 ```
 
 `compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **12 batches**, roughly **78-134 hours**
+TypeScript/Python track and reports **12 batches**, roughly **77-133 hours**
 total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -139,7 +139,7 @@ coverage, explorer polish, and release lane depth.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add broader production middleware patterns around the packaged `gemstone-rs-axum` and `gemstone-rs-actix` crates. |
+| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add broader framework coverage and richer real-application middleware patterns around the packaged adapters. |
 | P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
@@ -169,11 +169,11 @@ gemstone-rs compare all --totals
 | 1 | Explorer and VS Code visual polish | 5-8 hours |
 | 2 | Object mapping maturity | 8-14 hours |
 | 3 | Codegen live discovery and generated tests | 8-14 hours |
-| 4 | Async facade and web middleware | 3-5 hours |
+| 4 | Async facade and web framework breadth | 2-4 hours |
 | 5 | Shared core with `gemstone-py-native` | 8-14 hours |
 | 6 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **36-62 hours** to bring `gemstone-rs` materially closer to
+Total: roughly **35-61 hours** to bring `gemstone-rs` materially closer to
 `gemstone-py` across product polish, generated-code confidence, async/web
 ergonomics, shared native-core integration, and release depth.
 
@@ -216,17 +216,18 @@ not the implementation language:
   `503` JSON error until the pool is available. They also emit diagnostic
   adapter, route, request id, method, path, lifecycle, and handler-duration
   headers for route smoke tests and proxy logs. The checked Axum and Actix
-  services also emit framework middleware marker headers, and the smoke script
-  asserts them. The installed CLI can scaffold `session_worker_pool`,
+  services also emit production-style service/cache/security middleware
+  headers, and the smoke script asserts them. The installed CLI can scaffold
+  `session_worker_pool`,
   `axum_service`, and `actix_service`. A required live route smoke mode now
   verifies `/health/gemstone` returns `{"result":7}` for both adapters when
-  credentials are available. Broader production middleware patterns and an
-  async facade remain future work.
+  credentials are available. Broader framework coverage and an async facade
+  remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for
   explorer-integrated workflows and richer generated wrapper profile variants,
-  plus broader production middleware patterns, an async facade, and richer explorer screens
+  plus broader framework coverage, an async facade, and richer explorer screens
   before its onboarding feels as complete as gemstone-py.
 
 ## How They Should Work Together

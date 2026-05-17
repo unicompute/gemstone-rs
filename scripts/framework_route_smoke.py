@@ -127,6 +127,21 @@ def assert_diagnostics(service: Service, result: HttpResult, route: str) -> None
     middleware = result.headers.get("x-gemstone-rs-example-middleware")
     if middleware != service.adapter:
         raise AssertionError(f"{service.name} middleware header mismatch: {middleware!r}")
+    service_name = result.headers.get("x-gemstone-rs-service")
+    expected_service_name = f"gemstone-rs-{service.adapter}-service"
+    if service_name != expected_service_name:
+        raise AssertionError(f"{service.name} service header mismatch: {service_name!r}")
+    service_version = result.headers.get("x-gemstone-rs-service-version")
+    if not service_version:
+        raise AssertionError(f"{service.name} missing service version header")
+    cache_control = result.headers.get("cache-control")
+    if cache_control != "no-store":
+        raise AssertionError(f"{service.name} cache-control header mismatch: {cache_control!r}")
+    content_type_options = result.headers.get("x-content-type-options")
+    if content_type_options != "nosniff":
+        raise AssertionError(
+            f"{service.name} content type options header mismatch: {content_type_options!r}"
+        )
 
 
 def live_required(args: argparse.Namespace) -> bool:

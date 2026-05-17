@@ -597,8 +597,8 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 6,
-        hours_min: 36,
-        hours_max: 62,
+        hours_min: 35,
+        hours_max: 61,
         next_number: 1,
         next_focus: "Explorer and VS Code visual polish",
         next_hours_min: 5,
@@ -608,8 +608,8 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
         top_gap_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        top_gap_project_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration/middleware marker headers, packaged Axum/Actix adapters, checked services, local/live route smoke coverage, and installed Axum/Actix scaffolds. It still needs broader production middleware patterns.",
-        top_gap_next_action: "Add broader production middleware patterns for the packaged Axum/Actix adapters.",
+        top_gap_project_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, local/live route smoke coverage, and installed Axum/Actix scaffolds. It still needs broader framework coverage beyond Axum/Actix and richer real-application middleware patterns.",
+        top_gap_next_action: "Add broader framework coverage and richer real-application middleware patterns around the packaged adapters.",
         top_gap_verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
         command_target: "gemstone-py",
     })
@@ -645,7 +645,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":78,"hoursMax":134,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":77,"hoursMax":133,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -3508,8 +3508,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":36"#));
-        assert!(response.body.contains(r#""hoursMax":62"#));
+        assert!(response.body.contains(r#""hoursMin":35"#));
+        assert!(response.body.contains(r#""hoursMax":61"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Explorer and VS Code visual polish"));
         assert!(response
@@ -3526,8 +3526,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":78"#));
-        assert!(response.body.contains(r#""hoursMax":134"#));
+        assert!(response.body.contains(r#""hoursMin":77"#));
+        assert!(response.body.contains(r#""hoursMax":133"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }

@@ -55,10 +55,15 @@ headers: `x-gemstone-rs-request-id`, `x-gemstone-rs-request-method`, and
 `x-gemstone-rs-request-path`. Lifecycle headers
 `x-gemstone-rs-request-lifecycle: received,handled` and
 `x-gemstone-rs-request-duration-us` are also emitted. The checked example also
-adds an Actix middleware marker, `x-gemstone-rs-example-middleware: actix`, so
-tests can verify application middleware still runs around the packaged adapter
-routes. Send `x-request-id` in a request when you want a proxy, smoke test, or
-log stream to correlate the response.
+adds Actix middleware headers that the smoke test asserts:
+`x-gemstone-rs-example-middleware: actix`,
+`x-gemstone-rs-service: gemstone-rs-actix-service`,
+`x-gemstone-rs-service-version`, `cache-control: no-store`, and
+`x-content-type-options: nosniff`. That gives the example a small
+production-style service/cache/security header policy while proving
+application middleware still runs around the packaged adapter routes. Send
+`x-request-id` in a request when you want a proxy, smoke test, or log stream to
+correlate the response.
 
 Use `--live` or `GS_RUN_LIVE_RUST=1` when GemStone credentials are configured
 and `/health/gemstone` must return `{"result":7}` instead of accepting the
