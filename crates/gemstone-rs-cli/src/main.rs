@@ -2490,7 +2490,10 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         title: "gemstone-py-native PyO3 Starter",
         description: "Thin PyO3 adapter scaffold over gemstone_rs::py_native for a future gemstone-py-native package.",
         main_rs: include_str!("../templates/py_native_pyo3_adapter.rs"),
-        extra_dependencies: r#"pyo3 = { version = "0.22", features = ["extension-module"] }
+        extra_dependencies: r#"pyo3 = "0.28"
+
+[features]
+extension-module = ["pyo3/extension-module"]
 
 [lib]
 name = "gemstone_py_native"
@@ -6381,7 +6384,8 @@ mod tests {
         let py_native = find_scaffold_template("py_native_pyo3_adapter").unwrap();
         let py_native_toml = scaffold_cargo_toml(py_native);
         assert!(py_native_toml.contains(r#"name = "gemstone-py-native-starter""#));
-        assert!(py_native_toml.contains(r#"pyo3 = { version = "0.22""#));
+        assert!(py_native_toml.contains(r#"pyo3 = "0.28""#));
+        assert!(py_native_toml.contains(r#"extension-module = ["pyo3/extension-module"]"#));
         assert!(py_native_toml.contains(r#"name = "gemstone_py_native""#));
 
         let err = scaffold_example_project(template, &target, false)

@@ -102,7 +102,16 @@ pytest
 
 The scaffold writes `pyproject.toml`, `src/lib.rs`, `PYTHON.md`, and a Python
 smoke test. It is deliberately thin: Python calls PyO3 functions/classes, and
-those delegate into `gemstone_rs::py_native`.
+those delegate into `gemstone_rs::py_native`. The generated crate currently
+uses PyO3 0.28 for Python 3.14 compatibility and keeps PyO3's
+`extension-module` flag behind a Cargo feature so `cargo run` works while
+`maturin develop` still builds a proper Python extension. From a gemstone-rs
+source checkout, verify that the embedded scaffold still compiles against the
+local Rust core with:
+
+```bash
+python3 scripts/check_py_native_pyo3_scaffold.py
+```
 
 Run the dry-run contract check from a source checkout when you also want to
 exercise the example binary:
@@ -168,12 +177,14 @@ unsendable unless a dedicated worker-thread wrapper is used.
 1. Keep `gemstone-rs` independent and publishable.
 2. Scaffold or adapt the starter PyO3 crate with `gemstone-rs examples
    scaffold py_native_pyo3_adapter`.
-3. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
+3. Keep `scripts/check_py_native_pyo3_scaffold.py` green while the starter
+   evolves.
+4. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
    crate.
-4. Replace duplicated native loading code in `gemstone-py-native`.
-5. Run the existing `gemstone-py` native backend and live tests through the
+5. Replace duplicated native loading code in `gemstone-py-native`.
+6. Run the existing `gemstone-py` native backend and live tests through the
    Rust-backed native path.
-6. Keep pure Python fallback behavior and current sync return behavior
+7. Keep pure Python fallback behavior and current sync return behavior
    backward compatible.
 
 The main design rule: Rust owns the native bridge; Python owns Python

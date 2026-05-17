@@ -83,6 +83,7 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold http_service /tmp/gemstone-rs-scaffold-http-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold session_worker_pool /tmp/gemstone-rs-scaffold-session-worker-pool --force
 	cargo run -p gemstone-rs-cli -- examples scaffold py_native_pyo3_adapter /tmp/gemstone-rs-scaffold-py-native-pyo3-adapter --force
+	python3 scripts/check_py_native_pyo3_scaffold.py
 	cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-scaffold-axum-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-scaffold-actix-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes

@@ -79,7 +79,16 @@ templates. Current scaffold templates include `quickstart`, `browser`,
 dynamic nested BridgeRoot read-back and `python_native_adapter` for the future
 `gemstone-py-native` wrapper contract. The `py_native_pyo3_adapter` scaffold
 writes a `pyproject.toml`, PyO3 `src/lib.rs`, and Python smoke tests that wrap
-the dependency-free `gemstone_rs::py_native` contract.
+the dependency-free `gemstone_rs::py_native` contract. It uses PyO3 0.28 so the
+generated starter remains compatible with current Python 3.14 interpreters,
+and `maturin` enables the `extension-module` Cargo feature only for Python
+extension builds. Source checkout verification also compiles and runs the
+scaffold against the local Rust core:
+
+```bash
+python3 scripts/check_py_native_pyo3_scaffold.py
+```
+
 Aliases include `bridge`, `mapping`, `derive`, `codegen`, `discover`,
 `profiles`, `wrapper`, `framework`, `axum`, `actix`, and `http`.
 Scaffolds can include supporting project files; `profile_codegen_workflow`
