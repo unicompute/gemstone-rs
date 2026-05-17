@@ -297,6 +297,27 @@ pub struct PyNativeCapabilities {
     pub operations: &'static [&'static str],
 }
 
+impl PyNativeCapabilities {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","contractVersion":{},"threading":"{}","operations":[{}],"valueKinds":[{}],"errorKinds":[{}],"oopConstants":{{"nil":{},"true":{},"false":{},"smallint7":{},"charA":{}}}}}"#,
+            json_escape(PY_NATIVE_CONTRACT_NAME),
+            self.contract_version,
+            json_escape(self.threading),
+            json_string_array(self.operations),
+            json_string_array(PY_NATIVE_VALUE_KINDS),
+            json_string_array(PY_NATIVE_ERROR_KINDS),
+            nil_oop(),
+            bool_oop(true),
+            bool_oop(false),
+            smallint_oop(7),
+            char_oop('A')
+        )
+    }
+}
+
+pub const PY_NATIVE_CONTRACT_NAME: &str = "gemstone-py-native adapter contract";
+
 pub const PY_NATIVE_OPERATIONS: &[&str] = &[
     "login",
     "logout",
@@ -317,6 +338,25 @@ pub const PY_NATIVE_OPERATIONS: &[&str] = &[
     "in_transaction",
     "add_to_export_set",
     "remove_from_export_set",
+];
+
+pub const PY_NATIVE_VALUE_KINDS: &[&str] =
+    &["nil", "bool", "smallInt", "char", "string", "symbol", "oop"];
+
+pub const PY_NATIVE_ERROR_KINDS: &[&str] = &[
+    "gci",
+    "missingEnvironment",
+    "missingConfig",
+    "nul",
+    "notLoggedIn",
+    "gemStone",
+    "illegalOop",
+    "unexpectedType",
+    "mapping",
+    "workerStopped",
+    "workerPanicked",
+    "negativeSize",
+    "argumentCountTooLarge",
 ];
 
 pub fn capabilities() -> PyNativeCapabilities {
@@ -586,6 +626,14 @@ fn json_escape(value: &str) -> String {
     escaped
 }
 
+fn json_string_array(values: &[&str]) -> String {
+    values
+        .iter()
+        .map(|value| format!(r#""{}""#, json_escape(value)))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 pub struct PyNativeSession {
     session: Session,
 }
@@ -808,6 +856,19 @@ mod tests {
         assert!(report.operations.contains(&"eval"));
         assert!(report.operations.contains(&"perform"));
         assert!(report.operations.contains(&"add_to_export_set"));
+        assert_eq!(PY_NATIVE_VALUE_KINDS[0], "nil");
+        assert_eq!(PY_NATIVE_ERROR_KINDS[0], "gci");
+    }
+
+    #[test]
+    fn capability_report_json_is_stable_and_shared() {
+        let json = capabilities().to_json();
+        assert!(json.contains(r#""name":"gemstone-py-native adapter contract""#));
+        assert!(json.contains(r#""contractVersion":1"#));
+        assert!(json.contains(r#""operations":["login","logout","eval""#));
+        assert!(json.contains(r#""valueKinds":["nil","bool","smallInt""#));
+        assert!(json.contains(r#""errorKinds":["gci","missingEnvironment""#));
+        assert!(json.contains(r#""oopConstants":"#));
     }
 
     #[test]

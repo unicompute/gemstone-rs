@@ -2516,34 +2516,22 @@ fn print_hello(format: OutputFormat) {
     }
 }
 
-const PY_NATIVE_VALUE_KINDS: &[&str] =
-    &["nil", "bool", "smallInt", "char", "string", "symbol", "oop"];
-const PY_NATIVE_ERROR_KINDS: &[&str] = &[
-    "gci",
-    "missingEnvironment",
-    "missingConfig",
-    "nul",
-    "notLoggedIn",
-    "gemStone",
-    "illegalOop",
-    "unexpectedType",
-    "mapping",
-    "workerStopped",
-    "workerPanicked",
-    "negativeSize",
-    "argumentCountTooLarge",
-];
-
 fn print_py_native_capabilities(format: OutputFormat) {
     let capabilities = py_native::capabilities();
     match format {
         OutputFormat::Human => {
-            println!("gemstone-py-native adapter contract");
+            println!("{}", py_native::PY_NATIVE_CONTRACT_NAME);
             println!("  contract_version: {}", capabilities.contract_version);
             println!("  threading: {}", capabilities.threading);
             println!("  operations: {}", capabilities.operations.join(", "));
-            println!("  value_kinds: {}", PY_NATIVE_VALUE_KINDS.join(", "));
-            println!("  error_kinds: {}", PY_NATIVE_ERROR_KINDS.join(", "));
+            println!(
+                "  value_kinds: {}",
+                py_native::PY_NATIVE_VALUE_KINDS.join(", ")
+            );
+            println!(
+                "  error_kinds: {}",
+                py_native::PY_NATIVE_ERROR_KINDS.join(", ")
+            );
             println!("  oop_constants:");
             println!("    nil: {}", py_native::nil_oop());
             println!("    true: {}", py_native::bool_oop(true));
@@ -2551,25 +2539,8 @@ fn print_py_native_capabilities(format: OutputFormat) {
             println!("    smallint_7: {}", py_native::smallint_oop(7));
             println!("    char_A: {}", py_native::char_oop('A'));
         }
-        OutputFormat::Json => println!("{}", py_native_capabilities_json()),
+        OutputFormat::Json => println!("{}", capabilities.to_json()),
     }
-}
-
-fn py_native_capabilities_json() -> String {
-    let capabilities = py_native::capabilities();
-    format!(
-        r#"{{"name":"gemstone-py-native adapter contract","contractVersion":{},"threading":"{}","operations":[{}],"valueKinds":[{}],"errorKinds":[{}],"oopConstants":{{"nil":{},"true":{},"false":{},"smallint7":{},"charA":{}}}}}"#,
-        capabilities.contract_version,
-        escape_json(capabilities.threading),
-        json_hint_array(capabilities.operations),
-        json_hint_array(PY_NATIVE_VALUE_KINDS),
-        json_hint_array(PY_NATIVE_ERROR_KINDS),
-        py_native::nil_oop(),
-        py_native::bool_oop(true),
-        py_native::bool_oop(false),
-        py_native::smallint_oop(7),
-        py_native::char_oop('A')
-    )
 }
 
 fn default_py_native_fixture_path() -> PathBuf {
@@ -2577,7 +2548,7 @@ fn default_py_native_fixture_path() -> PathBuf {
 }
 
 fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
-    let expected = py_native_capabilities_json();
+    let expected = py_native::capabilities().to_json();
     let actual = fs::read_to_string(path)?;
     let actual = actual.trim_end();
     let matches = actual == expected;
@@ -7023,7 +6994,7 @@ GEMSTONE=/opt/gemstone # product root
 
     #[test]
     fn py_native_capabilities_json_is_stable() {
-        let json = py_native_capabilities_json();
+        let json = py_native::capabilities().to_json();
         assert!(json.contains(r#""contractVersion":1"#));
         assert!(json.contains(r#""operations":["login","logout","eval""#));
         assert!(json.contains(r#""valueKinds":["nil","bool","smallInt""#));
@@ -7037,7 +7008,7 @@ GEMSTONE=/opt/gemstone # product root
             "gemstone-rs-py-native-check-{}.json",
             std::process::id()
         ));
-        fs::write(&path, py_native_capabilities_json()).unwrap();
+        fs::write(&path, py_native::capabilities().to_json()).unwrap();
         run_py_native_check(&path, OutputFormat::Human).unwrap();
 
         fs::write(&path, r#"{"name":"wrong"}"#).unwrap();
