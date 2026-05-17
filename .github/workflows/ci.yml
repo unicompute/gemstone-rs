@@ -49,6 +49,7 @@ jobs:
       - run: cargo run -p gemstone-rs-cli -- profile sample > /tmp/gemstone-rs.codegen-profiles.json
       - run: diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.codegen-profiles.json
       - run: python3 scripts/release_asset_checks_test.py
+      - run: scripts/live_smoke.sh --dry-run
       - run: REQUIRE_EXPLORER_SMOKE=1 python3 scripts/explorer_endpoint_smoke.py
       - run: cargo package -p gemstone-gci --no-verify
 
@@ -109,23 +110,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p gemstone-rs live_
+      - run: scripts/live_smoke.sh
         env:
           GS_RUN_LIVE_RUST: "1"
           GS_LIB_PATH: ${{ secrets.GS_LIB_PATH }}
+          GS_LIB: ${{ secrets.GS_LIB }}
+          GEMSTONE: ${{ secrets.GEMSTONE }}
           GS_STONE: ${{ secrets.GS_STONE }}
           GS_STONE_NAME: ${{ secrets.GS_STONE_NAME }}
           GS_HOST: ${{ secrets.GS_HOST }}
           GS_NETLDI: ${{ secrets.GS_NETLDI }}
-          GS_USERNAME: ${{ secrets.GS_USERNAME }}
-          GS_PASSWORD: ${{ secrets.GS_PASSWORD }}
-      - run: python3 scripts/framework_route_smoke.py --live
-        env:
-          GS_RUN_LIVE_RUST: "1"
-          GS_LIB_PATH: ${{ secrets.GS_LIB_PATH }}
-          GS_STONE: ${{ secrets.GS_STONE }}
-          GS_STONE_NAME: ${{ secrets.GS_STONE_NAME }}
-          GS_HOST: ${{ secrets.GS_HOST }}
-          GS_NETLDI: ${{ secrets.GS_NETLDI }}
+          GS_GEM_SERVICE: ${{ secrets.GS_GEM_SERVICE }}
           GS_USERNAME: ${{ secrets.GS_USERNAME }}
           GS_PASSWORD: ${{ secrets.GS_PASSWORD }}

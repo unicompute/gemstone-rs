@@ -1,9 +1,9 @@
 VERSION ?= 0.2.2
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify version-check crate-metadata-check rust-check examples-check framework-smoke framework-live-smoke codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify version-check crate-metadata-check rust-check examples-check framework-smoke framework-live-smoke live-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: version-check crate-metadata-check rust-check examples-check framework-smoke codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check docs-pdf-check
+verify: version-check crate-metadata-check rust-check examples-check framework-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check docs-pdf-check
 
 version-check:
 	python3 scripts/version_check.py
@@ -82,7 +82,13 @@ framework-smoke:
 	python3 scripts/framework_route_smoke.py
 
 framework-live-smoke:
-	python3 scripts/framework_route_smoke.py --live
+	scripts/live_smoke.sh --skip-examples
+
+live-smoke:
+	scripts/live_smoke.sh
+
+live-smoke-dry-run:
+	scripts/live_smoke.sh --dry-run
 
 codegen-check:
 	cargo run -p gemstone-rs-cli -- env sample

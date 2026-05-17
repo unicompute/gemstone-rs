@@ -332,7 +332,8 @@ without needing a live stone:
 
 ```bash
 python3 scripts/framework_route_smoke.py
-GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
+scripts/live_smoke.sh --dry-run
+scripts/live_smoke.sh
 ```
 
 The adapters also return `x-gemstone-rs-adapter`, `x-gemstone-rs-route`,

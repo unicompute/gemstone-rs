@@ -199,18 +199,33 @@ To skip the GitHub Release asset check during early testing:
 VERIFY_GITHUB_RELEASE=0 scripts/publish_verify.sh 0.2.2
 ```
 
-## Optional Live Smoke
-
-Run the manual GitHub Actions live job with GemStone secrets configured, or run
-locally:
+The scheduled/manual **Post-Release Verify** workflow runs the same public
+verification against crates.io, the VS Code Marketplace, and GitHub Release
+assets. Run it manually when you want to verify a specific version:
 
 ```bash
-GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_ -- --test-threads=1
+gh workflow run post-release-verify.yml \
+  --ref main \
+  -f version=0.2.2 \
+  -f verify-github-release=true \
+  -f run-live-smoke=false
 ```
 
-The live smoke coverage includes login/logout, `3 + 4 == 7`, global put/get,
-string round-trip, `perform`, commit, abort, browser lookup of `Object`, and
-generated wrapper `printString`.
+## Optional Live Smoke
 
-The `--test-threads=1` flag is intentional. GemStone GCI has process-global
-session state, so live tests should not be run concurrently.
+Run the manual GitHub Actions live job with GemStone secrets configured, enable
+`run-live-smoke=true` on the post-release workflow, or run locally:
+
+```bash
+scripts/live_smoke.sh --dry-run
+scripts/live_smoke.sh
+```
+
+The live smoke coverage includes `doctor --strict --live`, login/logout,
+`3 + 4 == 7`, global put/get, string round-trip, `perform`, commit, abort,
+browser lookup of `Object`, generated wrapper `printString`, the
+`live_smoke_cookbook` example, the `python_native_adapter` shared-core example,
+and live Axum/Actix `/health/gemstone` routes.
+
+The script runs the Rust live tests with `--test-threads=1`. GemStone GCI has
+process-global session state, so live tests should not be run concurrently.

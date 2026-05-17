@@ -675,14 +675,18 @@ leaf crate first with:
 cargo package -p gemstone-gci --no-verify
 ```
 
-Run the opt-in live smoke test with:
+Run the opt-in live smoke lane with:
 
 ```bash
-GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_ -- --test-threads=1
+scripts/live_smoke.sh --dry-run
+scripts/live_smoke.sh
 ```
 
-The `--test-threads=1` flag avoids concurrent GCI sessions inside one Rust test
-process.
+The script checks the required GemStone environment up front, then runs
+`doctor --strict --live`, the serial Rust live tests, `live_smoke_cookbook`,
+`python_native_adapter`, and the live Axum/Actix route smoke. The underlying
+Rust test command still uses `--test-threads=1` to avoid concurrent GCI
+sessions inside one test process.
 
 ## Explorer Roadmap
 

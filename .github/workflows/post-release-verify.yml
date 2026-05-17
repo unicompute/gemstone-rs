@@ -1,0 +1,80 @@
+name: Post-Release Verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Published crate version to verify"
+        required: true
+        default: "0.2.2"
+      verify-github-release:
+        description: "Check GitHub Release assets and SHA256SUMS"
+        required: true
+        type: boolean
+        default: true
+      run-live-smoke:
+        description: "Run live GemStone smoke checks using repository secrets"
+        required: true
+        type: boolean
+        default: false
+  schedule:
+    - cron: "32 6 * * 1"
+
+jobs:
+  public-release:
+    name: Public Release Assets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+        working-directory: vscode-gemstone-rs-workbench
+      - name: Verify crates.io, Marketplace, and GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_INPUT: ${{ github.event.inputs['version'] }}
+          VERIFY_GITHUB_RELEASE_INPUT: ${{ github.event.inputs['verify-github-release'] }}
+        run: |
+          VERSION="${VERSION_INPUT:-}"
+          if [[ -z "$VERSION" ]]; then
+            VERSION="$(python3 -c "import tomllib; print(tomllib.load(open('crates/gemstone-rs/Cargo.toml', 'rb'))['package']['version'])")"
+          fi
+          VERIFY_GITHUB_RELEASE="${VERIFY_GITHUB_RELEASE_INPUT:-true}"
+          if [[ "$VERIFY_GITHUB_RELEASE" == "true" ]]; then
+            export VERIFY_GITHUB_RELEASE=1
+          else
+            export VERIFY_GITHUB_RELEASE=0
+          fi
+          scripts/publish_verify.sh "$VERSION"
+
+  live-smoke:
+    name: Live GemStone Smoke
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs['run-live-smoke'] }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run shared live smoke lane
+        env:
+          GS_RUN_LIVE_RUST: "1"
+          GS_LIB_PATH: ${{ secrets.GS_LIB_PATH }}
+          GS_LIB: ${{ secrets.GS_LIB }}
+          GEMSTONE: ${{ secrets.GEMSTONE }}
+          GS_STONE: ${{ secrets.GS_STONE }}
+          GS_STONE_NAME: ${{ secrets.GS_STONE_NAME }}
+          GS_HOST: ${{ secrets.GS_HOST }}
+          GS_NETLDI: ${{ secrets.GS_NETLDI }}
+          GS_GEM_SERVICE: ${{ secrets.GS_GEM_SERVICE }}
+          GS_USERNAME: ${{ secrets.GS_USERNAME }}
+          GS_PASSWORD: ${{ secrets.GS_PASSWORD }}
+        run: scripts/live_smoke.sh

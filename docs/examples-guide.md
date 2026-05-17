@@ -140,7 +140,8 @@ the route contract with:
 
 ```bash
 python3 scripts/framework_route_smoke.py
-GS_RUN_LIVE_RUST=1 python3 scripts/framework_route_smoke.py
+scripts/live_smoke.sh --dry-run
+scripts/live_smoke.sh
 ```
 
 The same smoke check asserts diagnostic and request-trace headers from the
@@ -155,9 +156,9 @@ also add `x-gemstone-rs-example-middleware: axum` or
 `x-gemstone-rs-service-version`, `cache-control: no-store`, and
 `x-content-type-options: nosniff`. The smoke script asserts those headers so
 application middleware and a small production-style cache/security policy stay
-covered. Pass `--live` or set `GS_RUN_LIVE_RUST=1` when GemStone credentials
-are available and `/health/gemstone` should be required to return
-`{"result":7}`.
+covered. Use `scripts/live_smoke.sh` when GemStone credentials are available
+and `/health/gemstone` should be required to return `{"result":7}` as part of
+the same live lane that runs Rust tests and live examples.
 
 ## Suggested Learning Order
 
