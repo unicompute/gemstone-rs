@@ -71,6 +71,7 @@ function activate(context) {
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
   register(context, "gemstoneRs.validatePyNativeContract", validatePyNativeContract);
+  register(context, "gemstoneRs.runPyNativeSmoke", runPyNativeSmoke);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -205,6 +206,7 @@ class GemStoneTreeProvider {
         actionNode("Check Project Profiles", "gemstoneRs.checkProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
         actionNode("Validate py-native Contract", "gemstoneRs.validatePyNativeContract"),
+        actionNode("Run py-native Smoke", "gemstoneRs.runPyNativeSmoke"),
       ];
     }
 
@@ -1521,6 +1523,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.listBridgeRootKeys",
     "gemstoneRs.openCodegenDocs",
     "gemstoneRs.validatePyNativeContract",
+    "gemstoneRs.runPyNativeSmoke",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1693,6 +1696,51 @@ async function validatePyNativeContract() {
   }
 }
 
+async function runPyNativeSmoke() {
+  const mode = await vscode.window.showQuickPick(
+    [
+      {
+        label: "Dry Run",
+        description: "No GemStone login",
+        args: ["--dry-run"],
+      },
+      {
+        label: "Live GemStone",
+        description: "Uses configured GS_* environment",
+        args: [],
+      },
+    ],
+    {
+      title: "Run py-native Smoke",
+      placeHolder: "Choose whether to run without or with a live GemStone login",
+    }
+  );
+  if (!mode) {
+    return;
+  }
+
+  const result = await runCli(["py-native", "smoke", ...mode.args, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native smoke returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeSmokeReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native smoke passed: ${Array.isArray(report.steps) ? report.steps.length : 0} steps.`
+    : "py-native smoke failed. See GemStone RS output.";
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report")
+    : await vscode.window.showErrorMessage(message, "Copy Report");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native smoke report.");
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -1724,6 +1772,27 @@ function formatPyNativeContractReport(result, report) {
     `ok: ${Boolean(report.ok)}`,
     `contractVersion: ${report.contractVersion || "-"}`,
   ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeSmokeReport(result, report) {
+  const steps = Array.isArray(report.steps) ? report.steps : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native adapter smoke",
+    `ok: ${Boolean(report.ok)}`,
+    `dryRun: ${Boolean(report.dryRun)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    "",
+  ];
+  for (const step of steps) {
+    lines.push(`${step.ok ? "ok" : "error"}\t${step.name || "(unnamed)"}`);
+    lines.push(`  ${step.detail || ""}`);
+  }
   if (result.stderr.trim()) {
     lines.push("");
     lines.push(result.stderr.trimEnd());
@@ -1903,6 +1972,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <label class="field">BridgeRoot<input id="bridgeRoot" value="${escapeHtml(cfg.bridgeRoot)}"></label>
       <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
       <button data-command="gemstoneRs.validatePyNativeContract">Validate py-native Contract</button>
+      <button data-command="gemstoneRs.runPyNativeSmoke">Run py-native Smoke</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>

@@ -40,6 +40,7 @@ const requiredCommands = [
   "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.validatePyNativeContract",
+  "gemstoneRs.runPyNativeSmoke",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
@@ -180,6 +181,7 @@ assert(readme.includes("Open Codegen Config"), "README should mention opening th
 assert(readme.includes("Open Project Profiles"), "README should mention opening project profiles");
 assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
 assert(readme.includes("Validate py-native Contract"), "README should mention py-native contract validation");
+assert(readme.includes("Run py-native Smoke"), "README should mention py-native smoke");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
@@ -205,6 +207,14 @@ assert(
 assert(
   extensionSource.includes('"py-native", "check", fixturePath, "--json"'),
   "py-native contract validation should use JSON output"
+);
+assert(
+  extensionSource.includes('"py-native", "smoke", ...mode.args, "--json"'),
+  "py-native smoke should use JSON output"
+);
+assert(
+  extensionSource.includes("formatPyNativeSmokeReport"),
+  "py-native smoke should render a readable report"
 );
 assert(
   extensionSource.includes("pyNativeFixture"),

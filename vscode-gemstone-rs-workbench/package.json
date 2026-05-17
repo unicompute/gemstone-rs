@@ -78,6 +78,7 @@
     "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs",
     "onCommand:gemstoneRs.validatePyNativeContract",
+    "onCommand:gemstoneRs.runPyNativeSmoke",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
   ],
@@ -315,6 +316,10 @@
       {
         "command": "gemstoneRs.validatePyNativeContract",
         "title": "GemStone RS: Validate py-native Contract"
+      },
+      {
+        "command": "gemstoneRs.runPyNativeSmoke",
+        "title": "GemStone RS: Run py-native Smoke"
       },
       {
         "command": "gemstoneRs.compareGemstonePyStatus",
