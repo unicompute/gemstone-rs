@@ -72,6 +72,12 @@ and the VS Code workbench packages the same schema for editor validation. A
 checked-in fixture lives at
 [`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json)
 so downstream wrapper CI can diff the contract without requiring a live stone.
+Use the CLI check in CI:
+
+```bash
+gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
+gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json --json
+```
 
 Run the dry-run contract check from a source checkout when you also want to
 exercise the example binary:

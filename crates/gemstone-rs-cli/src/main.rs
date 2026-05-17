@@ -45,6 +45,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_py_native_capabilities(format);
             Ok(())
         }
+        Command::PyNativeCheck { path, format } => run_py_native_check(&path, format),
         Command::CompareGemstonePy { view, format } => {
             print_gemstone_py_comparison(view, format);
             Ok(())
@@ -2570,6 +2571,42 @@ fn py_native_capabilities_json() -> String {
     )
 }
 
+fn default_py_native_fixture_path() -> PathBuf {
+    PathBuf::from("examples/py-native/gemstone-rs.py-native.json")
+}
+
+fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
+    let expected = py_native_capabilities_json();
+    let actual = fs::read_to_string(path)?;
+    let actual = actual.trim_end();
+    let matches = actual == expected;
+
+    match format {
+        OutputFormat::Human => {
+            if matches {
+                println!("py-native contract ok: {}", path.display());
+            }
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"path":"{}","ok":{},"contractVersion":{}}}"#,
+                escape_json(&path.display().to_string()),
+                if matches { "true" } else { "false" },
+                py_native::capabilities().contract_version
+            );
+        }
+    }
+
+    if matches {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "{} does not match `gemstone-rs py-native capabilities --json`; regenerate or review the contract change",
+            path.display()
+        )))
+    }
+}
+
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
@@ -3921,6 +3958,10 @@ enum Command {
     PyNativeCapabilities {
         format: OutputFormat,
     },
+    PyNativeCheck {
+        path: PathBuf,
+        format: OutputFormat,
+    },
     CompareGemstonePy {
         view: CompareView,
         format: OutputFormat,
@@ -4277,11 +4318,42 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
                 |format| Command::PyNativeCapabilities { format },
             )
         }
-        Some("-h" | "--help") => Err(CliError::usage("expected: py-native capabilities [--json]")),
+        Some("check" | "validate") => parse_py_native_check_command(&args[1..]),
+        Some("-h" | "--help") => Err(CliError::usage(
+            "expected: py-native capabilities [--json] | py-native check [path] [--json]",
+        )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities"
+            "unknown py-native command: {command}; expected capabilities|check"
         ))),
     }
+}
+
+fn parse_py_native_check_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut path = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage("expected: py-native check [path] [--json]"))
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native check option: {option}"
+                )));
+            }
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native check argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativeCheck {
+        path: path.unwrap_or_else(default_py_native_fixture_path),
+        format,
+    })
 }
 
 fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
@@ -5286,6 +5358,7 @@ fn usage() -> &'static str {
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
   gemstone-rs py-native capabilities [--json]
+  gemstone-rs py-native check [path] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -5454,6 +5527,26 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["py_native", "contract", "--json"])).unwrap(),
             Command::PyNativeCapabilities {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "check"])).unwrap(),
+            Command::PyNativeCheck {
+                path: default_py_native_fixture_path(),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "py-native",
+                "validate",
+                "examples/py-native/gemstone-rs.py-native.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::PyNativeCheck {
+                path: PathBuf::from("examples/py-native/gemstone-rs.py-native.json"),
                 format: OutputFormat::Json,
             }
         );
@@ -6850,5 +6943,22 @@ GEMSTONE=/opt/gemstone # product root
         assert!(json.contains(r#""valueKinds":["nil","bool","smallInt""#));
         assert!(json.contains(r#""errorKinds":["gci","missingEnvironment""#));
         assert!(json.contains(r#""oopConstants":"#));
+    }
+
+    #[test]
+    fn py_native_check_detects_contract_drift() {
+        let path = std::env::temp_dir().join(format!(
+            "gemstone-rs-py-native-check-{}.json",
+            std::process::id()
+        ));
+        fs::write(&path, py_native_capabilities_json()).unwrap();
+        run_py_native_check(&path, OutputFormat::Human).unwrap();
+
+        fs::write(&path, r#"{"name":"wrong"}"#).unwrap();
+        let err = run_py_native_check(&path, OutputFormat::Human)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("does not match"));
+        let _ = fs::remove_file(&path);
     }
 }

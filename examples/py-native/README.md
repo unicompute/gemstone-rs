@@ -13,8 +13,8 @@ contract sample without requiring a live GemStone/S stone.
 Verify it from a source checkout:
 
 ```bash
-cargo run -p gemstone-rs-cli -- py-native capabilities --json > /tmp/gemstone-rs.py-native.json
-diff -u examples/py-native/gemstone-rs.py-native.json /tmp/gemstone-rs.py-native.json
+cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
+cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json --json
 node scripts/validate_codegen_schemas.js
 ```
 
