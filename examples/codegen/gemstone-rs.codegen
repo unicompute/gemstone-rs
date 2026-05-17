@@ -5,6 +5,7 @@ class = Object
 method = Object>>printString | return=String | doc=Return the receiver printString.
 method = Object>>class
 method = Object>>perform: | args=selector:Symbol | doc=Perform a unary selector supplied as a Rust string.
+method = Object>>_alias | return=Symbol | doc=Return the receiver alias symbol as a Rust String.
 
 mapped = BookingDraft | doc=A typed Rust payload stored under BridgeRoot.
 field = BookingDraft.name | type=String | key=name

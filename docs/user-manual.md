@@ -70,6 +70,34 @@ assert_eq!(pool.eval("40 + 2")?, Value::SmallInt(42));
 pool.shutdown()?;
 ```
 
+Use the async facade when an async runtime should await worker-pool work
+without moving `Session` across threads:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+let printed = pool
+    .perform_oop_async(gemstone_rs::Oop::from_smallint(7), "printString", &[])
+    .await?;
+assert_eq!(pool.fetch_string_async(printed).await?, "7");
+pool.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
+Use `py_native` when you are building or testing a thin PyO3 wrapper for
+`gemstone-py-native`. It keeps the wrapper contract plain Rust while reusing
+the same `Session` implementation:
+
+```rust
+use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
+
+let mut session = PyNativeSession::login_from_env()?;
+assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
+session.logout()?;
+```
+
 ## Eval and Perform
 
 `eval` returns a marshalled `Value`:

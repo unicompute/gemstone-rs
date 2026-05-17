@@ -653,6 +653,7 @@ impl ArgType {
 pub enum ReturnType {
     Value,
     String,
+    Symbol,
     SmallInt,
     Bool,
     Oop,
@@ -663,6 +664,7 @@ impl ReturnType {
         match value {
             "" | "Value" | "value" => Ok(Self::Value),
             "String" | "string" => Ok(Self::String),
+            "Symbol" | "symbol" => Ok(Self::Symbol),
             "SmallInt" | "smallInt" | "smallint" | "i64" => Ok(Self::SmallInt),
             "Bool" | "Boolean" | "bool" | "boolean" => Ok(Self::Bool),
             "Oop" | "OOP" | "oop" => Ok(Self::Oop),
@@ -674,6 +676,7 @@ impl ReturnType {
         match self {
             Self::Value => "Value",
             Self::String => "String",
+            Self::Symbol => "Symbol",
             Self::SmallInt => "SmallInt",
             Self::Bool => "Bool",
             Self::Oop => "Oop",
@@ -683,7 +686,7 @@ impl ReturnType {
     fn rust_type(&self) -> &'static str {
         match self {
             Self::Value => "Value",
-            Self::String => "String",
+            Self::String | Self::Symbol => "String",
             Self::SmallInt => "i64",
             Self::Bool => "bool",
             Self::Oop => "Oop",
@@ -732,7 +735,10 @@ pub fn explain(config: &Config) -> String {
     let mut out = String::new();
     out.push_str("gemstone-rs codegen explain\n");
     out.push_str(&format!("output: {}\n", config.output.display()));
-    out.push_str("test_stubs: generated_surface_names_are_stable\n");
+    out.push_str(&format!(
+        "test_stubs: {}\n",
+        generated_test_stubs().join(", ")
+    ));
     out.push_str(&format!("classes: {}\n", config.classes.len()));
     for class in &config.classes {
         out.push_str(&format!(
@@ -854,9 +860,14 @@ pub fn explain_json(config: &Config) -> String {
         })
         .collect::<Vec<_>>()
         .join(",");
+    let test_stubs = generated_test_stubs()
+        .iter()
+        .map(|stub| (*stub).to_string())
+        .collect::<Vec<_>>();
     format!(
-        r#"{{"output":"{}","testStubs":["generated_surface_names_are_stable"],"classes":[{}],"mapped":[{}]}}"#,
+        r#"{{"output":"{}","testStubs":[{}],"classes":[{}],"mapped":[{}]}}"#,
         json_escape(&config.output.display().to_string()),
+        json_string_array(&test_stubs),
         classes,
         mapped
     )
@@ -937,6 +948,7 @@ pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) ->
     let mut browser = Browser::new(session);
     let mut specs = Vec::new();
     for class_ref in classes {
+        let selector_protocols = discover_selector_protocols(&mut browser, &class_ref);
         let selectors = browser.methods(
             &class_ref.class_name,
             browser::ALL_PROTOCOLS,
@@ -953,14 +965,10 @@ pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) ->
                     &class_ref.dictionary,
                 )
                 .unwrap_or_default();
-            spec.methods.push(MethodSpec {
-                class_ref: class_ref.clone(),
-                selector,
-                args: Vec::new(),
-                arg_types: Vec::new(),
-                return_type: ReturnType::Value,
-                doc: first_source_line(&source),
-            });
+            let protocol = selector_protocols.get(&selector).map(String::as_str);
+            spec.methods.push(discovered_method_spec(
+                &class_ref, selector, protocol, &source,
+            ));
         }
         specs.push(spec);
     }
@@ -969,6 +977,62 @@ pub fn discover(session: &mut Session, output: PathBuf, classes: &[ClassRef]) ->
         classes: specs,
         mapped: Vec::new(),
     })
+}
+
+fn discover_selector_protocols(
+    browser: &mut Browser<'_>,
+    class_ref: &ClassRef,
+) -> BTreeMap<String, String> {
+    let mut selector_protocols = BTreeMap::new();
+    let protocols = browser
+        .protocols(&class_ref.class_name, class_ref.meta, &class_ref.dictionary)
+        .unwrap_or_default();
+    for protocol in protocols {
+        for selector in browser
+            .methods(
+                &class_ref.class_name,
+                &protocol,
+                class_ref.meta,
+                &class_ref.dictionary,
+            )
+            .unwrap_or_default()
+        {
+            selector_protocols
+                .entry(selector)
+                .or_insert_with(|| protocol.clone());
+        }
+    }
+    selector_protocols
+}
+
+fn discovered_method_spec(
+    class_ref: &ClassRef,
+    selector: String,
+    protocol: Option<&str>,
+    source: &str,
+) -> MethodSpec {
+    let args = source_header_arg_names(&selector, source)
+        .unwrap_or_else(|| inferred_selector_args(&selector));
+    let arg_types = vec![ArgType::Oop; args.len()];
+    MethodSpec {
+        class_ref: class_ref.clone(),
+        selector,
+        args,
+        arg_types,
+        return_type: ReturnType::Value,
+        doc: discovery_doc(protocol, source),
+    }
+}
+
+fn discovery_doc(protocol: Option<&str>, source: &str) -> Option<String> {
+    let protocol = protocol.map(str::trim).filter(|value| !value.is_empty());
+    let source_line = first_source_line(source);
+    match (protocol, source_line) {
+        (Some(protocol), Some(source_line)) => Some(format!("protocol {protocol}; {source_line}")),
+        (Some(protocol), None) => Some(format!("protocol {protocol}")),
+        (None, Some(source_line)) => Some(source_line),
+        (None, None) => None,
+    }
 }
 
 pub fn discover_mapping(
@@ -1041,7 +1105,7 @@ pub fn config_source(config: &Config) -> String {
             }
             if let Some(doc) = method.doc.as_deref().filter(|doc| !doc.is_empty()) {
                 source.push_str(" | doc=");
-                source.push_str(&doc.replace('\n', " "));
+                source.push_str(&config_doc(doc));
             }
             source.push('\n');
         }
@@ -1432,19 +1496,54 @@ fn config_uses_btreemap(config: &Config) -> bool {
     })
 }
 
+fn generated_test_stubs() -> &'static [&'static str] {
+    &[
+        "generated_surface_names_are_stable",
+        "generated_method_metadata_is_stable",
+        "generated_mapped_field_metadata_is_stable",
+    ]
+}
+
 fn test_stubs_source(config: &Config) -> String {
     let mut names = Vec::new();
+    let mut method_metadata = Vec::new();
+    let mut field_metadata = Vec::new();
     for class in &config.classes {
         let struct_name = class.class_ref.struct_name();
         if class.methods.is_empty() {
             names.push(struct_name);
         } else {
             for method in &class.methods {
-                names.push(format!("{struct_name}::{}", method.fn_name()));
+                let fn_name = method.fn_name();
+                let args = method
+                    .arg_specs()
+                    .into_iter()
+                    .map(|arg| format!("{}:{}", arg.name, arg.arg_type.config_name()))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                names.push(format!("{struct_name}::{fn_name}"));
+                method_metadata.push((
+                    struct_name.clone(),
+                    fn_name,
+                    method.selector.clone(),
+                    args,
+                    method.return_type.config_name().to_string(),
+                ));
             }
         }
     }
-    names.extend(config.mapped.iter().map(|mapped| mapped.name.clone()));
+    for mapped in &config.mapped {
+        names.push(mapped.name.clone());
+        for field in &mapped.fields {
+            field_metadata.push((
+                mapped.name.clone(),
+                field.rust_name.clone(),
+                field.key.clone(),
+                field.key_type.config_name().to_string(),
+                field.field_type.config_name(),
+            ));
+        }
+    }
 
     let mut source = String::new();
     source.push_str("#[cfg(test)]\n");
@@ -1460,6 +1559,48 @@ fn test_stubs_source(config: &Config) -> String {
     }
     source.push_str("        ];\n");
     source.push_str("        assert!(names.iter().all(|name| !name.is_empty()));\n");
+    source.push_str("    }\n");
+    source.push('\n');
+    source.push_str("    #[test]\n");
+    source.push_str("    fn generated_method_metadata_is_stable() {\n");
+    source.push_str("        let methods: &[(&str, &str, &str, &str, &str)] = &[\n");
+    for (struct_name, fn_name, selector, args, return_type) in method_metadata {
+        source.push_str("            (");
+        source.push_str(&rust_string_literal(&struct_name));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&fn_name));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&selector));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&args));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&return_type));
+        source.push_str("),\n");
+    }
+    source.push_str("        ];\n");
+    source.push_str("        assert!(methods.iter().all(|(_, fn_name, selector, _, return_type)| !fn_name.is_empty() && !selector.is_empty() && !return_type.is_empty()));\n");
+    source.push_str("        assert!(methods.iter().all(|(_, _, selector, args, _)| selector.matches(':').count() == if args.is_empty() { 0 } else { args.split(',').count() }));\n");
+    source.push_str("    }\n");
+    source.push('\n');
+    source.push_str("    #[test]\n");
+    source.push_str("    fn generated_mapped_field_metadata_is_stable() {\n");
+    source.push_str("        let fields: &[(&str, &str, &str, &str, &str)] = &[\n");
+    for (mapped_name, rust_name, key, key_type, field_type) in field_metadata {
+        source.push_str("            (");
+        source.push_str(&rust_string_literal(&mapped_name));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&rust_name));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&key));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&key_type));
+        source.push_str(", ");
+        source.push_str(&rust_string_literal(&field_type));
+        source.push_str("),\n");
+    }
+    source.push_str("        ];\n");
+    source.push_str("        assert!(fields.iter().all(|(mapped_name, rust_name, key, _, field_type)| !mapped_name.is_empty() && !rust_name.is_empty() && !key.is_empty() && !field_type.is_empty()));\n");
+    source.push_str("        assert!(fields.iter().all(|(_, _, _, key_type, _)| matches!(*key_type, \"String\" | \"Symbol\")));\n");
     source.push_str("    }\n");
     source.push_str("}\n");
     source
@@ -1578,6 +1719,13 @@ fn return_conversion(return_type: &ReturnType) -> String {
                 "            Value::Oop(oop) => self.session.fetch_string(oop),",
             ],
         ),
+        ReturnType::Symbol => typed_match(
+            "Symbol",
+            &[
+                "            Value::String(value) => Ok(value),",
+                "            Value::Oop(oop) => self.session.fetch_string(oop),",
+            ],
+        ),
         ReturnType::SmallInt => typed_match(
             "SmallInt",
             &["            Value::SmallInt(value) => Ok(value),"],
@@ -1639,6 +1787,62 @@ fn first_source_line(source: &str) -> Option<String> {
         .map(str::trim)
         .find(|line| !line.is_empty())
         .map(|line| line.chars().take(120).collect())
+}
+
+fn source_header_arg_names(selector: &str, source: &str) -> Option<Vec<String>> {
+    let keywords = selector_keywords(selector);
+    if keywords.is_empty() {
+        return Some(Vec::new());
+    }
+    let header = first_source_line(source)?;
+    let tokens = header.split_whitespace().collect::<Vec<_>>();
+    let mut cursor = 0;
+    let mut args = Vec::new();
+    for keyword in keywords {
+        let index = tokens
+            .iter()
+            .enumerate()
+            .skip(cursor)
+            .find_map(|(index, token)| (clean_header_token(token) == keyword).then_some(index))?;
+        let raw_arg = tokens.get(index + 1)?;
+        if !looks_like_smalltalk_argument(raw_arg) {
+            return None;
+        }
+        let name = rust_fn_name(&clean_header_token(raw_arg));
+        if name.is_empty() || name == "perform" {
+            return None;
+        }
+        args.push(name);
+        cursor = index + 2;
+    }
+    Some(args)
+}
+
+fn selector_keywords(selector: &str) -> Vec<String> {
+    if !selector.contains(':') {
+        return Vec::new();
+    }
+    selector
+        .split(':')
+        .take_while(|part| !part.is_empty())
+        .map(|part| format!("{part}:"))
+        .collect()
+}
+
+fn clean_header_token(token: &str) -> String {
+    token
+        .trim_matches(|ch: char| matches!(ch, '(' | ')' | '[' | ']' | '{' | '}' | '.' | ',' | ';'))
+        .to_string()
+}
+
+fn looks_like_smalltalk_argument(token: &str) -> bool {
+    let token = clean_header_token(token);
+    let mut chars = token.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    (first.is_ascii_alphabetic() || first == '_')
+        && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
 fn inferred_selector_args(selector: &str) -> Vec<String> {
@@ -1894,6 +2098,65 @@ mod tests {
     }
 
     #[test]
+    fn extracts_argument_names_from_smalltalk_source_headers() {
+        assert_eq!(
+            source_header_arg_names(
+                "withCustomer:amount:",
+                "withCustomer: aCustomer amount: totalAmount\n  ^self"
+            ),
+            Some(vec!["a_customer".to_string(), "total_amount".to_string()])
+        );
+        assert_eq!(
+            source_header_arg_names(
+                "_changeClassTo:preserveVarying:",
+                "_changeClassTo: aClass preserveVarying: aBoolean"
+            ),
+            Some(vec!["a_class".to_string(), "a_boolean".to_string()])
+        );
+        assert_eq!(
+            source_header_arg_names("printString", "printString"),
+            Some(Vec::new())
+        );
+        assert_eq!(source_header_arg_names("at:put:", "at: ^self"), None);
+    }
+
+    #[test]
+    fn discovered_methods_include_safe_argument_and_protocol_metadata() -> Result<()> {
+        let class_ref = ClassRef::parse("Object").unwrap();
+        let method = discovered_method_spec(
+            &class_ref,
+            "at:put:".to_string(),
+            Some("accessing"),
+            "at: key put: value\n  ^self",
+        );
+
+        assert_eq!(method.args, vec!["key", "value"]);
+        assert_eq!(method.arg_types, vec![ArgType::Oop, ArgType::Oop]);
+        assert_eq!(method.return_type, ReturnType::Value);
+        assert_eq!(
+            method.doc.as_deref(),
+            Some("protocol accessing; at: key put: value")
+        );
+
+        let config = Config {
+            output: PathBuf::from("generated.rs"),
+            classes: vec![ClassSpec {
+                class_ref,
+                methods: vec![method],
+            }],
+            mapped: Vec::new(),
+        };
+        let source = config_source(&config);
+        assert!(source.contains(
+            "method = Object>>at:put: | args=key,value | doc=protocol accessing; at: key put: value"
+        ));
+        let json = explain_json(&config);
+        assert!(json.contains(r#""args":["key","value"]"#));
+        assert!(json.contains(r#""argTypes":["Oop","Oop"]"#));
+        Ok(())
+    }
+
+    #[test]
     fn parses_and_generates_typed_method_arguments() -> Result<()> {
         let config = Config::parse(
             "class = UserGlobals:Order\nmethod = UserGlobals:Order>>findById:customer:active: | args=id:SmallInt,customer:String,active:Bool | return=Oop\nmethod = UserGlobals:Order>>findBySymbol: | args=key:Symbol | return=Oop\n",
@@ -1938,6 +2201,32 @@ mod tests {
     }
 
     #[test]
+    fn parses_and_generates_symbol_return_helpers() -> Result<()> {
+        let config = Config::parse(
+            "class = UserGlobals:Order\nmethod = UserGlobals:Order>>statusSymbol | return=Symbol\n",
+            None,
+        )?;
+        assert_eq!(config.classes[0].methods[0].return_type, ReturnType::Symbol);
+
+        let generated = generate(&config);
+        assert!(generated
+            .source
+            .contains("pub fn status_symbol(&mut self) -> Result<String>"));
+        assert!(generated.source.contains("expected: \"Symbol\""));
+        assert!(generated
+            .source
+            .contains("Value::Oop(oop) => self.session.fetch_string(oop)"));
+
+        let explanation = explain(&config);
+        assert!(
+            explanation.contains("method: UserGlobals:Order>>statusSymbol args=[] return=Symbol")
+        );
+        let json = explain_json(&config);
+        assert!(json.contains(r#""return":"Symbol""#));
+        Ok(())
+    }
+
+    #[test]
     fn generates_wrapper_source() -> Result<()> {
         let config = Config::parse(
             "class = Object\nmethod = Object>>printString | return=String | doc=Print the receiver.\nmethod = Object>>at:put: | args=key,value\n",
@@ -1946,6 +2235,15 @@ mod tests {
         let generated = generate(&config);
         assert!(generated.source.contains("pub struct Object<'a>"));
         assert!(generated.source.contains("mod generated_code_tests"));
+        assert!(generated
+            .source
+            .contains("fn generated_method_metadata_is_stable()"));
+        assert!(generated
+            .source
+            .contains("(\"Object\", \"print_string\", \"printString\", \"\", \"String\")"));
+        assert!(generated
+            .source
+            .contains("(\"Object\", \"at_put\", \"at:put:\", \"key:Oop,value:Oop\", \"Value\")"));
         assert!(generated.source.contains("/// Print the receiver."));
         assert!(generated
             .source
@@ -1969,6 +2267,8 @@ mod tests {
 
         assert!(explanation.contains("output: ./generated.rs"));
         assert!(explanation.contains("test_stubs: generated_surface_names_are_stable"));
+        assert!(explanation.contains("generated_method_metadata_is_stable"));
+        assert!(explanation.contains("generated_mapped_field_metadata_is_stable"));
         assert!(explanation.contains("class: Object methods=1"));
         assert!(explanation.contains("method: Object>>printString args=[] return=String"));
         assert!(explanation.contains("mapped: BookingDraft fields=1"));
@@ -1976,7 +2276,9 @@ mod tests {
             .contains("field: BookingDraft.amount key=amount key_type=Symbol type=SmallInt"));
         let json = explain_json(&config);
         assert!(json.contains(r#""output":"./generated.rs""#));
-        assert!(json.contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
+        assert!(json.contains(
+            r#""testStubs":["generated_surface_names_are_stable","generated_method_metadata_is_stable","generated_mapped_field_metadata_is_stable"]"#
+        ));
         assert!(json.contains(r#""selector":"printString""#));
         assert!(json.contains(r#""keyType":"Symbol""#));
         Ok(())

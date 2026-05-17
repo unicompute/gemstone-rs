@@ -82,7 +82,7 @@
           }
         },
         "return": {
-          "type": "string"
+          "enum": ["Value", "Oop", "String", "Symbol", "SmallInt", "Bool"]
         },
         "doc": {
           "type": ["string", "null"]

@@ -72,14 +72,6 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
-gemstone-rs compare gemstone-js
-gemstone-rs compare gemstone-js --status
-gemstone-rs compare gemstone-js --scorecard
-gemstone-rs compare gemstone-js --parity
-gemstone-rs compare gemstone-js --gaps
-gemstone-rs compare gemstone-js --next
-gemstone-rs compare gemstone-js --totals
-gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --status
 gemstone-rs compare all --scorecard
 gemstone-rs compare all --parity
@@ -94,6 +86,7 @@ gemstone-rs examples show quickstart
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
+gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -111,8 +104,8 @@ gemstone-rs-explorer --env-file .env.gemstone-rs --port 8787
 gemstone-rs-explorer --help
 ```
 
-`gemstone-rs compare all --totals` prints only the combined estimate:
-**10 batches**, roughly **64-111 hours** total. Use
+`gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
+**2 batches**, roughly **10-17 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -190,6 +183,19 @@ assert_eq!(response.status, 200);
 pool.shutdown()?;
 ```
 
+The worker pool also has awaitable calls for async runtimes. The future wakes
+when the worker thread finishes, while `Session` stays on the thread that
+logged in:
+
+```rust,no_run
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+pool.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
 ```rust,no_run
 let pool = gemstone_rs_axum::pool_from_env(2)?;
 let app = gemstone_rs_axum::router_with_name(pool, "booking service");
@@ -235,6 +241,8 @@ cargo run -p gemstone-rs --example live_smoke_cookbook
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example session_worker_pool
+cargo run -p gemstone-rs --example async_worker
+cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example bridge_value_inspection
@@ -255,6 +263,8 @@ Additional walkthroughs:
 - [CLI browser walkthrough](examples/tooling/cli-browser-walkthrough.md)
 - [Standard-library HTTP service example](crates/gemstone-rs/examples/http_service.rs)
 - [Session worker pool example](crates/gemstone-rs/examples/session_worker_pool.rs)
+- [Async worker facade example](crates/gemstone-rs/examples/async_worker.rs)
+- [Python native adapter contract example](crates/gemstone-rs/examples/python_native_adapter.rs)
 - [Checked Axum service example](examples/axum-service/README.md)
 - [Checked Actix service example](examples/actix-service/README.md)
 
@@ -287,22 +297,6 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py --totals
 cargo run -p gemstone-rs-cli -- compare gemstone-py --totals --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js
-cargo run -p gemstone-rs-cli -- compare gemstone-js --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --status
-cargo run -p gemstone-rs-cli -- compare gemstone-js --status --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard
-cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --parity
-cargo run -p gemstone-rs-cli -- compare gemstone-js --parity --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
-cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --next
-cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --totals
-cargo run -p gemstone-rs-cli -- compare gemstone-js --totals --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
-cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- compare all
 cargo run -p gemstone-rs-cli -- compare all --json
 cargo run -p gemstone-rs-cli -- compare all --status

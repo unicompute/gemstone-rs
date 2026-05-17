@@ -376,16 +376,47 @@ pool.shutdown()?;
 # Ok::<(), gemstone_rs::Error>(())
 ```
 
+The same pool exposes awaitable calls for async runtimes:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+pool.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
 The installed CLI can also scaffold this shape:
 
 ```bash
 gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool
 ```
 
-An async facade remains planned; the dependency-free `gemstone_rs::web` helpers
-are still the shared response layer beneath the packaged framework adapters.
+The dependency-free `gemstone_rs::web` helpers now use the same async worker
+facade in Axum and Actix health handlers, so framework routes no longer need to
+wrap GemStone health checks in framework-specific blocking helpers.
 
-## Recipe 20: Run the Local Explorer
+## Recipe 20: Check the Python Native Adapter Contract
+
+Use this when you are preparing `gemstone-py-native` to wrap the Rust core:
+
+```bash
+cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
+```
+
+The live run logs in, evaluates `3 + 4`, performs `printString`, and round
+trips a `UserGlobals` string through `PyNativeSession`:
+
+```bash
+cargo run -p gemstone-rs --example python_native_adapter
+```
+
+The important point is architectural: Python should wrap
+`gemstone_rs::py_native`; it should not duplicate dynamic GCI loading or raw
+session calls.
+
+## Recipe 21: Run the Local Explorer
 
 ```bash
 gemstone-rs-explorer --port 8787
@@ -399,7 +430,7 @@ http://127.0.0.1:8787/
 
 The explorer starts read-only and loopback-only.
 
-## Recipe 21: Add a Local Explorer Auth Token
+## Recipe 22: Add a Local Explorer Auth Token
 
 ```bash
 export GEMSTONE_RS_EXPLORER_TOKEN='replace-with-a-local-random-token'
@@ -412,7 +443,7 @@ workbench stores the token in `gemstoneRs.explorerAuthToken`, launches the
 explorer with `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN`, and opens
 token-aware browser/webview URLs.
 
-## Recipe 22: Enable Explorer Eval Explicitly
+## Recipe 23: Enable Explorer Eval Explicitly
 
 ```bash
 gemstone-rs-explorer --port 8787 --allow-eval
@@ -421,7 +452,7 @@ curl -s 'http://127.0.0.1:8787/api/eval?source=3%20%2B%204'
 
 Use this locally only.
 
-## Recipe 23: Use the VS Code Workbench With a Checkout
+## Recipe 24: Use the VS Code Workbench With a Checkout
 
 ```json
 {
@@ -434,7 +465,7 @@ Use this locally only.
 Then open the GemStone RS sidebar and use the Dictionaries, Codegen Config, and
 Explorer trees.
 
-## Recipe 24: Verify Published Artifacts
+## Recipe 25: Verify Published Artifacts
 
 ```bash
 scripts/publish_verify.sh 0.2.2

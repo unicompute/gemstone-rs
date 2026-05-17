@@ -262,10 +262,11 @@ gemstone-rs codegen explain-profile --json default examples/codegen/gemstone-rs.
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
-Generated wrapper files now include a small `#[cfg(test)]` surface-name test
-stub, and `codegen explain` reports that stub beside the classes, selectors,
-return helpers, and mapped fields that will be generated. Add `--json` for the
-explorer or VS Code when they need the same summary as structured data.
+Generated wrapper files now include `#[cfg(test)]` stubs for surface names,
+method metadata, and mapped-field metadata. `codegen explain` reports those
+stubs beside the classes, selectors, argument counts, return helpers, field
+keys, key policies, and mapped fields that will be generated. Add `--json` for
+the explorer or VS Code when they need the same summary as structured data.
 `codegen explain-profile` gives the same report after resolving a named
 project profile, which is useful when the committed profile file is the source
 of truth for generation.
@@ -282,6 +283,7 @@ convert them at the call boundary:
 ```text
 method = UserGlobals:OkzBooking class>>findById: | args=id:SmallInt | return=Oop
 method = Object>>perform: | args=selector:Symbol
+method = UserGlobals:Order>>statusSymbol | return=Symbol
 method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return=Oop
 ```
 
@@ -300,6 +302,10 @@ pub fn perform(&mut self, selector: impl AsRef<str>) -> Result<Value> {
 }
 ```
 
+Typed returns can now also use `Symbol`. The generated wrapper returns a Rust
+`String`, using the same explicit fetch path as `return=String`, but the config
+keeps the domain intent clear.
+
 That is a direct catch-up item against `gemstone-py`: Python callers naturally
 pass Python ints and strings, while Rust now gets generated signatures that
 make those conversions explicit and compile-checked.
@@ -309,6 +315,13 @@ Generate a starter config from a live stone:
 ```bash
 gemstone-rs codegen discover gemstone-rs.codegen Object
 ```
+
+Discovery now carries more useful metadata into that starter file. Source
+headers become stable Rust argument names, keyword selectors are the fallback,
+protocol names and the first source line become `doc=...` context, and types
+stay conservative until the developer narrows them. That is the right tradeoff
+for Rust: improve the wrapper shape from live GemStone metadata, but avoid
+unsafe guesses about argument and return types.
 
 Generated wrappers keep selector spelling in one place:
 
@@ -758,6 +771,24 @@ assert_eq!(pool.eval("3 + 4")?, Value::SmallInt(7));
 pool.shutdown()?;
 ```
 
+That pool now exposes awaitable calls for async Rust services:
+
+```rust
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+let printed = pool
+    .perform_oop_async(gemstone_rs::Oop::from_smallint(7), "printString", &[])
+    .await?;
+assert_eq!(pool.fetch_string_async(printed).await?, "7");
+pool.shutdown()?;
+```
+
+The important safety property does not change: the async task awaits a future,
+but the GemStone `Session` still lives on the dedicated worker thread. The
+Axum and Actix adapters now use this async health path directly.
+
 The newest workbench setup check uses the same CLI `gemstone-rs doctor`
 report, and the CLI also has `doctor --json`, so terminal diagnostics, VS Code
 diagnostics, and release automation can all agree.
@@ -814,3 +845,26 @@ tooling on top of the same stable API.
 The long-term native direction is for `gemstone-py-native` to become a thin
 PyO3 wrapper over the Rust core. That would make Rust the shared GCI bridge and
 Python the ergonomic Python API on top.
+
+That direction now has a concrete Rust-side contract. `gemstone_rs::py_native`
+exposes plain Rust config, value, error, capability, and session wrappers that
+a PyO3 crate can wrap without duplicating GCI loading or session behavior:
+
+```rust
+use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
+
+let mut session = PyNativeSession::login_from_env()?;
+assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
+let printed = session.perform_values(PyNativeValue::SmallInt(7), "printString", &[])?;
+```
+
+The live smoke example is intentionally small:
+
+```bash
+cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
+cargo run -p gemstone-rs --example python_native_adapter
+```
+
+The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
+with PyO3, preserve the existing Python return behavior, and run the Python
+native backend/live test suite through the Rust-backed path.

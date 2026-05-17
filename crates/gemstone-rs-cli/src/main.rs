@@ -1693,6 +1693,22 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Bounded round-robin pool of dedicated GemStone session workers.",
     },
     ExampleInfo {
+        name: "async_worker",
+        title: "Async worker facade",
+        command: "cargo run -p gemstone-rs --example async_worker",
+        category: "web",
+        requires_live: true,
+        description: "Awaitable SessionWorkerPool calls for async runtimes without moving Session across threads.",
+    },
+    ExampleInfo {
+        name: "python_native_adapter",
+        title: "Python native adapter",
+        command: "cargo run -p gemstone-rs --example python_native_adapter",
+        category: "native",
+        requires_live: true,
+        description: "Exercise the dependency-free py_native contract intended for a future gemstone-py-native PyO3 wrapper.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -1851,7 +1867,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "codegen_preview, codegen_workflow, codegen_discover, profile_codegen_workflow, generated_wrapper_app",
         docs: "docs/codegen.md, docs/profile-schema.md",
         gemstone_py_reference: "gemstone_py.codegen, typed_access/codegen_demo",
-        status: "Preview/diff/check/generate and installed profile workflow parity; live discovery still needs more depth",
+        status: "Preview/diff/check/generate, installed profile workflow parity, generated metadata tests, and live discovery of source-header args plus protocol/source docs; deeper live type discovery remains planned",
     },
     FeatureInfo {
         stream: "7",
@@ -1875,10 +1891,10 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "9",
         title: "Rust web services",
         crates: "gemstone-rs::web, gemstone-rs-axum, gemstone-rs-actix, SessionWorkerPool, checked Axum/Actix services, and installed scaffolds",
-        examples: "session_worker, session_worker_pool, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
+        examples: "session_worker, session_worker_pool, async_worker, http_service, examples/axum-service, examples/actix-service, examples scaffold session_worker_pool/axum_service/actix_service",
         docs: "docs/examples-guide.md, docs/cookbook.md",
         gemstone_py_reference: "FastAPI, Litestar, Django examples",
-        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, installed scaffolds, local route smoke, and required live route smoke exist; broader framework coverage and async facade remain planned",
+        status: "Shared JSON health helpers, std HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, installed scaffolds, local/live route smoke, and a dependency-free async worker facade exist; broader framework coverage can grow incrementally",
     },
     FeatureInfo {
         stream: "10",
@@ -1892,11 +1908,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "11",
         title: "Shared native core",
-        crates: "gemstone-gci, gemstone-rs, future gemstone-py-native wrapper",
-        examples: "shared-core integration plan",
+        crates: "gemstone-gci, gemstone-rs::py_native, future gemstone-py-native wrapper",
+        examples: "python_native_adapter, shared-core integration plan",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Best long-term architecture; not wired into gemstone-py-native yet",
+        status: "Rust-side PyO3 adapter contract exists; gemstone-py-native still needs to wrap it",
     },
 ];
 
@@ -1940,8 +1956,8 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Native bridge direction",
         gemstone_py: "Python API should eventually consume a thin PyO3 native layer",
-        gemstone_rs: "Owns the long-term shared GCI core in gemstone-gci and gemstone-rs",
-        recommendation: "Make gemstone-py-native wrap the Rust core over time",
+        gemstone_rs: "Owns the long-term shared GCI core plus a dependency-free py_native adapter contract",
+        recommendation: "Wire gemstone-py-native to gemstone_rs::py_native over time",
     },
 ];
 
@@ -1989,18 +2005,18 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
     ParityInfo {
         area: "Async and lifetime behavior",
         gemstone_py_score: 4,
-        project_score: 2,
+        project_score: 3,
         leader: "gemstone-py",
-        status: "gemstone-py has async examples and FastAPI lifetime coverage; gemstone-rs uses SessionWorker and SessionWorkerPool but has no general async facade yet.",
-        next_action: "Layer a cautious async facade over SessionWorkerPool after GCI thread behavior is proven.",
+        status: "gemstone-py has broader async examples and FastAPI lifetime coverage; gemstone-rs now has dependency-free awaitable SessionWorker/SessionWorkerPool calls while keeping Session on a dedicated thread.",
+        next_action: "Add deeper cancellation, shutdown, and lifetime tests around async worker futures.",
     },
     ParityInfo {
         area: "Codegen and object mapping",
         gemstone_py_score: 4,
         project_score: 4,
         leader: "tie",
-        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, derive support, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; gemstone-py remains the broader reference.",
-        next_action: "Improve live discovery, generated wrapper tests, typed helper polish, and transparent object-model experiments.",
+        status: "gemstone-rs has compile-time wrapper checks, generated metadata tests, typed return helpers, BridgeRoot mapping, derive support, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; gemstone-py remains the broader reference.",
+        next_action: "Finish deeper live type discovery, typed helper polish, and transparent object-model experiments.",
     },
     ParityInfo {
         area: "Explorer and VS Code",
@@ -2023,19 +2039,19 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 3,
         project_score: 5,
         leader: "gemstone-rs",
-        status: "gemstone-rs owns the clean Rust GCI/session core that can become the shared implementation under gemstone-py-native.",
-        next_action: "Make gemstone-py-native a thin PyO3 adapter over gemstone-gci and gemstone-rs.",
+        status: "gemstone-rs owns the clean Rust GCI/session core and now exposes a dependency-free py_native contract for a PyO3 wrapper.",
+        next_action: "Wire gemstone-py-native to gemstone_rs::py_native and run the gemstone-py native backend checks.",
     },
 ];
 
 const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     GapInfo {
         priority: "P1",
-        area: "Web framework adapters",
-        gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, local/live route smoke coverage, and installed Axum/Actix scaffolds. It still needs broader framework coverage beyond Axum/Actix and richer real-application middleware patterns.",
-        next_action: "Add broader framework coverage and richer real-application middleware patterns around the packaged adapters.",
-        verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
+        area: "Shared native core",
+        gemstone_py_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
+        gemstone_rs_gap: "gemstone-rs now exposes a py_native adapter contract, but gemstone-py-native does not yet wrap it.",
+        next_action: "Wire gemstone-py-native to gemstone_rs::py_native and keep Python return behavior backward compatible.",
+        verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
     },
     GapInfo {
         priority: "P2",
@@ -2055,19 +2071,19 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
     GapInfo {
         priority: "P2",
-        area: "Async facade",
-        gemstone_py_strength: "gemstone-py has async examples, FastAPI integration, and lifetime/GC tests around async behavior.",
-        gemstone_rs_gap: "gemstone-rs keeps Session non-Send/non-Sync and now has SessionWorkerPool plus packaged web adapters, but no general async facade yet.",
-        next_action: "Add an async facade over SessionWorkerPool after GCI thread behavior is proven with live tests.",
-        verify_with: "GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_",
+        area: "Web framework adapters",
+        gemstone_py_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
+        gemstone_rs_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, async health handlers, local/live route smoke coverage, and installed Axum/Actix scaffolds. It can still grow broader framework coverage beyond Axum/Actix.",
+        next_action: "Add more framework adapter examples only when a real Rust service needs them.",
+        verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
         priority: "P2",
-        area: "Shared native core",
-        gemstone_py_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
-        gemstone_rs_gap: "gemstone-py-native does not yet wrap gemstone-gci/gemstone-rs as the shared native implementation.",
-        next_action: "Make gemstone-py-native a thin PyO3 adapter over the Rust GCI/session core.",
-        verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+        area: "Async lifetime depth",
+        gemstone_py_strength: "gemstone-py has async examples, FastAPI integration, and lifetime/GC tests around async behavior.",
+        gemstone_rs_gap: "gemstone-rs now has awaitable SessionWorkerPool calls and async Axum/Actix health handlers, but it still needs deeper cancellation, shutdown, and lifetime tests.",
+        next_action: "Add targeted cancellation/shutdown tests for pending worker futures.",
+        verify_with: "GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_",
     },
     GapInfo {
         priority: "P2",
@@ -2082,30 +2098,14 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
 const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
-        focus: "Codegen live discovery and generated tests",
-        hours_min: 8,
-        hours_max: 14,
-        outcome: "Discover richer GemStone class/method metadata, generate typed wrappers/tests, and improve explain/diff output for editors.",
-        verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
-    },
-    BatchInfo {
-        number: 2,
-        focus: "Async facade and web framework breadth",
-        hours_min: 2,
-        hours_max: 4,
-        outcome: "Layer a cautious async facade over SessionWorkerPool and add broader framework coverage plus richer real-application middleware patterns.",
-        verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
-    },
-    BatchInfo {
-        number: 3,
         focus: "Shared core with gemstone-py-native",
-        hours_min: 8,
-        hours_max: 14,
-        outcome: "Make gemstone-py-native a thin PyO3 adapter over gemstone-gci/gemstone-rs so Python and Rust share the native bridge.",
+        hours_min: 6,
+        hours_max: 10,
+        outcome: "Wire gemstone-py-native to the gemstone_rs::py_native adapter so Python and Rust share the native bridge.",
         verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
     },
     BatchInfo {
-        number: 4,
+        number: 2,
         focus: "Release and live CI hardening",
         hours_min: 4,
         hours_max: 7,
@@ -2608,21 +2608,28 @@ fn print_gemstone_js_comparison(view: CompareView, format: OutputFormat) {
 fn print_all_comparisons(view: CompareView, format: OutputFormat) {
     match format {
         OutputFormat::Human => {
-            println!("all gemstone comparison reports");
+            println!("active gemstone-rs comparison reports");
             if matches!(view, CompareView::Batches | CompareView::Totals) {
                 let totals = all_batch_totals();
                 println!(
-                    "  Combined total: {} batches, roughly {}-{} hours",
+                    "  Active total: {} batches, roughly {}-{} hours",
                     totals.total_batches, totals.hours_min, totals.hours_max
                 );
             }
             println!();
             match view {
-                CompareView::Totals => print_all_comparison_totals_human(),
+                CompareView::Totals => {
+                    print_batch_totals(
+                        "gemstone-rs remaining work vs gemstone-py",
+                        "gemstone-py",
+                        GEMSTONE_RS_BATCHES,
+                        OutputFormat::Human,
+                    );
+                }
                 CompareView::Status => {
                     let totals = all_batch_totals();
                     println!(
-                        "Combined remaining work: {} batches, roughly {}-{} hours",
+                        "Active remaining work: {} batches, roughly {}-{} hours",
                         totals.total_batches, totals.hours_min, totals.hours_max
                     );
                     println!();
@@ -2632,18 +2639,9 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
                         GEMSTONE_RS_PARITY,
                         OutputFormat::Human,
                     );
-                    println!();
-                    print_status(
-                        "gemstone-js status vs gemstone-py",
-                        gemstone_js_scorecard_info(),
-                        GEMSTONE_JS_PARITY,
-                        OutputFormat::Human,
-                    );
                 }
                 CompareView::Scorecard => {
                     print_scorecard(gemstone_py_scorecard_info(), OutputFormat::Human);
-                    println!();
-                    print_scorecard(gemstone_js_scorecard_info(), OutputFormat::Human);
                 }
                 CompareView::Parity => {
                     print_parity(
@@ -2653,20 +2651,8 @@ fn print_all_comparisons(view: CompareView, format: OutputFormat) {
                         GEMSTONE_RS_PARITY,
                         OutputFormat::Human,
                     );
-                    println!();
-                    print_parity(
-                        "gemstone-js parity vs gemstone-py",
-                        "gemstone-js",
-                        "gemstone-js",
-                        GEMSTONE_JS_PARITY,
-                        OutputFormat::Human,
-                    );
                 }
-                _ => {
-                    print_gemstone_py_comparison(view, OutputFormat::Human);
-                    println!();
-                    print_gemstone_js_comparison(view, OutputFormat::Human);
-                }
+                _ => print_gemstone_py_comparison(view, OutputFormat::Human),
             }
         }
         OutputFormat::Json => print_all_comparisons_json(view),
@@ -2677,20 +2663,12 @@ fn print_all_comparisons_json(view: CompareView) {
     match view {
         CompareView::Summary => {
             println!(
-                r#"{{"comparison":"all","view":"summary","comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"summary","activeOnly":true,"comparisons":[{}]}}"#,
                 comparison_summary_json_entry(
                     "gemstone-py",
                     GEMSTONE_PY_COMPARISON
                         .iter()
                         .map(comparison_json)
-                        .collect::<Vec<_>>()
-                        .join(",")
-                ),
-                comparison_summary_json_entry(
-                    "gemstone-js",
-                    GEMSTONE_JS_COMPARISON
-                        .iter()
-                        .map(js_comparison_json)
                         .collect::<Vec<_>>()
                         .join(",")
                 )
@@ -2699,35 +2677,32 @@ fn print_all_comparisons_json(view: CompareView) {
         CompareView::Status => {
             let totals = all_batch_totals();
             println!(
-                r#"{{"comparison":"all","view":"status","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"status","activeOnly":true,"totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{}]}}"#,
                 totals.total_batches,
                 totals.hours_min,
                 totals.hours_max,
-                status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY),
-                status_json_entry(gemstone_js_scorecard_info(), GEMSTONE_JS_PARITY)
+                status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
             );
         }
         CompareView::Scorecard => {
             let totals = all_batch_totals();
             println!(
-                r#"{{"comparison":"all","view":"scorecard","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"scorecard","activeOnly":true,"totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{}]}}"#,
                 totals.total_batches,
                 totals.hours_min,
                 totals.hours_max,
-                scorecard_json_entry(gemstone_py_scorecard_info()),
-                scorecard_json_entry(gemstone_js_scorecard_info())
+                scorecard_json_entry(gemstone_py_scorecard_info())
             );
         }
         CompareView::Parity => {
             println!(
-                r#"{{"comparison":"all","view":"parity","comparisons":[{},{}]}}"#,
-                parity_json_entry("gemstone-py", "gemstone-rs", GEMSTONE_RS_PARITY),
-                parity_json_entry("gemstone-js", "gemstone-js", GEMSTONE_JS_PARITY)
+                r#"{{"comparison":"all","view":"parity","activeOnly":true,"comparisons":[{}]}}"#,
+                parity_json_entry("gemstone-py", "gemstone-rs", GEMSTONE_RS_PARITY)
             );
         }
         CompareView::Gaps => {
             println!(
-                r#"{{"comparison":"all","view":"gaps","comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"gaps","activeOnly":true,"comparisons":[{}]}}"#,
                 gap_report_json_entry(
                     "gemstone-py",
                     GEMSTONE_PY_GAPS
@@ -2735,54 +2710,38 @@ fn print_all_comparisons_json(view: CompareView) {
                         .map(gap_json)
                         .collect::<Vec<_>>()
                         .join(",")
-                ),
-                gap_report_json_entry(
-                    "gemstone-js",
-                    GEMSTONE_JS_GAPS
-                        .iter()
-                        .map(js_gap_json)
-                        .collect::<Vec<_>>()
-                        .join(",")
                 )
             );
         }
         CompareView::Next => {
             println!(
-                r#"{{"comparison":"all","view":"next","comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"next","activeOnly":true,"comparisons":[{}]}}"#,
                 next_action_json_entry(
                     "gemstone-py",
                     GEMSTONE_RS_BATCHES,
                     GEMSTONE_PY_GAPS,
                     "gemstone-rs"
-                ),
-                next_action_json_entry(
-                    "gemstone-js",
-                    GEMSTONE_JS_BATCHES,
-                    GEMSTONE_JS_GAPS,
-                    "gemstone-js"
                 )
             );
         }
         CompareView::Totals => {
             let totals = all_batch_totals();
             println!(
-                r#"{{"comparison":"all","view":"totals","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"totals","activeOnly":true,"totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{}]}}"#,
                 totals.total_batches,
                 totals.hours_min,
                 totals.hours_max,
-                batch_totals_json_entry("gemstone-py", GEMSTONE_RS_BATCHES),
-                batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
+                batch_totals_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
             );
         }
         CompareView::Batches => {
             let totals = all_batch_totals();
             println!(
-                r#"{{"comparison":"all","view":"batches","totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{},{}]}}"#,
+                r#"{{"comparison":"all","view":"batches","activeOnly":true,"totalBatches":{},"hoursMin":{},"hoursMax":{},"comparisons":[{}]}}"#,
                 totals.total_batches,
                 totals.hours_min,
                 totals.hours_max,
-                batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES),
-                batch_plan_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
+                batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
             );
         }
     }
@@ -3390,22 +3349,6 @@ fn print_batch_totals(title: &str, comparison: &str, batches: &[BatchInfo], form
     }
 }
 
-fn print_all_comparison_totals_human() {
-    print_batch_totals(
-        "gemstone-rs remaining work vs gemstone-py",
-        "gemstone-py",
-        GEMSTONE_RS_BATCHES,
-        OutputFormat::Human,
-    );
-    println!();
-    print_batch_totals(
-        "gemstone-js remaining work vs gemstone-py",
-        "gemstone-js",
-        GEMSTONE_JS_BATCHES,
-        OutputFormat::Human,
-    );
-}
-
 fn batch_totals_json_entry(comparison: &str, batches: &[BatchInfo]) -> String {
     let (min_hours, max_hours) = total_batch_hours(batches);
     format!(
@@ -3478,11 +3421,10 @@ struct BatchTotals {
 
 fn all_batch_totals() -> BatchTotals {
     let (rs_min, rs_max) = total_batch_hours(GEMSTONE_RS_BATCHES);
-    let (js_min, js_max) = total_batch_hours(GEMSTONE_JS_BATCHES);
     BatchTotals {
-        total_batches: GEMSTONE_RS_BATCHES.len() + GEMSTONE_JS_BATCHES.len(),
-        hours_min: rs_min + js_min,
-        hours_max: rs_max + js_max,
+        total_batches: GEMSTONE_RS_BATCHES.len(),
+        hours_min: rs_min,
+        hours_max: rs_max,
     }
 }
 
@@ -5724,6 +5666,14 @@ mod tests {
             example_run_command(workflow, &["--flag".to_string(), "two words".to_string()]),
             "cargo run -p gemstone-rs --example codegen_workflow -- --flag 'two words'"
         );
+
+        let async_worker = find_example("async_worker").unwrap();
+        assert!(async_worker.requires_live);
+        assert!(async_worker.description.contains("Awaitable"));
+
+        let py_native = find_example("python_native_adapter").unwrap();
+        assert!(py_native.requires_live);
+        assert!(py_native.description.contains("py_native contract"));
     }
 
     #[test]
@@ -5742,6 +5692,11 @@ mod tests {
             .iter()
             .any(|feature| feature.title == "Safe sessions and transactions"
                 && feature.crates.contains("SessionWorker")));
+        assert!(FEATURE_MAP
+            .iter()
+            .any(|feature| feature.title == "Shared native core"
+                && feature.crates.contains("py_native")
+                && feature.examples.contains("python_native_adapter")));
         assert!(feature_json(&FEATURE_MAP[0]).contains(r#""gemstonePyReference":"#));
     }
 
@@ -5796,16 +5751,16 @@ mod tests {
 
     #[test]
     fn comparison_batch_plans_are_actionable() {
-        assert_eq!(GEMSTONE_RS_BATCHES.len(), 4);
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 2);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (22, 39));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (10, 17));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
-                total_batches: 10,
-                hours_min: 64,
-                hours_max: 111,
+                total_batches: 2,
+                hours_min: 10,
+                hours_max: 17,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5826,26 +5781,26 @@ mod tests {
         )
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
-            .contains(r#""totalBatches":4"#));
+            .contains(r#""totalBatches":2"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":4,"hoursMin":22,"hoursMax":39}"#));
+            .contains(r#""remaining":{"totalBatches":2,"hoursMin":10,"hoursMax":17}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
         );
         assert!(
             status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
-                .contains(r#""scoreGap":3"#)
+                .contains(r#""scoreGap":2"#)
         );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {
                 gemstone_py_score: 30,
-                project_score: 27,
+                project_score: 28,
                 max_score: 35,
-                score_gap: 3,
+                score_gap: 2,
             }
         );
         assert!(
@@ -5860,9 +5815,13 @@ mod tests {
     fn gap_report_prioritizes_actionable_gemstone_py_gaps() {
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P1"
+                && gap.area == "Shared native core"
+                && gap.next_action.contains("py_native")
+        }));
+        assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
+            gap.priority == "P2"
                 && gap.area == "Web framework adapters"
-                && gap.gemstone_py_strength.contains("FastAPI")
-                && gap.next_action.contains("middleware")
+                && gap.gemstone_rs_gap.contains("async health handlers")
         }));
         assert!(GEMSTONE_PY_GAPS
             .iter()

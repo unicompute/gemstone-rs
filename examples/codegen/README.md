@@ -25,10 +25,11 @@ cargo run -p gemstone-rs-cli -- codegen explain-profile --json default examples/
 cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml
 ```
 
-Generated wrappers include a small `#[cfg(test)]` surface-name test stub.
-`codegen explain` summarizes the output path, that test stub, wrapper methods,
-return helpers, and mapped fields before you write files. Add `--json` when a
-tool such as the explorer or VS Code needs a structured summary.
+Generated wrappers include `#[cfg(test)]` stubs for surface names, method
+metadata, and mapped-field metadata. `codegen explain` summarizes the output
+path, those test stubs, wrapper methods, return helpers, and mapped fields
+before you write files. Add `--json` when a tool such as the explorer or VS
+Code needs a structured summary.
 The wrapper-check crate imports the generated file and keeps the checked-in
 generated Rust compileable.
 
@@ -40,6 +41,7 @@ class = Object
 method = Object>>printString | return=String | doc=Return the receiver printString.
 method = Object>>class
 method = Object>>perform: | args=selector:Symbol | doc=Perform a unary selector supplied as a Rust string.
+method = Object>>_alias | return=Symbol | doc=Return the receiver alias symbol as a Rust String.
 ```
 
 Use `Dictionary:ClassName` when a class must be resolved from a specific
@@ -63,6 +65,8 @@ method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return
 Untyped `args` stay as `Oop` parameters. Typed arguments generate native Rust
 parameters and convert them before `perform`: `SmallInt` becomes `i64`,
 `String` and `Symbol` become `impl AsRef<str>`, and `Bool` becomes `bool`.
+Typed returns can use `Value`, `Oop`, `String`, `Symbol`, `SmallInt`, or
+`Bool`; `return=Symbol` fetches the symbol bytes back as a Rust `String`.
 
 The same config can generate typed `BridgeMapped` structs:
 
@@ -91,6 +95,14 @@ Generate a config from a live stone:
 cargo run -p gemstone-rs-cli -- codegen discover examples/codegen/discovered.codegen Object
 cargo run -p gemstone-rs-cli -- codegen discover-mapping examples/codegen/mapping.codegen BookingDraft Object
 ```
+
+Live discovery writes selectors, source-header argument names, and
+protocol/source documentation into the starter config. If source is not
+available, it falls back to keyword-selector argument names. It keeps
+discovered argument and return types conservative as `Oop`/`Value`; edit the
+generated config with `args=name:SmallInt`, `args=name:String`,
+`return=String`, or other typed metadata after reviewing the live method
+source.
 
 Preview a diff before writing:
 

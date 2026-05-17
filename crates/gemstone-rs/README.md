@@ -86,6 +86,29 @@ assert_eq!(response.status, 200);
 pool.shutdown()?;
 ```
 
+Async runtimes can await the same dedicated worker pool without moving
+`Session` across threads:
+
+```rust,no_run
+use gemstone_rs::{Config, SessionWorkerPool, Value};
+
+let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+pool.shutdown()?;
+# Ok::<(), gemstone_rs::Error>(())
+```
+
+`py_native` is the dependency-free Rust contract intended for a future
+`gemstone-py-native` PyO3 wrapper:
+
+```rust,no_run
+use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
+
+let mut session = PyNativeSession::login_from_env()?;
+assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
+# Ok::<(), gemstone_rs::Error>(())
+```
+
 Runnable examples in the repository:
 
 ```bash
@@ -94,6 +117,8 @@ cargo run -p gemstone-rs --example browser
 cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example session_worker_pool
+cargo run -p gemstone-rs --example async_worker
+cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example derive_mapping

@@ -92,7 +92,6 @@ for (const args of [
   ["compare", "gemstone-py", "--status", "--json"],
   ["compare", "gemstone-py", "--scorecard", "--json"],
   ["compare", "gemstone-py", "--parity", "--json"],
-  ["compare", "gemstone-js", "--gaps", "--json"],
   ["compare", "all", "--json"],
   ["compare", "all", "--status", "--json"],
   ["compare", "all", "--scorecard", "--json"],

@@ -43,6 +43,7 @@ gemstone-rs compare gemstone-py --batches
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs examples run codegen_preview --dry-run
+gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -95,6 +96,8 @@ sanity check after install.
 | Transactions | `cargo run -p gemstone-rs --example transactions` | You want commit-on-success and abort-on-error behavior. |
 | Session worker | `cargo run -p gemstone-rs --example session_worker` | You want a dedicated-thread worker for web services and async runtimes. |
 | Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | You want a bounded round-robin pool of dedicated GemStone session workers. |
+| Async worker facade | `cargo run -p gemstone-rs --example async_worker` | You want awaitable worker-pool calls without moving `Session` across threads. |
+| Python native adapter | `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | You want to inspect the Rust contract that a future `gemstone-py-native` PyO3 wrapper should expose. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
@@ -156,10 +159,6 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
-gemstone-rs compare gemstone-js --gaps
-gemstone-rs compare gemstone-js --next
-gemstone-rs compare gemstone-js --totals
-gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches

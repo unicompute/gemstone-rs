@@ -653,60 +653,31 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_label: "gemstone-rs",
         answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
         gemstone_py_score: 30,
-        project_score: 27,
+        project_score: 28,
         max_score: 35,
-        total_batches: 4,
-        hours_min: 22,
-        hours_max: 39,
+        total_batches: 2,
+        hours_min: 10,
+        hours_max: 17,
         next_number: 1,
-        next_focus: "Codegen live discovery and generated tests",
-        next_hours_min: 8,
-        next_hours_max: 14,
-        next_outcome: "Discover richer GemStone class/method metadata, generate typed wrappers/tests, and improve explain/diff output for editors.",
-        next_verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
-        top_gap_priority: "P1",
-        top_gap_area: "Web framework adapters",
-        top_gap_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
-        top_gap_project_gap: "gemstone-rs now has shared JSON health helpers, standard-library HTTP, graceful health-pool startup, route/request/lifecycle/duration headers, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, local/live route smoke coverage, and installed Axum/Actix scaffolds. It still needs broader framework coverage beyond Axum/Actix and richer real-application middleware patterns.",
-        top_gap_next_action: "Add broader framework coverage and richer real-application middleware patterns around the packaged adapters.",
-        top_gap_verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
-        command_target: "gemstone-py",
-    })
-}
-
-fn gemstone_js_status_json(include_view: bool) -> String {
-    status_json(StatusJson {
-        comparison: "gemstone-js",
-        view: include_view.then_some("status"),
-        project_label: "gemstone-js",
-        answer: "gemstone-py remains more mature for Python products and visual tooling; gemstone-js is the TypeScript/Node path when async JS services and npm packaging are the product boundary.",
-        gemstone_py_score: 32,
-        project_score: 21,
-        max_score: 35,
-        total_batches: 6,
-        hours_min: 42,
-        hours_max: 72,
-        next_number: 1,
-        next_focus: "Native publish confidence",
+        next_focus: "Shared core with gemstone-py-native",
         next_hours_min: 6,
         next_hours_max: 10,
-        next_outcome: "Publish and verify gemstone-js plus @gemstone-js/native from a clean install across supported Node platforms.",
-        next_verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
+        next_outcome: "Wire gemstone-py-native to the gemstone_rs::py_native adapter so Python and Rust share the native bridge.",
+        next_verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
         top_gap_priority: "P1",
-        top_gap_area: "Published native confidence",
-        top_gap_strength: "gemstone-py has a working package/release lane and optional native acceleration path.",
-        top_gap_project_gap: "gemstone-js is alpha and depends on optional @gemstone-js/native plus Deno/Bun FFI starter paths that need broader live proof.",
-        top_gap_next_action: "Publish and verify gemstone-js plus @gemstone-js/native across supported Node platforms, then run npm verify and live smoke tests from a clean install.",
-        top_gap_verify_with: "cd /Users/tariq/src/gemstone-js && npm run verify && GS_RUN_LIVE=1 npm run test:live",
-        command_target: "gemstone-js",
+        top_gap_area: "Shared native core",
+        top_gap_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
+        top_gap_project_gap: "gemstone-rs now exposes a py_native adapter contract, but gemstone-py-native does not yet wrap it.",
+        top_gap_next_action: "Wire gemstone-py-native to gemstone_rs::py_native and keep Python return behavior backward compatible.",
+        top_gap_verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+        command_target: "gemstone-py",
     })
 }
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":10,"hoursMin":64,"hoursMax":111,"comparisons":[{},{}]}}"#,
-        gemstone_py_status_json(false),
-        gemstone_js_status_json(false)
+        r#"{{"success":true,"comparison":"all","view":"status","activeOnly":true,"totalBatches":2,"hoursMin":10,"hoursMax":17,"comparisons":[{}]}}"#,
+        gemstone_py_status_json(false)
     )
 }
 
@@ -3833,11 +3804,12 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
-        assert!(response.body.contains(r#""totalBatches":4"#));
-        assert!(response.body.contains(r#""hoursMin":22"#));
-        assert!(response.body.contains(r#""hoursMax":39"#));
+        assert!(response.body.contains(r#""totalBatches":2"#));
+        assert!(response.body.contains(r#""hoursMin":10"#));
+        assert!(response.body.contains(r#""hoursMax":17"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
-        assert!(response.body.contains("Codegen live discovery"));
+        assert!(response.body.contains("Shared core"));
+        assert!(response.body.contains("py_native adapter"));
         assert!(response
             .body
             .contains("gemstone-rs compare gemstone-py --batches"));
@@ -3851,11 +3823,12 @@ mod tests {
         );
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
-        assert!(response.body.contains(r#""totalBatches":10"#));
-        assert!(response.body.contains(r#""hoursMin":64"#));
-        assert!(response.body.contains(r#""hoursMax":111"#));
+        assert!(response.body.contains(r#""activeOnly":true"#));
+        assert!(response.body.contains(r#""totalBatches":2"#));
+        assert!(response.body.contains(r#""hoursMin":10"#));
+        assert!(response.body.contains(r#""hoursMax":17"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
-        assert!(response.body.contains(r#""comparison":"gemstone-js""#));
+        assert!(!response.body.contains(r#""comparison":"gemstone-js""#));
     }
 
     #[test]
@@ -4099,9 +4072,9 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""success":true"#));
         assert!(response.body.contains(r#""explain":"#));
-        assert!(response
-            .body
-            .contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
+        assert!(response.body.contains(
+            r#""testStubs":["generated_surface_names_are_stable","generated_method_metadata_is_stable","generated_mapped_field_metadata_is_stable"]"#
+        ));
         assert!(response.body.contains(r#""selector":"printString""#));
     }
 
@@ -4121,9 +4094,9 @@ mod tests {
         assert!(response.body.contains(r#""success":true"#));
         assert!(response.body.contains(r#""profile":"default""#));
         assert!(response.body.contains(r#""explain":"#));
-        assert!(response
-            .body
-            .contains(r#""testStubs":["generated_surface_names_are_stable"]"#));
+        assert!(response.body.contains(
+            r#""testStubs":["generated_surface_names_are_stable","generated_method_metadata_is_stable","generated_mapped_field_metadata_is_stable"]"#
+        ));
         assert!(response.body.contains(r#""selector":"printString""#));
     }
 

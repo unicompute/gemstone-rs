@@ -88,7 +88,7 @@
           "description": "Optional parallel type list for tools that keep names and types separate."
         },
         "return": {
-          "enum": ["Value", "Oop", "String", "SmallInt", "Bool"],
+          "enum": ["Value", "Oop", "String", "Symbol", "SmallInt", "Bool"],
           "default": "Value"
         },
         "doc": {

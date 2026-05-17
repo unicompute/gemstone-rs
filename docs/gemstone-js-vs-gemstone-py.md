@@ -104,12 +104,9 @@ gemstone-rs compare gemstone-js --gaps --json
 gemstone-rs compare gemstone-js --next --json
 gemstone-rs compare gemstone-js --totals --json
 gemstone-rs compare gemstone-js --batches --json
-gemstone-rs compare all --next
-gemstone-rs compare all --totals
-gemstone-rs compare all --next --json
 ```
 
 Use the JSON form when an editor, release script, or dashboard needs to render
-the comparison. Use `compare all` when you want the TypeScript/Python and
-Rust/Python tracks in one report. `compare all --batches` includes the combined
-**10-batch**, **64-111 hour** estimate for both tracks.
+the archived TypeScript/Python comparison. `compare all` is intentionally scoped
+to the active gemstone-rs planning track now, so use the explicit
+`compare gemstone-js` commands above when you need this archived reference.

@@ -52,6 +52,10 @@ pub fn gemstone_health_response(pool: &SessionWorkerPool) -> JsonResponse {
     gemstone_health_response_from_result(gemstone_health_value(pool))
 }
 
+pub async fn gemstone_health_response_async(pool: &SessionWorkerPool) -> JsonResponse {
+    gemstone_health_response_from_result(gemstone_health_value_async(pool).await)
+}
+
 pub fn gemstone_health_response_once(config: Config) -> JsonResponse {
     gemstone_health_response_from_result(gemstone_health_value_once(config))
 }
@@ -114,10 +118,21 @@ impl HealthPool {
             Self::Unavailable(message) => JsonResponse::error(503, message),
         }
     }
+
+    pub async fn gemstone_health_response_async(&self) -> JsonResponse {
+        match self {
+            Self::Ready(pool) => gemstone_health_response_async(pool).await,
+            Self::Unavailable(message) => JsonResponse::error(503, message),
+        }
+    }
 }
 
 pub fn gemstone_health_value(pool: &SessionWorkerPool) -> Result<i64> {
     smallint_health_value(pool.eval("3 + 4")?)
+}
+
+pub async fn gemstone_health_value_async(pool: &SessionWorkerPool) -> Result<i64> {
+    smallint_health_value(pool.eval_async("3 + 4").await?)
 }
 
 pub fn gemstone_health_value_once(config: Config) -> Result<i64> {
@@ -161,6 +176,28 @@ pub fn json_escape(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::future::Future;
+    use std::sync::Arc;
+    use std::task::{Context, Poll, Wake, Waker};
+    use std::time::Duration;
+
+    struct TestWake;
+
+    impl Wake for TestWake {
+        fn wake(self: Arc<Self>) {}
+    }
+
+    fn block_on<F: Future>(future: F) -> F::Output {
+        let waker = Waker::from(Arc::new(TestWake));
+        let mut context = Context::from_waker(&waker);
+        let mut future = Box::pin(future);
+        loop {
+            match Future::poll(future.as_mut(), &mut context) {
+                Poll::Ready(value) => return value,
+                Poll::Pending => std::thread::sleep(Duration::from_millis(1)),
+            }
+        }
+    }
 
     #[test]
     fn index_response_escapes_service_name() {
@@ -193,6 +230,14 @@ mod tests {
         );
 
         let response = pool.gemstone_health_response();
+        assert_eq!(response.status, 503);
+        assert!(response.body.contains("GS_USERNAME"));
+    }
+
+    #[test]
+    fn async_health_pool_reports_unavailable_without_panicking() {
+        let pool = HealthPool::from_result(Err(Error::MissingEnvironment("GS_USERNAME")));
+        let response = block_on(pool.gemstone_health_response_async());
         assert_eq!(response.status, 503);
         assert!(response.body.contains("GS_USERNAME"));
     }

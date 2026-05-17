@@ -53,13 +53,15 @@ method = UserGlobals:OkzBooking class>>findById: | args=id | return=Oop
 | --- | --- | --- |
 | `args` | `args=id,user` | Names generated Rust function arguments. |
 | `args` with types | `args=id:SmallInt,name:String,selector:Symbol,enabled:Bool` | Generates native Rust parameters and converts them to GemStone OOPs before `perform`. |
-| `return` | `return=String` | Generates a typed return helper instead of `Value`. |
+| `return` | `return=String` or `return=Symbol` | Generates a typed return helper instead of `Value`. |
 | `doc` | `doc=Find by id.` | Writes a Rust doc comment above the generated method. |
 
-When `args` is omitted, codegen now infers useful argument names from selector
+When `args` is omitted, codegen infers useful argument names from selector
 keywords. For example `at:put:` becomes `at, put`, and
-`withCustomer:amount:` becomes `customer, amount`. Provide explicit `args=...`
-when the selector keywords are not good Rust argument names.
+`withCustomer:amount:` becomes `customer, amount`. Live discovery goes one
+step further: when method source is available, it prefers the Smalltalk source
+header, so `at: anIndex put: aValue` becomes `an_index, a_value`. Provide
+explicit `args=...` when you want a different Rust API name.
 
 Untyped arguments stay explicit as `Oop`. Add a type after the argument name
 when the generated wrapper should accept native Rust values:
@@ -67,6 +69,7 @@ when the generated wrapper should accept native Rust values:
 ```text
 method = UserGlobals:OkzBooking class>>findById: | args=id:SmallInt | return=Oop
 method = Object>>perform: | args=selector:Symbol
+method = UserGlobals:Order>>statusSymbol | return=Symbol
 method = UserGlobals:User>>named:active: | args=name:String,active:Bool | return=Oop
 ```
 
@@ -85,11 +88,13 @@ pub fn perform(&mut self, selector: impl AsRef<str>) -> Result<Value> {
 }
 ```
 
-Generated wrapper files include a small `#[cfg(test)]` surface-name test stub,
-so downstream crates can keep generated wrapper names visible to Rust test
-tooling. Use `codegen explain` before generating when you want a readable
-summary of the output file, test stub, wrapper classes, selectors, argument
-names and types, return helpers, mapped structs, and BridgeRoot field mappings:
+Generated wrapper files include `#[cfg(test)]` stubs for stable surface names,
+method metadata, and mapped-field metadata. That gives downstream crates a
+cheap compile-time smoke check for wrapper names, selectors, argument counts,
+typed returns, BridgeRoot field keys, key policies, and field types. Use
+`codegen explain` before generating when you want a readable summary of the
+output file, test stubs, wrapper classes, selectors, argument names and types,
+return helpers, mapped structs, and BridgeRoot field mappings:
 
 ```bash
 gemstone-rs codegen explain examples/codegen/gemstone-rs.codegen
@@ -102,6 +107,8 @@ render the output path, generated test stubs, class wrappers, selector
 arguments, argument types, return helpers, and mapped fields as structured
 data. Method entries include both the legacy `args` name list and an
 `arguments` array with `{name, type, rustType}` objects for richer UI rendering.
+The `testStubs` array now reports all generated tests so VS Code, CI, and the
+explorer can show exactly what wrapper invariants are covered.
 
 Machine-readable schema files are committed for tooling:
 
@@ -124,6 +131,7 @@ Supported return types:
 | --- | --- |
 | `Value` | `gemstone_rs::Value` |
 | `String` | `String` |
+| `Symbol` | `String` |
 | `SmallInt` | `i64` |
 | `Bool` | `bool` |
 | `Oop` | `gemstone_rs::Oop` |
@@ -175,6 +183,13 @@ gemstone-rs codegen discover gemstone-rs.codegen Object
 gemstone-rs codegen discover gemstone-rs.codegen UserGlobals:OkzBooking
 gemstone-rs codegen discover-mapping gemstone-rs.codegen BookingDraft Object
 ```
+
+Live method discovery is deliberately conservative. It records selectors,
+prefers argument names from the source header, falls back to keyword selector
+names, keeps argument types as explicit `Oop` until a user narrows them, and
+adds protocol/source context to `doc=...` when the browser can fetch it. That
+gives generated wrappers stable Rust argument names without pretending to know
+return or argument types that GemStone/S has not declared.
 
 From a checkout:
 

@@ -30,16 +30,6 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --totals --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
-	cargo run -p gemstone-rs-cli -- compare gemstone-js
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --json
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --next
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --totals
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --totals --json
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
-	cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 	cargo run -p gemstone-rs-cli -- compare all
 	cargo run -p gemstone-rs-cli -- compare all --json
 	cargo run -p gemstone-rs-cli -- compare all --gaps
@@ -60,6 +50,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker_pool --dry-run
+	cargo run -p gemstone-rs-cli -- examples run async_worker --dry-run
+	cargo run -p gemstone-rs-cli -- examples run python_native_adapter --dry-run
 	cargo run -p gemstone-rs-cli -- examples run http_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run axum_service --dry-run -- --routes
 	cargo run -p gemstone-rs-cli -- examples run actix_service --dry-run -- --routes
@@ -79,6 +71,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples scaffold axum_service /tmp/gemstone-rs-scaffold-axum-service --force
 	cargo run -p gemstone-rs-cli -- examples scaffold actix_service /tmp/gemstone-rs-scaffold-actix-service --force
 	cargo run -p gemstone-rs --example http_service -- --routes
+	cargo run -p gemstone-rs --example async_worker -- --dry-run
+	cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 	cargo test --manifest-path examples/axum-service/Cargo.toml
 	cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes
 	cargo test --manifest-path examples/actix-service/Cargo.toml

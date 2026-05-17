@@ -52,9 +52,9 @@ file.
 | Capability | gemstone-py | gemstone-rs |
 | --- | --- | --- |
 | Stable install path | Mature: PyPI and TestPyPI | Early: crates.io workflow and verification added |
-| Native bridge | PyO3 extension path | Rust GCI crate and safe API |
+| Native bridge | PyO3 extension path | Rust GCI crate, safe API, and dependency-free `py_native` adapter contract |
 | Sync API | Mature | Initial safe API |
-| Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker` and bounded `SessionWorkerPool`; async facade still planned |
+| Async API | Mature enough for examples and tests | Dedicated-thread `SessionWorker`, bounded `SessionWorkerPool`, and dependency-free awaitable worker futures |
 | Web frameworks | FastAPI, Litestar, Django examples | Shared `gemstone_rs::web` health helpers, standard-library HTTP, `SessionWorkerPool`, packaged `gemstone-rs-axum`/`gemstone-rs-actix` adapters, checked Axum/Actix examples, request-trace, lifecycle-duration, and production-style service/cache/security middleware headers |
 | Codegen | Python wrapper workflow | Rust wrapper workflow with preview/diff/check/generate, live discovery, typed argument conversion, typed return helpers, and profile scaffolds |
 | Browser API | Used by database explorer | CLI/explorer API for dictionaries/classes/methods/source |
@@ -113,9 +113,10 @@ gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 ```
 
-`compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **10 batches**, roughly **64-111 hours**
-total.
+`compare all --batches` now reports only active gemstone-rs work. The
+gemstone-js comparison remains available as archived background reference, but
+it is no longer part of the active remaining-work estimate. Active remaining
+work is **2 batches**, roughly **10-17 hours** total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
@@ -132,18 +133,18 @@ remain, and the next recommended batch.
 
 Use `--parity` when you want a measured maturity view. It scores each area out
 of five and shows the current leader, status, and next action. The current
-Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 27/35**:
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 28/35**:
 Rust is at parity or ahead for core sessions, codegen/mapping, and the shared
 native-core direction; Python remains ahead for web frameworks, async/lifetime
 coverage, explorer polish, and release lane depth.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add broader framework coverage and richer real-application middleware patterns around the packaged adapters. |
+| P1 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
 | P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Fold the remaining explorer polish into the object mapping maturity batch. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
-| P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
-| P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
+| P2 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add more Rust framework examples only when a real service needs them. |
+| P2 | Async lifetime depth | gemstone-py has async examples and FastAPI integration. | Add deeper cancellation, shutdown, and lifetime tests around async worker futures. |
 | P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
 
 Use `--next` when you only want the first recommended implementation step:
@@ -166,14 +167,27 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Codegen live discovery and generated tests | 8-14 hours |
-| 2 | Async facade and web framework breadth | 2-4 hours |
-| 3 | Shared core with `gemstone-py-native` | 8-14 hours |
-| 4 | Release and live CI hardening | 4-7 hours |
+| 1 | Shared core with `gemstone-py-native` | 6-10 hours |
+| 2 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **22-39 hours** to bring `gemstone-rs` materially closer to
-`gemstone-py` across product polish, generated-code confidence, async/web
-ergonomics, shared native-core integration, and release depth.
+Total: roughly **10-17 hours** to bring `gemstone-rs` materially closer to
+`gemstone-py` across shared native-core integration and release depth.
+
+Recent codegen batch status: closed. `codegen discover` now records
+protocol/source documentation, prefers source-header argument names, generated
+wrappers carry metadata tests, and `return=Symbol` generates Rust `String`
+helpers while preserving the GemStone domain type in config metadata.
+
+Recent async/web batch status: closed. `SessionWorker` and
+`SessionWorkerPool` now expose awaitable calls, the Axum and Actix health
+handlers use that async path, and the `async_worker` example shows how Rust
+services can await GemStone work without moving `Session` across threads.
+
+Recent shared-core batch status: Rust-side contract added. The new
+`gemstone_rs::py_native` module gives a future `gemstone-py-native` PyO3 crate
+plain Rust config, value, error, capability, and session wrappers. The
+remaining work is Python-side wiring and compatibility testing in
+`gemstone-py`.
 
 ## Current Gap Analysis
 

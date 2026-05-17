@@ -50,6 +50,19 @@ impl<'a> Object<'a> {
         let value = self.session.perform(self.oop, "perform:", &[selector])?;
         Ok(value)
     }
+
+    /// Return the receiver alias symbol as a Rust String.
+    pub fn alias(&mut self) -> Result<String> {
+        let value = self.session.perform(self.oop, "_alias", &[])?;
+        match value {
+            Value::String(value) => Ok(value),
+            Value::Oop(oop) => self.session.fetch_string(oop),
+            other => Err(Error::UnexpectedType {
+                expected: "Symbol",
+                actual: format!("{other:?}"),
+            }),
+        }
+    }
 }
 
 /// A typed Rust payload stored under BridgeRoot.
@@ -128,8 +141,35 @@ mod generated_code_tests {
             "Object::print_string",
             "Object::class",
             "Object::perform",
+            "Object::alias",
             "BookingDraft",
         ];
         assert!(names.iter().all(|name| !name.is_empty()));
+    }
+
+    #[test]
+    fn generated_method_metadata_is_stable() {
+        let methods: &[(&str, &str, &str, &str, &str)] = &[
+            ("Object", "print_string", "printString", "", "String"),
+            ("Object", "class", "class", "", "Value"),
+            ("Object", "perform", "perform:", "selector:Symbol", "Value"),
+            ("Object", "alias", "_alias", "", "Symbol"),
+        ];
+        assert!(methods.iter().all(|(_, fn_name, selector, _, return_type)| !fn_name.is_empty() && !selector.is_empty() && !return_type.is_empty()));
+        assert!(methods.iter().all(|(_, _, selector, args, _)| selector.matches(':').count() == if args.is_empty() { 0 } else { args.split(',').count() }));
+    }
+
+    #[test]
+    fn generated_mapped_field_metadata_is_stable() {
+        let fields: &[(&str, &str, &str, &str, &str)] = &[
+            ("BookingDraft", "name", "name", "String", "String"),
+            ("BookingDraft", "amount", "amount", "String", "SmallInt"),
+            ("BookingDraft", "currency", "currency", "String", "String"),
+            ("BookingDraft", "tags", "tags", "String", "Vec<String>"),
+            ("BookingDraft", "labels", "labels", "String", "BTreeMap<String, String>"),
+            ("BookingDraft", "note", "note", "String", "Option<String>"),
+        ];
+        assert!(fields.iter().all(|(mapped_name, rust_name, key, _, field_type)| !mapped_name.is_empty() && !rust_name.is_empty() && !key.is_empty() && !field_type.is_empty()));
+        assert!(fields.iter().all(|(_, _, _, key_type, _)| matches!(*key_type, "String" | "Symbol")));
     }
 }

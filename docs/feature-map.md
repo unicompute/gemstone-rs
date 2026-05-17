@@ -16,14 +16,6 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
-gemstone-rs compare gemstone-js
-gemstone-rs compare gemstone-js --status
-gemstone-rs compare gemstone-js --scorecard
-gemstone-rs compare gemstone-js --parity
-gemstone-rs compare gemstone-js --gaps
-gemstone-rs compare gemstone-js --next
-gemstone-rs compare gemstone-js --totals
-gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --status
 gemstone-rs compare all --scorecard
 gemstone-rs compare all --parity
@@ -43,8 +35,8 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 
 `hello` is the no-live sanity check that mirrors `gemstone-examples hello`.
 `compare gemstone-py` prints a compact version of the Python/Rust comparison
-guide. `compare gemstone-js` prints the TypeScript/Python comparison from
-[gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md). The `--status`
+guide. `compare gemstone-js` remains available as archived background
+reference, but active planning now focuses on gemstone-rs. The `--status`
 forms give the shortest answer with the direct recommendation, parity score,
 remaining batch count, next batch, top gap, and follow-up commands. The `--scorecard`
 forms print the shortest decision view: when to use each project, current
@@ -56,9 +48,8 @@ The `--next` forms print the first recommended batch and top priority gap.
 The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
-same flags to print both comparison tracks together; `compare all --batches`
-reports **10 batches** and roughly **64-111 hours** across the Rust and
-TypeScript catch-up tracks.
+same flags to print the active gemstone-rs track; `compare all --batches`
+reports **2 batches** and roughly **10-17 hours**.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,
@@ -78,12 +69,12 @@ prints.
 | 3 | Browser and inspection | `gemstone-rs::browser`, CLI `browse`, `gemstone-rs-explorer` | `browser`, `tooling/cli-browser-walkthrough.md` | `docs/user-manual.md`, `docs/explorer.md` | `gemstone_py.inspection`, `python-gemstone-database-explorer` | API parity is growing; the Python explorer is still more mature. |
 | 4 | OOP and value handling | `Oop`, `Value`, export-set helpers | `oop_values` | `docs/user-manual.md`, `docs/performance-safety.md` | Managed OOP handles and typed access examples | Rust has an explicit ownership model; Python is easier for casual scripting. |
 | 5 | BridgeRoot object mapping | `gemstone-rs::bridge`, `gemstone-rs-macros` | `bridge_root_mapping`, `derive_mapping`, `bridge_value_inspection`, `generated_mapping_app` | `docs/object-mapping.md`, `docs/cookbook.md` | `SmalltalkBridge`, `PersistentRoot`, facade examples | Rust has typed mapping, derive, nested dynamic `BridgeValue` read-back, repeated-OOP identity groups, and path-aware diagnostics; a fully transparent object model remains future work. |
-| 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `codegen_discover`, `profile_codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, generate, profiles, typed return helpers, and typed argument conversion; live discovery still needs more depth. |
+| 6 | Typed codegen | `gemstone-rs::codegen`, CLI `codegen` and `profile` | `codegen_preview`, `codegen_workflow`, `codegen_discover`, `profile_codegen_workflow`, `generated_wrapper_app` | `docs/codegen.md`, `docs/profile-schema.md` | `gemstone_py.codegen`, `typed_access/codegen_demo` | Preview, diff, check, generate, profiles, typed return helpers, typed argument conversion, generated metadata tests, and live discovery of source-header args plus protocol/source docs; deeper live type discovery remains planned. |
 | 7 | Explorer workflow | `gemstone-rs-explorer` | `tooling/explorer.md` | `docs/explorer.md`, `docs/screenshots.md` | `python-gemstone-database-explorer` | Useful local UI/API with setup, profile status, live browse path/source previews, editable generated output, nested BridgeValue rendering, codegen workflows, VS Code open-file actions, browser fallback prompts, and committed visual assets; Python explorer remains the richer product reference. |
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs/editable output files, BridgeRoot keys/nested values, comparison status, and Marketplace/GitHub visuals. |
-| 9 | Rust web services | `gemstone-rs::web`, `gemstone-rs-axum`, `gemstone-rs-actix`, `SessionWorkerPool`, checked Axum/Actix services, and installed scaffolds | `session_worker`, `session_worker_pool`, `http_service`, `examples/axum-service`, `examples/actix-service`, `framework_route_smoke.py`, `examples scaffold session_worker_pool/axum_service/actix_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Shared JSON health helpers, standard-library HTTP, graceful health-pool startup, diagnostic, request-trace, lifecycle, duration, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, local/live route smoke coverage, and installed scaffolds exist; broader framework coverage and async facade remain planned. |
+| 9 | Rust web services | `gemstone-rs::web`, `gemstone-rs-axum`, `gemstone-rs-actix`, `SessionWorkerPool`, async worker futures, checked Axum/Actix services, and installed scaffolds | `session_worker`, `session_worker_pool`, `async_worker`, `http_service`, `examples/axum-service`, `examples/actix-service`, `framework_route_smoke.py`, `examples scaffold session_worker_pool/axum_service/actix_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Shared JSON health helpers, standard-library HTTP, graceful health-pool startup, diagnostic, request-trace, lifecycle, duration, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, async health handlers, local/live route smoke coverage, installed scaffolds, and a dependency-free async worker facade exist. |
 | 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
-| 11 | Shared native core | `gemstone-gci`, `gemstone-rs`, future `gemstone-py-native` wrapper | Shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Best long-term architecture; not wired into `gemstone-py-native` yet. |
+| 11 | Shared native core | `gemstone-gci`, `gemstone-rs::py_native`, future `gemstone-py-native` wrapper | `python_native_adapter`, shared-core integration plan | `docs/shared-core-integration.md` | `gemstone-py-native` | Rust-side PyO3 adapter contract exists; `gemstone-py-native` still needs to wrap it. |
 
 ## What This Says Compared With gemstone-py
 

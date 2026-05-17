@@ -28,22 +28,6 @@ cargo run -p gemstone-rs-cli -- compare gemstone-py --totals
 cargo run -p gemstone-rs-cli -- compare gemstone-py --totals --json
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches
 cargo run -p gemstone-rs-cli -- compare gemstone-py --batches --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js
-cargo run -p gemstone-rs-cli -- compare gemstone-js --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --status
-cargo run -p gemstone-rs-cli -- compare gemstone-js --status --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard
-cargo run -p gemstone-rs-cli -- compare gemstone-js --scorecard --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --parity
-cargo run -p gemstone-rs-cli -- compare gemstone-js --parity --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps
-cargo run -p gemstone-rs-cli -- compare gemstone-js --gaps --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --next
-cargo run -p gemstone-rs-cli -- compare gemstone-js --next --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --totals
-cargo run -p gemstone-rs-cli -- compare gemstone-js --totals --json
-cargo run -p gemstone-rs-cli -- compare gemstone-js --batches
-cargo run -p gemstone-rs-cli -- compare gemstone-js --batches --json
 cargo run -p gemstone-rs-cli -- compare all
 cargo run -p gemstone-rs-cli -- compare all --json
 cargo run -p gemstone-rs-cli -- compare all --status
@@ -142,16 +126,17 @@ shells where you do not want to source the file globally.
 `hello` is the fastest no-GemStone sanity check. It mirrors
 `gemstone-examples hello` from gemstone-py and prints the CLI version, target
 OS, target architecture, and executable path. `compare gemstone-py` prints the
-Rust/Python comparison, while `compare gemstone-js` prints the
-TypeScript/Python comparison. `compare all` prints both comparison tracks in
-one run. Add `--gaps` for the prioritized catch-up report, `--next` for the
+Rust/Python comparison. `compare gemstone-js` remains available as archived
+background reference, but active planning and verification now focus on
+gemstone-rs. `compare all` prints the active gemstone-rs track. Add `--gaps`
+for the prioritized catch-up report, `--next` for the
 single recommended next action, `--totals` for only the estimated batch/hour
 totals, `--batches` for the detailed work batches, `--status` for the shortest
 answer with parity and batch count, `--scorecard` for the decision view, and
 `--parity` for area-by-area maturity scores.
-`compare all --totals` reports the combined
-**12-batch**, **86-151 hour** estimate across the Rust and TypeScript catch-up
-tracks. Add `--json` when an editor, CI job, or release script needs
+`compare all --totals` reports the active
+**2-batch**, **10-17 hour** gemstone-rs estimate. Add `--json` when an editor,
+CI job, or release script needs
 structured output. The JSON shape is documented in
 `schemas/gemstone-rs.compare.schema.json` and checked by the repository schema
 validation script.

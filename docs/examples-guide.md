@@ -41,10 +41,6 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
-gemstone-rs compare gemstone-js --gaps
-gemstone-rs compare gemstone-js --next
-gemstone-rs compare gemstone-js --totals
-gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --status
 gemstone-rs compare all --scorecard
 gemstone-rs compare all --parity
@@ -54,6 +50,7 @@ gemstone-rs compare all --batches
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
+gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -71,7 +68,9 @@ templates. Current scaffold templates include `quickstart`, `browser`,
 `codegen_discover`, `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`,
 `session_worker_pool`, `axum_service`, and `actix_service`; checked-in examples
-also include `bridge_value_inspection` for dynamic nested BridgeRoot read-back.
+also include `bridge_value_inspection` for dynamic nested BridgeRoot read-back
+and `python_native_adapter` for the future `gemstone-py-native` wrapper
+contract.
 Aliases include `bridge`, `mapping`, `derive`, `codegen`, `discover`,
 `profiles`, `wrapper`, `framework`, `axum`, `actix`, and `http`.
 Scaffolds can include supporting project files; `profile_codegen_workflow`
@@ -112,6 +111,8 @@ CLI binary is installed and runnable.
 | Transactions | `cargo run -p gemstone-rs --example transactions` | Commit-on-success and abort-on-error transaction wrapper. |
 | Session worker | `cargo run -p gemstone-rs --example session_worker` | Dedicated-thread `SessionWorker` for web services and async runtimes. |
 | Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | Bounded round-robin pool of dedicated GemStone session workers. |
+| Async worker facade | `cargo run -p gemstone-rs --example async_worker` | Awaitable `SessionWorkerPool` calls for async runtimes without moving `Session` across threads. |
+| Python native adapter | `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | Dependency-free `py_native` contract that a future `gemstone-py-native` PyO3 wrapper can expose. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
@@ -123,7 +124,7 @@ CLI binary is installed and runnable.
 | Mapping discovery | `cargo run -p gemstone-rs --example codegen_discover_mapping` | Connects to a live stone and proposes a `BridgeMapped` config. |
 | Generated wrapper app | `cargo run -p gemstone-rs --example generated_wrapper_app` | Uses checked-in generated wrappers to call `Object>>printString`. |
 | Generated mapping app | `cargo run -p gemstone-rs --example generated_mapping_app` | Uses codegen-created `BridgeMapped` structs with `BridgeRoot`. |
-| Generated wrapper compile check | `cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml` | Imports the checked-in generated wrappers as a separate crate. |
+| Generated wrapper compile check | `cargo test --manifest-path examples/codegen-wrapper-check/Cargo.toml` | Imports the checked-in generated wrappers as a separate crate and runs generated metadata tests. |
 | Codegen files | `examples/codegen/` | Config, generated wrappers, check/diff/generate workflow. |
 | Explorer tooling | `examples/tooling/explorer.md` | Local explorer startup and endpoint checks. |
 | VS Code tooling | `examples/tooling/vscode-workbench.md` | Sidebar browsing, codegen actions, and explorer launch. |
@@ -168,23 +169,24 @@ are available and `/health/gemstone` should be required to return
 6. `transactions`
 7. `session_worker`
 8. `session_worker_pool`
-9. `oop_values`
-10. `bridge_root_mapping`
-11. `derive_mapping`
-12. `bridge_value_inspection`
-13. `codegen_preview`
-14. `codegen_workflow`
-15. `generated_wrapper_app`
-16. `generated_mapping_app`
-17. `codegen_discover`
-18. `codegen_discover_mapping`
-19. `examples/codegen/`
-20. `examples/tooling/cli-browser-walkthrough.md`
-21. `examples/tooling/explorer.md`
-22. `examples/tooling/vscode-workbench.md`
-23. `http_service`
-24. `examples/axum-service/`
-25. `examples/actix-service/`
+9. `async_worker`
+10. `oop_values`
+11. `bridge_root_mapping`
+12. `derive_mapping`
+13. `bridge_value_inspection`
+14. `codegen_preview`
+15. `codegen_workflow`
+16. `generated_wrapper_app`
+17. `generated_mapping_app`
+18. `codegen_discover`
+19. `codegen_discover_mapping`
+20. `examples/codegen/`
+21. `examples/tooling/cli-browser-walkthrough.md`
+22. `examples/tooling/explorer.md`
+23. `examples/tooling/vscode-workbench.md`
+24. `http_service`
+25. `examples/axum-service/`
+26. `examples/actix-service/`
 
 ## Expected Output
 
@@ -254,7 +256,10 @@ such as `method = Object>>perform: | args=selector:Symbol` generates a Rust
 method that accepts `selector: impl AsRef<str>` and creates the GemStone symbol
 before dispatch. For application wrappers, use `SmallInt`, `String`, `Symbol`,
 `Bool`, or the default `Oop` depending on how much conversion you want at the
-generated boundary.
+generated boundary. Typed returns cover the same common value shapes:
+`return=Symbol` fetches the GemStone Symbol as a Rust `String`, while
+`return=SmallInt`, `return=Bool`, `return=String`, and `return=Oop` narrow the
+result at the wrapper boundary.
 
 ## CLI Equivalents
 
@@ -291,10 +296,6 @@ gemstone-rs compare gemstone-py --gaps
 gemstone-rs compare gemstone-py --next
 gemstone-rs compare gemstone-py --totals
 gemstone-rs compare gemstone-py --batches
-gemstone-rs compare gemstone-js --gaps
-gemstone-rs compare gemstone-js --next
-gemstone-rs compare gemstone-js --totals
-gemstone-rs compare gemstone-js --batches
 gemstone-rs compare all --status
 gemstone-rs compare all --scorecard
 gemstone-rs compare all --parity

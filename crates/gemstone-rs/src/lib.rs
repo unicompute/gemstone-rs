@@ -215,6 +215,21 @@
 //! }
 //! ```
 //!
+//! The same pool exposes awaitable methods for async runtimes. The future
+//! wakes when the dedicated worker thread finishes the call; `Session` still
+//! never leaves the thread that logged in:
+//!
+//! ```no_run
+//! # async fn run() -> gemstone_rs::Result<()> {
+//! use gemstone_rs::{Config, SessionWorkerPool, Value};
+//!
+//! let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+//! assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+//! pool.shutdown()?;
+//! # Ok(())
+//! # }
+//! ```
+//!
 //! The `web` module provides dependency-free JSON health responses that Axum,
 //! Actix, standard-library HTTP servers, and other frameworks can wrap:
 //!
@@ -226,6 +241,26 @@
 //!     let response = web::gemstone_health_response(&pool);
 //!     assert_eq!(response.status, 200);
 //!     pool.shutdown()?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! `py_native` provides a narrow, dependency-free contract that a future
+//! `gemstone-py-native` PyO3 wrapper can expose to Python without duplicating
+//! GCI/session logic:
+//!
+//! ```no_run
+//! use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = PyNativeSession::login_from_env()?;
+//!     assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
+//!     let printed = session.perform_values(
+//!         PyNativeValue::SmallInt(7),
+//!         "printString",
+//!         &[],
+//!     )?;
+//!     println!("{printed:?}");
 //!     Ok(())
 //! }
 //! ```
@@ -292,6 +327,7 @@ pub mod bridge;
 pub mod browser;
 pub mod codegen;
 pub mod profiles;
+pub mod py_native;
 pub mod web;
 pub mod worker;
 
@@ -315,8 +351,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::rc::Rc;
-pub use worker::SessionWorker;
-pub use worker::SessionWorkerPool;
+pub use worker::{SessionWorker, SessionWorkerFuture, SessionWorkerPool};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -1206,9 +1241,30 @@ fn err_is_fatal(err: &Error) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Mutex, MutexGuard};
+    use std::future::Future;
+    use std::sync::{Arc, Mutex, MutexGuard};
+    use std::task::{Context, Poll, Wake, Waker};
+    use std::time::Duration;
 
     static LIVE_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    struct TestWake;
+
+    impl Wake for TestWake {
+        fn wake(self: Arc<Self>) {}
+    }
+
+    fn block_on<F: Future>(future: F) -> F::Output {
+        let waker = Waker::from(Arc::new(TestWake));
+        let mut context = Context::from_waker(&waker);
+        let mut future = Box::pin(future);
+        loop {
+            match Future::poll(future.as_mut(), &mut context) {
+                Poll::Ready(value) => return value,
+                Poll::Pending => std::thread::sleep(Duration::from_millis(1)),
+            }
+        }
+    }
 
     #[test]
     fn config_formats_remote_stone_nrs() {
@@ -1474,6 +1530,39 @@ mod tests {
         pool.commit()?;
         pool.shutdown()?;
         Ok(())
+    }
+
+    #[test]
+    fn live_session_worker_pool_async_facade_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
+        if required_env("GS_USERNAME").is_err() || required_env("GS_PASSWORD").is_err() {
+            return Ok(());
+        }
+
+        block_on(async {
+            let pool = SessionWorkerPool::start(Config::from_env()?, 2)?;
+            assert_eq!(pool.eval_async("3 + 4").await?, Value::SmallInt(7));
+
+            let seven = Oop::from_smallint(7);
+            let printed = pool.perform_oop_async(seven, "printString", &[]).await?;
+            assert_eq!(pool.fetch_string_async(printed).await?, "7");
+
+            let key = live_key("GemStoneRsWorkerPoolAsync");
+            let key_for_write = key.clone();
+            pool.transaction_async(move |session| {
+                let value = session.new_string("async pool")?;
+                session.global_put(&key_for_write, value)
+            })
+            .await?;
+            let stored = pool.global_get_async(&key).await?;
+            assert_eq!(pool.fetch_string_async(stored).await?, "async pool");
+            pool.global_put_async(&key, Oop::NIL).await?;
+            pool.commit_async().await?;
+            pool.shutdown()?;
+            Ok(())
+        })
     }
 
     #[test]

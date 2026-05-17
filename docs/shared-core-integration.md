@@ -8,6 +8,7 @@ gemstone-gci
 
 gemstone-rs
   Safe Rust API: Config, Session, Oop, Value, browser, codegen, BridgeRoot.
+  Also exposes gemstone_rs::py_native as a narrow adapter contract.
 
 gemstone-py-native
   Thin PyO3 wrapper around the Rust core.
@@ -46,11 +47,39 @@ This keeps Python and Rust from growing separate native bridges.
 Python call -> PyO3 wrapper -> gemstone-rs Session -> gemstone-gci -> libgcirpc
 ```
 
+The Rust side now exposes `gemstone_rs::py_native`, which is deliberately
+plain Rust and dependency-free. A PyO3 crate can wrap these types without
+depending on internal `Session` details:
+
+- `PyNativeConfig`
+- `PyNativeConfigSummary`
+- `PyNativeValue`
+- `PyNativeErrorInfo`
+- `PyNativeSession`
+- `capabilities()`
+
+Run the dry-run contract check from a source checkout:
+
+```bash
+cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
+```
+
+Run it against a live stone:
+
+```bash
+export GS_LIB=/opt/gemstone/product/lib
+export GS_STONE=gs64stone
+export GS_USERNAME=DataCurator
+export GS_PASSWORD=swordfish
+cargo run -p gemstone-rs --example python_native_adapter
+```
+
 The wrapper should expose stable operations first:
 
 - `login(config)`
 - `eval(source)`
 - `execute(source)`
+- `value_to_oop(value)`
 - `perform(oop, selector, args)`
 - `commit()`
 - `abort()`
@@ -59,13 +88,44 @@ The wrapper should expose stable operations first:
 Only after that should it expose higher-level browser, codegen, and BridgeRoot
 operations.
 
+## PyO3 Sketch
+
+The future `gemstone-py-native` crate should be thin:
+
+```rust
+use gemstone_rs::py_native::{PyNativeConfig, PyNativeSession};
+
+struct NativeSession {
+    inner: PyNativeSession,
+}
+
+impl NativeSession {
+    fn login(config: PyNativeConfig) -> gemstone_rs::Result<Self> {
+        Ok(Self {
+            inner: PyNativeSession::login(config)?,
+        })
+    }
+
+    fn eval(&mut self, source: &str) -> gemstone_rs::Result<String> {
+        Ok(format!("{:?}", self.inner.eval(source)?))
+    }
+}
+```
+
+Actual PyO3 code should translate `PyNativeValue` into Python objects and
+translate `PyNativeErrorInfo` into Python exceptions. Keep `PyNativeSession`
+unsendable unless a dedicated worker-thread wrapper is used.
+
 ## Migration Plan
 
 1. Keep `gemstone-rs` independent and publishable.
-2. Add a small PyO3 crate that depends on `gemstone-rs`.
+2. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
+   crate.
 3. Replace duplicated native loading code in `gemstone-py-native`.
-4. Run the existing `gemstone-py` live tests through the Rust-backed native path.
-5. Keep pure Python fallback behavior available.
+4. Run the existing `gemstone-py` native backend and live tests through the
+   Rust-backed native path.
+5. Keep pure Python fallback behavior and current sync return behavior
+   backward compatible.
 
 The main design rule: Rust owns the native bridge; Python owns Python
 ergonomics.

@@ -164,11 +164,7 @@ pub async fn health_gemstone(
     headers: HeaderMap,
 ) -> impl IntoResponse {
     let health = state.health.clone();
-    let response =
-        match tokio::task::spawn_blocking(move || health.gemstone_health_response()).await {
-            Ok(response) => response,
-            Err(err) => gemstone_web::JsonResponse::error(500, err.to_string()),
-        };
+    let response = health.gemstone_health_response_async().await;
     json_response_with_route_and_trace(
         response,
         "health.gemstone",
