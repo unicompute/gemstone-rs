@@ -51,6 +51,9 @@ gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples run python_native_adapter --dry-run
+gemstone-rs examples run py_native_capabilities --dry-run
+gemstone-rs examples run py_native_contract_fixture --dry-run
+gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
@@ -61,7 +64,9 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 ```
 
 From a source checkout, `gemstone-rs examples run <name>` can launch the
-selected Cargo example directly. Use `--dry-run` when you only want to verify
+selected Cargo example or CLI-backed example directly. That includes the
+py-native fixture checks, so `examples list`, VS Code, and CI all point at the
+same adapter contract workflows. Use `--dry-run` when you only want to verify
 the command that would run. From an installed CLI, `gemstone-rs examples
 scaffold <name> [path]` writes a standalone Cargo project from embedded
 templates. Current scaffold templates include `quickstart`, `browser`,
@@ -115,6 +120,7 @@ CLI binary is installed and runnable.
 | Async worker facade | `cargo run -p gemstone-rs --example async_worker` | Awaitable `SessionWorkerPool` calls for async runtimes without moving `Session` across threads. |
 | Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | Dependency-free `py_native` contract that a future `gemstone-py-native` PyO3 wrapper can expose and smoke-test. |
 | Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | Checked-in capability and smoke samples for wrapper CI and editor tooling. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run` | Exposes py-native fixture workflows through the same examples catalog as Cargo examples. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |

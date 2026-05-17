@@ -21,6 +21,9 @@ cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemston
 cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
+cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
 node scripts/validate_codegen_schemas.js
 ```
 

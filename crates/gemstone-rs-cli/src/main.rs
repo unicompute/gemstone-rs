@@ -1717,6 +1717,30 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Exercise the dependency-free py_native contract intended for a future gemstone-py-native PyO3 wrapper.",
     },
     ExampleInfo {
+        name: "py_native_capabilities",
+        title: "py-native capabilities",
+        command: "gemstone-rs py-native capabilities",
+        category: "native",
+        requires_live: false,
+        description: "Print the Rust adapter contract that gemstone-py-native should expose.",
+    },
+    ExampleInfo {
+        name: "py_native_contract_fixture",
+        title: "py-native contract fixture",
+        command: "gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json",
+        category: "native",
+        requires_live: false,
+        description: "Validate the checked-in py-native capabilities fixture against the Rust core.",
+    },
+    ExampleInfo {
+        name: "py_native_smoke_fixture",
+        title: "py-native smoke fixture",
+        command: "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json",
+        category: "native",
+        requires_live: false,
+        description: "Validate the checked-in dry-run py-native smoke fixture against the Rust core.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -3711,7 +3735,9 @@ fn feature_json(feature: &FeatureInfo) -> String {
 fn example_run_command(example: &ExampleInfo, extra_args: &[String]) -> String {
     let mut command = example.command.to_string();
     if !extra_args.is_empty() {
-        command.push_str(" --");
+        if example_cli_args(example.name).is_none() {
+            command.push_str(" --");
+        }
         for arg in extra_args {
             command.push(' ');
             command.push_str(&display_command_arg(arg));
@@ -3743,15 +3769,25 @@ fn run_example(
     }
 
     println!("running: {command}");
-    let mut process = ProcessCommand::new("cargo");
-    if let Some(manifest_path) = example_manifest_path(example.name) {
-        process.args(["run", "--manifest-path", manifest_path]);
-    } else {
-        process.args(["run", "-p", "gemstone-rs", "--example", example.name]);
-    }
-    if !extra_args.is_empty() {
-        process.arg("--");
+    let mut process;
+    if let Some(cli_args) = example_cli_args(example.name) {
+        process = ProcessCommand::new(env::current_exe()?);
+        process.args(cli_args);
         process.args(extra_args);
+    } else if let Some(manifest_path) = example_manifest_path(example.name) {
+        process = ProcessCommand::new("cargo");
+        process.args(["run", "--manifest-path", manifest_path]);
+        if !extra_args.is_empty() {
+            process.arg("--");
+            process.args(extra_args);
+        }
+    } else {
+        process = ProcessCommand::new("cargo");
+        process.args(["run", "-p", "gemstone-rs", "--example", example.name]);
+        if !extra_args.is_empty() {
+            process.arg("--");
+            process.args(extra_args);
+        }
     }
 
     let status = process.status()?;
@@ -3762,6 +3798,24 @@ fn run_example(
             "example {} exited with {}",
             example.name, status
         )))
+    }
+}
+
+fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
+    match name {
+        "hello" => Some(&["hello"]),
+        "py_native_capabilities" => Some(&["py-native", "capabilities"]),
+        "py_native_contract_fixture" => Some(&[
+            "py-native",
+            "check",
+            "examples/py-native/gemstone-rs.py-native.json",
+        ]),
+        "py_native_smoke_fixture" => Some(&[
+            "py-native",
+            "check-smoke",
+            "examples/py-native/gemstone-rs.py-native-smoke.json",
+        ]),
+        _ => None,
     }
 }
 
@@ -6021,6 +6075,27 @@ mod tests {
         let py_native = find_example("python_native_adapter").unwrap();
         assert!(py_native.requires_live);
         assert!(py_native.description.contains("py_native contract"));
+
+        let py_native_fixture = find_example("py-native smoke fixture").unwrap();
+        assert!(!py_native_fixture.requires_live);
+        assert_eq!(
+            example_cli_args(py_native_fixture.name),
+            Some(
+                &[
+                    "py-native",
+                    "check-smoke",
+                    "examples/py-native/gemstone-rs.py-native-smoke.json",
+                ][..]
+            )
+        );
+        assert_eq!(
+            example_run_command(py_native_fixture, &[]),
+            "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json"
+        );
+        assert_eq!(
+            example_run_command(py_native_fixture, &["--json".to_string()]),
+            "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json"
+        );
     }
 
     #[test]

@@ -44,6 +44,9 @@ gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run python_native_adapter --dry-run
+gemstone-rs examples run py_native_capabilities --dry-run
+gemstone-rs examples run py_native_contract_fixture --dry-run
+gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
@@ -55,9 +58,10 @@ gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 ```
 
-`gemstone-rs examples run <name>` launches the selected Cargo example from a
-source checkout. `--dry-run` prints the command without compiling or connecting
-to GemStone, which makes it useful for CI and release docs checks. Use
+`gemstone-rs examples run <name>` launches the selected Cargo example or
+CLI-backed example from a source checkout. `--dry-run` prints the command
+without compiling or connecting to GemStone, which makes it useful for CI and
+release docs checks. Use
 `gemstone-rs examples map` when you want the gemstone-py-style feature stream
 view across crates, examples, docs, and parity status. Use `gemstone-rs
 examples scaffold <name> [path]` when you installed the CLI and want a
@@ -100,6 +104,7 @@ sanity check after install.
 | Async worker facade | `cargo run -p gemstone-rs --example async_worker` | You want awaitable worker-pool calls without moving `Session` across threads. |
 | Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | You want to inspect and smoke-test the Rust contract that a future `gemstone-py-native` PyO3 wrapper should expose. |
 | Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | You want stable capability and smoke JSON samples for wrapper CI. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
