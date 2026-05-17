@@ -87,6 +87,23 @@ gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
 ```
 
+To create a starter PyO3 wrapper crate from the installed CLI:
+
+```bash
+gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
+cd ./gemstone-py-native-starter
+cargo run
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install maturin pytest
+maturin develop
+pytest
+```
+
+The scaffold writes `pyproject.toml`, `src/lib.rs`, `PYTHON.md`, and a Python
+smoke test. It is deliberately thin: Python calls PyO3 functions/classes, and
+those delegate into `gemstone_rs::py_native`.
+
 Run the dry-run contract check from a source checkout when you also want to
 exercise the example binary:
 
@@ -149,12 +166,14 @@ unsendable unless a dedicated worker-thread wrapper is used.
 ## Migration Plan
 
 1. Keep `gemstone-rs` independent and publishable.
-2. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
+2. Scaffold or adapt the starter PyO3 crate with `gemstone-rs examples
+   scaffold py_native_pyo3_adapter`.
+3. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
    crate.
-3. Replace duplicated native loading code in `gemstone-py-native`.
-4. Run the existing `gemstone-py` native backend and live tests through the
+4. Replace duplicated native loading code in `gemstone-py-native`.
+5. Run the existing `gemstone-py` native backend and live tests through the
    Rust-backed native path.
-5. Keep pure Python fallback behavior and current sync return behavior
+6. Keep pure Python fallback behavior and current sync return behavior
    backward compatible.
 
 The main design rule: Rust owns the native bridge; Python owns Python

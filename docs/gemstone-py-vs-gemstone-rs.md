@@ -185,7 +185,9 @@ services can await GemStone work without moving `Session` across threads.
 Recent shared-core batch status: Rust-side contract added. The new
 `gemstone_rs::py_native` module gives a future `gemstone-py-native` PyO3 crate
 plain Rust config, value, error, capability, and session wrappers. The
-remaining work is Python-side wiring and compatibility testing in
+installed CLI can now scaffold a starter PyO3 crate with
+`gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter`.
+The remaining work is Python-side wiring and compatibility testing in
 `gemstone-py`.
 
 ## Current Gap Analysis
@@ -248,6 +250,8 @@ clean boundary:
 
 - `gemstone-rs` owns the direct Rust/GCI interface and safe Rust API.
 - `gemstone-py-native` can become a thin PyO3 layer over the Rust core.
+- `gemstone-rs examples scaffold py_native_pyo3_adapter` provides the starter
+  wrapper shape for that migration.
 - `gemstone-py` remains the Python API, examples, and Python web integration.
 - The Python and Rust explorers can share concepts and eventually converge on
   common codegen workflows.

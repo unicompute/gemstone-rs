@@ -1941,10 +1941,10 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "11",
         title: "Shared native core",
         crates: "gemstone-gci, gemstone-rs::py_native, future gemstone-py-native wrapper",
-        examples: "python_native_adapter, shared-core integration plan",
+        examples: "python_native_adapter, py_native_pyo3_adapter scaffold, shared-core integration plan",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Rust-side PyO3 adapter contract exists; gemstone-py-native still needs to wrap it",
+        status: "Rust-side PyO3 adapter contract and starter scaffold exist; gemstone-py-native still needs to wrap it",
     },
 ];
 
@@ -2483,6 +2483,37 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         main_rs: include_str!("../templates/session_worker_pool.rs"),
         extra_dependencies: "",
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
+    },
+    ScaffoldTemplate {
+        name: "py_native_pyo3_adapter",
+        package_name: "gemstone-py-native-starter",
+        title: "gemstone-py-native PyO3 Starter",
+        description: "Thin PyO3 adapter scaffold over gemstone_rs::py_native for a future gemstone-py-native package.",
+        main_rs: include_str!("../templates/py_native_pyo3_adapter.rs"),
+        extra_dependencies: r#"pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[lib]
+name = "gemstone_py_native"
+crate-type = ["cdylib", "rlib"]
+"#,
+        extra_files: &[
+            ScaffoldFile {
+                path: "src/lib.rs",
+                source: include_str!("../templates/py_native_pyo3_adapter_lib.rs"),
+            },
+            ScaffoldFile {
+                path: "pyproject.toml",
+                source: include_str!("../templates/py_native_pyo3_adapter_pyproject.toml"),
+            },
+            ScaffoldFile {
+                path: "PYTHON.md",
+                source: include_str!("../templates/py_native_pyo3_adapter_python.md"),
+            },
+            ScaffoldFile {
+                path: "tests/test_smoke.py",
+                source: include_str!("../templates/py_native_pyo3_adapter_smoke_test.py"),
+            },
+        ],
     },
     ScaffoldTemplate {
         name: "axum_service",
@@ -3841,6 +3872,9 @@ fn find_scaffold_template(name: &str) -> Option<&'static ScaffoldTemplate> {
         "generated-mapping" | "generated_mapping" => "generated_mapping_app",
         "generated-wrapper" | "generated_wrapper" | "wrapper" => "generated_wrapper_app",
         "http" | "http-service" | "http_service" => "http_service",
+        "py-native" | "py_native" | "pynative" | "python-native" | "python_native" | "pyo3" => {
+            "py_native_pyo3_adapter"
+        }
         "pool" | "session-worker-pool" | "session_worker" | "session-worker" => {
             "session_worker_pool"
         }
@@ -6269,6 +6303,7 @@ mod tests {
             "generated_mapping_app",
             "http_service",
             "session_worker_pool",
+            "py_native_pyo3_adapter",
             "axum_service",
             "actix_service",
         ] {
@@ -6310,6 +6345,10 @@ mod tests {
             find_scaffold_template("profiles").unwrap().name,
             "profile_codegen_workflow"
         );
+        assert_eq!(
+            find_scaffold_template("py-native").unwrap().name,
+            "py_native_pyo3_adapter"
+        );
 
         let target =
             std::env::temp_dir().join(format!("gemstone-rs-scaffold-test-{}", std::process::id()));
@@ -6339,6 +6378,12 @@ mod tests {
         assert!(actix_toml.contains(r#"actix-web = "4""#));
         assert!(actix_toml.contains(r#"gemstone-rs-actix = "0.2.2""#));
 
+        let py_native = find_scaffold_template("py_native_pyo3_adapter").unwrap();
+        let py_native_toml = scaffold_cargo_toml(py_native);
+        assert!(py_native_toml.contains(r#"name = "gemstone-py-native-starter""#));
+        assert!(py_native_toml.contains(r#"pyo3 = { version = "0.22""#));
+        assert!(py_native_toml.contains(r#"name = "gemstone_py_native""#));
+
         let err = scaffold_example_project(template, &target, false)
             .unwrap_err()
             .to_string();
@@ -6359,6 +6404,23 @@ mod tests {
         let profile_main = fs::read_to_string(profile_target.join("src").join("main.rs")).unwrap();
         assert!(profile_main.contains("profiles::load_file"));
         let _ = fs::remove_dir_all(&profile_target);
+
+        let py_native_target = target.with_file_name(format!(
+            "gemstone-rs-py-native-scaffold-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&py_native_target);
+        scaffold_example_project(py_native, &py_native_target, false).unwrap();
+        assert!(py_native_target.join("pyproject.toml").exists());
+        assert!(py_native_target.join("PYTHON.md").exists());
+        assert!(py_native_target
+            .join("tests")
+            .join("test_smoke.py")
+            .exists());
+        let lib_rs = fs::read_to_string(py_native_target.join("src").join("lib.rs")).unwrap();
+        assert!(lib_rs.contains("PyNativeSession::login_from_env"));
+        assert!(lib_rs.contains("#[pyclass(unsendable)]"));
+        let _ = fs::remove_dir_all(&py_native_target);
         let _ = fs::remove_dir_all(&target);
     }
 

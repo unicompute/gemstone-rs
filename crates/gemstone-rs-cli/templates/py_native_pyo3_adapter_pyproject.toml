@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "gemstone-py-native-starter"
+version = "0.1.0"
+description = "Starter PyO3 adapter over gemstone-rs::py_native"
+requires-python = ">=3.9"
+
+[tool.maturin]
+module-name = "gemstone_py_native"
+features = ["pyo3/extension-module"]

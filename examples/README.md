@@ -54,6 +54,7 @@ gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 ```
@@ -67,9 +68,11 @@ view across crates, examples, docs, and parity status. Use `gemstone-rs
 examples scaffold <name> [path]` when you installed the CLI and want a
 standalone Cargo project instead of a source-checkout example. Useful aliases
 include `bridge`, `mapping`, `derive`, `codegen`, `discover`, `profiles`,
-`wrapper`, `framework`, `axum`, `actix`, and `http`. Some scaffolds write
-supporting project files as well as Rust source; `profile_codegen_workflow` includes
-`gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json`.
+`wrapper`, `py-native`, `pyo3`, `framework`, `axum`, `actix`, and `http`.
+Some scaffolds write supporting project files as well as Rust source;
+`profile_codegen_workflow` includes `gemstone-rs.codegen` and
+`gemstone-rs.codegen-profiles.json`, while `py_native_pyo3_adapter` includes a
+`pyproject.toml`, `src/lib.rs`, and Python smoke tests for a thin PyO3 wrapper.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -91,6 +94,7 @@ sanity check after install.
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
 | Scaffold worker pool | `gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool` | You want a standalone bounded SessionWorkerPool project from the installed CLI. |
+| Scaffold PyO3 adapter | `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter` | You want a starter `gemstone-py-native` crate that wraps `gemstone_rs::py_native` with PyO3. |
 | Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | You want a standalone Axum health-service project from the installed CLI. |
 | Scaffold Actix service | `gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service` | You want a standalone Actix Web health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |
@@ -173,6 +177,7 @@ gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
+gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 gemstone-rs examples run axum_service --dry-run -- --routes
