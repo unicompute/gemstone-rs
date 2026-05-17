@@ -109,7 +109,9 @@ gemstone-rs-explorer --help
 ```
 
 The py-native JSON fixture is checked in at
-`examples/py-native/gemstone-rs.py-native.json` for downstream wrapper CI.
+`examples/py-native/gemstone-rs.py-native.json`, and the dry-run smoke fixture
+is checked in at `examples/py-native/gemstone-rs.py-native-smoke.json`, for
+downstream wrapper CI.
 Validate it with:
 
 ```bash

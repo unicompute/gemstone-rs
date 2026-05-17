@@ -12,6 +12,7 @@ const schemaNames = [
   "gemstone-rs.profile-check.schema.json",
   "gemstone-rs.compare.schema.json",
   "gemstone-rs.py-native.schema.json",
+  "gemstone-rs.py-native-smoke.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -104,6 +105,24 @@ assert.deepStrictEqual(
   pyNativeCapabilities,
   pyNativeFixture,
   "py-native capabilities output drifted from examples/py-native/gemstone-rs.py-native.json"
+);
+const pyNativeSmokeFixture = readJson("examples/py-native/gemstone-rs.py-native-smoke.json");
+assertPyNativeSmoke(pyNativeSmokeFixture, { dryRun: true });
+const pyNativeSmokeOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "smoke", "--dry-run", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativeSmoke = JSON.parse(lastJsonLine(pyNativeSmokeOutput));
+assertPyNativeSmoke(pyNativeSmoke, { dryRun: true });
+assert.deepStrictEqual(
+  pyNativeSmoke,
+  pyNativeSmokeFixture,
+  "py-native smoke output drifted from examples/py-native/gemstone-rs.py-native-smoke.json"
 );
 
 for (const args of [
@@ -299,6 +318,36 @@ function assertPyNativeCapabilities(value) {
       "number",
       `py-native.oopConstants.${field}`
     );
+  }
+}
+
+function assertPyNativeSmoke(value, options = {}) {
+  assert.strictEqual(typeof value.ok, "boolean", "py-native-smoke.ok");
+  assert.strictEqual(typeof value.dryRun, "boolean", "py-native-smoke.dryRun");
+  if (options.dryRun !== undefined) {
+    assert.strictEqual(value.dryRun, options.dryRun, "py-native-smoke.dryRun expected value");
+  }
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-smoke.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-smoke.contractVersion");
+  assert(Array.isArray(value.steps), "py-native-smoke.steps");
+  assert(value.steps.length > 0, "py-native-smoke.steps should not be empty");
+
+  const names = new Set();
+  for (const [index, step] of value.steps.entries()) {
+    assert.strictEqual(typeof step.name, "string", `py-native-smoke.steps[${index}].name`);
+    assert(!names.has(step.name), `py-native-smoke.steps duplicate ${step.name}`);
+    names.add(step.name);
+    assert.strictEqual(typeof step.ok, "boolean", `py-native-smoke.steps[${index}].ok`);
+    assert.strictEqual(typeof step.detail, "string", `py-native-smoke.steps[${index}].detail`);
+  }
+  for (const required of [
+    "capabilities",
+    "oop_constants",
+    "value_conversion",
+    "config_error_mapping",
+    "structured_error_mapping",
+  ]) {
+    assert(names.has(required), `py-native-smoke.steps missing ${required}`);
   }
 }
 

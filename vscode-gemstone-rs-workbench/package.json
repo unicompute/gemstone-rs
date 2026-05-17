@@ -403,6 +403,13 @@
           "*.gemstone-rs.py-native.json"
         ],
         "url": "./schemas/gemstone-rs.py-native.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native-smoke.json",
+          "*.gemstone-rs.py-native-smoke.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-smoke.schema.json"
       }
     ],
     "configuration": {

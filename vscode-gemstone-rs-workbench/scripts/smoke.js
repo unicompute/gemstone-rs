@@ -15,6 +15,7 @@ const schemaNames = [
   "gemstone-rs.profile-check.schema.json",
   "gemstone-rs.compare.schema.json",
   "gemstone-rs.py-native.schema.json",
+  "gemstone-rs.py-native-smoke.schema.json",
 ];
 
 function includes(list, value) {
@@ -284,6 +285,12 @@ assert(
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native"))
   ),
   "package.json should contribute JSON validation for py-native capability reports"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-smoke"))
+  ),
+  "package.json should contribute JSON validation for py-native smoke reports"
 );
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],
