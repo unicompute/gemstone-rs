@@ -405,5 +405,7 @@ make vscode-package
 The embedded webview now covers the main Codegen, profile, setup, comparison,
 generated-output editing, BridgeRoot inspection, live browsing, source preview,
 open-file loops, nested BridgeValue rendering, and committed Marketplace/GitHub
-visual assets. Next polish should focus on object-mapping-aware BridgeRoot
-panels and relationship/identity-cache views.
+visual assets. Shape reports now also show repeated OOP identity groups, so
+users can see every relationship path pointing at the same GemStone object.
+Next polish should focus on deeper generated-file editing flows and richer live
+object navigation.

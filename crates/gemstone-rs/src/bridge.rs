@@ -91,8 +91,15 @@ impl BridgeValue {
 
     pub fn shape_report(&self) -> BridgeValueShapeReport {
         let mut report = BridgeValueShapeReport::default();
-        let mut oop_identities = BTreeMap::new();
-        report.visit("value".to_string(), None, 0, self, &mut oop_identities);
+        let mut identity_groups = BTreeMap::new();
+        report.visit("value".to_string(), None, 0, self, &mut identity_groups);
+        report.identity_groups = identity_groups
+            .into_values()
+            .filter(|group| group.paths.len() > 1)
+            .collect();
+        report
+            .identity_groups
+            .sort_by_key(|group| group.identity_id);
         report
     }
 
@@ -214,6 +221,7 @@ pub struct BridgeValueShapeReport {
     pub nil_nodes: usize,
     pub max_depth: usize,
     pub nodes: Vec<BridgeValueShapeNode>,
+    pub identity_groups: Vec<BridgeValueIdentityGroup>,
 }
 
 impl BridgeValueShapeReport {
@@ -223,7 +231,7 @@ impl BridgeValueShapeReport {
         key_type: Option<BridgeKeyType>,
         depth: usize,
         value: &BridgeValue,
-        oop_identities: &mut BTreeMap<u64, usize>,
+        identity_groups: &mut BTreeMap<u64, BridgeValueIdentityGroup>,
     ) {
         self.total_nodes += 1;
         self.max_depth = self.max_depth.max(depth);
@@ -267,12 +275,20 @@ impl BridgeValueShapeReport {
                 self.opaque_oops += 1;
                 let raw_oop = oop.raw();
                 let (identity_id, repeated_identity) =
-                    if let Some(identity_id) = oop_identities.get(&raw_oop).copied() {
+                    if let Some(group) = identity_groups.get_mut(&raw_oop) {
                         self.repeated_oop_refs += 1;
-                        (identity_id, true)
+                        group.paths.push(path.clone());
+                        (group.identity_id, true)
                     } else {
-                        let identity_id = oop_identities.len() + 1;
-                        oop_identities.insert(raw_oop, identity_id);
+                        let identity_id = identity_groups.len() + 1;
+                        identity_groups.insert(
+                            raw_oop,
+                            BridgeValueIdentityGroup {
+                                identity_id,
+                                oop: *oop,
+                                paths: vec![path.clone()],
+                            },
+                        );
                         self.unique_oops += 1;
                         (identity_id, false)
                     };
@@ -323,7 +339,7 @@ impl BridgeValueShapeReport {
                         Some(BridgeKeyType::String),
                         depth + 1,
                         value,
-                        oop_identities,
+                        identity_groups,
                     );
                 }
             }
@@ -334,7 +350,7 @@ impl BridgeValueShapeReport {
                         Some(key.key_type),
                         depth + 1,
                         value,
-                        oop_identities,
+                        identity_groups,
                     );
                 }
             }
@@ -345,7 +361,7 @@ impl BridgeValueShapeReport {
                         None,
                         depth + 1,
                         value,
-                        oop_identities,
+                        identity_groups,
                     );
                 }
             }
@@ -370,6 +386,13 @@ pub struct BridgeValueShapeNode {
     pub identity_id: Option<usize>,
     pub repeated_identity: bool,
     pub note: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BridgeValueIdentityGroup {
+    pub identity_id: usize,
+    pub oop: Oop,
+    pub paths: Vec<String>,
 }
 
 fn bridge_shape_key_path(parent: &str, key: &str, key_type: BridgeKeyType) -> String {
@@ -1831,6 +1854,14 @@ mod tests {
         assert_eq!(report.opaque_oops, 2);
         assert_eq!(report.unique_oops, 1);
         assert_eq!(report.repeated_oop_refs, 1);
+        assert_eq!(
+            report.identity_groups,
+            vec![BridgeValueIdentityGroup {
+                identity_id: 1,
+                oop: Oop(1234),
+                paths: vec!["value.items[2]".to_string(), "value.items[3]".to_string()],
+            }]
+        );
         assert_eq!(report.nil_nodes, 1);
         assert_eq!(report.max_depth, 3);
         assert!(report.nodes.iter().any(|node| {

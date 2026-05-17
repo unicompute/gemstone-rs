@@ -221,6 +221,8 @@ also use equals-style options such as `--root=DemoRoot`,
 `--key-type=Symbol`, and `--type=SmallInt`.
 `bridge shape` summarizes relationship paths, key policy, node counts, nil
 nodes, opaque OOPs, report-local identity ids, and repeated opaque references.
+When the same opaque object appears in more than one place, the output also
+groups those paths under `repeated identities`.
 `bridge mapping-preview` reads a live BridgeRoot value as a nested
 `BridgeValue` tree and infers a reviewable `BridgeMapped` codegen config.
 

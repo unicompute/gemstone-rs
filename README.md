@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**11 batches**, roughly **66-115 hours** total. Use
+**10 batches**, roughly **64-111 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -696,5 +696,8 @@ The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
 recent config history, named local profiles, diff detail, local field
 persistence, project profile file load/save, editable generated-output webview,
 browser fallback paths, nested BridgeValue rendering, and committed
-Marketplace/GitHub visuals are now wired. Next explorer work should focus on
-richer object-mapping-aware BridgeRoot panels over the stable local API.
+Marketplace/GitHub visuals are now wired. Shape reports now include repeated
+OOP identity groups, so the explorer can show relationship paths for the same
+GemStone object across a nested payload. Next explorer work should focus on
+deeper generated-file editing and richer live object navigation over the stable
+local API.

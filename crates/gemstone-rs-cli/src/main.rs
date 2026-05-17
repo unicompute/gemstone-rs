@@ -1466,13 +1466,14 @@ fn print_bridge_shape_report(value: &BridgeValue) {
     println!("  nil_nodes: {}", report.nil_nodes);
     println!("  max_depth: {}", report.max_depth);
     println!("relationships:");
-    for node in report.nodes {
+    for node in &report.nodes {
         let key_type = node
             .key_type
             .map(|key_type| key_type.config_name())
             .unwrap_or("-");
         let note = node
             .note
+            .as_ref()
             .map(|note| format!("\tnote={note}"))
             .unwrap_or_default();
         let oop = node
@@ -1500,6 +1501,17 @@ fn print_bridge_shape_report(value: &BridgeValue) {
             repeated,
             note
         );
+    }
+    if !report.identity_groups.is_empty() {
+        println!("repeated identities:");
+        for group in &report.identity_groups {
+            println!(
+                "  identity_id={}\toop={}\tpaths={}",
+                group.identity_id,
+                group.oop.raw(),
+                group.paths.join(", ")
+            );
+        }
     }
 }
 
@@ -1830,7 +1842,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "bridge_root_mapping, derive_mapping, bridge_value_inspection, generated_mapping_app",
         docs: "docs/object-mapping.md, docs/cookbook.md",
         gemstone_py_reference: "SmalltalkBridge, PersistentRoot, facade examples",
-        status: "Rust has typed mapping, derive, nested dynamic BridgeValue read-back, and path-aware diagnostics; transparent object model remains future work",
+        status: "Rust has typed mapping, derive, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; a fully transparent object model remains future work",
     },
     FeatureInfo {
         stream: "6",
@@ -1922,7 +1934,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Explorer and VS Code",
         gemstone_py: "More mature database explorer and workbench product flow",
-        gemstone_rs: "Local explorer, command workbench, embedded webview with structured setup/profile/codegen/diff/BridgeRoot panels, and CLI-backed codegen workflow",
+        gemstone_rs: "Local explorer, command workbench, embedded webview with structured setup/profile/codegen/diff/BridgeRoot panels, repeated-OOP identity groups, and CLI-backed codegen workflow",
         recommendation: "Python explorer remains the product reference; Rust explorer is the backend proving ground",
     },
     ComparisonInfo {
@@ -1987,16 +1999,16 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 4,
         project_score: 4,
         leader: "tie",
-        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, derive support, nested dynamic BridgeValue read-back, and path-aware diagnostics; gemstone-py remains the broader reference.",
-        next_action: "Improve relationship mapping, identity-cache behavior, live discovery, generated wrapper tests, and transparent object-model experiments.",
+        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, derive support, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; gemstone-py remains the broader reference.",
+        next_action: "Improve live discovery, generated wrapper tests, typed helper polish, and transparent object-model experiments.",
     },
     ParityInfo {
         area: "Explorer and VS Code",
         gemstone_py_score: 5,
         project_score: 4,
         leader: "gemstone-py",
-        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, nested BridgeValue rendering, and committed Marketplace/GitHub visuals.",
-        next_action: "Turn nested BridgeValue rendering into object-mapping-aware BridgeRoot panels and relationship drill-downs.",
+        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, nested BridgeValue rendering, repeated-OOP identity groups, and committed Marketplace/GitHub visuals.",
+        next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -2029,8 +2041,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, nested BridgeValue rendering, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. They still need object-mapping-aware BridgeRoot panels and relationship/identity drill-downs.",
-        next_action: "Turn nested BridgeValue rendering into object-mapping-aware BridgeRoot panels.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, nested BridgeValue rendering, repeated-OOP identity groups, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. It still needs more polished editing flows and richer live object navigation.",
+        next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -2070,14 +2082,6 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
 const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
-        focus: "Object mapping maturity",
-        hours_min: 2,
-        hours_max: 4,
-        outcome: "Improve richer BridgeRoot panels and transparent object-model experiments.",
-        verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
-    },
-    BatchInfo {
-        number: 2,
         focus: "Codegen live discovery and generated tests",
         hours_min: 8,
         hours_max: 14,
@@ -2085,7 +2089,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
     },
     BatchInfo {
-        number: 3,
+        number: 2,
         focus: "Async facade and web framework breadth",
         hours_min: 2,
         hours_max: 4,
@@ -2093,7 +2097,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
     },
     BatchInfo {
-        number: 4,
+        number: 3,
         focus: "Shared core with gemstone-py-native",
         hours_min: 8,
         hours_max: 14,
@@ -2101,7 +2105,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
     },
     BatchInfo {
-        number: 5,
+        number: 4,
         focus: "Release and live CI hardening",
         hours_min: 4,
         hours_max: 7,
@@ -5792,16 +5796,16 @@ mod tests {
 
     #[test]
     fn comparison_batch_plans_are_actionable() {
-        assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 4);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (24, 43));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (22, 39));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
-                total_batches: 11,
-                hours_min: 66,
-                hours_max: 115,
+                total_batches: 10,
+                hours_min: 64,
+                hours_max: 111,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5822,11 +5826,11 @@ mod tests {
         )
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
-            .contains(r#""totalBatches":5"#));
+            .contains(r#""totalBatches":4"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":5,"hoursMin":24,"hoursMax":43}"#));
+            .contains(r#""remaining":{"totalBatches":4,"hoursMin":22,"hoursMax":39}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -5864,7 +5868,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("BridgeRoot panels")));
+                && gap.next_action.contains("live object navigation")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 

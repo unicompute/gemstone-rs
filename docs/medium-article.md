@@ -488,6 +488,8 @@ relationships:
   value.items[1].sku      kind=string    key_type=String
   value.items[2]          kind=oop       identity_id=1
   value.items[3]          kind=oop       identity_id=1 repeated_identity=true
+repeated identities:
+  identity_id=1 oop=1234 paths=value.items[2], value.items[3]
 ```
 
 `mapping-preview` is the bridge between exploration and codegen. It reads the

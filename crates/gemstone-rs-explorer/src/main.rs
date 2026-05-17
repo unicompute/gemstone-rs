@@ -655,15 +655,15 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         gemstone_py_score: 30,
         project_score: 27,
         max_score: 35,
-        total_batches: 5,
-        hours_min: 24,
-        hours_max: 43,
+        total_batches: 4,
+        hours_min: 22,
+        hours_max: 39,
         next_number: 1,
-        next_focus: "Object mapping maturity",
-        next_hours_min: 2,
-        next_hours_max: 4,
-        next_outcome: "Improve richer BridgeRoot panels and transparent object-model experiments.",
-        next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
+        next_focus: "Codegen live discovery and generated tests",
+        next_hours_min: 8,
+        next_hours_max: 14,
+        next_outcome: "Discover richer GemStone class/method metadata, generate typed wrappers/tests, and improve explain/diff output for editors.",
+        next_verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
         top_gap_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
@@ -704,7 +704,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":66,"hoursMax":115,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":10,"hoursMin":64,"hoursMax":111,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -1136,8 +1136,27 @@ fn bridge_shape_json(value: &BridgeValue) -> String {
         ));
     }
     nodes.push(']');
+    let mut identity_groups = String::from("[");
+    for (index, group) in report.identity_groups.iter().enumerate() {
+        if index > 0 {
+            identity_groups.push(',');
+        }
+        let paths = group
+            .paths
+            .iter()
+            .map(|path| format!(r#""{}""#, escape_json(path)))
+            .collect::<Vec<_>>()
+            .join(",");
+        identity_groups.push_str(&format!(
+            r#"{{"identityId":{},"oop":{},"paths":[{}]}}"#,
+            group.identity_id,
+            group.oop.raw(),
+            paths
+        ));
+    }
+    identity_groups.push(']');
     format!(
-        r#"{{"totalNodes":{},"scalarNodes":{},"dictionaryNodes":{},"arrayNodes":{},"opaqueOops":{},"uniqueOops":{},"repeatedOopRefs":{},"nilNodes":{},"maxDepth":{},"nodes":{}}}"#,
+        r#"{{"totalNodes":{},"scalarNodes":{},"dictionaryNodes":{},"arrayNodes":{},"opaqueOops":{},"uniqueOops":{},"repeatedOopRefs":{},"nilNodes":{},"maxDepth":{},"nodes":{},"identityGroups":{}}}"#,
         report.total_nodes,
         report.scalar_nodes,
         report.dictionary_nodes,
@@ -1147,7 +1166,8 @@ fn bridge_shape_json(value: &BridgeValue) -> String {
         report.repeated_oop_refs,
         report.nil_nodes,
         report.max_depth,
-        nodes
+        nodes,
+        identity_groups
     )
 }
 
@@ -2845,6 +2865,18 @@ function renderBridgeShape(data) {
       '<td>' + Number(node.childCount || 0) + oop + identity + note + '</td>' +
     '</tr>';
   }).join('');
+  const identityRows = (shape.identityGroups || []).map(group => {
+    const paths = (group.paths || []).map(path => '<code>' + escapeHtml(path) + '</code>').join('<br>');
+    return '<tr>' +
+      '<td>identity #' + Number(group.identityId || 0) + '</td>' +
+      '<td><code>' + escapeHtml(group.oop || '-') + '</code></td>' +
+      '<td>' + paths + '</td>' +
+    '</tr>';
+  }).join('');
+  const identityTable = identityRows
+    ? '<div class="pane-title">Repeated Object References</div>' +
+      '<table class="profile-table"><thead><tr><th>Identity</th><th>OOP</th><th>Paths</th></tr></thead><tbody>' + identityRows + '</tbody></table>'
+    : '';
   detail.className = 'detail profile-check';
   detail.innerHTML = '<div class="pane-title">BridgeRoot Shape Report</div>' +
     '<div class="bridge-card">' +
@@ -2860,6 +2892,7 @@ function renderBridgeShape(data) {
         ' unique OOPs, ' + Number(shape.repeatedOopRefs || 0) +
         ' repeated refs, ' + Number(shape.nilNodes || 0) + ' nil</p>' +
     '</div>' +
+    identityTable +
     '<table class="profile-table"><thead><tr><th>Path</th><th>Kind</th><th>Key Type</th><th>Depth</th><th>Children / Note</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 function renderBridgeValueNode(value, label) {
@@ -3800,11 +3833,11 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
-        assert!(response.body.contains(r#""totalBatches":5"#));
-        assert!(response.body.contains(r#""hoursMin":24"#));
-        assert!(response.body.contains(r#""hoursMax":43"#));
+        assert!(response.body.contains(r#""totalBatches":4"#));
+        assert!(response.body.contains(r#""hoursMin":22"#));
+        assert!(response.body.contains(r#""hoursMax":39"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
-        assert!(response.body.contains("Object mapping maturity"));
+        assert!(response.body.contains("Codegen live discovery"));
         assert!(response
             .body
             .contains("gemstone-rs compare gemstone-py --batches"));
@@ -3818,9 +3851,9 @@ mod tests {
         );
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
-        assert!(response.body.contains(r#""totalBatches":11"#));
-        assert!(response.body.contains(r#""hoursMin":66"#));
-        assert!(response.body.contains(r#""hoursMax":115"#));
+        assert!(response.body.contains(r#""totalBatches":10"#));
+        assert!(response.body.contains(r#""hoursMin":64"#));
+        assert!(response.body.contains(r#""hoursMax":111"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3932,6 +3965,9 @@ mod tests {
         assert!(json.contains(r#""repeatedOopRefs":1"#));
         assert!(json.contains(r#""oop":1234,"identityId":1,"repeatedIdentity":false"#));
         assert!(json.contains(r#""oop":1234,"identityId":1,"repeatedIdentity":true"#));
+        assert!(json.contains(
+            r#""identityGroups":[{"identityId":1,"oop":1234,"paths":["value.items[2]","value.items[3]"]}]"#
+        ));
         assert!(json.contains(r#""path":"value.customer.#name""#));
         assert!(json.contains(r#""path":"value.items[1].sku""#));
         assert!(json.contains("Option&lt;T&gt;") || json.contains("Option<T>"));

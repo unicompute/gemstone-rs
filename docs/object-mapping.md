@@ -338,6 +338,11 @@ kinds, key policy, child counts, opaque OOPs, report-local identity ids,
 repeated opaque references, and nil nodes. It is meant for relationship mapping
 review before generating typed wrappers.
 
+When the same opaque OOP appears more than once, the report also includes an
+identity group. That gives the CLI, explorer, and VS Code webview a stable way
+to show relationship paths such as `value.items[2]` and `value.items[3]` both
+pointing at the same GemStone object.
+
 You can turn the inspected shape into a starter codegen config before writing a
 typed struct by hand:
 
