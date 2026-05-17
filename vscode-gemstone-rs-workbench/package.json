@@ -77,6 +77,7 @@
     "onCommand:gemstoneRs.openExplorerWebview",
     "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs",
+    "onCommand:gemstoneRs.validatePyNativeContract",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
   ],
@@ -312,6 +313,10 @@
         "title": "GemStone RS: Open Codegen Docs"
       },
       {
+        "command": "gemstoneRs.validatePyNativeContract",
+        "title": "GemStone RS: Validate py-native Contract"
+      },
+      {
         "command": "gemstoneRs.compareGemstonePyStatus",
         "title": "GemStone RS: Compare with gemstone-py"
       },
@@ -432,6 +437,11 @@
           "type": "string",
           "default": "gemstone-rs.codegen-profiles.json",
           "description": "Default gemstone-rs project profile JSON path."
+        },
+        "gemstoneRs.pyNativeFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native.json",
+          "description": "Default py-native contract fixture checked by gemstone-rs py-native check."
         },
         "gemstoneRs.bridgeRoot": {
           "type": "string",

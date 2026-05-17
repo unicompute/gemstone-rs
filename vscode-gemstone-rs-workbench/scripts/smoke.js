@@ -39,6 +39,7 @@ const requiredCommands = [
   "gemstoneRs.openProjectProfiles",
   "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
+  "gemstoneRs.validatePyNativeContract",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
@@ -178,6 +179,7 @@ assert(readme.includes("Codegen Explain Profile"), "README should mention profil
 assert(readme.includes("Open Codegen Config"), "README should mention opening the codegen config");
 assert(readme.includes("Open Project Profiles"), "README should mention opening project profiles");
 assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
+assert(readme.includes("Validate py-native Contract"), "README should mention py-native contract validation");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
@@ -199,6 +201,14 @@ assert(
 assert(
   extensionSource.includes('"profile", "check", "--json"'),
   "profile checking should use JSON output"
+);
+assert(
+  extensionSource.includes('"py-native", "check", fixturePath, "--json"'),
+  "py-native contract validation should use JSON output"
+);
+assert(
+  extensionSource.includes("pyNativeFixture"),
+  "Workbench should expose a py-native fixture setting"
 );
 assert(
   extensionSource.includes('"compare", target, "--status", "--json"'),

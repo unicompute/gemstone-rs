@@ -193,8 +193,10 @@ checkout.
 5. Run `GemStone RS: Codegen Explain`.
 6. Run `GemStone RS: Open Codegen Config` or `GemStone RS: Open Project Profiles`
    when you want to edit configured files in VS Code.
-7. Run `GemStone RS: Open Generated Output`.
-8. Run `GemStone RS: Codegen Generate`.
+7. Run `GemStone RS: Validate py-native Contract` when you want to confirm the
+   checked-in Rust adapter contract for `gemstone-py-native`.
+8. Run `GemStone RS: Open Generated Output`.
+9. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -207,6 +209,10 @@ copy the raw JSON, open the JSON in an editor, or open the config file.
 directly from settings, which is useful from the webview and command palette.
 `Open Generated Output` uses the same structured explain output to open the
 current generated wrapper file directly.
+`Validate py-native Contract` runs
+`gemstone-rs py-native check --json` against `gemstoneRs.pyNativeFixture`, then
+renders the path, status, and contract version in the output panel with actions
+to copy the report or open the fixture.
 
 Inside `GemStone RS: Open Explorer Webview`, the Codegen buttons use the same
 config/profile settings but keep the review loop in one pane. `Preview/Edit

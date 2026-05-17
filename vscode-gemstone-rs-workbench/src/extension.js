@@ -70,6 +70,7 @@ function activate(context) {
   register(context, "gemstoneRs.openExplorerWebview", openExplorerWebview);
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
+  register(context, "gemstoneRs.validatePyNativeContract", validatePyNativeContract);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -203,6 +204,7 @@ class GemStoneTreeProvider {
         actionNode("Resolve Project Profile", "gemstoneRs.resolveProjectProfile"),
         actionNode("Check Project Profiles", "gemstoneRs.checkProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
+        actionNode("Validate py-native Contract", "gemstoneRs.validatePyNativeContract"),
       ];
     }
 
@@ -1518,6 +1520,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.previewBridgeRoot",
     "gemstoneRs.listBridgeRootKeys",
     "gemstoneRs.openCodegenDocs",
+    "gemstoneRs.validatePyNativeContract",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1657,6 +1660,39 @@ async function checkProjectProfiles() {
   await handleProfileCheckAction(action, profilePath, reportText);
 }
 
+async function validatePyNativeContract() {
+  const fixturePath = await vscode.window.showInputBox({
+    title: "Validate py-native Contract",
+    prompt: "Path to gemstone-rs.py-native.json",
+    value: settings().pyNativeFixture,
+  });
+  if (!fixturePath) {
+    return;
+  }
+  const result = await runCli(["py-native", "check", fixturePath, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeContractReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native contract is current: ${report.path || fixturePath}`
+    : `py-native contract drifted: ${report.path || fixturePath}`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report", "Open Fixture")
+    : await vscode.window.showErrorMessage(message, "Copy Report", "Open Fixture");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native contract report.");
+  } else if (action === "Open Fixture") {
+    await openPathInEditor(fixturePath);
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -1678,6 +1714,21 @@ function showProfileCheckReport(result, report) {
   output.append(reportText);
   output.show(true);
   return reportText;
+}
+
+function formatPyNativeContractReport(result, report) {
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native contract check",
+    `path: ${report.path || "-"}`,
+    `ok: ${Boolean(report.ok)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+  ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 function formatProfileCheckReport(result, report) {
@@ -1851,6 +1902,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <label class="field">Profile file<input id="codegenProfiles" value="${escapeHtml(cfg.codegenProfiles)}"></label>
       <label class="field">BridgeRoot<input id="bridgeRoot" value="${escapeHtml(cfg.bridgeRoot)}"></label>
       <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
+      <button data-command="gemstoneRs.validatePyNativeContract">Validate py-native Contract</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
@@ -2618,6 +2670,7 @@ function settings() {
     envFile: cfg.get("envFile", ".env.gemstone-rs"),
     codegenConfig: cfg.get("codegenConfig", "gemstone-rs.codegen"),
     codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
+    pyNativeFixture: cfg.get("pyNativeFixture", "examples/py-native/gemstone-rs.py-native.json"),
     bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),

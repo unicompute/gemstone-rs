@@ -90,6 +90,7 @@ For a source checkout:
 - `GemStone RS: Open Explorer Webview`
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
+- `GemStone RS: Validate py-native Contract`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -103,6 +104,10 @@ open the current config, project profile file, and generated wrapper output in
 VS Code editors so review and edits stay in the IDE. The profile variants run
 the same preview/diff/check/explain/generate loop from a
 named project profile in `gemstone-rs.codegen-profiles.json`.
+`Validate py-native Contract` runs
+`gemstone-rs py-native check --json` against `gemstoneRs.pyNativeFixture` so a
+future `gemstone-py-native` wrapper can verify the Rust adapter contract from
+the editor.
 `Show Example Commands` uses `gemstone-rs examples list --json` to show the
 same curated example map that the CLI exposes, then lets you run a selected
 example in a terminal, copy its command, or open the examples guide. This is
