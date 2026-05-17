@@ -220,9 +220,9 @@ when the BridgeRoot key is a GemStone Symbol instead of a String. Scripts can
 also use equals-style options such as `--root=DemoRoot`,
 `--key-type=Symbol`, and `--type=SmallInt`.
 `bridge shape` summarizes relationship paths, key policy, node counts, nil
-nodes, and opaque OOPs. `bridge mapping-preview` reads a live BridgeRoot value
-as a nested `BridgeValue` tree and infers a reviewable `BridgeMapped` codegen
-config.
+nodes, opaque OOPs, report-local identity ids, and repeated opaque references.
+`bridge mapping-preview` reads a live BridgeRoot value as a nested
+`BridgeValue` tree and infers a reviewable `BridgeMapped` codegen config.
 
 `codegen diff` previews generated changes before writing. `codegen check` is
 suitable for CI. In this repository it verifies:

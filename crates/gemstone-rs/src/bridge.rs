@@ -91,7 +91,8 @@ impl BridgeValue {
 
     pub fn shape_report(&self) -> BridgeValueShapeReport {
         let mut report = BridgeValueShapeReport::default();
-        report.visit("value".to_string(), None, 0, self);
+        let mut oop_identities = BTreeMap::new();
+        report.visit("value".to_string(), None, 0, self, &mut oop_identities);
         report
     }
 
@@ -208,6 +209,8 @@ pub struct BridgeValueShapeReport {
     pub dictionary_nodes: usize,
     pub array_nodes: usize,
     pub opaque_oops: usize,
+    pub unique_oops: usize,
+    pub repeated_oop_refs: usize,
     pub nil_nodes: usize,
     pub max_depth: usize,
     pub nodes: Vec<BridgeValueShapeNode>,
@@ -220,58 +223,83 @@ impl BridgeValueShapeReport {
         key_type: Option<BridgeKeyType>,
         depth: usize,
         value: &BridgeValue,
+        oop_identities: &mut BTreeMap<u64, usize>,
     ) {
         self.total_nodes += 1;
         self.max_depth = self.max_depth.max(depth);
 
-        let (kind, child_count, note) = match value {
+        let (kind, child_count, oop, identity_id, repeated_identity, note) = match value {
             BridgeValue::Nil => {
                 self.nil_nodes += 1;
                 (
                     "nil",
                     0,
+                    None,
+                    None,
+                    false,
                     Some("nil observed; generated mappings should usually use Option<T>"),
                 )
             }
             BridgeValue::Bool(_) => {
                 self.scalar_nodes += 1;
-                ("bool", 0, None)
+                ("bool", 0, None, None, false, None)
             }
             BridgeValue::SmallInt(_) => {
                 self.scalar_nodes += 1;
-                ("smallInt", 0, None)
+                ("smallInt", 0, None, None, false, None)
             }
             BridgeValue::String(_) => {
                 self.scalar_nodes += 1;
-                ("string", 0, None)
+                ("string", 0, None, None, false, None)
             }
             BridgeValue::Symbol(_) => {
                 self.scalar_nodes += 1;
                 (
                     "symbol",
                     0,
+                    None,
+                    None,
+                    false,
                     Some("symbol value; confirm string-vs-symbol policy"),
                 )
             }
-            BridgeValue::Oop(_) => {
+            BridgeValue::Oop(oop) => {
                 self.opaque_oops += 1;
+                let raw_oop = oop.raw();
+                let (identity_id, repeated_identity) =
+                    if let Some(identity_id) = oop_identities.get(&raw_oop).copied() {
+                        self.repeated_oop_refs += 1;
+                        (identity_id, true)
+                    } else {
+                        let identity_id = oop_identities.len() + 1;
+                        oop_identities.insert(raw_oop, identity_id);
+                        self.unique_oops += 1;
+                        (identity_id, false)
+                    };
                 (
                     "oop",
                     0,
-                    Some("opaque object; inspect it or increase read depth before mapping"),
+                    Some(*oop),
+                    Some(identity_id),
+                    repeated_identity,
+                    Some(if repeated_identity {
+                        "repeated opaque object; same OOP appeared earlier in this shape report"
+                    } else {
+                        "opaque object; inspect it or increase read depth before mapping"
+                    }),
                 )
             }
             BridgeValue::Dictionary(entries) => {
                 self.dictionary_nodes += 1;
-                ("dictionary", entries.len(), None)
+                ("dictionary", entries.len(), None, None, false, None)
             }
             BridgeValue::KeyedDictionary(entries) => {
                 self.dictionary_nodes += 1;
-                ("keyedDictionary", entries.len(), None)
+                ("keyedDictionary", entries.len(), None, None, false, None)
             }
             BridgeValue::Array(values) => {
                 self.array_nodes += 1;
-                ("array", values.len(), None)
+                ("array", values.len(), None, None, false, None)
             }
         };
 
@@ -281,6 +309,9 @@ impl BridgeValueShapeReport {
             key_type,
             depth,
             child_count,
+            oop,
+            identity_id,
+            repeated_identity,
             note: note.map(str::to_string),
         });
 
@@ -292,6 +323,7 @@ impl BridgeValueShapeReport {
                         Some(BridgeKeyType::String),
                         depth + 1,
                         value,
+                        oop_identities,
                     );
                 }
             }
@@ -302,12 +334,19 @@ impl BridgeValueShapeReport {
                         Some(key.key_type),
                         depth + 1,
                         value,
+                        oop_identities,
                     );
                 }
             }
             BridgeValue::Array(values) => {
                 for (index, value) in values.iter().enumerate() {
-                    self.visit(format!("{path}[{}]", index + 1), None, depth + 1, value);
+                    self.visit(
+                        format!("{path}[{}]", index + 1),
+                        None,
+                        depth + 1,
+                        value,
+                        oop_identities,
+                    );
                 }
             }
             BridgeValue::Nil
@@ -327,6 +366,9 @@ pub struct BridgeValueShapeNode {
     pub key_type: Option<BridgeKeyType>,
     pub depth: usize,
     pub child_count: usize,
+    pub oop: Option<Oop>,
+    pub identity_id: Option<usize>,
+    pub repeated_identity: bool,
     pub note: Option<String>,
 }
 
@@ -1776,16 +1818,19 @@ mod tests {
                         ("quantity".to_string(), BridgeValue::from(2_i64)),
                     ]),
                     BridgeValue::Oop(Oop(1234)),
+                    BridgeValue::Oop(Oop(1234)),
                 ]),
             ),
             ("note".to_string(), BridgeValue::Nil),
         ]);
 
         let report = value.shape_report();
-        assert_eq!(report.total_nodes, 10);
+        assert_eq!(report.total_nodes, 11);
         assert_eq!(report.dictionary_nodes, 3);
         assert_eq!(report.array_nodes, 1);
-        assert_eq!(report.opaque_oops, 1);
+        assert_eq!(report.opaque_oops, 2);
+        assert_eq!(report.unique_oops, 1);
+        assert_eq!(report.repeated_oop_refs, 1);
         assert_eq!(report.nil_nodes, 1);
         assert_eq!(report.max_depth, 3);
         assert!(report.nodes.iter().any(|node| {
@@ -1793,10 +1838,15 @@ mod tests {
                 && node.kind == "string"
                 && node.key_type == Some(BridgeKeyType::Symbol)
         }));
-        assert!(report
+        let opaque_nodes = report
             .nodes
             .iter()
-            .any(|node| node.path == "value.items[2]" && node.kind == "oop"));
+            .filter(|node| node.kind == "oop")
+            .collect::<Vec<_>>();
+        assert_eq!(opaque_nodes[0].identity_id, Some(1));
+        assert!(!opaque_nodes[0].repeated_identity);
+        assert_eq!(opaque_nodes[1].identity_id, Some(1));
+        assert!(opaque_nodes[1].repeated_identity);
     }
 
     #[test]

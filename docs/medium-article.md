@@ -478,12 +478,16 @@ gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 
 ```text
 BridgeValue shape
-  total_nodes: 10
+  total_nodes: 11
   dictionary_nodes: 3
   array_nodes: 1
+  unique_oops: 1
+  repeated_oop_refs: 1
 relationships:
   value.customer.#name    kind=string    key_type=Symbol
   value.items[1].sku      kind=string    key_type=String
+  value.items[2]          kind=oop       identity_id=1
+  value.items[3]          kind=oop       identity_id=1 repeated_identity=true
 ```
 
 `mapping-preview` is the bridge between exploration and codegen. It reads the
@@ -497,8 +501,8 @@ field = BookingDraft.note | type=Option<Oop> | key=note | key_type=String | doc=
 ```
 
 This keeps the Rust model honest: it helps discover a shape, but the developer
-still reviews field names, symbol/string key policy, optional fields, and
-opaque OOPs before generating code.
+still reviews field names, symbol/string key policy, optional fields, opaque
+OOPs, and repeated object references before generating code.
 
 When a Smalltalk-facing dictionary should use symbols, use the matching
 key-policy variants:

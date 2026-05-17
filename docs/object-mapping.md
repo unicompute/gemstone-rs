@@ -334,8 +334,9 @@ gemstone-rs bridge shape BookingDraft --depth 4
 ```
 
 This reports paths such as `value.customer.#name`, `value.items[1].sku`, node
-kinds, key policy, child counts, opaque OOPs, and nil nodes. It is meant for
-relationship mapping review before generating typed wrappers.
+kinds, key policy, child counts, opaque OOPs, report-local identity ids,
+repeated opaque references, and nil nodes. It is meant for relationship mapping
+review before generating typed wrappers.
 
 You can turn the inspected shape into a starter codegen config before writing a
 typed struct by hand:

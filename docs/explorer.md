@@ -248,7 +248,7 @@ The `Comparison Status` buttons call read-only local endpoints:
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **11 batches** and roughly
-  **67-117 hours**
+  **66-115 hours**
 
 Read-only endpoints:
 
@@ -377,7 +377,8 @@ and arrays. `Preview Mapping Config` reads the same nested value and writes a
 starter `mapped = ...`/`field = ...` config into the detail pane, including
 review notes for opaque OOPs, nil fields, symbols, empty arrays, and mixed
 arrays. `Shape Report` turns the value into a relationship table with paths,
-node kinds, key policy, child counts, nil counts, and opaque OOP counts. It
+node kinds, key policy, child counts, nil counts, opaque OOP counts,
+report-local identity ids, and repeated opaque references. It
 persists the selected key, value, class, selector, config, and
 mapping fields in browser local storage; use `Clear Saved Fields` to reset the
 page back to the documented defaults.

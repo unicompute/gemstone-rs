@@ -656,13 +656,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 5,
-        hours_min: 25,
-        hours_max: 45,
+        hours_min: 24,
+        hours_max: 43,
         next_number: 1,
         next_focus: "Object mapping maturity",
-        next_hours_min: 3,
-        next_hours_max: 6,
-        next_outcome: "Improve identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
+        next_hours_min: 2,
+        next_hours_max: 4,
+        next_outcome: "Improve richer BridgeRoot panels and transparent object-model experiments.",
         next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -704,7 +704,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":67,"hoursMax":117,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":66,"hoursMax":115,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -1114,24 +1114,37 @@ fn bridge_shape_json(value: &BridgeValue) -> String {
             .as_ref()
             .map(|note| format!(r#""{}""#, escape_json(note)))
             .unwrap_or_else(|| "null".to_string());
+        let oop = node
+            .oop
+            .map(|oop| oop.raw().to_string())
+            .unwrap_or_else(|| "null".to_string());
+        let identity_id = node
+            .identity_id
+            .map(|identity_id| identity_id.to_string())
+            .unwrap_or_else(|| "null".to_string());
         nodes.push_str(&format!(
-            r#"{{"path":"{}","kind":"{}","keyType":{},"depth":{},"childCount":{},"note":{}}}"#,
+            r#"{{"path":"{}","kind":"{}","keyType":{},"depth":{},"childCount":{},"oop":{},"identityId":{},"repeatedIdentity":{},"note":{}}}"#,
             escape_json(&node.path),
             escape_json(&node.kind),
             key_type,
             node.depth,
             node.child_count,
+            oop,
+            identity_id,
+            node.repeated_identity,
             note
         ));
     }
     nodes.push(']');
     format!(
-        r#"{{"totalNodes":{},"scalarNodes":{},"dictionaryNodes":{},"arrayNodes":{},"opaqueOops":{},"nilNodes":{},"maxDepth":{},"nodes":{}}}"#,
+        r#"{{"totalNodes":{},"scalarNodes":{},"dictionaryNodes":{},"arrayNodes":{},"opaqueOops":{},"uniqueOops":{},"repeatedOopRefs":{},"nilNodes":{},"maxDepth":{},"nodes":{}}}"#,
         report.total_nodes,
         report.scalar_nodes,
         report.dictionary_nodes,
         report.array_nodes,
         report.opaque_oops,
+        report.unique_oops,
+        report.repeated_oop_refs,
         report.nil_nodes,
         report.max_depth,
         nodes
@@ -2822,12 +2835,14 @@ function renderBridgeShape(data) {
   const shape = data.shape || {};
   const rows = (shape.nodes || []).map(node => {
     const note = node.note ? '<br><span class="profile-stale">' + escapeHtml(node.note) + '</span>' : '';
+    const identity = node.identityId ? '<br><span>identity #' + Number(node.identityId) + (node.repeatedIdentity ? ' repeated' : '') + '</span>' : '';
+    const oop = node.oop ? '<br><span>OOP ' + escapeHtml(node.oop) + '</span>' : '';
     return '<tr>' +
       '<td><code>' + escapeHtml(node.path || '-') + '</code></td>' +
       '<td>' + escapeHtml(node.kind || '-') + '</td>' +
       '<td>' + escapeHtml(node.keyType || '-') + '</td>' +
       '<td>' + Number(node.depth || 0) + '</td>' +
-      '<td>' + Number(node.childCount || 0) + note + '</td>' +
+      '<td>' + Number(node.childCount || 0) + oop + identity + note + '</td>' +
     '</tr>';
   }).join('');
   detail.className = 'detail profile-check';
@@ -2841,7 +2856,9 @@ function renderBridgeShape(data) {
         ' dictionaries, ' + Number(shape.arrayNodes || 0) +
         ' arrays, ' + Number(shape.scalarNodes || 0) +
         ' scalars, ' + Number(shape.opaqueOops || 0) +
-        ' opaque OOPs, ' + Number(shape.nilNodes || 0) + ' nil</p>' +
+        ' opaque OOP refs, ' + Number(shape.uniqueOops || 0) +
+        ' unique OOPs, ' + Number(shape.repeatedOopRefs || 0) +
+        ' repeated refs, ' + Number(shape.nilNodes || 0) + ' nil</p>' +
     '</div>' +
     '<table class="profile-table"><thead><tr><th>Path</th><th>Kind</th><th>Key Type</th><th>Depth</th><th>Children / Note</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
@@ -3784,8 +3801,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":5"#));
-        assert!(response.body.contains(r#""hoursMin":25"#));
-        assert!(response.body.contains(r#""hoursMax":45"#));
+        assert!(response.body.contains(r#""hoursMin":24"#));
+        assert!(response.body.contains(r#""hoursMax":43"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Object mapping maturity"));
         assert!(response
@@ -3802,8 +3819,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":11"#));
-        assert!(response.body.contains(r#""hoursMin":67"#));
-        assert!(response.body.contains(r#""hoursMax":117"#));
+        assert!(response.body.contains(r#""hoursMin":66"#));
+        assert!(response.body.contains(r#""hoursMax":115"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3900,16 +3917,21 @@ mod tests {
             ),
             (
                 "items".to_string(),
-                BridgeValue::array([BridgeValue::dictionary([(
-                    "sku".to_string(),
-                    BridgeValue::from("A-1"),
-                )])]),
+                BridgeValue::array([
+                    BridgeValue::dictionary([("sku".to_string(), BridgeValue::from("A-1"))]),
+                    BridgeValue::Oop(gemstone_rs::Oop(1234)),
+                    BridgeValue::Oop(gemstone_rs::Oop(1234)),
+                ]),
             ),
             ("note".to_string(), BridgeValue::Nil),
         ]);
         let json = bridge_shape_json(&value);
-        assert!(json.contains(r#""totalNodes":7"#));
+        assert!(json.contains(r#""totalNodes":9"#));
         assert!(json.contains(r#""dictionaryNodes":3"#));
+        assert!(json.contains(r#""uniqueOops":1"#));
+        assert!(json.contains(r#""repeatedOopRefs":1"#));
+        assert!(json.contains(r#""oop":1234,"identityId":1,"repeatedIdentity":false"#));
+        assert!(json.contains(r#""oop":1234,"identityId":1,"repeatedIdentity":true"#));
         assert!(json.contains(r#""path":"value.customer.#name""#));
         assert!(json.contains(r#""path":"value.items[1].sku""#));
         assert!(json.contains("Option&lt;T&gt;") || json.contains("Option<T>"));

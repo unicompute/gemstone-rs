@@ -1461,6 +1461,8 @@ fn print_bridge_shape_report(value: &BridgeValue) {
     println!("  dictionary_nodes: {}", report.dictionary_nodes);
     println!("  array_nodes: {}", report.array_nodes);
     println!("  opaque_oops: {}", report.opaque_oops);
+    println!("  unique_oops: {}", report.unique_oops);
+    println!("  repeated_oop_refs: {}", report.repeated_oop_refs);
     println!("  nil_nodes: {}", report.nil_nodes);
     println!("  max_depth: {}", report.max_depth);
     println!("relationships:");
@@ -1473,9 +1475,30 @@ fn print_bridge_shape_report(value: &BridgeValue) {
             .note
             .map(|note| format!("\tnote={note}"))
             .unwrap_or_default();
+        let oop = node
+            .oop
+            .map(|oop| format!("\toop={}", oop.raw()))
+            .unwrap_or_default();
+        let identity = node
+            .identity_id
+            .map(|identity_id| format!("\tidentity_id={identity_id}"))
+            .unwrap_or_default();
+        let repeated = if node.repeated_identity {
+            "\trepeated_identity=true"
+        } else {
+            ""
+        };
         println!(
-            "  {}\tkind={}\tkey_type={}\tdepth={}\tchildren={}{}",
-            node.path, node.kind, key_type, node.depth, node.child_count, note
+            "  {}\tkind={}\tkey_type={}\tdepth={}\tchildren={}{}{}{}{}",
+            node.path,
+            node.kind,
+            key_type,
+            node.depth,
+            node.child_count,
+            oop,
+            identity,
+            repeated,
+            note
         );
     }
 }
@@ -2048,9 +2071,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Object mapping maturity",
-        hours_min: 3,
-        hours_max: 6,
-        outcome: "Improve identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
+        hours_min: 2,
+        hours_max: 4,
+        outcome: "Improve richer BridgeRoot panels and transparent object-model experiments.",
         verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
     },
     BatchInfo {
@@ -5771,14 +5794,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (25, 45));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (24, 43));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 11,
-                hours_min: 67,
-                hours_max: 117,
+                hours_min: 66,
+                hours_max: 115,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5803,7 +5826,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":5,"hoursMin":25,"hoursMax":45}"#));
+            .contains(r#""remaining":{"totalBatches":5,"hoursMin":24,"hoursMax":43}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
