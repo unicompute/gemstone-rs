@@ -224,8 +224,9 @@ scripts/live_smoke.sh
 The live smoke coverage includes `doctor --strict --live`, login/logout,
 `3 + 4 == 7`, global put/get, string round-trip, `perform`, commit, abort,
 browser lookup of `Object`, generated wrapper `printString`, the
-`live_smoke_cookbook` example, the `python_native_adapter` shared-core example,
-and live Axum/Actix `/health/gemstone` routes.
+`py-native smoke` shared-core check, the `live_smoke_cookbook` example, the
+`python_native_adapter` shared-core example, and live Axum/Actix
+`/health/gemstone` routes.
 
 The script runs the Rust live tests with `--test-threads=1`. GemStone GCI has
 process-global session state, so live tests should not be run concurrently.

@@ -102,6 +102,8 @@ if [[ "$CHECK_ENV_ONLY" == "1" ]]; then
 fi
 
 run env GS_RUN_LIVE_RUST=1 cargo run -p gemstone-rs-cli -- doctor --strict --live
+run cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
+run env GS_RUN_LIVE_RUST=1 cargo run -p gemstone-rs-cli -- py-native smoke
 run env GS_RUN_LIVE_RUST=1 cargo test -p gemstone-rs live_ -- --test-threads=1
 
 if [[ "$SKIP_EXAMPLES" == "0" ]]; then
