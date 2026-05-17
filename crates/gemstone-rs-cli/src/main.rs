@@ -2,7 +2,7 @@ use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
     gci_library_path, gci_library_resolution, profiles, BridgeKeyType, BridgeValue, Config,
-    Error as GemStoneError, Oop, Session, Value, DEFAULT_BRIDGE_ROOT,
+    Error as GemStoneError, Oop, Session, Value, DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -218,6 +218,20 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
                 bridge_root.get_value_with_key_type(&key, key_type)?
             };
             print_value(&mut session, value)?;
+            Ok(())
+        }
+        Command::BridgeValue {
+            root,
+            key,
+            key_type,
+            depth,
+        } => {
+            let mut session = login()?;
+            let value = {
+                let mut bridge_root = session.bridge_root_named(root)?;
+                bridge_root.get_bridge_value_with_depth(&key, key_type, depth)?
+            };
+            print_bridge_value(&value, 0);
             Ok(())
         }
         Command::BridgeInspect {
@@ -1374,6 +1388,39 @@ fn print_oop_inspection(session: &mut Session, oop: Oop) -> Result<(), CliError>
     Ok(())
 }
 
+fn print_bridge_value(value: &BridgeValue, indent: usize) {
+    let prefix = " ".repeat(indent);
+    match value {
+        BridgeValue::Nil => println!("{prefix}nil"),
+        BridgeValue::Bool(value) => println!("{prefix}Bool({value})"),
+        BridgeValue::SmallInt(value) => println!("{prefix}SmallInt({value})"),
+        BridgeValue::String(value) => println!("{prefix}String({value:?})"),
+        BridgeValue::Symbol(value) => println!("{prefix}Symbol({value:?})"),
+        BridgeValue::Oop(oop) => println!("{prefix}Oop({})", oop.raw()),
+        BridgeValue::Dictionary(entries) => {
+            println!("{prefix}Dictionary");
+            for (key, value) in entries {
+                println!("{prefix}  {key}:");
+                print_bridge_value(value, indent + 4);
+            }
+        }
+        BridgeValue::KeyedDictionary(entries) => {
+            println!("{prefix}KeyedDictionary");
+            for (key, value) in entries {
+                println!("{prefix}  {} ({}):", key.name, key.key_type.config_name());
+                print_bridge_value(value, indent + 4);
+            }
+        }
+        BridgeValue::Array(values) => {
+            println!("{prefix}Array");
+            for (index, value) in values.iter().enumerate() {
+                println!("{prefix}  [{}]:", index + 1);
+                print_bridge_value(value, indent + 4);
+            }
+        }
+    }
+}
+
 fn print_lines(values: impl IntoIterator<Item = String>) {
     for value in values {
         println!("{value}");
@@ -1576,6 +1623,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "#[derive(BridgeMapped)] with nested structs, vectors, maps, optionals, and symbol keys.",
     },
     ExampleInfo {
+        name: "bridge_value_inspection",
+        title: "BridgeValue inspection",
+        command: "cargo run -p gemstone-rs --example bridge_value_inspection",
+        category: "mapping",
+        requires_live: true,
+        description: "Read nested BridgeRoot dictionaries and arrays back as dynamic BridgeValue trees.",
+    },
+    ExampleInfo {
         name: "codegen_preview",
         title: "Codegen preview",
         command: "cargo run -p gemstone-rs --example codegen_preview",
@@ -1690,10 +1745,10 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "5",
         title: "BridgeRoot object mapping",
         crates: "gemstone-rs::bridge, gemstone-rs-macros",
-        examples: "bridge_root_mapping, derive_mapping, generated_mapping_app",
+        examples: "bridge_root_mapping, derive_mapping, bridge_value_inspection, generated_mapping_app",
         docs: "docs/object-mapping.md, docs/cookbook.md",
         gemstone_py_reference: "SmalltalkBridge, PersistentRoot, facade examples",
-        status: "Rust has typed mapping and derive; transparent object model remains future work",
+        status: "Rust has typed mapping, derive, nested dynamic BridgeValue read-back, and path-aware diagnostics; transparent object model remains future work",
     },
     FeatureInfo {
         stream: "6",
@@ -1711,7 +1766,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/explorer.md",
         docs: "docs/explorer.md, docs/screenshots.md",
         gemstone_py_reference: "python-gemstone-database-explorer",
-        status: "Useful local UI/API with profile status, codegen diff/explain, editable generated output, BridgeRoot, comparison workflows, and committed visual assets; Python explorer remains the richer product reference",
+        status: "Useful local UI/API with profile status, codegen diff/explain, editable generated output, nested BridgeValue rendering, comparison workflows, and committed visual assets; Python explorer remains the richer product reference",
     },
     FeatureInfo {
         stream: "8",
@@ -1720,7 +1775,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/vscode-workbench.md",
         docs: "docs/vscode-workbench.md",
         gemstone_py_reference: "gemstone-py Workbench",
-        status: "Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs/editable output, BridgeRoot keys, comparison status, and Marketplace/GitHub visuals",
+        status: "Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs/editable output, BridgeRoot keys/nested values, comparison status, and Marketplace/GitHub visuals",
     },
     FeatureInfo {
         stream: "9",
@@ -1850,16 +1905,16 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 4,
         project_score: 4,
         leader: "tie",
-        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, and derive support; gemstone-py remains the broader reference.",
-        next_action: "Improve live discovery, generated wrapper tests, relationship mapping, and transparent object-model experiments.",
+        status: "gemstone-rs has compile-time wrapper checks, typed return helpers, BridgeRoot mapping, derive support, nested dynamic BridgeValue read-back, and path-aware diagnostics; gemstone-py remains the broader reference.",
+        next_action: "Improve relationship mapping, identity-cache behavior, live discovery, generated wrapper tests, and transparent object-model experiments.",
     },
     ParityInfo {
         area: "Explorer and VS Code",
         gemstone_py_score: 5,
         project_score: 4,
         leader: "gemstone-py",
-        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, and committed Marketplace/GitHub visuals.",
-        next_action: "Fold the remaining explorer polish into richer BridgeRoot inspection and object-mapping drill-downs.",
+        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, nested BridgeValue rendering, and committed Marketplace/GitHub visuals.",
+        next_action: "Turn nested BridgeValue rendering into object-mapping-aware BridgeRoot panels and relationship drill-downs.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -1892,8 +1947,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot keys/values, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. They still need richer BridgeRoot value drill-downs and object-mapping-aware inspection.",
-        next_action: "Fold the remaining explorer polish into the object mapping maturity batch.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, nested BridgeValue rendering, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. They still need object-mapping-aware BridgeRoot panels and relationship/identity drill-downs.",
+        next_action: "Turn nested BridgeValue rendering into object-mapping-aware BridgeRoot panels.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -1934,9 +1989,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Object mapping maturity",
-        hours_min: 8,
-        hours_max: 14,
-        outcome: "Improve nested object/array/dictionary read-back, relationship examples, identity-cache behavior, and mapping diagnostics.",
+        hours_min: 6,
+        hours_max: 10,
+        outcome: "Improve relationship examples, identity-cache behavior, object-mapping-aware panels, and transparent object-model experiments.",
         verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
     },
     BatchInfo {
@@ -3864,6 +3919,12 @@ enum Command {
         key: String,
         key_type: BridgeKeyType,
     },
+    BridgeValue {
+        root: String,
+        key: String,
+        key_type: BridgeKeyType,
+        depth: usize,
+    },
     BridgeInspect {
         root: String,
         key: String,
@@ -4684,7 +4745,7 @@ fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         ));
     };
     match command {
@@ -4706,6 +4767,19 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 root: options.root,
                 key,
                 key_type: options.key_type,
+            })
+        }
+        "value" => {
+            let key = args
+                .get(1)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing key for bridge value"))?;
+            let options = parse_bridge_options(&args[2..])?;
+            Ok(Command::BridgeValue {
+                root: options.root,
+                key,
+                key_type: options.key_type,
+                depth: options.depth.unwrap_or(DEFAULT_BRIDGE_VALUE_DEPTH),
             })
         }
         "inspect" => {
@@ -4758,7 +4832,7 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .unwrap_or_else(|| "BookingDraft".to_string()),
         }),
         _ => Err(CliError::usage(
-            "expected: bridge root|keys|get|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         )),
     }
 }
@@ -4812,12 +4886,14 @@ struct BridgeOptions {
     root: String,
     key_type: BridgeKeyType,
     value_type: Option<BridgeValueType>,
+    depth: Option<usize>,
 }
 
 fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
     let mut root = DEFAULT_BRIDGE_ROOT.to_string();
     let mut key_type = BridgeKeyType::String;
     let mut value_type = None;
+    let mut depth = None;
     let mut index = 0;
     while index < args.len() {
         match args[index].as_str() {
@@ -4865,6 +4941,20 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
                 }
                 value_type = Some(parse_bridge_value_type(value)?);
             }
+            "--depth" => {
+                index += 1;
+                depth =
+                    Some(parse_bridge_depth(args.get(index).ok_or_else(|| {
+                        CliError::usage("missing value for --depth")
+                    })?)?);
+            }
+            option if option.starts_with("--depth=") => {
+                let (_, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage("missing value for --depth="));
+                }
+                depth = Some(parse_bridge_depth(value)?);
+            }
             other => {
                 return Err(CliError::usage(format!("unknown bridge option: {other}")));
             }
@@ -4875,6 +4965,7 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
         root,
         key_type,
         value_type,
+        depth,
     })
 }
 
@@ -4886,6 +4977,14 @@ fn parse_bridge_key_type(value: &str) -> Result<BridgeKeyType, CliError> {
             "expected bridge key type String or Symbol, got {value}"
         ))),
     }
+}
+
+fn parse_bridge_depth(value: &str) -> Result<usize, CliError> {
+    value
+        .trim()
+        .parse::<usize>()
+        .map(|depth| depth.min(16))
+        .map_err(|_| CliError::usage(format!("expected bridge depth integer, got {value}")))
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -5037,6 +5136,7 @@ fn usage() -> &'static str {
   gemstone-rs bridge root [--root <name>]
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge value <key> [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge inspect <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put <key> <value> [--type String|Symbol|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put-string <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
@@ -5550,14 +5650,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (30, 53));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (28, 49));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 11,
-                hours_min: 72,
-                hours_max: 125,
+                hours_min: 70,
+                hours_max: 121,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5582,7 +5682,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":5,"hoursMin":30,"hoursMax":53}"#));
+            .contains(r#""remaining":{"totalBatches":5,"hoursMin":28,"hoursMax":49}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -5620,7 +5720,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("object mapping maturity")));
+                && gap.next_action.contains("BridgeRoot panels")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 
@@ -5988,6 +6088,23 @@ GEMSTONE=/opt/gemstone # product root
                 root: DEFAULT_BRIDGE_ROOT.to_string(),
                 key: "BookingDraft".to_string(),
                 key_type: BridgeKeyType::Symbol,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "value",
+                "BookingDraft",
+                "--depth=4",
+                "--root",
+                "DemoRoot"
+            ]))
+            .unwrap(),
+            Command::BridgeValue {
+                root: "DemoRoot".to_string(),
+                key: "BookingDraft".to_string(),
+                key_type: BridgeKeyType::String,
+                depth: 4,
             }
         );
         assert_eq!(

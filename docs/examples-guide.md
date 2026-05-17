@@ -70,9 +70,10 @@ templates. Current scaffold templates include `quickstart`, `browser`,
 `bridge_root_mapping`, `derive_mapping`, `codegen_preview`, `codegen_workflow`,
 `codegen_discover`, `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`,
-`session_worker_pool`, `axum_service`, and `actix_service`; aliases include `bridge`, `mapping`,
-`derive`, `codegen`, `discover`, `profiles`, `wrapper`, `framework`, `axum`,
-`actix`, and `http`.
+`session_worker_pool`, `axum_service`, and `actix_service`; checked-in examples
+also include `bridge_value_inspection` for dynamic nested BridgeRoot read-back.
+Aliases include `bridge`, `mapping`, `derive`, `codegen`, `discover`,
+`profiles`, `wrapper`, `framework`, `axum`, `actix`, and `http`.
 Scaffolds can include supporting project files; `profile_codegen_workflow`
 writes both `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json`.
 `gemstone-rs examples map` is the Rust equivalent of `gemstone-examples
@@ -114,6 +115,7 @@ CLI binary is installed and runnable.
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
+| BridgeValue inspection | `cargo run -p gemstone-rs --example bridge_value_inspection` | Reads nested BridgeRoot dictionaries and arrays back as dynamic `BridgeValue` trees. |
 | Offline codegen | `cargo run -p gemstone-rs --example codegen_preview` | Generates wrappers from the sample config without a live stone. |
 | Codegen workflow | `cargo run -p gemstone-rs --example codegen_workflow` | Writes config, previews, diffs, checks, generates, and verifies a clean diff. |
 | Codegen discovery | `cargo run -p gemstone-rs --example codegen_discover` | Connects to a live stone and discovers a starter config for `Object`. |
@@ -168,19 +170,20 @@ are available and `/health/gemstone` should be required to return
 9. `oop_values`
 10. `bridge_root_mapping`
 11. `derive_mapping`
-11. `codegen_preview`
-12. `codegen_workflow`
-13. `generated_wrapper_app`
-14. `generated_mapping_app`
-15. `codegen_discover`
-16. `codegen_discover_mapping`
-17. `examples/codegen/`
-18. `examples/tooling/cli-browser-walkthrough.md`
-19. `examples/tooling/explorer.md`
-20. `examples/tooling/vscode-workbench.md`
-21. `http_service`
-22. `examples/axum-service/`
-23. `examples/actix-service/`
+12. `bridge_value_inspection`
+13. `codegen_preview`
+14. `codegen_workflow`
+15. `generated_wrapper_app`
+16. `generated_mapping_app`
+17. `codegen_discover`
+18. `codegen_discover_mapping`
+19. `examples/codegen/`
+20. `examples/tooling/cli-browser-walkthrough.md`
+21. `examples/tooling/explorer.md`
+22. `examples/tooling/vscode-workbench.md`
+23. `http_service`
+24. `examples/axum-service/`
+25. `examples/actix-service/`
 
 ## Expected Output
 
@@ -220,6 +223,11 @@ loaded symbol labels: {"source": "manual"}
 
 $ cargo run -p gemstone-rs --example derive_mapping
 derived mapped payload: BookingDraft { amount: 100, customer: CustomerDraft { name: "Tariq" }, tags: ["priority", "demo"], labels: {"source": "derive"}, note: None }
+
+$ cargo run -p gemstone-rs --example bridge_value_inspection
+dynamic BridgeValue: Dictionary({"customer": Dictionary(...), "items": Array(...), "note": Nil, "state": Symbol("ready")})
+bridge root identity: <number>
+bridge root key count: <number>
 
 $ cargo run -p gemstone-rs --example generated_mapping_app
 generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }

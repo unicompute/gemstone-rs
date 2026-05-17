@@ -34,6 +34,9 @@ The initial mapping layer supports:
 - `BridgeRoot::put_optional_with_key_type`
 - `BridgeRoot::get_oop`
 - `BridgeRoot::get_value`
+- `BridgeRoot::get_bridge_value`
+- `BridgeRoot::get_bridge_value_with_key_type`
+- `BridgeRoot::get_bridge_value_with_depth`
 - `BridgeRoot::get_field`
 - `BridgeRoot::get_field_with_key_type`
 - `BridgeRoot::get_vec`
@@ -61,6 +64,9 @@ The initial mapping layer supports:
 - `BridgeRoot::contains_key`
 - `BridgeDictionary::at_oop`
 - `BridgeDictionary::at_value`
+- `BridgeDictionary::at_bridge_value`
+- `BridgeDictionary::at_bridge_value_with_key_type`
+- `BridgeDictionary::at_bridge_value_with_depth`
 - `BridgeDictionary::at_string`
 - `BridgeDictionary::at_smallint`
 - `BridgeDictionary::at_bool`
@@ -96,6 +102,8 @@ The initial mapping layer supports:
 - `BridgeValue::Dictionary`
 - `BridgeValue::KeyedDictionary`
 - `BridgeValue::Array`
+- `BridgeValue::from_oop`
+- `BridgeValue::from_oop_with_depth`
 - session-local OOP identity ids with `Session::identity_for_oop`
 
 The default root is a GemStone `Dictionary` stored in `UserGlobals` under
@@ -245,6 +253,67 @@ loaded labels: {"source": "manual"}
 loaded symbol labels: {"source": "manual"}
 ```
 
+## Dynamic BridgeValue Inspection
+
+When you do not want a typed struct yet, read a BridgeRoot value back as a
+dynamic `BridgeValue` tree:
+
+```rust
+use gemstone_rs::{BridgeValue, Config, Session};
+
+fn main() -> gemstone_rs::Result<()> {
+    let mut session = Session::login(Config::from_env()?)?;
+    let mut bridge_root = session.bridge_root()?;
+
+    let payload = BridgeValue::dictionary([
+        (
+            "customer".to_string(),
+            BridgeValue::dictionary([
+                ("name".to_string(), BridgeValue::from("Tariq")),
+                ("vip".to_string(), BridgeValue::from(true)),
+            ]),
+        ),
+        (
+            "items".to_string(),
+            BridgeValue::array([
+                BridgeValue::dictionary([
+                    ("sku".to_string(), BridgeValue::from("A-1")),
+                    ("quantity".to_string(), BridgeValue::from(2_i64)),
+                ]),
+            ]),
+        ),
+        ("state".to_string(), BridgeValue::Symbol("ready".to_string())),
+        ("note".to_string(), BridgeValue::Nil),
+    ]);
+
+    bridge_root.put("BridgeValueInspection", payload.clone())?;
+    let dynamic = bridge_root.get_bridge_value("BridgeValueInspection")?;
+    assert_eq!(dynamic, payload);
+    Ok(())
+}
+```
+
+Run the checked-in live example:
+
+```bash
+cargo run -p gemstone-rs --example bridge_value_inspection
+```
+
+Expected output includes:
+
+```text
+dynamic BridgeValue: Dictionary({"customer": Dictionary(...), "items": Array(...), "note": Nil, "state": Symbol("ready")})
+bridge root identity: <number>
+bridge root key count: <number>
+```
+
+`BridgeValue::from_oop_with_depth(session, oop, max_depth)` is also available
+for inspectors and tools. It reads nil, booleans, small integers, characters,
+strings, symbols, arrays, and string/symbol-keyed dictionaries. When the reader
+hits an unsupported object, a repeated object, or the depth limit, it returns
+`BridgeValue::Oop(oop)` instead of pretending the object is transparent Rust
+state.
+
 ## Derive-Based Mapping
 
 For normal Rust structs, prefer `#[derive(BridgeMapped)]`. The derive writes a
@@ -356,6 +425,11 @@ read back nested payloads from a live stone.
 Lookup failures are also wrapped with the current path, so missing keys and
 invalid nested arrays point at `booking.items` or `booking.items[2]` instead of
 only returning a generic GemStone lookup error.
+
+Dynamic `BridgeValue` read-back uses the same path-aware machinery when called
+through `BridgeRoot::get_bridge_value` or `BridgeDictionary::at_bridge_value`.
+That makes it useful for explorer panels and generated-wrapper debugging before
+you settle on a typed `BridgeMapped` struct.
 
 ## Key Policy
 
@@ -517,6 +591,7 @@ For quick CLI inspection of the bridge root itself:
 gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
+gemstone-rs bridge value BookingDraft --depth 4
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
 gemstone-rs bridge put-symbol WorkbenchState ready

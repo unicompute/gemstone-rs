@@ -1,7 +1,8 @@
 use crate::{Error, Oop, Result, Session, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const DEFAULT_BRIDGE_ROOT: &str = "GemStoneRsBridgeRoot";
+pub const DEFAULT_BRIDGE_VALUE_DEPTH: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BridgeKeyType {
@@ -86,6 +87,70 @@ impl BridgeValue {
 
     pub fn array(values: impl IntoIterator<Item = BridgeValue>) -> Self {
         Self::Array(values.into_iter().collect())
+    }
+
+    pub fn from_oop(session: &mut Session, oop: Oop) -> Result<Self> {
+        Self::from_oop_with_depth(session, oop, DEFAULT_BRIDGE_VALUE_DEPTH)
+    }
+
+    pub fn from_oop_with_depth(session: &mut Session, oop: Oop, max_depth: usize) -> Result<Self> {
+        let mut seen = BTreeSet::new();
+        Self::from_oop_inner(session, oop, max_depth, &mut seen)
+    }
+
+    fn from_oop_inner(
+        session: &mut Session,
+        oop: Oop,
+        remaining_depth: usize,
+        seen: &mut BTreeSet<u64>,
+    ) -> Result<Self> {
+        if oop.is_nil() {
+            return Ok(Self::Nil);
+        }
+        if let Some(value) = oop.as_bool() {
+            return Ok(Self::Bool(value));
+        }
+        if let Some(value) = oop.as_smallint() {
+            return Ok(Self::SmallInt(value));
+        }
+        if let Some(value) = oop.as_char()? {
+            return Ok(Self::String(value.to_string()));
+        }
+
+        session.identity_for_oop(oop);
+        if remaining_depth == 0 || !seen.insert(oop.raw()) {
+            return Ok(Self::Oop(oop));
+        }
+
+        let value = if session.is_kind_of(oop, "Symbol")? {
+            Self::Symbol(session.fetch_string(oop)?)
+        } else if session.is_kind_of(oop, "String")? {
+            Self::String(session.fetch_string(oop)?)
+        } else if session.is_kind_of(oop, "Array")? {
+            let size = session.fetch_size(oop)?;
+            if size < 0 {
+                return Err(Error::NegativeSize(size));
+            }
+            let mut values = Vec::with_capacity(size as usize);
+            for index in 1..=size {
+                let index_oop = session.smallint_oop(index);
+                let value_oop = session.perform_oop(oop, "at:", &[index_oop])?;
+                values.push(Self::from_oop_inner(
+                    session,
+                    value_oop,
+                    remaining_depth.saturating_sub(1),
+                    seen,
+                )?);
+            }
+            Self::Array(values)
+        } else if session.is_kind_of(oop, "Dictionary")? {
+            bridge_value_dictionary_from_oop(session, oop, remaining_depth, seen)?
+        } else {
+            Self::Oop(oop)
+        };
+
+        seen.remove(&oop.raw());
+        Ok(value)
     }
 
     pub fn to_oop(&self, session: &mut Session) -> Result<Oop> {
@@ -373,6 +438,20 @@ impl<T: BridgeMapped> BridgeFieldRead for T {
 
     fn expected_type() -> &'static str {
         "Dictionary"
+    }
+}
+
+impl BridgeFieldRead for BridgeValue {
+    fn read_bridge_oop(
+        session: &mut Session,
+        oop: Oop,
+        context: &BridgeFieldContext,
+    ) -> Result<Self> {
+        BridgeValue::from_oop(session, oop).map_err(|err| context.read_error(err))
+    }
+
+    fn expected_type() -> &'static str {
+        "Any"
     }
 }
 
@@ -688,6 +767,28 @@ impl<'a> BridgeRoot<'a> {
     pub fn get_value_with_key_type(&mut self, key: &str, key_type: BridgeKeyType) -> Result<Value> {
         let key_oop = BridgeKey::new(key, key_type).to_oop(self.session)?;
         self.session.perform(self.oop, "at:", &[key_oop])
+    }
+
+    pub fn get_bridge_value(&mut self, key: &str) -> Result<BridgeValue> {
+        self.get_bridge_value_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn get_bridge_value_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<BridgeValue> {
+        self.get_field_with_key_type(key, key_type)
+    }
+
+    pub fn get_bridge_value_with_depth(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        max_depth: usize,
+    ) -> Result<BridgeValue> {
+        let oop = self.get_oop_with_key_type(key, key_type)?;
+        BridgeValue::from_oop_with_depth(self.session, oop, max_depth)
     }
 
     pub fn get_string(&mut self, key: &str) -> Result<String> {
@@ -1046,6 +1147,28 @@ impl<'a> BridgeDictionary<'a> {
         self.session.perform(self.oop, "at:", &[key_oop])
     }
 
+    pub fn at_bridge_value(&mut self, key: &str) -> Result<BridgeValue> {
+        self.at_bridge_value_with_key_type(key, BridgeKeyType::String)
+    }
+
+    pub fn at_bridge_value_with_key_type(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+    ) -> Result<BridgeValue> {
+        self.at_field_with_key_type(key, key_type)
+    }
+
+    pub fn at_bridge_value_with_depth(
+        &mut self,
+        key: &str,
+        key_type: BridgeKeyType,
+        max_depth: usize,
+    ) -> Result<BridgeValue> {
+        let oop = self.at_oop_with_key_type(key, key_type)?;
+        BridgeValue::from_oop_with_depth(self.session, oop, max_depth)
+    }
+
     pub fn at_string(&mut self, key: &str) -> Result<String> {
         self.at_string_with_key_type(key, BridgeKeyType::String)
     }
@@ -1192,6 +1315,13 @@ impl BridgeFieldContext {
         }
     }
 
+    fn read_error(&self, err: Error) -> Error {
+        match err {
+            Error::Mapping { .. } => self.nested_error(err),
+            other => self.unexpected(format!("read failed: {other}")),
+        }
+    }
+
     fn nested_error(&self, err: Error) -> Error {
         match err {
             Error::Mapping {
@@ -1322,6 +1452,55 @@ fn dictionary_string_entries<T: BridgeFieldRead>(
         entries.insert(key, value);
     }
     Ok(entries)
+}
+
+fn bridge_value_dictionary_from_oop(
+    session: &mut Session,
+    dictionary: Oop,
+    remaining_depth: usize,
+    seen: &mut BTreeSet<u64>,
+) -> Result<BridgeValue> {
+    let keys = dictionary_keys(session, dictionary)?;
+    let mut string_entries = BTreeMap::new();
+    let mut keyed_entries = Vec::new();
+    let mut only_string_keys = true;
+
+    for summary in keys {
+        let key = bridge_key_from_summary(session, &summary)?;
+        let value_oop = session.perform_oop(dictionary, "at:", &[summary.oop])?;
+        let value = BridgeValue::from_oop_inner(
+            session,
+            value_oop,
+            remaining_depth.saturating_sub(1),
+            seen,
+        )?;
+        if key.key_type == BridgeKeyType::String {
+            string_entries.insert(key.name.clone(), value.clone());
+        } else {
+            only_string_keys = false;
+        }
+        keyed_entries.push((key, value));
+    }
+
+    if only_string_keys {
+        Ok(BridgeValue::Dictionary(string_entries))
+    } else {
+        Ok(BridgeValue::KeyedDictionary(keyed_entries))
+    }
+}
+
+fn bridge_key_from_summary(session: &mut Session, summary: &BridgeKeySummary) -> Result<BridgeKey> {
+    if session.is_kind_of(summary.oop, "Symbol")? {
+        return Ok(BridgeKey::symbol(session.fetch_string(summary.oop)?));
+    }
+    if session.is_kind_of(summary.oop, "String")? {
+        return Ok(BridgeKey::string(session.fetch_string(summary.oop)?));
+    }
+    Err(Error::Mapping {
+        field: "dictionary key".to_string(),
+        expected: "String or Symbol",
+        actual: format!("{} (OOP {})", summary.print_string, summary.oop.raw()),
+    })
 }
 
 #[cfg(test)]

@@ -248,7 +248,7 @@ The `Comparison Status` buttons call read-only local endpoints:
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **11 batches** and roughly
-  **72-125 hours**
+  **70-121 hours**
 
 Read-only endpoints:
 
@@ -361,6 +361,7 @@ configuration as the browser endpoints:
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
+curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft&depth=4'
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft&key_type=Symbol'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 ```
@@ -368,10 +369,17 @@ curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 The browser UI exposes `Bridge key type` and `Bridge value type` controls so
 you can explicitly test string-key, symbol-key, string-value, symbol-value,
 small-int-value, and bool-value mappings before encoding them in a reusable
-config file. It
-persists the selected key, value, class, selector, config, and mapping fields in
-browser local storage; use `Clear Saved Fields` to reset the page back to the
-documented defaults.
+config file. `BridgeRoot Value` now shows both the raw OOP/class/printString
+summary and a nested `BridgeValue` tree for string/symbol-keyed dictionaries
+and arrays. It persists the selected key, value, class, selector, config, and
+mapping fields in browser local storage; use `Clear Saved Fields` to reset the
+page back to the documented defaults.
+
+The same nested read-back is available from the CLI:
+
+```bash
+gemstone-rs bridge value BookingDraft --depth 4
+```
 
 Writes are disabled unless the explorer is started with `--allow-write`:
 
@@ -389,7 +397,7 @@ Expected shapes:
 ```json
 {"success":true,"name":"GemStoneRsBridgeRoot","oop":1234,"identityId":1}
 {"success":true,"root":"GemStoneRsBridgeRoot","keys":[{"printString":"BookingDraft"}]}
-{"success":true,"root":"GemStoneRsBridgeRoot","key":"BookingDraft","keyType":"String","value":{"oop":5678,"classOop":9012,"printString":"aDictionary(...)"}}
+{"success":true,"root":"GemStoneRsBridgeRoot","key":"BookingDraft","keyType":"String","depth":4,"value":{"oop":5678,"classOop":9012,"printString":"aDictionary(...)"},"bridgeValue":{"type":"dictionary","entries":{"name":{"type":"string","value":"Tariq"}}}}
 {"success":true,"config":"mapped = BookingDraft ..."}
 {"success":true,"root":"GemStoneRsBridgeRoot","key":"WorkbenchDraft","keyType":"String","valueType":"String","oop":3456}
 ```
@@ -402,5 +410,7 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- richer BridgeRoot inspection and value drill-downs inside the VS Code webview
-- object-mapping-aware explorer panels once nested read-back matures
+- object-mapping-aware BridgeRoot panels that turn `BridgeValue` trees into
+  typed mapping previews
+- relationship and identity-cache views for repeated OOPs inside nested
+  payloads

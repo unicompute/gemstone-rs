@@ -451,6 +451,27 @@ let note: Option<String> = bridge_root.get_optional("BookingNote")?;
 let labels: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
 ```
 
+When the shape is still exploratory, read the same payload back as a dynamic
+`BridgeValue` tree instead of committing to a struct:
+
+```rust
+let dynamic = bridge_root.get_bridge_value("BookingDraft")?;
+println!("{dynamic:?}");
+```
+
+That reads nested dictionaries, arrays, strings, symbols, booleans, small
+integers, and `nil` into plain Rust data. If a value is outside that supported
+BridgeRoot shape, or the read hits the configured depth limit, it stays as an
+explicit `BridgeValue::Oop`. This is useful in the explorer and VS Code
+webview because users can inspect a live payload first, then turn the stable
+parts into `BridgeMapped` structs or codegen config.
+
+The terminal workflow is:
+
+```bash
+gemstone-rs bridge value BookingDraft --depth 4
+```
+
 When a Smalltalk-facing dictionary should use symbols, use the matching
 key-policy variants:
 
@@ -489,9 +510,9 @@ curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 The explorer stays read-only unless started with `--allow-write`, so these
 BridgeRoot write endpoints are useful smoke tests without becoming accidental
 public write APIs. BridgeRoot reads now return a structured payload with the
-root name, key, key type, OOP, class OOP, and `printString`, so the browser and
-VS Code webview can render object values as inspection cards instead of raw
-JSON.
+root name, key, key type, OOP, class OOP, `printString`, and a nested
+`BridgeValue` tree, so the browser and VS Code webview can render object values
+as inspection cards instead of raw JSON.
 
 In VS Code, use:
 

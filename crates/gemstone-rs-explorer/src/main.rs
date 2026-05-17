@@ -2,7 +2,7 @@ use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
     gci_library_path, profiles, BridgeKeySummary, BridgeKeyType, BridgeValue, Config, Oop, Session,
-    Value, DEFAULT_BRIDGE_ROOT,
+    Value, DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -399,19 +399,23 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 .non_empty_query("root")
                 .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
             let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            let depth = bridge_depth_query(route.query("depth").as_deref());
             live_json(|session| {
-                let (root_name, oop) = {
+                let (root_name, oop, bridge_value) = {
                     let mut root = session.bridge_root_named(root_name)?;
                     let oop = root.get_oop_with_key_type(&key, key_type)?;
-                    (root.name().to_string(), oop)
+                    let bridge_value = root.get_bridge_value_with_depth(&key, key_type, depth)?;
+                    (root.name().to_string(), oop, bridge_value)
                 };
                 let value = inspect_oop_value(session, oop)?;
                 Ok(format!(
-                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","value":{}}}"#,
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","depth":{},"value":{},"bridgeValue":{}}}"#,
                     escape_json(&root_name),
                     escape_json(&key),
                     key_type.config_name(),
-                    value
+                    depth,
+                    value,
+                    bridge_value_json(&bridge_value)
                 ))
             })
         }
@@ -597,13 +601,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 5,
-        hours_min: 30,
-        hours_max: 53,
+        hours_min: 28,
+        hours_max: 49,
         next_number: 1,
         next_focus: "Object mapping maturity",
-        next_hours_min: 8,
-        next_hours_max: 14,
-        next_outcome: "Improve nested object/array/dictionary read-back, relationship examples, identity-cache behavior, and mapping diagnostics.",
+        next_hours_min: 6,
+        next_hours_max: 10,
+        next_outcome: "Improve relationship examples, identity-cache behavior, object-mapping-aware panels, and transparent object-model experiments.",
         next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -645,7 +649,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":72,"hoursMax":125,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":70,"hoursMax":121,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -979,6 +983,64 @@ fn bridge_keys_json(keys: &[BridgeKeySummary]) -> String {
     }
     result.push(']');
     result
+}
+
+fn bridge_value_json(value: &BridgeValue) -> String {
+    match value {
+        BridgeValue::Nil => r#"{"type":"nil","value":null}"#.to_string(),
+        BridgeValue::Bool(value) => format!(r#"{{"type":"bool","value":{value}}}"#),
+        BridgeValue::SmallInt(value) => {
+            format!(r#"{{"type":"smallInt","value":{value}}}"#)
+        }
+        BridgeValue::String(value) => {
+            format!(r#"{{"type":"string","value":"{}"}}"#, escape_json(value))
+        }
+        BridgeValue::Symbol(value) => {
+            format!(r#"{{"type":"symbol","value":"{}"}}"#, escape_json(value))
+        }
+        BridgeValue::Oop(oop) => format!(r#"{{"type":"oop","oop":{}}}"#, oop.raw()),
+        BridgeValue::Dictionary(entries) => {
+            let mut result = String::from(r#"{"type":"dictionary","entries":{"#);
+            for (index, (key, value)) in entries.iter().enumerate() {
+                if index > 0 {
+                    result.push(',');
+                }
+                result.push('"');
+                result.push_str(&escape_json(key));
+                result.push_str(r#"":"#);
+                result.push_str(&bridge_value_json(value));
+            }
+            result.push_str("}}");
+            result
+        }
+        BridgeValue::KeyedDictionary(entries) => {
+            let mut result = String::from(r#"{"type":"keyedDictionary","entries":["#);
+            for (index, (key, value)) in entries.iter().enumerate() {
+                if index > 0 {
+                    result.push(',');
+                }
+                result.push_str(&format!(
+                    r#"{{"key":"{}","keyType":"{}","value":{}}}"#,
+                    escape_json(&key.name),
+                    key.key_type.config_name(),
+                    bridge_value_json(value)
+                ));
+            }
+            result.push_str("]}");
+            result
+        }
+        BridgeValue::Array(values) => {
+            let mut result = String::from(r#"{"type":"array","values":["#);
+            for (index, value) in values.iter().enumerate() {
+                if index > 0 {
+                    result.push(',');
+                }
+                result.push_str(&bridge_value_json(value));
+            }
+            result.push_str("]}");
+            result
+        }
+    }
 }
 
 fn bool_query(value: Option<&str>) -> bool {
@@ -1902,6 +1964,13 @@ fn bridge_key_type_query(value: Option<&str>) -> BridgeKeyType {
     }
 }
 
+fn bridge_depth_query(value: Option<&str>) -> usize {
+    value
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .map(|value| value.min(16))
+        .unwrap_or(DEFAULT_BRIDGE_VALUE_DEPTH)
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BridgeValueType {
     String,
@@ -2322,6 +2391,11 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 .bridge-card { display: grid; gap: 6px; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin: 8px 0; background: #161b22; color: #e6edf3; }
 .bridge-card p { margin: 0; }
 .bridge-card code { color: #79c0ff; }
+.bridge-tree { margin-top: 10px; display: grid; gap: 4px; }
+.bridge-node { border-left: 2px solid #30363d; padding-left: 8px; margin-left: 4px; }
+.bridge-node > summary { cursor: pointer; color: #f0f6fc; }
+.bridge-leaf { color: #c9d1d9; }
+.bridge-type { color: #79c0ff; }
 @media (max-width: 760px) { main { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -2633,10 +2707,37 @@ function renderBridgeValue(data) {
     '<div class="bridge-card">' +
       '<p><strong>Root:</strong> ' + escapeHtml(data.root || '-') + '</p>' +
       '<p><strong>Key:</strong> <code>' + escapeHtml(data.key || '-') + '</code> (' + escapeHtml(data.keyType || '-') + ')</p>' +
+      '<p><strong>Depth:</strong> ' + escapeHtml(data.depth || '-') + '</p>' +
       '<p><strong>OOP:</strong> ' + escapeHtml(value.oop || '-') + '</p>' +
       '<p><strong>Class OOP:</strong> ' + escapeHtml(value.classOop || '-') + '</p>' +
       '<p><strong>printString:</strong> ' + escapeHtml(value.printString || '-') + '</p>' +
-    '</div>';
+    '</div>' +
+    '<div class="pane-title">Nested BridgeValue</div>' +
+    '<div class="bridge-card bridge-tree">' + renderBridgeValueNode(data.bridgeValue, 'value') + '</div>';
+}
+function renderBridgeValueNode(value, label) {
+  if (!value || typeof value !== 'object') return '<div class="bridge-leaf">' + escapeHtml(label) + ': -</div>';
+  const type = value.type || 'unknown';
+  if (type === 'dictionary') {
+    const entries = value.entries || {};
+    const rows = Object.keys(entries).sort().map(key => renderBridgeValueNode(entries[key], key)).join('');
+    return '<details class="bridge-node" open><summary>' + escapeHtml(label) + ' <span class="bridge-type">Dictionary</span></summary>' + rows + '</details>';
+  }
+  if (type === 'keyedDictionary') {
+    const rows = (value.entries || []).map(entry => {
+      const key = (entry.key || '-') + ' (' + (entry.keyType || '-') + ')';
+      return renderBridgeValueNode(entry.value, key);
+    }).join('');
+    return '<details class="bridge-node" open><summary>' + escapeHtml(label) + ' <span class="bridge-type">KeyedDictionary</span></summary>' + rows + '</details>';
+  }
+  if (type === 'array') {
+    const rows = (value.values || []).map((entry, index) => renderBridgeValueNode(entry, '[' + (index + 1) + ']')).join('');
+    return '<details class="bridge-node" open><summary>' + escapeHtml(label) + ' <span class="bridge-type">Array</span></summary>' + rows + '</details>';
+  }
+  if (type === 'oop') {
+    return '<div class="bridge-leaf">' + escapeHtml(label) + ': <span class="bridge-type">OOP</span> ' + escapeHtml(value.oop || '-') + '</div>';
+  }
+  return '<div class="bridge-leaf">' + escapeHtml(label) + ': <span class="bridge-type">' + escapeHtml(type) + '</span> ' + escapeHtml(value.value === null || value.value === undefined ? 'nil' : String(value.value)) + '</div>';
 }
 function renderDiff(diff) {
   detail.className = 'detail diff';
@@ -3544,8 +3645,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":5"#));
-        assert!(response.body.contains(r#""hoursMin":30"#));
-        assert!(response.body.contains(r#""hoursMax":53"#));
+        assert!(response.body.contains(r#""hoursMin":28"#));
+        assert!(response.body.contains(r#""hoursMax":49"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Object mapping maturity"));
         assert!(response
@@ -3562,8 +3663,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":11"#));
-        assert!(response.body.contains(r#""hoursMin":72"#));
-        assert!(response.body.contains(r#""hoursMax":125"#));
+        assert!(response.body.contains(r#""hoursMin":70"#));
+        assert!(response.body.contains(r#""hoursMax":121"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3616,6 +3717,36 @@ mod tests {
             BridgeValueType::Symbol
         );
         assert_eq!(bridge_value_type_query(Some("bool")), BridgeValueType::Bool);
+    }
+
+    #[test]
+    fn bridge_depth_query_defaults_and_caps_values() {
+        assert_eq!(bridge_depth_query(None), DEFAULT_BRIDGE_VALUE_DEPTH);
+        assert_eq!(bridge_depth_query(Some("3")), 3);
+        assert_eq!(bridge_depth_query(Some("999")), 16);
+        assert_eq!(bridge_depth_query(Some("nope")), DEFAULT_BRIDGE_VALUE_DEPTH);
+    }
+
+    #[test]
+    fn bridge_value_json_renders_nested_dictionaries_arrays_and_symbol_keys() {
+        let value = BridgeValue::dictionary([
+            ("name".to_string(), BridgeValue::from("Tariq")),
+            (
+                "items".to_string(),
+                BridgeValue::array([
+                    BridgeValue::dictionary([("sku".to_string(), BridgeValue::from("A-1"))]),
+                    BridgeValue::keyed_dictionary([(
+                        gemstone_rs::BridgeKey::symbol("state"),
+                        BridgeValue::Symbol("ready".to_string()),
+                    )]),
+                ]),
+            ),
+        ]);
+        let json = bridge_value_json(&value);
+        assert!(json.contains(r#""type":"dictionary""#));
+        assert!(json.contains(r#""items":{"type":"array""#));
+        assert!(json.contains(r#""type":"keyedDictionary""#));
+        assert!(json.contains(r#""key":"state","keyType":"Symbol""#));
     }
 
     #[test]

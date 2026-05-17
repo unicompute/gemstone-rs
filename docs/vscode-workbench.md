@@ -245,6 +245,11 @@ opens:
 http://127.0.0.1:8787/api/bridge/root?root=GemStoneRsBridgeRoot
 ```
 
+Use the embedded explorer's `BridgeRoot Value` action when you want the richer
+view. The response includes the raw OOP/class/printString summary and a nested
+`BridgeValue` tree, so dictionaries, arrays, symbol values, and depth-limited
+object references are visible before you settle on a generated mapping.
+
 Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
 opening a browser; it runs `gemstone-rs bridge keys --root <bridge-root>` and
 writes the key OOPs, class OOPs, `printString` values, and identity ids to the
@@ -393,5 +398,6 @@ make vscode-package
 
 The embedded webview now covers the main Codegen, profile, setup, comparison,
 generated-output editing, BridgeRoot inspection, live browsing, source preview,
-open-file loops, and committed Marketplace/GitHub visual assets. Next polish
-should focus on richer BridgeRoot inspection actions.
+open-file loops, nested BridgeValue rendering, and committed Marketplace/GitHub
+visual assets. Next polish should focus on object-mapping-aware BridgeRoot
+panels and relationship/identity-cache views.

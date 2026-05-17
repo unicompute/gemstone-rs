@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**11 batches**, roughly **72-125 hours** total. Use
+**11 batches**, roughly **70-121 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -237,6 +237,7 @@ cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping
+cargo run -p gemstone-rs --example bridge_value_inspection
 cargo run -p gemstone-rs --example codegen_preview
 cargo run -p gemstone-rs --example codegen_workflow
 cargo run -p gemstone-rs --example generated_wrapper_app
@@ -409,7 +410,10 @@ creates a standalone Cargo project from an installed template, including
 `codegen_discover_mapping`, `profile_codegen_workflow`,
 `generated_wrapper_app`, `generated_mapping_app`, `http_service`,
 `session_worker_pool`, `axum_service`, and `actix_service`, so users can try
-gemstone-rs without keeping the repository checkout open. `profile_codegen_workflow` also writes
+gemstone-rs without keeping the repository checkout open. The source checkout
+also includes `bridge_value_inspection`, which reads nested BridgeRoot
+dictionaries and arrays back as dynamic `BridgeValue` trees before a typed
+mapping is finalized. `profile_codegen_workflow` also writes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside
 `src/main.rs`. `examples map` mirrors the `gemstone-examples plan3-map` idea
 by showing which Rust crates, examples, and docs correspond to each feature
@@ -417,6 +421,7 @@ stream and gemstone-py reference point. The JSON forms are used by tooling and
 are suitable for CI checks.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
+`bridge value <key> --depth 4` prints a nested dynamic `BridgeValue` tree; and
 `bridge put` and `bridge remove` make explicit committed BridgeRoot edits.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
@@ -685,6 +690,6 @@ process.
 The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
 recent config history, named local profiles, diff detail, local field
 persistence, project profile file load/save, editable generated-output webview,
-browser fallback paths, and committed Marketplace/GitHub visuals are now wired.
-Next explorer work should focus on richer BridgeRoot inspection actions over
-the stable local API.
+browser fallback paths, nested BridgeValue rendering, and committed
+Marketplace/GitHub visuals are now wired. Next explorer work should focus on
+richer object-mapping-aware BridgeRoot panels over the stable local API.

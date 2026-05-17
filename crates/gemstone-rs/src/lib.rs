@@ -298,6 +298,7 @@ pub mod worker;
 pub use bridge::{
     BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,
     BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue, DEFAULT_BRIDGE_ROOT,
+    DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{
@@ -723,6 +724,22 @@ impl Session {
         };
         self.check_oop("perform", oop)?;
         Ok(Oop(oop))
+    }
+
+    pub fn is_kind_of(&mut self, oop: Oop, class_name: &str) -> Result<bool> {
+        let class_oop = self.resolve(class_name)?;
+        match self.perform(oop, "isKindOf:", &[class_oop])? {
+            Value::Bool(value) => Ok(value),
+            other => Err(Error::UnexpectedType {
+                expected: "Bool",
+                actual: format!("{other:?}"),
+            }),
+        }
+    }
+
+    pub fn print_string(&mut self, oop: Oop) -> Result<String> {
+        let printed = self.perform_oop(oop, "printString", &[])?;
+        self.fetch_string(printed)
     }
 
     pub fn resolve(&mut self, name: &str) -> Result<Oop> {
@@ -1615,6 +1632,64 @@ mod tests {
         bridge_root.remove(&tags_key)?;
         bridge_root.remove(&note_key)?;
         bridge_root.remove_with_key_type(&symbol_labels_key, BridgeKeyType::Symbol)?;
+        bridge_root.commit()?;
+        Ok(())
+    }
+
+    #[test]
+    fn live_bridge_value_nested_readback_when_enabled() -> Result<()> {
+        let Some(_guard) = live_test_guard() else {
+            return Ok(());
+        };
+        let Some(mut session) = live_session()? else {
+            return Ok(());
+        };
+
+        let key = live_key("GemStoneRsBridgeValue");
+        let payload = BridgeValue::dictionary([
+            ("name".to_string(), BridgeValue::from("Tariq")),
+            ("amount".to_string(), BridgeValue::from(100_i64)),
+            (
+                "customer".to_string(),
+                BridgeValue::dictionary([
+                    ("name".to_string(), BridgeValue::from("Tariq")),
+                    ("vip".to_string(), BridgeValue::from(true)),
+                ]),
+            ),
+            (
+                "items".to_string(),
+                BridgeValue::array([
+                    BridgeValue::dictionary([
+                        ("sku".to_string(), BridgeValue::from("A-1")),
+                        ("quantity".to_string(), BridgeValue::from(2_i64)),
+                    ]),
+                    BridgeValue::dictionary([
+                        ("sku".to_string(), BridgeValue::from("B-2")),
+                        ("quantity".to_string(), BridgeValue::from(1_i64)),
+                    ]),
+                ]),
+            ),
+            (
+                "state".to_string(),
+                BridgeValue::Symbol("ready".to_string()),
+            ),
+            ("note".to_string(), BridgeValue::Nil),
+        ]);
+
+        let mut bridge_root = session.bridge_root()?;
+        bridge_root.put(&key, payload.clone())?;
+        assert_eq!(bridge_root.get_bridge_value(&key)?, payload);
+
+        let symbol_key = live_key("GemStoneRsBridgeValueSymbol");
+        let symbol_payload = BridgeValue::keyed_dictionary([(
+            BridgeKey::symbol("state"),
+            BridgeValue::Symbol("ready".to_string()),
+        )]);
+        bridge_root.put(&symbol_key, symbol_payload.clone())?;
+        assert_eq!(bridge_root.get_bridge_value(&symbol_key)?, symbol_payload);
+
+        bridge_root.remove(&key)?;
+        bridge_root.remove(&symbol_key)?;
         bridge_root.commit()?;
         Ok(())
     }
