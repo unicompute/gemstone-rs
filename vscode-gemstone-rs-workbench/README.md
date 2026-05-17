@@ -9,7 +9,7 @@ and VS Code provides command palette actions, output panels, and generated-file
 previews. The GemStone RS activity bar view also exposes a browsable tree for
 dictionaries, classes, protocols, methods, and codegen actions.
 
-![gemstone-rs Workbench codegen edit flow](https://raw.githubusercontent.com/unicompute/gemstone-rs/main/docs/assets/workbench-codegen-edit-flow.png)
+![gemstone-rs Workbench codegen edit flow](https://raw.githubusercontent.com/unicompute/gemstone-rs/main/docs/assets/workbench-codegen-edit-flow.gif)
 
 ## Setup
 

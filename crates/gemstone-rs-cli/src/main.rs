@@ -1711,7 +1711,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/explorer.md",
         docs: "docs/explorer.md, docs/screenshots.md",
         gemstone_py_reference: "python-gemstone-database-explorer",
-        status: "Useful local UI/API with profile status, codegen diff/explain, BridgeRoot, and comparison workflows; Python explorer remains the richer product reference",
+        status: "Useful local UI/API with profile status, codegen diff/explain, editable generated output, BridgeRoot, comparison workflows, and committed visual assets; Python explorer remains the richer product reference",
     },
     FeatureInfo {
         stream: "8",
@@ -1720,7 +1720,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "tooling/vscode-workbench.md",
         docs: "docs/vscode-workbench.md",
         gemstone_py_reference: "gemstone-py Workbench",
-        status: "Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs, BridgeRoot keys, and comparison status",
+        status: "Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs/editable output, BridgeRoot keys, comparison status, and Marketplace/GitHub visuals",
     },
     FeatureInfo {
         stream: "9",
@@ -1858,8 +1858,8 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 5,
         project_score: 4,
         leader: "gemstone-py",
-        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, and an embedded webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels.",
-        next_action: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
+        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, and committed Marketplace/GitHub visuals.",
+        next_action: "Fold the remaining explorer polish into richer BridgeRoot inspection and object-mapping drill-downs.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -1889,11 +1889,11 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         verify_with: "cargo run --manifest-path examples/actix-service/Cargo.toml -- --routes",
     },
     GapInfo {
-        priority: "P1",
+        priority: "P2",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot keys/values, open-file actions, browser fallback prompts, and comparison status. They still need Marketplace/GitHub stills or short GIFs that show the refreshed workflow.",
-        next_action: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot keys/values, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. They still need richer BridgeRoot value drill-downs and object-mapping-aware inspection.",
+        next_action: "Fold the remaining explorer polish into the object mapping maturity batch.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -1933,14 +1933,6 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
 const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
-        focus: "Explorer and VS Code visual polish",
-        hours_min: 2,
-        hours_max: 3,
-        outcome: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
-        verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
-    },
-    BatchInfo {
-        number: 2,
         focus: "Object mapping maturity",
         hours_min: 8,
         hours_max: 14,
@@ -1948,7 +1940,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
     },
     BatchInfo {
-        number: 3,
+        number: 2,
         focus: "Codegen live discovery and generated tests",
         hours_min: 8,
         hours_max: 14,
@@ -1956,7 +1948,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/gemstone-rs.codegen --json",
     },
     BatchInfo {
-        number: 4,
+        number: 3,
         focus: "Async facade and web framework breadth",
         hours_min: 2,
         hours_max: 4,
@@ -1964,7 +1956,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "cargo run --manifest-path examples/axum-service/Cargo.toml -- --routes",
     },
     BatchInfo {
-        number: 5,
+        number: 4,
         focus: "Shared core with gemstone-py-native",
         hours_min: 8,
         hours_max: 14,
@@ -1972,7 +1964,7 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
     },
     BatchInfo {
-        number: 6,
+        number: 5,
         focus: "Release and live CI hardening",
         hours_min: 4,
         hours_max: 7,
@@ -5556,16 +5548,16 @@ mod tests {
 
     #[test]
     fn comparison_batch_plans_are_actionable() {
-        assert_eq!(GEMSTONE_RS_BATCHES.len(), 6);
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (32, 56));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (30, 53));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
-                total_batches: 12,
-                hours_min: 74,
-                hours_max: 128,
+                total_batches: 11,
+                hours_min: 72,
+                hours_max: 125,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5586,11 +5578,11 @@ mod tests {
         )
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
-            .contains(r#""totalBatches":6"#));
+            .contains(r#""totalBatches":5"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":6,"hoursMin":32,"hoursMax":56}"#));
+            .contains(r#""remaining":{"totalBatches":5,"hoursMin":30,"hoursMax":53}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -5628,7 +5620,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("Marketplace/GitHub")));
+                && gap.next_action.contains("object mapping maturity")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 

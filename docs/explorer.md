@@ -247,8 +247,8 @@ The `Comparison Status` buttons call read-only local endpoints:
 - `Compare with gemstone-py` renders the same short answer as
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
-  TypeScript/Python batch count, currently **12 batches** and roughly
-  **74-128 hours**
+  TypeScript/Python batch count, currently **11 batches** and roughly
+  **72-125 hours**
 
 Read-only endpoints:
 
@@ -402,5 +402,5 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- short GIFs showing profile import, editable generated output, and BridgeRoot checks
 - richer BridgeRoot inspection and value drill-downs inside the VS Code webview
+- object-mapping-aware explorer panels once nested read-back matures

@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**12 batches**, roughly **74-128 hours** total. Use
+**11 batches**, roughly **72-125 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -685,6 +685,6 @@ process.
 The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
 recent config history, named local profiles, diff detail, local field
 persistence, project profile file load/save, editable generated-output webview,
-and browser fallback paths are now wired. Next explorer work should add short
-Marketplace/GitHub GIFs and more BridgeRoot inspection actions over the stable
-local API.
+browser fallback paths, and committed Marketplace/GitHub visuals are now wired.
+Next explorer work should focus on richer BridgeRoot inspection actions over
+the stable local API.

@@ -10,7 +10,7 @@ Marketplace:
 https://marketplace.visualstudio.com/items?itemName=unicompute.gemstone-rs-workbench
 ```
 
-![gemstone-rs Workbench codegen edit flow](assets/workbench-codegen-edit-flow.png)
+![gemstone-rs Workbench codegen edit flow](assets/workbench-codegen-edit-flow.gif)
 
 ## Setup
 
@@ -393,5 +393,5 @@ make vscode-package
 
 The embedded webview now covers the main Codegen, profile, setup, comparison,
 generated-output editing, BridgeRoot inspection, live browsing, source preview,
-and open-file loops. Next visual polish should focus on Marketplace/GitHub GIF
-coverage and richer BridgeRoot inspection actions.
+open-file loops, and committed Marketplace/GitHub visual assets. Next polish
+should focus on richer BridgeRoot inspection actions.

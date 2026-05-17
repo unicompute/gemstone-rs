@@ -86,8 +86,8 @@ file.
 | Rust HTTP service demo | Not applicable | Supported through `cargo run -p gemstone-rs --example http_service -- --port 3000` |
 | Axum/Actix demo | Not applicable | Axum and Actix services supported through `gemstone-rs-axum`, `gemstone-rs-actix`, `examples/axum-service`, and `examples/actix-service` |
 | Installed examples index | `gemstone-examples hello`, `list`, `plan3-map` | `gemstone-rs hello`, `compare gemstone-py`, `examples list`, `map`, `show`, `run --dry-run`, `scaffold`, plus JSON for tooling |
-| Database explorer | Mature Python app | Rust explorer has browser UI, local API, profile status, codegen diff/explain, BridgeRoot, and comparison workflows; still less polished |
-| VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and an embedded explorer webview with structured setup, profile, codegen, diff, BridgeRoot, and comparison panels |
+| Database explorer | Mature Python app | Rust explorer has browser UI, local API, profile status, codegen diff/explain, editable generated output, BridgeRoot, comparison workflows, and committed visual assets; still less polished |
+| VS Code sidebar workflow | More complete | Rust workbench has sidebar commands and an embedded explorer webview with structured setup, profile, codegen, diff, editable generated output, BridgeRoot, comparison panels, and Marketplace/GitHub visuals |
 
 ## Actionable Gap Report
 
@@ -114,7 +114,7 @@ gemstone-rs compare all --batches
 ```
 
 `compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **12 batches**, roughly **74-128 hours**
+TypeScript/Python track and reports **11 batches**, roughly **72-125 hours**
 total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -140,7 +140,7 @@ coverage, explorer polish, and release lane depth.
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
 | P1 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add broader framework coverage and richer real-application middleware patterns around the packaged adapters. |
-| P1 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs. |
+| P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Fold the remaining explorer polish into the object mapping maturity batch. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Async facade | gemstone-py has async examples and FastAPI integration. | Add an async facade over `SessionWorkerPool` after GCI thread behavior is proven with live tests. |
 | P2 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
@@ -166,14 +166,13 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Explorer and VS Code visual polish | 2-3 hours |
-| 2 | Object mapping maturity | 8-14 hours |
-| 3 | Codegen live discovery and generated tests | 8-14 hours |
-| 4 | Async facade and web framework breadth | 2-4 hours |
-| 5 | Shared core with `gemstone-py-native` | 8-14 hours |
-| 6 | Release and live CI hardening | 4-7 hours |
+| 1 | Object mapping maturity | 8-14 hours |
+| 2 | Codegen live discovery and generated tests | 8-14 hours |
+| 3 | Async facade and web framework breadth | 2-4 hours |
+| 4 | Shared core with `gemstone-py-native` | 8-14 hours |
+| 5 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **32-56 hours** to bring `gemstone-rs` materially closer to
+Total: roughly **30-53 hours** to bring `gemstone-rs` materially closer to
 `gemstone-py` across product polish, generated-code confidence, async/web
 ergonomics, shared native-core integration, and release depth.
 

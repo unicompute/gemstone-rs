@@ -596,15 +596,15 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         gemstone_py_score: 30,
         project_score: 27,
         max_score: 35,
-        total_batches: 6,
-        hours_min: 32,
-        hours_max: 56,
+        total_batches: 5,
+        hours_min: 30,
+        hours_max: 53,
         next_number: 1,
-        next_focus: "Explorer and VS Code visual polish",
-        next_hours_min: 2,
-        next_hours_max: 3,
-        next_outcome: "Package the refreshed webview flow as Marketplace/GitHub stills or short GIFs.",
-        next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
+        next_focus: "Object mapping maturity",
+        next_hours_min: 8,
+        next_hours_max: 14,
+        next_outcome: "Improve nested object/array/dictionary read-back, relationship examples, identity-cache behavior, and mapping diagnostics.",
+        next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
         top_gap_strength: "FastAPI, Litestar, and Django examples are first-class and documented.",
@@ -645,7 +645,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":74,"hoursMax":128,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":72,"hoursMax":125,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -3543,11 +3543,11 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
-        assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":32"#));
-        assert!(response.body.contains(r#""hoursMax":56"#));
+        assert!(response.body.contains(r#""totalBatches":5"#));
+        assert!(response.body.contains(r#""hoursMin":30"#));
+        assert!(response.body.contains(r#""hoursMax":53"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
-        assert!(response.body.contains("Explorer and VS Code visual polish"));
+        assert!(response.body.contains("Object mapping maturity"));
         assert!(response
             .body
             .contains("gemstone-rs compare gemstone-py --batches"));
@@ -3561,9 +3561,9 @@ mod tests {
         );
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
-        assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":74"#));
-        assert!(response.body.contains(r#""hoursMax":128"#));
+        assert!(response.body.contains(r#""totalBatches":11"#));
+        assert!(response.body.contains(r#""hoursMin":72"#));
+        assert!(response.body.contains(r#""hoursMax":125"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
