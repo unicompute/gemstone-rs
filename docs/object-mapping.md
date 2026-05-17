@@ -314,6 +314,37 @@ hits an unsupported object, a repeated object, or the depth limit, it returns
 `BridgeValue::Oop(oop)` instead of pretending the object is transparent Rust
 state.
 
+You can turn the inspected shape into a starter codegen config before writing a
+typed struct by hand:
+
+```rust
+use gemstone_rs::{codegen, BridgeValue};
+
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+]);
+
+let config = codegen::mapping_config_from_bridge_value("BookingDraft", &payload);
+println!("{config}");
+```
+
+Run the offline example:
+
+```bash
+cargo run -p gemstone-rs --example bridge_mapping_preview
+```
+
+Or infer from a live BridgeRoot value:
+
+```bash
+gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
+```
+
+The output is intentionally reviewable text, not automatic persistence magic.
+Opaque OOPs, nil fields, symbols, empty arrays, and mixed arrays receive `doc=`
+notes so you can choose a narrower type before running codegen.
+
 ## Derive-Based Mapping
 
 For normal Rust structs, prefer `#[derive(BridgeMapped)]`. The derive writes a
@@ -592,6 +623,7 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge value BookingDraft --depth 4
+gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
 gemstone-rs bridge put-symbol WorkbenchState ready

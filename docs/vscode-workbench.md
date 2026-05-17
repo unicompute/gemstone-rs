@@ -249,6 +249,9 @@ Use the embedded explorer's `BridgeRoot Value` action when you want the richer
 view. The response includes the raw OOP/class/printString summary and a nested
 `BridgeValue` tree, so dictionaries, arrays, symbol values, and depth-limited
 object references are visible before you settle on a generated mapping.
+Use `Preview Mapping Config` in that same BridgeRoot panel to infer a starter
+`BridgeMapped` codegen config from the selected live value before saving it to
+the project.
 
 Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
 opening a browser; it runs `gemstone-rs bridge keys --root <bridge-root>` and

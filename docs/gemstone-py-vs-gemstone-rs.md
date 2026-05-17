@@ -114,7 +114,7 @@ gemstone-rs compare all --batches
 ```
 
 `compare all --batches` combines this Rust/Python track with the
-TypeScript/Python track and reports **11 batches**, roughly **70-121 hours**
+TypeScript/Python track and reports **11 batches**, roughly **68-119 hours**
 total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
@@ -166,13 +166,13 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Object mapping maturity | 6-10 hours |
+| 1 | Object mapping maturity | 4-8 hours |
 | 2 | Codegen live discovery and generated tests | 8-14 hours |
 | 3 | Async facade and web framework breadth | 2-4 hours |
 | 4 | Shared core with `gemstone-py-native` | 8-14 hours |
 | 5 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **28-49 hours** to bring `gemstone-rs` materially closer to
+Total: roughly **26-47 hours** to bring `gemstone-rs` materially closer to
 `gemstone-py` across product polish, generated-code confidence, async/web
 ergonomics, shared native-core integration, and release depth.
 

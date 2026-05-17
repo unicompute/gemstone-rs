@@ -470,7 +470,22 @@ The terminal workflow is:
 
 ```bash
 gemstone-rs bridge value BookingDraft --depth 4
+gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 ```
+
+`mapping-preview` is the bridge between exploration and codegen. It reads the
+live `BridgeValue` tree and emits reviewable config:
+
+```text
+mapped = BookingDraft | doc=Inferred from a live BridgeRoot value.
+field = BookingDraft.customer | type=Mapped<BookingDraftCustomer> | key=customer | key_type=String
+field = BookingDraft.items | type=Vec<Mapped<BookingDraftItem>> | key=items | key_type=String
+field = BookingDraft.note | type=Option<Oop> | key=note | key_type=String | doc=Observed nil; choose a narrower Option<T> before committing generated code.
+```
+
+This keeps the Rust model honest: it helps discover a shape, but the developer
+still reviews field names, symbol/string key policy, optional fields, and
+opaque OOPs before generating code.
 
 When a Smalltalk-facing dictionary should use symbols, use the matching
 key-policy variants:
@@ -502,6 +517,7 @@ The local explorer and VS Code extension expose this workflow too:
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
+curl -s 'http://127.0.0.1:8787/api/bridge/mapping-preview?key=BookingDraft&mapped=BookingDraft&depth=4'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'

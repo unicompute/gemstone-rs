@@ -234,6 +234,24 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_bridge_value(&value, 0);
             Ok(())
         }
+        Command::BridgeMappingPreview {
+            root,
+            key,
+            key_type,
+            depth,
+            mapped_name,
+        } => {
+            let mut session = login()?;
+            let value = {
+                let mut bridge_root = session.bridge_root_named(root)?;
+                bridge_root.get_bridge_value_with_depth(&key, key_type, depth)?
+            };
+            println!(
+                "{}",
+                codegen::mapping_config_from_bridge_value(&mapped_name, &value)
+            );
+            Ok(())
+        }
         Command::BridgeInspect {
             root,
             key,
@@ -1989,9 +2007,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Object mapping maturity",
-        hours_min: 6,
-        hours_max: 10,
-        outcome: "Improve relationship examples, identity-cache behavior, object-mapping-aware panels, and transparent object-model experiments.",
+        hours_min: 4,
+        hours_max: 8,
+        outcome: "Improve relationship examples, identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
         verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
     },
     BatchInfo {
@@ -3925,6 +3943,13 @@ enum Command {
         key_type: BridgeKeyType,
         depth: usize,
     },
+    BridgeMappingPreview {
+        root: String,
+        key: String,
+        key_type: BridgeKeyType,
+        depth: usize,
+        mapped_name: String,
+    },
     BridgeInspect {
         root: String,
         key: String,
@@ -4745,7 +4770,7 @@ fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Err(CliError::usage(
-            "expected: bridge root|keys|get|value|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         ));
     };
     match command {
@@ -4780,6 +4805,22 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 key,
                 key_type: options.key_type,
                 depth: options.depth.unwrap_or(DEFAULT_BRIDGE_VALUE_DEPTH),
+            })
+        }
+        "mapping-preview" | "preview-mapping" => {
+            let key = args
+                .get(1)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing key for bridge mapping-preview"))?;
+            let options = parse_bridge_options(&args[2..])?;
+            Ok(Command::BridgeMappingPreview {
+                root: options.root,
+                key,
+                key_type: options.key_type,
+                depth: options.depth.unwrap_or(DEFAULT_BRIDGE_VALUE_DEPTH),
+                mapped_name: options
+                    .mapped_name
+                    .unwrap_or_else(|| "BookingDraft".to_string()),
             })
         }
         "inspect" => {
@@ -4832,7 +4873,7 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .unwrap_or_else(|| "BookingDraft".to_string()),
         }),
         _ => Err(CliError::usage(
-            "expected: bridge root|keys|get|value|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         )),
     }
 }
@@ -4887,6 +4928,7 @@ struct BridgeOptions {
     key_type: BridgeKeyType,
     value_type: Option<BridgeValueType>,
     depth: Option<usize>,
+    mapped_name: Option<String>,
 }
 
 fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
@@ -4894,6 +4936,7 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
     let mut key_type = BridgeKeyType::String;
     let mut value_type = None;
     let mut depth = None;
+    let mut mapped_name = None;
     let mut index = 0;
     while index < args.len() {
         match args[index].as_str() {
@@ -4955,6 +4998,21 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
                 }
                 depth = Some(parse_bridge_depth(value)?);
             }
+            "--mapped" | "--mapped-name" => {
+                index += 1;
+                mapped_name = Some(
+                    args.get(index)
+                        .cloned()
+                        .ok_or_else(|| CliError::usage("missing value for --mapped"))?,
+                );
+            }
+            option if option.starts_with("--mapped=") || option.starts_with("--mapped-name=") => {
+                let (name, value) = option.split_once('=').unwrap_or_default();
+                if value.is_empty() {
+                    return Err(CliError::usage(format!("missing value for {name}=")));
+                }
+                mapped_name = Some(value.to_string());
+            }
             other => {
                 return Err(CliError::usage(format!("unknown bridge option: {other}")));
             }
@@ -4966,6 +5024,7 @@ fn parse_bridge_options(args: &[String]) -> Result<BridgeOptions, CliError> {
         key_type,
         value_type,
         depth,
+        mapped_name,
     })
 }
 
@@ -5137,6 +5196,7 @@ fn usage() -> &'static str {
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge value <key> [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge mapping-preview <key> [--mapped <name>] [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge inspect <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put <key> <value> [--type String|Symbol|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put-string <key> <value> [--symbol|--string|--key-type String|Symbol] [--root <name>]
@@ -5650,14 +5710,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (28, 49));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (26, 47));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 11,
-                hours_min: 70,
-                hours_max: 121,
+                hours_min: 68,
+                hours_max: 119,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5682,7 +5742,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":5,"hoursMin":28,"hoursMax":49}"#));
+            .contains(r#""remaining":{"totalBatches":5,"hoursMin":26,"hoursMax":47}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -6105,6 +6165,27 @@ GEMSTONE=/opt/gemstone # product root
                 key: "BookingDraft".to_string(),
                 key_type: BridgeKeyType::String,
                 depth: 4,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "mapping-preview",
+                "BookingDraft",
+                "--mapped=BookingDraft",
+                "--depth",
+                "5",
+                "--symbol",
+                "--root",
+                "DemoRoot"
+            ]))
+            .unwrap(),
+            Command::BridgeMappingPreview {
+                root: "DemoRoot".to_string(),
+                key: "BookingDraft".to_string(),
+                key_type: BridgeKeyType::Symbol,
+                depth: 5,
+                mapped_name: "BookingDraft".to_string(),
             }
         );
         assert_eq!(

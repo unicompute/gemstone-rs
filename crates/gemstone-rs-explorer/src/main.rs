@@ -500,6 +500,36 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 ),
             )
         }
+        "/api/bridge/mapping-preview" => {
+            let Some(key) = route.non_empty_query("key") else {
+                return Response::json(400, r#"{"error":"missing key"}"#.to_string());
+            };
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
+            let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            let depth = bridge_depth_query(route.query("depth").as_deref());
+            let mapped = route
+                .non_empty_query("mapped")
+                .unwrap_or_else(|| "BookingDraft".to_string());
+            live_json(|session| {
+                let (root_name, bridge_value) = {
+                    let mut root = session.bridge_root_named(root_name)?;
+                    let bridge_value = root.get_bridge_value_with_depth(&key, key_type, depth)?;
+                    (root.name().to_string(), bridge_value)
+                };
+                let config = codegen::mapping_config_from_bridge_value(&mapped, &bridge_value);
+                Ok(format!(
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","depth":{},"mapped":"{}","config":"{}"}}"#,
+                    escape_json(&root_name),
+                    escape_json(&key),
+                    key_type.config_name(),
+                    depth,
+                    escape_json(&mapped),
+                    escape_json(&config)
+                ))
+            })
+        }
         _ => Response::json(404, r#"{"error":"not found"}"#.to_string()),
     }
 }
@@ -601,13 +631,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 5,
-        hours_min: 28,
-        hours_max: 49,
+        hours_min: 26,
+        hours_max: 47,
         next_number: 1,
         next_focus: "Object mapping maturity",
-        next_hours_min: 6,
-        next_hours_max: 10,
-        next_outcome: "Improve relationship examples, identity-cache behavior, object-mapping-aware panels, and transparent object-model experiments.",
+        next_hours_min: 4,
+        next_hours_max: 8,
+        next_outcome: "Improve relationship examples, identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
         next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -649,7 +679,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":70,"hoursMax":121,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":68,"hoursMax":119,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -2458,11 +2488,16 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 <label>Bridge value<input id="bridgeValue" value="hello"></label>
 </div>
 <div class="row">
+<label>Mapped struct<input id="bridgeMappedName" value="BookingDraft"></label>
+<label>Read depth<input id="bridgeDepth" value="4"></label>
+</div>
+<div class="row">
 <label>Bridge key type<select id="bridgeKeyType"><option>String</option><option>Symbol</option></select></label>
 <label>Bridge value type<select id="bridgeValueType"><option>String</option><option>Symbol</option><option>SmallInt</option><option>Bool</option></select></label>
 </div>
 <div class="actions">
 <button class="secondary" onclick="getBridgeValue()">Get</button>
+<button class="secondary" onclick="previewBridgeMapping()">Preview Mapping Config</button>
 <button class="secondary" onclick="putBridgeValue()">Put Value</button>
 <button class="secondary" onclick="removeBridgeValue()">Remove</button>
 </div>
@@ -2537,7 +2572,7 @@ function apiPath(path) {
   if (!authToken) return path;
   return path + (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(authToken);
 }
-function bridgeQuery() { return 'key=' + q('bridgeKey') + '&key_type=' + q('bridgeKeyType'); }
+function bridgeQuery() { return 'key=' + q('bridgeKey') + '&key_type=' + q('bridgeKeyType') + '&depth=' + q('bridgeDepth'); }
 function codegenRootQuery() {
   const root = document.getElementById('codegenRoot').value.trim();
   return root ? '&root=' + encodeURIComponent(root) : '';
@@ -2891,6 +2926,9 @@ async function loadBridgeKeys() {
   }
 }
 function getBridgeValue() { callApi('/api/bridge/get?' + bridgeQuery()); }
+function previewBridgeMapping() {
+  callApi('/api/bridge/mapping-preview?' + bridgeQuery() + '&mapped=' + q('bridgeMappedName'));
+}
 function putBridgeValue() {
   if (!confirmWrite('Put this value into BridgeRoot?')) return;
   callApi('/api/bridge/put?' + bridgeQuery() + '&value=' + q('bridgeValue') + '&value_type=' + q('bridgeValueType'));
@@ -3606,6 +3644,8 @@ mod tests {
         assert!(response.body.contains("codegenGenerateProfile()"));
         assert!(response.body.contains("bridgeKeyType"));
         assert!(response.body.contains("bridgeValueType"));
+        assert!(response.body.contains("bridgeMappedName"));
+        assert!(response.body.contains("previewBridgeMapping()"));
         assert!(response.body.contains("Generated Source / Config / Diff"));
         assert!(response.body.contains("renderDiff"));
         assert!(response.body.contains("renderSideBySideDiff"));
@@ -3624,6 +3664,7 @@ mod tests {
         assert!(response.body.contains("/api/compare/all/status"));
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
+        assert!(response.body.contains("/api/bridge/mapping-preview"));
         assert!(response.body.contains("/api/codegen/configs"));
         assert!(response.body.contains("/api/codegen/profiles/check"));
         assert!(response.body.contains("/api/codegen/preview-profile"));
@@ -3645,8 +3686,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":5"#));
-        assert!(response.body.contains(r#""hoursMin":28"#));
-        assert!(response.body.contains(r#""hoursMax":49"#));
+        assert!(response.body.contains(r#""hoursMin":26"#));
+        assert!(response.body.contains(r#""hoursMax":47"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Object mapping maturity"));
         assert!(response
@@ -3663,8 +3704,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":11"#));
-        assert!(response.body.contains(r#""hoursMin":70"#));
-        assert!(response.body.contains(r#""hoursMax":121"#));
+        assert!(response.body.contains(r#""hoursMin":68"#));
+        assert!(response.body.contains(r#""hoursMax":119"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3790,6 +3831,16 @@ mod tests {
         );
         assert_eq!(invalid_smallint.status, 400);
         assert!(invalid_smallint.body.contains("SmallInt"));
+    }
+
+    #[test]
+    fn bridge_mapping_preview_requires_key_before_live_login() {
+        let response = handle_request(
+            "GET /api/bridge/mapping-preview?mapped=BookingDraft HTTP/1.1",
+            &ExplorerConfig::default(),
+        );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("missing key"));
     }
 
     #[test]

@@ -200,6 +200,8 @@ The `bridge` commands inspect the default `GemStoneRsBridgeRoot` dictionary:
 gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
+gemstone-rs bridge value BookingDraft --depth 4
+gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"
 gemstone-rs bridge put-symbol WorkbenchState ready
@@ -216,6 +218,8 @@ The generic `bridge put` remains available when scripts prefer
 when the BridgeRoot key is a GemStone Symbol instead of a String. Scripts can
 also use equals-style options such as `--root=DemoRoot`,
 `--key-type=Symbol`, and `--type=SmallInt`.
+`bridge mapping-preview` reads a live BridgeRoot value as a nested
+`BridgeValue` tree and infers a reviewable `BridgeMapped` codegen config.
 
 `codegen diff` previews generated changes before writing. `codegen check` is
 suitable for CI. In this repository it verifies:

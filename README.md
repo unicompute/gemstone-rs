@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**11 batches**, roughly **70-121 hours** total. Use
+**11 batches**, roughly **68-119 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -413,16 +413,20 @@ creates a standalone Cargo project from an installed template, including
 gemstone-rs without keeping the repository checkout open. The source checkout
 also includes `bridge_value_inspection`, which reads nested BridgeRoot
 dictionaries and arrays back as dynamic `BridgeValue` trees before a typed
-mapping is finalized. `profile_codegen_workflow` also writes
+mapping is finalized, and `bridge_mapping_preview`, which infers a reviewable
+starter `BridgeMapped` codegen config from that dynamic shape.
+`profile_codegen_workflow` also writes
 `gemstone-rs.codegen` and `gemstone-rs.codegen-profiles.json` beside
 `src/main.rs`. `examples map` mirrors the `gemstone-examples plan3-map` idea
 by showing which Rust crates, examples, and docs correspond to each feature
 stream and gemstone-py reference point. The JSON forms are used by tooling and
 are suitable for CI checks.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
-`bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`;
-`bridge value <key> --depth 4` prints a nested dynamic `BridgeValue` tree; and
-`bridge put` and `bridge remove` make explicit committed BridgeRoot edits.
+`bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`,
+`bridge value <key> --depth 4` prints a nested dynamic `BridgeValue` tree,
+`bridge mapping-preview <key> --mapped BookingDraft --depth 4` converts a live
+BridgeRoot value into a reviewable mapping config, and `bridge put` and
+`bridge remove` make explicit committed BridgeRoot edits.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
 line-oriented config, explain what will be generated, preview generated Rust

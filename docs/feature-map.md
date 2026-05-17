@@ -57,7 +57,7 @@ The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print both comparison tracks together; `compare all --batches`
-reports **11 batches** and roughly **70-121 hours** across the Rust and
+reports **11 batches** and roughly **68-119 hours** across the Rust and
 TypeScript catch-up tracks.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,

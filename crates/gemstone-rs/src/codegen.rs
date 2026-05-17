@@ -1,4 +1,4 @@
-use crate::{browser, browser::Browser, Session};
+use crate::{browser, browser::Browser, BridgeKeyType, BridgeValue, Session};
 use std::collections::BTreeMap;
 use std::error::Error as StdError;
 use std::fmt;
@@ -1104,6 +1104,269 @@ pub fn sample_mapping_config(mapped: &str) -> String {
     )
 }
 
+pub fn mapping_config_from_bridge_value(mapped: &str, value: &BridgeValue) -> String {
+    let mut inference = BridgeMappingInference::new(rust_type_name(mapped));
+    let root_name = inference.root_name.clone();
+    inference.infer_mapping(&root_name, "Inferred from a live BridgeRoot value.", value);
+    inference.render()
+}
+
+#[derive(Debug)]
+struct BridgeMappingInference {
+    root_name: String,
+    mappings: Vec<InferredMapping>,
+}
+
+impl BridgeMappingInference {
+    fn new(root_name: String) -> Self {
+        Self {
+            root_name,
+            mappings: Vec::new(),
+        }
+    }
+
+    fn infer_mapping(&mut self, name: &str, doc: &str, value: &BridgeValue) {
+        if self.mappings.iter().any(|mapping| mapping.name == name) {
+            return;
+        }
+
+        self.mappings.push(InferredMapping {
+            name: name.to_string(),
+            doc: doc.to_string(),
+            fields: Vec::new(),
+        });
+
+        let fields = match value {
+            BridgeValue::Dictionary(entries) => {
+                let mut fields = Vec::new();
+                for (key, value) in entries {
+                    fields.push(self.infer_field(name, key, BridgeKeyType::String, value));
+                }
+                fields
+            }
+            BridgeValue::KeyedDictionary(entries) => {
+                let mut fields = Vec::new();
+                for (key, value) in entries {
+                    fields.push(self.infer_field(name, &key.name, key.key_type, value));
+                }
+                fields
+            }
+            other => {
+                let (field_type, doc) = self.infer_field_type(name, "value", other);
+                vec![InferredField {
+                    rust_name: "value".to_string(),
+                    key: "value".to_string(),
+                    key_type: BridgeKeyType::String,
+                    field_type,
+                    doc: Some(doc.unwrap_or_else(|| {
+                        "Synthetic field for a scalar BridgeRoot value; review the key before generating wrappers.".to_string()
+                    })),
+                }]
+            }
+        };
+
+        if let Some(mapping) = self
+            .mappings
+            .iter_mut()
+            .find(|mapping| mapping.name == name)
+        {
+            mapping.fields = fields;
+        }
+    }
+
+    fn infer_field(
+        &mut self,
+        parent: &str,
+        key: &str,
+        key_type: BridgeKeyType,
+        value: &BridgeValue,
+    ) -> InferredField {
+        let rust_name = rust_fn_name(key);
+        let (field_type, doc) = self.infer_field_type(parent, key, value);
+        InferredField {
+            rust_name,
+            key: key.to_string(),
+            key_type,
+            field_type,
+            doc,
+        }
+    }
+
+    fn infer_field_type(
+        &mut self,
+        parent: &str,
+        key: &str,
+        value: &BridgeValue,
+    ) -> (FieldType, Option<String>) {
+        match value {
+            BridgeValue::Nil => (
+                FieldType::Option(Box::new(FieldType::Oop)),
+                Some("Observed nil; choose a narrower Option<T> before committing generated code.".to_string()),
+            ),
+            BridgeValue::Bool(_) => (FieldType::Bool, None),
+            BridgeValue::SmallInt(_) => (FieldType::SmallInt, None),
+            BridgeValue::String(_) => (FieldType::String, None),
+            BridgeValue::Symbol(_) => (
+                FieldType::String,
+                Some("Observed a GemStone Symbol; generated as String because BridgeMapped fields currently store string-like values explicitly.".to_string()),
+            ),
+            BridgeValue::Oop(oop) => (
+                FieldType::Oop,
+                Some(format!(
+                    "Observed opaque OOP {}; inspect it or increase --depth before choosing a mapped type.",
+                    oop.raw()
+                )),
+            ),
+            BridgeValue::Dictionary(_) | BridgeValue::KeyedDictionary(_) => {
+                let nested = nested_mapping_name(parent, key, false);
+                self.infer_mapping(&nested, &format!("Nested payload inferred from field `{key}`."), value);
+                (FieldType::Mapped(nested), None)
+            }
+            BridgeValue::Array(values) => self.infer_array_field_type(parent, key, values),
+        }
+    }
+
+    fn infer_array_field_type(
+        &mut self,
+        parent: &str,
+        key: &str,
+        values: &[BridgeValue],
+    ) -> (FieldType, Option<String>) {
+        let Some(first) = values.first() else {
+            return (
+                FieldType::Vec(Box::new(FieldType::Oop)),
+                Some(
+                    "Observed an empty Array; choose the element type before generating wrappers."
+                        .to_string(),
+                ),
+            );
+        };
+
+        if values.iter().all(is_dictionary_value) {
+            let nested = nested_mapping_name(parent, key, true);
+            self.infer_mapping(
+                &nested,
+                &format!("Array element payload inferred from the first `{key}` entry."),
+                first,
+            );
+            return (FieldType::Vec(Box::new(FieldType::Mapped(nested))), None);
+        }
+
+        let (first_type, first_doc) = self.infer_scalar_array_type(first);
+        if values
+            .iter()
+            .all(|value| self.infer_scalar_array_type(value).0 == first_type)
+        {
+            return (FieldType::Vec(Box::new(first_type)), first_doc);
+        }
+
+        (
+            FieldType::Vec(Box::new(FieldType::Oop)),
+            Some(
+                "Observed a mixed Array; inspect values and choose a narrower element type."
+                    .to_string(),
+            ),
+        )
+    }
+
+    fn infer_scalar_array_type(&self, value: &BridgeValue) -> (FieldType, Option<String>) {
+        match value {
+            BridgeValue::Nil => (
+                FieldType::Option(Box::new(FieldType::Oop)),
+                Some("Observed nil elements; choose a narrower Option<T> element type.".to_string()),
+            ),
+            BridgeValue::Bool(_) => (FieldType::Bool, None),
+            BridgeValue::SmallInt(_) => (FieldType::SmallInt, None),
+            BridgeValue::String(_) => (FieldType::String, None),
+            BridgeValue::Symbol(_) => (
+                FieldType::String,
+                Some("Observed Symbol elements; generated as String values.".to_string()),
+            ),
+            BridgeValue::Oop(_) | BridgeValue::Dictionary(_) | BridgeValue::KeyedDictionary(_) | BridgeValue::Array(_) => (
+                FieldType::Oop,
+                Some("Observed complex or opaque Array elements; inspect before choosing a mapped element type.".to_string()),
+            ),
+        }
+    }
+
+    fn render(&self) -> String {
+        let mut source = String::new();
+        source.push_str(
+            "# Generated by gemstone-rs from a live BridgeValue. Review before using in CI.\n",
+        );
+        source.push_str("output = src/generated/gemstone_wrappers.rs\n");
+        for mapping in &self.mappings {
+            source.push_str(&format!(
+                "mapped = {} | doc={}\n",
+                mapping.name,
+                config_doc(&mapping.doc)
+            ));
+            for field in &mapping.fields {
+                source.push_str(&format!(
+                    "field = {}.{} | type={} | key={} | key_type={}",
+                    mapping.name,
+                    field.rust_name,
+                    field.field_type.config_name(),
+                    field.key,
+                    field.key_type.config_name()
+                ));
+                if let Some(doc) = &field.doc {
+                    source.push_str(&format!(" | doc={}", config_doc(doc)));
+                }
+                source.push('\n');
+            }
+        }
+        source
+    }
+}
+
+#[derive(Debug)]
+struct InferredMapping {
+    name: String,
+    doc: String,
+    fields: Vec<InferredField>,
+}
+
+#[derive(Debug)]
+struct InferredField {
+    rust_name: String,
+    key: String,
+    key_type: BridgeKeyType,
+    field_type: FieldType,
+    doc: Option<String>,
+}
+
+fn is_dictionary_value(value: &BridgeValue) -> bool {
+    matches!(
+        value,
+        BridgeValue::Dictionary(_) | BridgeValue::KeyedDictionary(_)
+    )
+}
+
+fn nested_mapping_name(parent: &str, key: &str, array_element: bool) -> String {
+    let key = if array_element {
+        singular_field_name(key)
+    } else {
+        key.to_string()
+    };
+    rust_type_name(&format!("{parent} {key}"))
+}
+
+fn singular_field_name(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.len() > 3 && trimmed.ends_with("ies") {
+        format!("{}y", &trimmed[..trimmed.len() - 3])
+    } else if trimmed.len() > 1 && trimmed.ends_with('s') {
+        trimmed[..trimmed.len() - 1].to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn config_doc(value: &str) -> String {
+    value.replace(['\r', '\n', '|'], " ")
+}
+
 fn generate_source(config: &Config) -> String {
     let mut source = String::new();
     source.push_str("// @generated by gemstone-rs codegen. Do not edit by hand.\n");
@@ -1806,6 +2069,64 @@ mod tests {
         assert!(source.contains("field = BookingDraft.tags | type=Vec<String>"));
         assert!(source.contains("field = BookingDraft.labels | type=BTreeMap<String, String>"));
         assert!(source.contains("field = BookingDraft.note | type=Option<String>"));
+    }
+
+    #[test]
+    fn infers_mapping_config_from_bridge_value_tree() -> Result<()> {
+        let source = mapping_config_from_bridge_value(
+            "booking draft",
+            &BridgeValue::dictionary([
+                ("name".to_string(), BridgeValue::from("Tariq")),
+                ("amount".to_string(), BridgeValue::from(100_i64)),
+                (
+                    "customer".to_string(),
+                    BridgeValue::keyed_dictionary([
+                        (crate::BridgeKey::symbol("name"), BridgeValue::from("Tariq")),
+                        (crate::BridgeKey::symbol("vip"), BridgeValue::from(true)),
+                    ]),
+                ),
+                (
+                    "items".to_string(),
+                    BridgeValue::array([
+                        BridgeValue::dictionary([
+                            ("sku".to_string(), BridgeValue::from("A-1")),
+                            ("quantity".to_string(), BridgeValue::from(2_i64)),
+                        ]),
+                        BridgeValue::dictionary([
+                            ("sku".to_string(), BridgeValue::from("B-2")),
+                            ("quantity".to_string(), BridgeValue::from(1_i64)),
+                        ]),
+                    ]),
+                ),
+                (
+                    "state".to_string(),
+                    BridgeValue::Symbol("ready".to_string()),
+                ),
+                ("note".to_string(), BridgeValue::Nil),
+            ]),
+        );
+
+        assert!(source.contains("mapped = BookingDraft"));
+        assert!(source.contains(
+            "field = BookingDraft.customer | type=Mapped<BookingDraftCustomer> | key=customer | key_type=String"
+        ));
+        assert!(source.contains("mapped = BookingDraftCustomer"));
+        assert!(source.contains(
+            "field = BookingDraftCustomer.name | type=String | key=name | key_type=Symbol"
+        ));
+        assert!(source.contains(
+            "field = BookingDraft.items | type=Vec<Mapped<BookingDraftItem>> | key=items | key_type=String"
+        ));
+        assert!(source.contains("mapped = BookingDraftItem"));
+        assert!(source.contains(
+            "field = BookingDraftItem.quantity | type=SmallInt | key=quantity | key_type=String"
+        ));
+        assert!(source.contains("field = BookingDraft.state | type=String"));
+        assert!(source.contains("field = BookingDraft.note | type=Option<Oop>"));
+
+        let config = Config::parse(&source, None)?;
+        assert_eq!(config.mapped.len(), 3);
+        Ok(())
     }
 
     #[test]
