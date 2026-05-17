@@ -55,9 +55,12 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples show quickstart --json
 	cargo run -p gemstone-rs-cli -- examples show py_native_smoke_fixture
 	cargo run -p gemstone-rs-cli -- examples run hello --dry-run
+	cargo run -p gemstone-rs-cli -- examples run hello
 	cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
+	cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture
 	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
+	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker_pool --dry-run
