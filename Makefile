@@ -23,6 +23,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- py-native capabilities
 	cargo run -p gemstone-rs-cli -- py-native capabilities --json
 	cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
+	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
+	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps

@@ -80,6 +80,8 @@ gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 gemstone-rs py-native capabilities
 gemstone-rs py-native capabilities --json
+gemstone-rs py-native smoke --dry-run
+gemstone-rs py-native smoke --dry-run --json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -112,6 +114,7 @@ Validate it with:
 
 ```bash
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
+gemstone-rs py-native smoke --dry-run
 ```
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:

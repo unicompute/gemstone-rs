@@ -46,6 +46,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             Ok(())
         }
         Command::PyNativeCheck { path, format } => run_py_native_check(&path, format),
+        Command::PyNativeSmoke { dry_run, format } => run_py_native_smoke(dry_run, format),
         Command::CompareGemstonePy { view, format } => {
             print_gemstone_py_comparison(view, format);
             Ok(())
@@ -2607,6 +2608,245 @@ fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct PyNativeSmokeStep {
+    name: &'static str,
+    ok: bool,
+    detail: String,
+}
+
+fn run_py_native_smoke(dry_run: bool, format: OutputFormat) -> Result<(), CliError> {
+    let mut steps = Vec::new();
+    py_native_smoke_contract_steps(&mut steps);
+    if !dry_run {
+        py_native_smoke_live_steps(&mut steps);
+    }
+
+    let ok = steps.iter().all(|step| step.ok);
+    match format {
+        OutputFormat::Human => print_py_native_smoke_human(dry_run, &steps),
+        OutputFormat::Json => print_py_native_smoke_json(dry_run, &steps),
+    }
+
+    if ok {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(
+            "py-native adapter smoke failed; see step report above".to_string(),
+        ))
+    }
+}
+
+fn py_native_smoke_contract_steps(steps: &mut Vec<PyNativeSmokeStep>) {
+    let capabilities = py_native::capabilities();
+    push_smoke_step(
+        steps,
+        "capabilities",
+        capabilities.contract_version == 1
+            && capabilities.operations.contains(&"eval")
+            && capabilities.operations.contains(&"perform")
+            && capabilities.operations.contains(&"global_put"),
+        format!(
+            "contract_version={} operations={}",
+            capabilities.contract_version,
+            capabilities.operations.len()
+        ),
+    );
+    push_smoke_step(
+        steps,
+        "oop_constants",
+        py_native::nil_oop() == Oop::NIL.raw()
+            && py_native::bool_oop(true) == Oop::TRUE.raw()
+            && py_native::bool_oop(false) == Oop::FALSE.raw()
+            && py_native::smallint_oop(7) == Oop::from_smallint(7).raw()
+            && py_native::char_oop('A') == Oop::from_char('A').raw(),
+        "nil/true/false/smallint/char constants match gemstone-rs Oop helpers",
+    );
+    push_smoke_step(
+        steps,
+        "value_conversion",
+        py_native::PyNativeValue::from(Value::SmallInt(7)) == py_native::PyNativeValue::SmallInt(7)
+            && py_native::PyNativeValue::from(Value::Oop(Oop(1234))).raw_oop() == Some(1234)
+            && py_native::PyNativeValue::Symbol("abc".to_string())
+                .to_value()
+                .is_none(),
+        "plain Value <-> PyNativeValue conversion is stable",
+    );
+    let config_error = py_native::PyNativeConfig::default()
+        .into_config()
+        .unwrap_err();
+    let config_info = py_native::PyNativeErrorInfo::from_error(&config_error);
+    push_smoke_step(
+        steps,
+        "config_error_mapping",
+        matches!(config_error, GemStoneError::MissingConfig("username"))
+            && config_info.kind == py_native::PyNativeErrorKind::MissingConfig,
+        config_error.to_string(),
+    );
+    let oop_error = GemStoneError::IllegalOop { operation: "eval" };
+    let oop_info = py_native::PyNativeErrorInfo::from_error(&oop_error);
+    push_smoke_step(
+        steps,
+        "structured_error_mapping",
+        oop_info.kind == py_native::PyNativeErrorKind::IllegalOop
+            && oop_info.operation == Some("eval"),
+        oop_error.to_string(),
+    );
+}
+
+fn py_native_smoke_live_steps(steps: &mut Vec<PyNativeSmokeStep>) {
+    let config = match py_native::PyNativeConfig::from_env() {
+        Ok(config) => {
+            let summary = config.redacted_summary();
+            push_smoke_step(
+                steps,
+                "config_from_env",
+                true,
+                format!(
+                    "stone={} host={} user={} password_set={}",
+                    summary.stone, summary.host, summary.username, summary.password_set
+                ),
+            );
+            config
+        }
+        Err(err) => {
+            push_smoke_step(steps, "config_from_env", false, err.to_string());
+            return;
+        }
+    };
+
+    let mut session = match py_native::PyNativeSession::login(config) {
+        Ok(session) => {
+            push_smoke_step(
+                steps,
+                "login",
+                true,
+                format!("session_id={}", session.session_id()),
+            );
+            session
+        }
+        Err(err) => {
+            push_smoke_step(steps, "login", false, err.to_string());
+            return;
+        }
+    };
+
+    push_result_step(
+        steps,
+        "eval_3_plus_4",
+        session.eval("3 + 4").map(|value| {
+            (
+                value == py_native::PyNativeValue::SmallInt(7),
+                format!("{value:?}"),
+            )
+        }),
+    );
+    push_result_step(
+        steps,
+        "perform_print_string",
+        session
+            .perform_values(py_native::PyNativeValue::SmallInt(7), "printString", &[])
+            .and_then(|printed| {
+                let raw = printed.raw_oop().ok_or(GemStoneError::UnexpectedType {
+                    expected: "Oop",
+                    actual: format!("{printed:?}"),
+                })?;
+                session.fetch_string(raw)
+            })
+            .map(|value| (value == "7", value)),
+    );
+
+    let key = format!("GemStoneRsPyNative{}", std::process::id());
+    let global_round_trip = session
+        .global_put_value(
+            &key,
+            py_native::PyNativeValue::String("shared core".to_string()),
+        )
+        .and_then(|_| session.commit())
+        .and_then(|_| session.global_get(&key))
+        .and_then(|oop| session.fetch_string(oop))
+        .map(|value| (value == "shared core", value));
+    push_result_step(steps, "global_string_round_trip", global_round_trip);
+
+    let cleanup = session
+        .global_put_raw(&key, py_native::nil_oop())
+        .and_then(|_| session.commit())
+        .map(|_| (true, format!("{key}=nil")));
+    push_result_step(steps, "cleanup", cleanup);
+
+    push_result_step(
+        steps,
+        "logout",
+        session.logout().map(|_| (true, "logged out".to_string())),
+    );
+}
+
+fn push_result_step(
+    steps: &mut Vec<PyNativeSmokeStep>,
+    name: &'static str,
+    result: Result<(bool, String), GemStoneError>,
+) {
+    match result {
+        Ok((ok, detail)) => push_smoke_step(steps, name, ok, detail),
+        Err(err) => push_smoke_step(steps, name, false, err.to_string()),
+    }
+}
+
+fn push_smoke_step(
+    steps: &mut Vec<PyNativeSmokeStep>,
+    name: &'static str,
+    ok: bool,
+    detail: impl Into<String>,
+) {
+    steps.push(PyNativeSmokeStep {
+        name,
+        ok,
+        detail: detail.into(),
+    });
+}
+
+fn print_py_native_smoke_human(dry_run: bool, steps: &[PyNativeSmokeStep]) {
+    println!("py-native adapter smoke");
+    println!(
+        "  mode: {}",
+        if dry_run { "dry-run" } else { "live GemStone" }
+    );
+    for step in steps {
+        println!(
+            "  {} {}: {}",
+            if step.ok { "ok" } else { "error" },
+            step.name,
+            step.detail
+        );
+    }
+}
+
+fn print_py_native_smoke_json(dry_run: bool, steps: &[PyNativeSmokeStep]) {
+    let steps_json = steps
+        .iter()
+        .map(|step| {
+            format!(
+                r#"{{"name":"{}","ok":{},"detail":"{}"}}"#,
+                escape_json(step.name),
+                if step.ok { "true" } else { "false" },
+                escape_json(&step.detail)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    println!(
+        r#"{{"ok":{},"dryRun":{},"contractVersion":{},"steps":[{}]}}"#,
+        if steps.iter().all(|step| step.ok) {
+            "true"
+        } else {
+            "false"
+        },
+        if dry_run { "true" } else { "false" },
+        py_native::capabilities().contract_version,
+        steps_json
+    );
+}
+
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
@@ -3962,6 +4202,10 @@ enum Command {
         path: PathBuf,
         format: OutputFormat,
     },
+    PyNativeSmoke {
+        dry_run: bool,
+        format: OutputFormat,
+    },
     CompareGemstonePy {
         view: CompareView,
         format: OutputFormat,
@@ -4319,11 +4563,12 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
             )
         }
         Some("check" | "validate") => parse_py_native_check_command(&args[1..]),
+        Some("smoke") => parse_py_native_smoke_command(&args[1..]),
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native smoke [--dry-run] [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check"
+            "unknown py-native command: {command}; expected capabilities|check|smoke"
         ))),
     }
 }
@@ -4354,6 +4599,33 @@ fn parse_py_native_check_command(args: &[String]) -> Result<Command, CliError> {
         path: path.unwrap_or_else(default_py_native_fixture_path),
         format,
     })
+}
+
+fn parse_py_native_smoke_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut dry_run = false;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "--dry-run" => dry_run = true,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: py-native smoke [--dry-run] [--json]",
+                ))
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native smoke option: {option}"
+                )));
+            }
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native smoke argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativeSmoke { dry_run, format })
 }
 
 fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
@@ -5359,6 +5631,7 @@ fn usage() -> &'static str {
   gemstone-rs hello [--json]
   gemstone-rs py-native capabilities [--json]
   gemstone-rs py-native check [path] [--json]
+  gemstone-rs py-native smoke [--dry-run] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -5547,6 +5820,13 @@ mod tests {
             .unwrap(),
             Command::PyNativeCheck {
                 path: PathBuf::from("examples/py-native/gemstone-rs.py-native.json"),
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "smoke", "--dry-run", "--json"])).unwrap(),
+            Command::PyNativeSmoke {
+                dry_run: true,
                 format: OutputFormat::Json,
             }
         );
@@ -6960,5 +7240,17 @@ GEMSTONE=/opt/gemstone # product root
             .to_string();
         assert!(err.contains("does not match"));
         let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn py_native_smoke_contract_steps_pass_without_live_stone() {
+        let mut steps = Vec::new();
+        py_native_smoke_contract_steps(&mut steps);
+        assert_eq!(steps.len(), 5);
+        assert!(steps.iter().all(|step| step.ok));
+        assert!(steps.iter().any(|step| step.name == "value_conversion"));
+        assert!(steps
+            .iter()
+            .any(|step| step.name == "structured_error_mapping"));
     }
 }

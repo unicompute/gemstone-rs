@@ -90,6 +90,11 @@ Use `py_native` when you are building or testing a thin PyO3 wrapper for
 `gemstone-py-native`. It keeps the wrapper contract plain Rust while reusing
 the same `Session` implementation:
 
+```bash
+gemstone-rs py-native smoke --dry-run
+gemstone-rs py-native smoke
+```
+
 ```rust
 use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
 
