@@ -104,6 +104,9 @@ The initial mapping layer supports:
 - `BridgeValue::Array`
 - `BridgeValue::from_oop`
 - `BridgeValue::from_oop_with_depth`
+- `BridgeValue::shape_report`
+- `BridgeValueShapeReport`
+- `BridgeValueShapeNode`
 - session-local OOP identity ids with `Session::identity_for_oop`
 
 The default root is a GemStone `Dictionary` stored in `UserGlobals` under
@@ -313,6 +316,26 @@ strings, symbols, arrays, and string/symbol-keyed dictionaries. When the reader
 hits an unsupported object, a repeated object, or the depth limit, it returns
 `BridgeValue::Oop(oop)` instead of pretending the object is transparent Rust
 state.
+
+For a compact relationship-oriented view, ask the value for a shape report:
+
+```rust
+let report = dynamic.shape_report();
+println!("nodes: {}", report.total_nodes);
+for node in report.nodes {
+    println!("{} {} children={}", node.path, node.kind, node.child_count);
+}
+```
+
+The CLI form is:
+
+```bash
+gemstone-rs bridge shape BookingDraft --depth 4
+```
+
+This reports paths such as `value.customer.#name`, `value.items[1].sku`, node
+kinds, key policy, child counts, opaque OOPs, and nil nodes. It is meant for
+relationship mapping review before generating typed wrappers.
 
 You can turn the inspected shape into a starter codegen config before writing a
 typed struct by hand:
@@ -623,6 +646,7 @@ gemstone-rs bridge root
 gemstone-rs bridge keys
 gemstone-rs bridge get BookingDraft --symbol
 gemstone-rs bridge value BookingDraft --depth 4
+gemstone-rs bridge shape BookingDraft --depth 4
 gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 gemstone-rs bridge inspect BookingDraft --symbol
 gemstone-rs bridge put-string WorkbenchDraft "hello from Rust"

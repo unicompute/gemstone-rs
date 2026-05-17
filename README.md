@@ -112,7 +112,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the combined estimate:
-**11 batches**, roughly **68-119 hours** total. Use
+**11 batches**, roughly **67-117 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
@@ -424,6 +424,7 @@ are suitable for CI checks.
 `eval`, `inspect oop`, and `bridge` commands are wired to live GemStone calls.
 `bridge keys` lists the keys currently stored under `GemStoneRsBridgeRoot`,
 `bridge value <key> --depth 4` prints a nested dynamic `BridgeValue` tree,
+`bridge shape <key> --depth 4` prints relationship paths and node counts,
 `bridge mapping-preview <key> --mapped BookingDraft --depth 4` converts a live
 BridgeRoot value into a reviewable mapping config, and `bridge put` and
 `bridge remove` make explicit committed BridgeRoot edits.

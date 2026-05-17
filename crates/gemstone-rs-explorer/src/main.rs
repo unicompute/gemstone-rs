@@ -419,6 +419,31 @@ fn handle_http_request(request: &HttpRequest, config: &ExplorerConfig) -> Respon
                 ))
             })
         }
+        "/api/bridge/shape" => {
+            let Some(key) = route.non_empty_query("key") else {
+                return Response::json(400, r#"{"error":"missing key"}"#.to_string());
+            };
+            let root_name = route
+                .non_empty_query("root")
+                .unwrap_or_else(|| DEFAULT_BRIDGE_ROOT.to_string());
+            let key_type = bridge_key_type_query(route.query("key_type").as_deref());
+            let depth = bridge_depth_query(route.query("depth").as_deref());
+            live_json(|session| {
+                let (root_name, bridge_value) = {
+                    let mut root = session.bridge_root_named(root_name)?;
+                    let bridge_value = root.get_bridge_value_with_depth(&key, key_type, depth)?;
+                    (root.name().to_string(), bridge_value)
+                };
+                Ok(format!(
+                    r#"{{"success":true,"root":"{}","key":"{}","keyType":"{}","depth":{},"shape":{}}}"#,
+                    escape_json(&root_name),
+                    escape_json(&key),
+                    key_type.config_name(),
+                    depth,
+                    bridge_shape_json(&bridge_value)
+                ))
+            })
+        }
         "/api/bridge/put" => {
             if config.read_only {
                 return Response::json(
@@ -631,13 +656,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 5,
-        hours_min: 26,
-        hours_max: 47,
+        hours_min: 25,
+        hours_max: 45,
         next_number: 1,
         next_focus: "Object mapping maturity",
-        next_hours_min: 4,
-        next_hours_max: 8,
-        next_outcome: "Improve relationship examples, identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
+        next_hours_min: 3,
+        next_hours_max: 6,
+        next_outcome: "Improve identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
         next_verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -679,7 +704,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":68,"hoursMax":119,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":11,"hoursMin":67,"hoursMax":117,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -1071,6 +1096,46 @@ fn bridge_value_json(value: &BridgeValue) -> String {
             result
         }
     }
+}
+
+fn bridge_shape_json(value: &BridgeValue) -> String {
+    let report = value.shape_report();
+    let mut nodes = String::from("[");
+    for (index, node) in report.nodes.iter().enumerate() {
+        if index > 0 {
+            nodes.push(',');
+        }
+        let key_type = node
+            .key_type
+            .map(|key_type| format!(r#""{}""#, key_type.config_name()))
+            .unwrap_or_else(|| "null".to_string());
+        let note = node
+            .note
+            .as_ref()
+            .map(|note| format!(r#""{}""#, escape_json(note)))
+            .unwrap_or_else(|| "null".to_string());
+        nodes.push_str(&format!(
+            r#"{{"path":"{}","kind":"{}","keyType":{},"depth":{},"childCount":{},"note":{}}}"#,
+            escape_json(&node.path),
+            escape_json(&node.kind),
+            key_type,
+            node.depth,
+            node.child_count,
+            note
+        ));
+    }
+    nodes.push(']');
+    format!(
+        r#"{{"totalNodes":{},"scalarNodes":{},"dictionaryNodes":{},"arrayNodes":{},"opaqueOops":{},"nilNodes":{},"maxDepth":{},"nodes":{}}}"#,
+        report.total_nodes,
+        report.scalar_nodes,
+        report.dictionary_nodes,
+        report.array_nodes,
+        report.opaque_oops,
+        report.nil_nodes,
+        report.max_depth,
+        nodes
+    )
 }
 
 fn bool_query(value: Option<&str>) -> bool {
@@ -2497,6 +2562,7 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 </div>
 <div class="actions">
 <button class="secondary" onclick="getBridgeValue()">Get</button>
+<button class="secondary" onclick="getBridgeShape()">Shape Report</button>
 <button class="secondary" onclick="previewBridgeMapping()">Preview Mapping Config</button>
 <button class="secondary" onclick="putBridgeValue()">Put Value</button>
 <button class="secondary" onclick="removeBridgeValue()">Remove</button>
@@ -2613,6 +2679,8 @@ function renderDetail(data) {
     renderSourceDetail(data);
   } else if (data.value && typeof data.value === 'object') {
     renderBridgeValue(data);
+  } else if (data.shape && typeof data.shape === 'object') {
+    renderBridgeShape(data);
   } else if (typeof data.config === 'string') {
     detail.textContent = data.config;
   } else if (typeof data.error === 'string') {
@@ -2749,6 +2817,33 @@ function renderBridgeValue(data) {
     '</div>' +
     '<div class="pane-title">Nested BridgeValue</div>' +
     '<div class="bridge-card bridge-tree">' + renderBridgeValueNode(data.bridgeValue, 'value') + '</div>';
+}
+function renderBridgeShape(data) {
+  const shape = data.shape || {};
+  const rows = (shape.nodes || []).map(node => {
+    const note = node.note ? '<br><span class="profile-stale">' + escapeHtml(node.note) + '</span>' : '';
+    return '<tr>' +
+      '<td><code>' + escapeHtml(node.path || '-') + '</code></td>' +
+      '<td>' + escapeHtml(node.kind || '-') + '</td>' +
+      '<td>' + escapeHtml(node.keyType || '-') + '</td>' +
+      '<td>' + Number(node.depth || 0) + '</td>' +
+      '<td>' + Number(node.childCount || 0) + note + '</td>' +
+    '</tr>';
+  }).join('');
+  detail.className = 'detail profile-check';
+  detail.innerHTML = '<div class="pane-title">BridgeRoot Shape Report</div>' +
+    '<div class="bridge-card">' +
+      '<p><strong>Root:</strong> ' + escapeHtml(data.root || '-') + '</p>' +
+      '<p><strong>Key:</strong> <code>' + escapeHtml(data.key || '-') + '</code> (' + escapeHtml(data.keyType || '-') + ')</p>' +
+      '<p><strong>Depth:</strong> ' + escapeHtml(data.depth || '-') + '</p>' +
+      '<p><strong>Nodes:</strong> ' + Number(shape.totalNodes || 0) +
+        ' total, ' + Number(shape.dictionaryNodes || 0) +
+        ' dictionaries, ' + Number(shape.arrayNodes || 0) +
+        ' arrays, ' + Number(shape.scalarNodes || 0) +
+        ' scalars, ' + Number(shape.opaqueOops || 0) +
+        ' opaque OOPs, ' + Number(shape.nilNodes || 0) + ' nil</p>' +
+    '</div>' +
+    '<table class="profile-table"><thead><tr><th>Path</th><th>Kind</th><th>Key Type</th><th>Depth</th><th>Children / Note</th></tr></thead><tbody>' + rows + '</tbody></table>';
 }
 function renderBridgeValueNode(value, label) {
   if (!value || typeof value !== 'object') return '<div class="bridge-leaf">' + escapeHtml(label) + ': -</div>';
@@ -2926,6 +3021,7 @@ async function loadBridgeKeys() {
   }
 }
 function getBridgeValue() { callApi('/api/bridge/get?' + bridgeQuery()); }
+function getBridgeShape() { callApi('/api/bridge/shape?' + bridgeQuery()); }
 function previewBridgeMapping() {
   callApi('/api/bridge/mapping-preview?' + bridgeQuery() + '&mapped=' + q('bridgeMappedName'));
 }
@@ -3645,6 +3741,7 @@ mod tests {
         assert!(response.body.contains("bridgeKeyType"));
         assert!(response.body.contains("bridgeValueType"));
         assert!(response.body.contains("bridgeMappedName"));
+        assert!(response.body.contains("getBridgeShape()"));
         assert!(response.body.contains("previewBridgeMapping()"));
         assert!(response.body.contains("Generated Source / Config / Diff"));
         assert!(response.body.contains("renderDiff"));
@@ -3664,6 +3761,7 @@ mod tests {
         assert!(response.body.contains("/api/compare/all/status"));
         assert!(response.body.contains("/api/bridge/keys"));
         assert!(response.body.contains("/api/bridge/put"));
+        assert!(response.body.contains("/api/bridge/shape"));
         assert!(response.body.contains("/api/bridge/mapping-preview"));
         assert!(response.body.contains("/api/codegen/configs"));
         assert!(response.body.contains("/api/codegen/profiles/check"));
@@ -3686,8 +3784,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":5"#));
-        assert!(response.body.contains(r#""hoursMin":26"#));
-        assert!(response.body.contains(r#""hoursMax":47"#));
+        assert!(response.body.contains(r#""hoursMin":25"#));
+        assert!(response.body.contains(r#""hoursMax":45"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Object mapping maturity"));
         assert!(response
@@ -3704,8 +3802,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":11"#));
-        assert!(response.body.contains(r#""hoursMin":68"#));
-        assert!(response.body.contains(r#""hoursMax":119"#));
+        assert!(response.body.contains(r#""hoursMin":67"#));
+        assert!(response.body.contains(r#""hoursMax":117"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
@@ -3791,6 +3889,33 @@ mod tests {
     }
 
     #[test]
+    fn bridge_shape_json_reports_relationship_paths() {
+        let value = BridgeValue::dictionary([
+            (
+                "customer".to_string(),
+                BridgeValue::keyed_dictionary([(
+                    gemstone_rs::BridgeKey::symbol("name"),
+                    BridgeValue::from("Tariq"),
+                )]),
+            ),
+            (
+                "items".to_string(),
+                BridgeValue::array([BridgeValue::dictionary([(
+                    "sku".to_string(),
+                    BridgeValue::from("A-1"),
+                )])]),
+            ),
+            ("note".to_string(), BridgeValue::Nil),
+        ]);
+        let json = bridge_shape_json(&value);
+        assert!(json.contains(r#""totalNodes":7"#));
+        assert!(json.contains(r#""dictionaryNodes":3"#));
+        assert!(json.contains(r#""path":"value.customer.#name""#));
+        assert!(json.contains(r#""path":"value.items[1].sku""#));
+        assert!(json.contains("Option&lt;T&gt;") || json.contains("Option<T>"));
+    }
+
+    #[test]
     fn bridge_bool_parser_accepts_common_values() {
         assert!(parse_bridge_bool("true").unwrap());
         assert!(!parse_bridge_bool("0").unwrap());
@@ -3839,6 +3964,13 @@ mod tests {
             "GET /api/bridge/mapping-preview?mapped=BookingDraft HTTP/1.1",
             &ExplorerConfig::default(),
         );
+        assert_eq!(response.status, 400);
+        assert!(response.body.contains("missing key"));
+    }
+
+    #[test]
+    fn bridge_shape_requires_key_before_live_login() {
+        let response = handle_request("GET /api/bridge/shape HTTP/1.1", &ExplorerConfig::default());
         assert_eq!(response.status, 400);
         assert!(response.body.contains("missing key"));
     }

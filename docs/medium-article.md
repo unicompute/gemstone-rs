@@ -470,11 +470,24 @@ The terminal workflow is:
 
 ```bash
 gemstone-rs bridge value BookingDraft --depth 4
+gemstone-rs bridge shape BookingDraft --depth 4
 gemstone-rs bridge mapping-preview BookingDraft --mapped BookingDraft --depth 4
 ```
 
+`shape` prints relationship paths and counts before you generate anything:
+
+```text
+BridgeValue shape
+  total_nodes: 10
+  dictionary_nodes: 3
+  array_nodes: 1
+relationships:
+  value.customer.#name    kind=string    key_type=Symbol
+  value.items[1].sku      kind=string    key_type=String
+```
+
 `mapping-preview` is the bridge between exploration and codegen. It reads the
-live `BridgeValue` tree and emits reviewable config:
+same live `BridgeValue` tree and emits reviewable config:
 
 ```text
 mapped = BookingDraft | doc=Inferred from a live BridgeRoot value.
@@ -517,6 +530,7 @@ The local explorer and VS Code extension expose this workflow too:
 curl -s http://127.0.0.1:8787/api/bridge/root
 curl -s http://127.0.0.1:8787/api/bridge/keys
 curl -s 'http://127.0.0.1:8787/api/bridge/get?key=BookingDraft'
+curl -s 'http://127.0.0.1:8787/api/bridge/shape?key=BookingDraft&depth=4'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-preview?key=BookingDraft&mapped=BookingDraft&depth=4'
 curl -s 'http://127.0.0.1:8787/api/bridge/put?key=WorkbenchDraft&value=hello'
 curl -s 'http://127.0.0.1:8787/api/bridge/remove?key=WorkbenchDraft'

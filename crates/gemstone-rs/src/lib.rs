@@ -297,8 +297,8 @@ pub mod worker;
 
 pub use bridge::{
     BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,
-    BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue, DEFAULT_BRIDGE_ROOT,
-    DEFAULT_BRIDGE_VALUE_DEPTH,
+    BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue, BridgeValueShapeNode,
+    BridgeValueShapeReport, DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{

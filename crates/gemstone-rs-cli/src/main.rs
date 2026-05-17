@@ -234,6 +234,20 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_bridge_value(&value, 0);
             Ok(())
         }
+        Command::BridgeShape {
+            root,
+            key,
+            key_type,
+            depth,
+        } => {
+            let mut session = login()?;
+            let value = {
+                let mut bridge_root = session.bridge_root_named(root)?;
+                bridge_root.get_bridge_value_with_depth(&key, key_type, depth)?
+            };
+            print_bridge_shape_report(&value);
+            Ok(())
+        }
         Command::BridgeMappingPreview {
             root,
             key,
@@ -1439,6 +1453,33 @@ fn print_bridge_value(value: &BridgeValue, indent: usize) {
     }
 }
 
+fn print_bridge_shape_report(value: &BridgeValue) {
+    let report = value.shape_report();
+    println!("BridgeValue shape");
+    println!("  total_nodes: {}", report.total_nodes);
+    println!("  scalar_nodes: {}", report.scalar_nodes);
+    println!("  dictionary_nodes: {}", report.dictionary_nodes);
+    println!("  array_nodes: {}", report.array_nodes);
+    println!("  opaque_oops: {}", report.opaque_oops);
+    println!("  nil_nodes: {}", report.nil_nodes);
+    println!("  max_depth: {}", report.max_depth);
+    println!("relationships:");
+    for node in report.nodes {
+        let key_type = node
+            .key_type
+            .map(|key_type| key_type.config_name())
+            .unwrap_or("-");
+        let note = node
+            .note
+            .map(|note| format!("\tnote={note}"))
+            .unwrap_or_default();
+        println!(
+            "  {}\tkind={}\tkey_type={}\tdepth={}\tchildren={}{}",
+            node.path, node.kind, key_type, node.depth, node.child_count, note
+        );
+    }
+}
+
 fn print_lines(values: impl IntoIterator<Item = String>) {
     for value in values {
         println!("{value}");
@@ -1646,7 +1687,7 @@ const EXAMPLES: &[ExampleInfo] = &[
         command: "cargo run -p gemstone-rs --example bridge_value_inspection",
         category: "mapping",
         requires_live: true,
-        description: "Read nested BridgeRoot dictionaries and arrays back as dynamic BridgeValue trees.",
+        description: "Read nested BridgeRoot dictionaries and arrays back as dynamic BridgeValue trees with shape reports.",
     },
     ExampleInfo {
         name: "codegen_preview",
@@ -2007,9 +2048,9 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
         focus: "Object mapping maturity",
-        hours_min: 4,
-        hours_max: 8,
-        outcome: "Improve relationship examples, identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
+        hours_min: 3,
+        hours_max: 6,
+        outcome: "Improve identity-cache behavior, richer BridgeRoot panels, and transparent object-model experiments.",
         verify_with: "cargo test -p gemstone-rs bridge_ mapping_",
     },
     BatchInfo {
@@ -3943,6 +3984,12 @@ enum Command {
         key_type: BridgeKeyType,
         depth: usize,
     },
+    BridgeShape {
+        root: String,
+        key: String,
+        key_type: BridgeKeyType,
+        depth: usize,
+    },
     BridgeMappingPreview {
         root: String,
         key: String,
@@ -4770,7 +4817,7 @@ fn parse_browse_command(args: &[String]) -> Result<Command, CliError> {
 fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
     let Some(command) = args.first().map(String::as_str) else {
         return Err(CliError::usage(
-            "expected: bridge root|keys|get|value|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|shape|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         ));
     };
     match command {
@@ -4801,6 +4848,19 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .ok_or_else(|| CliError::usage("missing key for bridge value"))?;
             let options = parse_bridge_options(&args[2..])?;
             Ok(Command::BridgeValue {
+                root: options.root,
+                key,
+                key_type: options.key_type,
+                depth: options.depth.unwrap_or(DEFAULT_BRIDGE_VALUE_DEPTH),
+            })
+        }
+        "shape" | "relationships" => {
+            let key = args
+                .get(1)
+                .cloned()
+                .ok_or_else(|| CliError::usage("missing key for bridge shape"))?;
+            let options = parse_bridge_options(&args[2..])?;
+            Ok(Command::BridgeShape {
                 root: options.root,
                 key,
                 key_type: options.key_type,
@@ -4873,7 +4933,7 @@ fn parse_bridge_command(args: &[String]) -> Result<Command, CliError> {
                 .unwrap_or_else(|| "BookingDraft".to_string()),
         }),
         _ => Err(CliError::usage(
-            "expected: bridge root|keys|get|value|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
+            "expected: bridge root|keys|get|value|shape|mapping-preview|inspect|put|put-string|put-symbol|put-smallint|put-bool|remove|sample-config",
         )),
     }
 }
@@ -5196,6 +5256,7 @@ fn usage() -> &'static str {
   gemstone-rs bridge keys [--root <name>]
   gemstone-rs bridge get <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge value <key> [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
+  gemstone-rs bridge shape <key> [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge mapping-preview <key> [--mapped <name>] [--depth <n>] [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge inspect <key> [--symbol|--string|--key-type String|Symbol] [--root <name>]
   gemstone-rs bridge put <key> <value> [--type String|Symbol|SmallInt|Bool] [--symbol|--string|--key-type String|Symbol] [--root <name>]
@@ -5710,14 +5771,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 5);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (26, 47));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (25, 45));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 11,
-                hours_min: 68,
-                hours_max: 119,
+                hours_min: 67,
+                hours_max: 117,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5742,7 +5803,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":5,"hoursMin":26,"hoursMax":47}"#));
+            .contains(r#""remaining":{"totalBatches":5,"hoursMin":25,"hoursMax":45}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -6165,6 +6226,22 @@ GEMSTONE=/opt/gemstone # product root
                 key: "BookingDraft".to_string(),
                 key_type: BridgeKeyType::String,
                 depth: 4,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "bridge",
+                "shape",
+                "BookingDraft",
+                "--depth=3",
+                "--root=DemoRoot"
+            ]))
+            .unwrap(),
+            Command::BridgeShape {
+                root: "DemoRoot".to_string(),
+                key: "BookingDraft".to_string(),
+                key_type: BridgeKeyType::String,
+                depth: 3,
             }
         );
         assert_eq!(

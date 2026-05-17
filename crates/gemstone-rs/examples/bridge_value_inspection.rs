@@ -3,6 +3,8 @@
 // Expected output includes:
 //
 // dynamic BridgeValue: Dictionary({"customer": Dictionary({"name": String("Tariq"), "vip": Bool(true)}), "items": Array([Dictionary({"quantity": SmallInt(2), "sku": String("A-1")}), Dictionary({"quantity": SmallInt(1), "sku": String("B-2")})]), "note": Nil, "state": Symbol("ready")})
+// shape nodes: <number> max depth: <number>
+// relationship: value.items[1].sku string
 // bridge root identity: <number>
 // bridge root key count: <number>
 
@@ -46,6 +48,14 @@ fn main() -> gemstone_rs::Result<()> {
         assert_eq!(dynamic, payload);
 
         println!("dynamic BridgeValue: {dynamic:?}");
+        let shape = dynamic.shape_report();
+        println!(
+            "shape nodes: {} max depth: {}",
+            shape.total_nodes, shape.max_depth
+        );
+        for node in shape.nodes.iter().filter(|node| node.child_count == 0) {
+            println!("relationship: {} {}", node.path, node.kind);
+        }
         println!("bridge root identity: {}", root.identity_id());
         println!("bridge root key count: {}", root.keys()?.len());
         root.remove("BridgeValueInspection")?;
