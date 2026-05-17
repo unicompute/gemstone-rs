@@ -17,6 +17,8 @@ Verify it from a source checkout:
 ```bash
 cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
 cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json --json
+cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
+cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
 node scripts/validate_codegen_schemas.js

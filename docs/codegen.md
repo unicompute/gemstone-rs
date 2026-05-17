@@ -125,8 +125,9 @@ schemas/gemstone-rs.py-native-smoke.schema.json
 describes an equivalent structured JSON model for editor panels and generated
 summaries, while the explain schema matches `codegen explain --json`. The
 py-native schemas match `gemstone-rs py-native capabilities --json` and
-`gemstone-rs py-native smoke --json` so a future `gemstone-py-native` wrapper
-can check the Rust adapter contract without linking against internal CLI code.
+`gemstone-rs py-native smoke --dry-run --json`. Use `gemstone-rs py-native
+check` and `gemstone-rs py-native check-smoke` to compare checked-in fixtures
+against those shared core renderers without linking against internal CLI code.
 The profile check schema matches `profile check --json` and the explorer
 `/api/codegen/profiles/check` endpoint.
 

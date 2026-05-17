@@ -406,16 +406,19 @@ Use this when you are preparing `gemstone-py-native` to wrap the Rust core:
 gemstone-rs py-native capabilities
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
+gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 gemstone-rs py-native smoke --dry-run
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 ```
 
 The CLI command prints the contract version, threading rule, supported
-operations, value kinds, error kinds, and OOP constants. The smoke command
-checks capabilities, OOP constants, value conversion, config error mapping, and
-structured error mapping without a live stone when `--dry-run` is passed. The
-live example logs in, evaluates `3 + 4`, performs `printString`, and round
-trips a `UserGlobals` string through `PyNativeSession`:
+operations, value kinds, error kinds, and OOP constants. The fixture checks
+compare the checked-in capability and dry-run smoke JSON against the shared
+core renderer. The smoke command checks capabilities, OOP constants, value
+conversion, config error mapping, and structured error mapping without a live
+stone when `--dry-run` is passed. The live example logs in, evaluates `3 + 4`,
+performs `printString`, and round trips a `UserGlobals` string through
+`PyNativeSession`:
 
 ```bash
 gemstone-rs py-native smoke

@@ -81,6 +81,8 @@ Use the CLI check in CI:
 ```bash
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json --json
+gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
+gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
 ```

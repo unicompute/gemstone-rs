@@ -99,7 +99,7 @@ sanity check after install.
 | Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | You want a bounded round-robin pool of dedicated GemStone session workers. |
 | Async worker facade | `cargo run -p gemstone-rs --example async_worker` | You want awaitable worker-pool calls without moving `Session` across threads. |
 | Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | You want to inspect and smoke-test the Rust contract that a future `gemstone-py-native` PyO3 wrapper should expose. |
-| Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native smoke --dry-run --json` | You want stable capability and smoke JSON samples for wrapper CI. |
+| Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | You want stable capability and smoke JSON samples for wrapper CI. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
