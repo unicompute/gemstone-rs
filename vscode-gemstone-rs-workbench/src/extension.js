@@ -45,6 +45,8 @@ function activate(context) {
   register(context, "gemstoneRs.codegenDiff", codegenDiff);
   register(context, "gemstoneRs.codegenCheck", codegenCheck);
   register(context, "gemstoneRs.codegenExplain", codegenExplain);
+  register(context, "gemstoneRs.openCodegenConfig", openCodegenConfig);
+  register(context, "gemstoneRs.openProjectProfiles", openProjectProfiles);
   register(context, "gemstoneRs.openGeneratedOutput", openGeneratedOutput);
   register(context, "gemstoneRs.codegenGenerate", codegenGenerate);
   register(context, "gemstoneRs.codegenPreviewProfile", codegenPreviewProfile);
@@ -181,6 +183,8 @@ class GemStoneTreeProvider {
         actionNode("Diff Generated Output", "gemstoneRs.codegenDiff"),
         actionNode("Check Freshness", "gemstoneRs.codegenCheck"),
         actionNode("Explain Config", "gemstoneRs.codegenExplain"),
+        actionNode("Open Codegen Config", "gemstoneRs.openCodegenConfig"),
+        actionNode("Open Project Profiles", "gemstoneRs.openProjectProfiles"),
         actionNode("Open Generated Output", "gemstoneRs.openGeneratedOutput"),
         actionNode("Generate Wrappers", "gemstoneRs.codegenGenerate"),
         actionNode("Preview Profile Wrappers", "gemstoneRs.codegenPreviewProfile"),
@@ -871,6 +875,14 @@ async function codegenExplain() {
   });
 }
 
+async function openCodegenConfig() {
+  await openPathInEditor(settings().codegenConfig);
+}
+
+async function openProjectProfiles() {
+  await openPathInEditor(settings().codegenProfiles);
+}
+
 async function openGeneratedOutput() {
   const configPath = await askConfigPath();
   if (!configPath) {
@@ -1366,6 +1378,7 @@ function openExplorerWebview() {
   output.appendLine(`Opened gemstone-rs Explorer webview for ${url}`);
   output.appendLine("Run GemStone RS: Launch Explorer first if the webview cannot connect.");
   output.show(true);
+  probeExplorerHealth(url);
 }
 
 async function handleExplorerWebviewMessage(message, url) {
@@ -1383,8 +1396,40 @@ async function handleExplorerWebviewMessage(message, url) {
     }
     return;
   }
+  if (message.command === "openDocument") {
+    const content = String(message.content || "");
+    if (content) {
+      const document = await vscode.workspace.openTextDocument({
+        content,
+        language: String(message.language || "plaintext"),
+      });
+      await vscode.window.showTextDocument(document, { preview: true });
+    }
+    return;
+  }
   if (message.command === "runWorkbenchCommand") {
     await runWorkbenchCommand(String(message.id || ""));
+  }
+}
+
+async function probeExplorerHealth(url) {
+  const healthUrl = new URL("/health", url).toString();
+  try {
+    await httpGetJson(healthUrl);
+  } catch (error) {
+    const action = await vscode.window.showWarningMessage(
+      "gemstone-rs Explorer is not reachable yet.",
+      "Launch Explorer",
+      "Open Browser",
+      "Copy URL"
+    );
+    if (action === "Launch Explorer") {
+      launchExplorer();
+    } else if (action === "Open Browser") {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    } else if (action === "Copy URL") {
+      await vscode.env.clipboard.writeText(url);
+    }
   }
 }
 
@@ -1400,6 +1445,8 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.codegenDiff",
     "gemstoneRs.codegenCheck",
     "gemstoneRs.codegenExplain",
+    "gemstoneRs.openCodegenConfig",
+    "gemstoneRs.openProjectProfiles",
     "gemstoneRs.openGeneratedOutput",
     "gemstoneRs.codegenGenerate",
     "gemstoneRs.codegenPreviewProfile",
@@ -1707,6 +1754,10 @@ a { color: var(--vscode-textLink-foreground); }
 .diff-meta { color: var(--vscode-descriptionForeground); }
 .key-list { display: grid; gap: 4px; margin: 8px 0 0; }
 .key-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
+.browse-list { display: grid; gap: 4px; margin-top: 8px; }
+.browse-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; align-items: center; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
+.browse-row button { padding: 3px 6px; }
+.source-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .content { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; }
 .iframe-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--vscode-panel-border); overflow-x: auto; }
 iframe { display: block; width: 100%; height: 100%; border: 0; background: white; }
@@ -1737,7 +1788,21 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <label class="field">Profile file<input id="codegenProfiles" value="${escapeHtml(cfg.codegenProfiles)}"></label>
       <label class="field">BridgeRoot<input id="bridgeRoot" value="${escapeHtml(cfg.bridgeRoot)}"></label>
       <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
+      <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
+      <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
+    </div>
+    <div class="group">
+      <h2>Live Browse</h2>
+      <label class="field">Dictionary<input id="browseDictionary" value="UserGlobals"></label>
+      <label class="field">Class<input id="browseClass" value="Object"></label>
+      <label class="field">Protocol<input id="browseProtocol" value="-- all --"></label>
+      <label class="field">Selector<input id="browseSelector" value="printString"></label>
+      <button data-browse="/api/browse/dictionaries">Dictionaries</button>
+      <button data-browse="/api/browse/classes">Classes</button>
+      <button data-browse="/api/browse/protocols">Protocols</button>
+      <button data-browse="/api/browse/methods">Methods</button>
+      <button data-browse="/api/browse/source">Open Source</button>
     </div>
     <div class="group">
       <h2>Comparison</h2>
@@ -1762,6 +1827,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-probe="/api/codegen/check">Check Freshness</button>
       <button data-command="gemstoneRs.codegenPreview">Preview in Editor</button>
       <button data-command="gemstoneRs.codegenDiff">Diff in Editor</button>
+      <button data-command="gemstoneRs.openCodegenConfig">Open Config File</button>
       <button data-command="gemstoneRs.openGeneratedOutput">Open Output File</button>
       <button data-command="gemstoneRs.codegenGenerate">Generate with Confirmation</button>
     </div>
@@ -1774,6 +1840,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-probe="/api/codegen/check-profile">Check Profile</button>
       <button data-command="gemstoneRs.codegenPreviewProfile">Preview Profile in Editor</button>
       <button data-command="gemstoneRs.codegenGenerateProfile">Generate Profile with Confirmation</button>
+      <button data-command="gemstoneRs.openProjectProfiles">Open Profile File</button>
     </div>
     <div id="inspector" class="inspector"><pre>Use the inspector buttons to query the running explorer. The iframe remains the full explorer UI.</pre></div>
   </aside>
@@ -1824,6 +1891,32 @@ function apiUrl(path) {
   return url;
 }
 
+function browseUrl(path) {
+  const url = apiUrl(path);
+  const dictionary = configValue('browseDictionary') || 'UserGlobals';
+  const className = configValue('browseClass') || 'Object';
+  const protocol = configValue('browseProtocol') || '-- all --';
+  const selector = configValue('browseSelector') || 'printString';
+  if (path.includes('/api/browse/classes')) {
+    url.searchParams.set('dictionary', dictionary);
+  }
+  if (path.includes('/api/browse/protocols')) {
+    url.searchParams.set('dictionary', dictionary);
+    url.searchParams.set('class', className);
+  }
+  if (path.includes('/api/browse/methods')) {
+    url.searchParams.set('dictionary', dictionary);
+    url.searchParams.set('class', className);
+    url.searchParams.set('protocol', protocol);
+  }
+  if (path.includes('/api/browse/source')) {
+    url.searchParams.set('dictionary', dictionary);
+    url.searchParams.set('class', className);
+    url.searchParams.set('selector', selector);
+  }
+  return url;
+}
+
 function setInspector(text, isError) {
   inspector.className = isError ? 'inspector error' : 'inspector';
   inspector.innerHTML = '<pre>' + escapeHtml(text) + '</pre>';
@@ -1855,6 +1948,14 @@ function renderProbeResult(parsed, ok) {
     recordOutputPath(parsed);
     if (Array.isArray(parsed.profiles) && typeof parsed.profileCount === 'number') {
       renderProfileStatus(parsed, ok);
+    } else if (Array.isArray(parsed.dictionaries)) {
+      renderBrowseList('Dictionaries', parsed.dictionaries, 'dictionary', ok);
+    } else if (Array.isArray(parsed.classes)) {
+      renderBrowseList('Classes', parsed.classes, 'class', ok);
+    } else if (Array.isArray(parsed.protocols)) {
+      renderBrowseList('Protocols', parsed.protocols, 'protocol', ok);
+    } else if (Array.isArray(parsed.methods)) {
+      renderBrowseList('Methods', parsed.methods, 'selector', ok);
     } else if (parsed.view === 'status' && (parsed.remaining || Array.isArray(parsed.comparisons))) {
       renderComparisonStatus(parsed, ok);
     } else if (Array.isArray(parsed.steps)) {
@@ -1864,7 +1965,7 @@ function renderProbeResult(parsed, ok) {
     } else if (typeof parsed.diff === 'string') {
       renderDiff(parsed.diff || 'No generated output changes.', ok);
     } else if (typeof parsed.source === 'string') {
-      setInspectorHtml(resultTitle('Generated Source') + '<pre>' + escapeHtml(parsed.source) + '</pre>', !ok);
+      renderBrowseSource(parsed, ok);
     } else if (typeof parsed.config === 'string') {
       setInspectorHtml(resultTitle('Codegen Config') + '<pre>' + escapeHtml(parsed.config) + '</pre>', !ok);
     } else if (Array.isArray(parsed.keys)) {
@@ -2021,6 +2122,45 @@ function renderBridgeKeys(data, ok) {
   );
 }
 
+function renderBrowseList(title, values, targetField, ok) {
+  const rows = values.map(value =>
+    '<div class="browse-row"><span>' + escapeHtml(value) + '</span><button data-browse-pick="' + escapeHtml(targetField) + '" data-value="' + escapeHtml(value) + '">Use</button></div>'
+  ).join('');
+  setInspectorHtml(
+    resultTitle(title, values.length + ' result' + (values.length === 1 ? '' : 's')) +
+    (rows ? '<div class="browse-list">' + rows + '</div>' : '<p class="muted">No values reported.</p>'),
+    !ok
+  );
+  inspector.querySelectorAll('button[data-browse-pick]').forEach(button => {
+    button.addEventListener('click', () => {
+      const value = button.dataset.value || '';
+      const field = button.dataset.browsePick;
+      if (field === 'dictionary') document.getElementById('browseDictionary').value = value;
+      else if (field === 'class') document.getElementById('browseClass').value = value;
+      else if (field === 'protocol') document.getElementById('browseProtocol').value = value;
+      else if (field === 'selector') document.getElementById('browseSelector').value = value;
+    });
+  });
+}
+
+function renderBrowseSource(data, ok) {
+  const title = [data.class, data.selector].filter(Boolean).join('>>') || 'GemStone Source';
+  setInspectorHtml(
+    resultTitle('Method Source', title) +
+    '<div class="source-actions"><button data-open-source-editor>Open Source in Editor</button></div>' +
+    '<pre>' + escapeHtml(data.source) + '</pre>',
+    !ok
+  );
+  const button = inspector.querySelector('button[data-open-source-editor]');
+  if (button) {
+    button.addEventListener('click', () => vscode.postMessage({
+      command: 'openDocument',
+      language: 'smalltalk',
+      content: data.source
+    }));
+  }
+}
+
 function renderBridgeValue(data, ok) {
   const value = data.value || {};
   setInspectorHtml(
@@ -2094,6 +2234,25 @@ function navigate(path) {
   frame.src = url.href;
 }
 
+async function browseProbe(path) {
+  const url = browseUrl(path);
+  status.textContent = 'GET ' + url.pathname + url.search;
+  setInspector('Loading ' + url.href + ' ...', false);
+  try {
+    const response = await fetch(url.href);
+    const text = await response.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = text;
+    }
+    renderProbeResult(parsed, response.ok);
+  } catch (error) {
+    setInspector('Could not reach explorer at ' + state.baseUrl + '\\n' + error.message + '\\n\\nRun GemStone RS: Launch Explorer first.', true);
+  }
+}
+
 document.querySelectorAll('[data-command]').forEach(button => {
   button.addEventListener('click', () => vscode.postMessage({
     command: 'runWorkbenchCommand',
@@ -2103,6 +2262,10 @@ document.querySelectorAll('[data-command]').forEach(button => {
 
 document.querySelectorAll('[data-probe]').forEach(button => {
   button.addEventListener('click', () => probe(button.dataset.probe));
+});
+
+document.querySelectorAll('[data-browse]').forEach(button => {
+  button.addEventListener('click', () => browseProbe(button.dataset.browse));
 });
 
 document.querySelectorAll('[data-nav]').forEach(button => {

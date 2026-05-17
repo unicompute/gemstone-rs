@@ -49,6 +49,10 @@ Open the GemStone RS activity bar item.
 4. Expand a protocol.
 5. Select a method to open its source.
 
+The embedded explorer webview has a matching `Live Browse` inspector. It can
+load dictionaries, classes, protocols, methods, and source without leaving the
+webview, then hand the method source to a VS Code editor.
+
 This exercises:
 
 - `gemstone-rs browse dictionaries`
@@ -126,3 +130,5 @@ detail pane shows generated source, generated mapping config, unified diff
 output, or side-by-side diff output, and the page remembers the current fields
 locally across reloads. Config saves use a POST body, so the editor can handle
 realistic config files instead of being limited by URL length.
+Workbench buttons can open the current codegen config, project profile file,
+and generated output directly in VS Code for review or edits.

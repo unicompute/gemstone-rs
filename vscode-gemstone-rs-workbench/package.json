@@ -52,6 +52,8 @@
     "onCommand:gemstoneRs.codegenDiff",
     "onCommand:gemstoneRs.codegenCheck",
     "onCommand:gemstoneRs.codegenExplain",
+    "onCommand:gemstoneRs.openCodegenConfig",
+    "onCommand:gemstoneRs.openProjectProfiles",
     "onCommand:gemstoneRs.openGeneratedOutput",
     "onCommand:gemstoneRs.codegenGenerate",
     "onCommand:gemstoneRs.codegenPreviewProfile",
@@ -210,6 +212,14 @@
         "title": "GemStone RS: Codegen Explain"
       },
       {
+        "command": "gemstoneRs.openCodegenConfig",
+        "title": "GemStone RS: Open Codegen Config"
+      },
+      {
+        "command": "gemstoneRs.openProjectProfiles",
+        "title": "GemStone RS: Open Project Profiles"
+      },
+      {
         "command": "gemstoneRs.openGeneratedOutput",
         "title": "GemStone RS: Open Generated Output"
       },
@@ -333,14 +343,19 @@
           "group": "navigation@4"
         },
         {
-          "command": "gemstoneRs.openGeneratedOutput",
+          "command": "gemstoneRs.openCodegenConfig",
           "when": "view == gemstoneRsExplorer",
           "group": "navigation@5"
         },
         {
-          "command": "gemstoneRs.codegenGenerate",
+          "command": "gemstoneRs.openGeneratedOutput",
           "when": "view == gemstoneRsExplorer",
           "group": "navigation@6"
+        },
+        {
+          "command": "gemstoneRs.codegenGenerate",
+          "when": "view == gemstoneRsExplorer",
+          "group": "navigation@7"
         }
       ]
     },

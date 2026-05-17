@@ -34,6 +34,8 @@ http://127.0.0.1:8787/
 The home page is a small browser UI over the same JSON endpoints. It can:
 
 - browse dictionaries, classes, protocols, methods, and source
+- show the current browse path, class-side toggle, result count, and selected
+  method source in the detail pane
 - run a setup assistant that checks the env file, live configuration, GCI
   library, codegen config, and project profiles
 - run doctor/status checks
@@ -230,13 +232,20 @@ type and GemStone class, then use:
 - `Generate Profile` to resolve a named project profile and write its wrappers
   when the explorer was started with `--allow-write`
 
+The VS Code webview wraps the same page with native handoff actions. It can run
+live browse probes from the side inspector, open method source in a VS Code
+editor, open the configured codegen/profile files, open the generated output
+file reported by codegen explain/check/profile status, and offer Launch
+Explorer/Open Browser/Copy URL fallbacks when the loopback explorer is not
+running.
+
 The `Comparison Status` buttons call read-only local endpoints:
 
 - `Compare with gemstone-py` renders the same short answer as
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the combined Rust/Python and
   TypeScript/Python batch count, currently **12 batches** and roughly
-  **77-133 hours**
+  **76-131 hours**
 
 Read-only endpoints:
 
@@ -391,4 +400,4 @@ higher-level browsing and codegen workflows.
 Good next steps:
 
 - short GIFs showing profile import, codegen preview, and BridgeRoot checks
-- deeper VS Code webview integration
+- deeper generated-file editing inside the VS Code webview

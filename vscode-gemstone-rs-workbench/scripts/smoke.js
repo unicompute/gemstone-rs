@@ -34,6 +34,8 @@ const requiredCommands = [
   "gemstoneRs.codegenDiff",
   "gemstoneRs.codegenCheck",
   "gemstoneRs.codegenExplain",
+  "gemstoneRs.openCodegenConfig",
+  "gemstoneRs.openProjectProfiles",
   "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.codegenPreviewProfile",
@@ -92,6 +94,10 @@ assert(
 assert(extensionSource.includes("renderProfileStatus"), "webview should render profile status as structured content");
 assert(extensionSource.includes("data-profile-action"), "webview profile status should expose row actions");
 assert(extensionSource.includes("runProfileProbe"), "webview profile actions should call explorer profile endpoints");
+assert(extensionSource.includes("data-browse=\"/api/browse/dictionaries\""), "webview should expose live dictionary browsing");
+assert(extensionSource.includes("renderBrowseList"), "webview should render live browse lists");
+assert(extensionSource.includes("renderBrowseSource"), "webview should render live method source");
+assert(extensionSource.includes("openDocument"), "webview should hand off source previews to VS Code editors");
 assert(extensionSource.includes("renderCodegenExplain"), "webview should render codegen explain summaries");
 assert(extensionSource.includes("renderBridgeValue"), "webview should render BridgeRoot values as structured content");
 assert(extensionSource.includes("data-probe=\"/api/codegen/output\""), "webview should expose generated output reads");
@@ -116,6 +122,7 @@ assert(
 assert(extensionSource.includes("handleExplorerWebviewMessage"), "webview should handle VS Code command messages");
 assert(extensionSource.includes("escapeHtml(url)"), "webview URL must be escaped");
 assert(extensionSource.includes("GemStone RS: Launch Explorer first"), "webview launch hint is missing");
+assert(extensionSource.includes("probeExplorerHealth"), "webview should warn when the explorer is not reachable");
 assert(extensionSource.includes("Copy Env Script"), "verify setup should offer environment script copy");
 assert(extensionSource.includes("Open Settings"), "verify setup should offer settings shortcut");
 assert(extensionSource.includes('"doctor", "--live"'), "verify live setup should run doctor --live");
@@ -161,6 +168,8 @@ assert(readme.includes("Run Setup Assistant"), "README should mention setup assi
 assert(readme.includes("Codegen Check Profile"), "README should mention profile-driven codegen");
 assert(readme.includes("Codegen Explain"), "README should mention codegen explain");
 assert(readme.includes("Codegen Explain Profile"), "README should mention profile codegen explain");
+assert(readme.includes("Open Codegen Config"), "README should mention opening the codegen config");
+assert(readme.includes("Open Project Profiles"), "README should mention opening project profiles");
 assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");

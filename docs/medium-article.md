@@ -628,9 +628,10 @@ The VS Code extension adds a GemStone RS sidebar:
 - BridgeRoot put/remove smoke actions
 - codegen preview/diff/check/generate
 - generated output file opening
+- codegen config and project profile file opening
 - profile-driven codegen preview/diff/check/generate
 - explorer launch
-- embedded explorer webview
+- embedded explorer webview with live browsing and source preview
 
 For a source checkout:
 
@@ -642,6 +643,11 @@ For a source checkout:
 }
 ```
 
+The embedded webview now gives the explorer a more IDE-like loop: it can browse
+live dictionaries, classes, protocols, methods, and source from the side
+inspector; open method source in a VS Code editor; open configured codegen and
+profile files; open generated wrapper output; and warn with Launch Explorer,
+Open Browser, and Copy URL fallbacks when the loopback explorer is not running.
 The extension stays thin. The Rust CLI remains the contract, which keeps the
 tooling testable outside VS Code.
 

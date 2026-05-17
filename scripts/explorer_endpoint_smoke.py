@@ -72,6 +72,13 @@ def run_one_smoke(auth_token: str | None) -> None:
             suffix = ""
             separator = "?"
 
+        root_html = get_text(f"{base}/{suffix}")
+        assert "gemstone-rs Explorer" in root_html
+        assert "browseStatus" in root_html
+        assert "metaClass" in root_html
+        assert "renderSourceDetail" in root_html
+        assert "copyDetailText" in root_html
+
         status_code, status = get_json_with_status(f"{base}/api/status{suffix}")
         assert status_code in {200, 500, 503}
         assert "connected" in status
@@ -150,6 +157,13 @@ def get_json(url: str, headers: dict[str, str] | None = None) -> dict:
     status, value = get_json_with_status(url, headers=headers)
     assert 200 <= status < 300, f"{url}: expected 2xx, got {status}"
     return value
+
+
+def get_text(url: str, headers: dict[str, str] | None = None) -> str:
+    request = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(request, timeout=5) as response:
+        assert 200 <= response.status < 300, f"{url}: expected 2xx, got {response.status}"
+        return response.read().decode("utf-8")
 
 
 def get_json_with_status(

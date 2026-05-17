@@ -63,6 +63,9 @@ For a source checkout:
 - `GemStone RS: Codegen Diff`
 - `GemStone RS: Codegen Check`
 - `GemStone RS: Codegen Explain`
+- `GemStone RS: Open Codegen Config`
+- `GemStone RS: Open Project Profiles`
+- `GemStone RS: Open Generated Output`
 - `GemStone RS: Codegen Generate`
 - `GemStone RS: Codegen Preview Profile`
 - `GemStone RS: Codegen Diff Profile`
@@ -92,8 +95,11 @@ For a source checkout:
 `Codegen Diff` opens a generated diff. `Codegen Generate` shows that diff
 before writing, then opens the generated file after a successful write. The
 `Codegen Explain` renders the structured `codegen explain --json` summary with
-classes, selectors, return types, mapped fields, and generated test stubs. The
-profile variants run the same preview/diff/check/explain/generate loop from a
+classes, selectors, return types, mapped fields, and generated test stubs.
+`Open Codegen Config`, `Open Project Profiles`, and `Open Generated Output`
+open the current config, project profile file, and generated wrapper output in
+VS Code editors so review and edits stay in the IDE. The profile variants run
+the same preview/diff/check/explain/generate loop from a
 named project profile in `gemstone-rs.codegen-profiles.json`.
 `Show Example Commands` uses `gemstone-rs examples list --json` to show the
 same curated example map that the CLI exposes, then lets you run a selected
@@ -134,12 +140,14 @@ terminal.
 `Open Explorer Webview` embeds the running loopback explorer inside VS Code.
 The webview wraps the explorer in a workbench shell: the iframe remains the
 full browser UI, while the side inspector renders structured setup checks,
-project profile freshness tables with Preview/Diff/Check/Generate buttons,
-Codegen explain summaries, generated source, colorized diffs, BridgeRoot
+live dictionary/class/protocol/method browsing, method source previews, project
+profile freshness tables with Preview/Diff/Check/Generate buttons, Codegen
+explain summaries, generated source, colorized diffs, BridgeRoot
 identity/key/value summaries, and comparison status cards. Workbench buttons
 can hand off to native VS Code commands for previewing wrappers, opening diffs,
-reading or opening generated output files, generating with confirmation,
-checking project profiles, and opening docs.
+opening config/profile/generated files, generating with confirmation, checking
+project profiles, and opening docs. If the explorer is not running, the webview
+offers Launch Explorer, Open Browser, and Copy URL fallbacks.
 If `gemstoneRs.explorerAuthToken` is set, `Launch Explorer` passes
 `--auth-token-env GEMSTONE_RS_EXPLORER_TOKEN` and all browser/webview URLs
 include the matching `token=` query parameter. Use `Generate Explorer Auth

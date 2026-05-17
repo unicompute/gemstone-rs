@@ -597,13 +597,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         project_score: 27,
         max_score: 35,
         total_batches: 6,
-        hours_min: 35,
-        hours_max: 61,
+        hours_min: 34,
+        hours_max: 59,
         next_number: 1,
         next_focus: "Explorer and VS Code visual polish",
-        next_hours_min: 5,
-        next_hours_max: 8,
-        next_outcome: "Polish live class browsing, generated-file editing, screenshots, and browser fallback behavior inside the embedded webview.",
+        next_hours_min: 4,
+        next_hours_max: 6,
+        next_outcome: "Deepen generated-file editing and screenshot/GIF coverage inside the embedded webview.",
         next_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         top_gap_priority: "P1",
         top_gap_area: "Web framework adapters",
@@ -645,7 +645,7 @@ fn gemstone_js_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":77,"hoursMax":133,"comparisons":[{},{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","totalBatches":12,"hoursMin":76,"hoursMax":131,"comparisons":[{},{}]}}"#,
         gemstone_py_status_json(false),
         gemstone_js_status_json(false)
     )
@@ -2292,6 +2292,8 @@ textarea.compact, pre.compact { min-height: 80px; }
 .pill { border: 1px solid rgba(255,255,255,.45); border-radius: 999px; padding: 4px 8px; font-size: 12px; }
 .list { max-height: 420px; overflow: auto; }
 .item { display: block; width: 100%; text-align: left; border-color: #d0d7de; background: white; color: #24292f; margin-bottom: 4px; }
+.browse-status { min-height: 52px; background: #f6f8fa; color: #24292f; border: 1px solid #d0d7de; border-radius: 6px; padding: 8px; margin: 8px 0; white-space: pre-wrap; }
+.source-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 12px; }
 .panes { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .pane-title { color: #57606a; font-size: 12px; margin: 8px 0 4px; }
@@ -2354,8 +2356,10 @@ pre { min-height: 220px; overflow: auto; white-space: pre-wrap; background: #0d1
 </div>
 <label>Dictionary<input id="dictionary" value="UserGlobals"></label>
 <label>Class<input id="className" value="Object"></label>
+<label><input id="metaClass" type="checkbox" style="width:auto"> Browse class side</label>
 <label>Protocol<input id="protocol" value="-- all --"></label>
 <label>Selector<input id="selector" value="printString"></label>
+<pre id="browseStatus" class="browse-status">Pick a dictionary, class, protocol, and method to load source.</pre>
 <div id="items" class="list"></div>
 </section>
 <section id="bridge-codegen">
@@ -2450,6 +2454,7 @@ const out = document.getElementById('output');
 const detail = document.getElementById('detail');
 const items = document.getElementById('items');
 const importSummary = document.getElementById('importSummary');
+const browseStatus = document.getElementById('browseStatus');
 const recentConfigsKey = 'gemstone-rs-explorer:recentCodegenConfigs';
 const profilesKey = 'gemstone-rs-explorer:codegenProfiles';
 const authToken = new URLSearchParams(window.location.search).get('token') || '';
@@ -2496,7 +2501,7 @@ function renderDetail(data) {
   } else if (data.explain && typeof data.explain === 'object') {
     detail.textContent = renderCodegenExplain(data.explain);
   } else if (typeof data.source === 'string') {
-    detail.textContent = data.source;
+    renderSourceDetail(data);
   } else if (data.value && typeof data.value === 'object') {
     renderBridgeValue(data);
   } else if (typeof data.config === 'string') {
@@ -2711,12 +2716,35 @@ function button(label, onClick) {
   element.onclick = onClick;
   return element;
 }
+function setBrowseStatus(kind, count) {
+  browseStatus.textContent = [
+    'Dictionary: ' + document.getElementById('dictionary').value,
+    'Class: ' + document.getElementById('className').value + (document.getElementById('metaClass').checked ? ' class' : ''),
+    'Protocol: ' + document.getElementById('protocol').value,
+    'Selector: ' + document.getElementById('selector').value,
+    kind + ': ' + count + ' result' + (count === 1 ? '' : 's')
+  ].join('\n');
+}
+function renderSourceDetail(data) {
+  const title = [data.class, data.selector].filter(Boolean).join('>>') || 'GemStone source';
+  detail.className = 'detail';
+  detail.innerHTML =
+    '<div class="pane-title">Method Source: ' + escapeHtml(title) + '</div>' +
+    '<div class="source-actions"><button class="secondary" onclick="copyDetailText()">Copy Source</button></div>' +
+    '<pre>' + escapeHtml(data.source) + '</pre>';
+}
+function copyDetailText() {
+  const text = detail.innerText || detail.textContent || '';
+  navigator.clipboard?.writeText(text);
+}
 async function list(path, key, onPick) {
   const response = await fetch(apiPath(path));
   const data = await response.json();
   items.innerHTML = '';
   out.textContent = JSON.stringify(data, null, 2);
-  for (const value of data[key] || []) items.appendChild(button(value, () => onPick(value)));
+  const values = data[key] || [];
+  setBrowseStatus(key, values.length);
+  for (const value of values) items.appendChild(button(value, () => onPick(value)));
 }
 function loadDictionaries() {
   list('/api/browse/dictionaries', 'dictionaries', value => {
@@ -2731,19 +2759,23 @@ function loadClasses() {
   });
 }
 function loadProtocols() {
-  list('/api/browse/protocols?class=' + q('className') + '&dictionary=' + q('dictionary'), 'protocols', value => {
+  const meta = document.getElementById('metaClass').checked ? '&meta=1' : '';
+  list('/api/browse/protocols?class=' + q('className') + '&dictionary=' + q('dictionary') + meta, 'protocols', value => {
     document.getElementById('protocol').value = value;
     loadMethods();
   });
 }
 function loadMethods() {
-  list('/api/browse/methods?class=' + q('className') + '&dictionary=' + q('dictionary') + '&protocol=' + q('protocol'), 'methods', value => {
+  const meta = document.getElementById('metaClass').checked ? '&meta=1' : '';
+  list('/api/browse/methods?class=' + q('className') + '&dictionary=' + q('dictionary') + '&protocol=' + q('protocol') + meta, 'methods', value => {
     document.getElementById('selector').value = value;
     loadSource();
   });
 }
 function loadSource() {
-  callApi('/api/browse/source?class=' + q('className') + '&dictionary=' + q('dictionary') + '&selector=' + q('selector'));
+  const meta = document.getElementById('metaClass').checked ? '&meta=1' : '';
+  setBrowseStatus('source', 1);
+  callApi('/api/browse/source?class=' + q('className') + '&dictionary=' + q('dictionary') + '&selector=' + q('selector') + meta);
 }
 async function loadBridgeKeys() {
   const response = await fetch(apiPath('/api/bridge/keys'));
@@ -3419,6 +3451,10 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains("gemstone-rs Explorer"));
         assert!(response.body.contains("loadDictionaries()"));
+        assert!(response.body.contains("browseStatus"));
+        assert!(response.body.contains("metaClass"));
+        assert!(response.body.contains("renderSourceDetail"));
+        assert!(response.body.contains("copyDetailText"));
         assert!(response.body.contains("BridgeRoot and Codegen"));
         assert!(response.body.contains("Codegen Workflow"));
         assert!(response.body.contains("codegenConfig"));
@@ -3508,8 +3544,8 @@ mod tests {
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
         assert!(response.body.contains(r#""totalBatches":6"#));
-        assert!(response.body.contains(r#""hoursMin":35"#));
-        assert!(response.body.contains(r#""hoursMax":61"#));
+        assert!(response.body.contains(r#""hoursMin":34"#));
+        assert!(response.body.contains(r#""hoursMax":59"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Explorer and VS Code visual polish"));
         assert!(response
@@ -3526,8 +3562,8 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""totalBatches":12"#));
-        assert!(response.body.contains(r#""hoursMin":77"#));
-        assert!(response.body.contains(r#""hoursMax":133"#));
+        assert!(response.body.contains(r#""hoursMin":76"#));
+        assert!(response.body.contains(r#""hoursMax":131"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""comparison":"gemstone-js""#));
     }
