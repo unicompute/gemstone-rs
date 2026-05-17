@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native.schema.json",
+  "title": "gemstone-rs py-native Capabilities Output",
+  "description": "Machine-readable output from gemstone-rs py-native capabilities --json for gemstone-py-native wrappers, CI, release checks, and editor integrations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "contractVersion",
+    "threading",
+    "operations",
+    "valueKinds",
+    "errorKinds",
+    "oopConstants"
+  ],
+  "properties": {
+    "name": {
+      "const": "gemstone-py-native adapter contract"
+    },
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "threading": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "valueKinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["nil", "bool", "smallInt", "char", "string", "symbol", "oop"]
+      }
+    },
+    "errorKinds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "gci",
+          "missingEnvironment",
+          "missingConfig",
+          "nul",
+          "notLoggedIn",
+          "gemStone",
+          "illegalOop",
+          "unexpectedType",
+          "mapping",
+          "workerStopped",
+          "workerPanicked",
+          "negativeSize",
+          "argumentCountTooLarge"
+        ]
+      }
+    },
+    "oopConstants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nil", "true", "false", "smallint7", "charA"],
+      "properties": {
+        "nil": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "true": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "false": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "smallint7": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "charA": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

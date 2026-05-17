@@ -117,11 +117,15 @@ schemas/gemstone-rs.codegen.schema.json
 schemas/gemstone-rs.codegen-explain.schema.json
 schemas/gemstone-rs.codegen-profiles.schema.json
 schemas/gemstone-rs.profile-check.schema.json
+schemas/gemstone-rs.py-native.schema.json
 ```
 
 `gemstone-rs.codegen` remains the line-oriented CLI format. The config schema
 describes an equivalent structured JSON model for editor panels and generated
 summaries, while the explain schema matches `codegen explain --json`. The
+py-native schema matches `gemstone-rs py-native capabilities --json` so a
+future `gemstone-py-native` wrapper can check the Rust adapter contract without
+linking against internal CLI code. The
 profile check schema matches `profile check --json` and the explorer
 `/api/codegen/profiles/check` endpoint.
 

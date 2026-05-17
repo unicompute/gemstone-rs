@@ -386,6 +386,13 @@
           "*.gemstone-rs.compare.json"
         ],
         "url": "./schemas/gemstone-rs.compare.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native.json",
+          "*.gemstone-rs.py-native.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native.schema.json"
       }
     ],
     "configuration": {

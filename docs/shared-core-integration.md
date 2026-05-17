@@ -66,6 +66,10 @@ gemstone-rs py-native capabilities
 gemstone-rs py-native capabilities --json
 ```
 
+The JSON output is covered by
+[`schemas/gemstone-rs.py-native.schema.json`](../schemas/gemstone-rs.py-native.schema.json)
+and the VS Code workbench packages the same schema for editor validation.
+
 Run the dry-run contract check from a source checkout when you also want to
 exercise the example binary:
 

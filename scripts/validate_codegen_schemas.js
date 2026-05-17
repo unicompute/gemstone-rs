@@ -11,6 +11,7 @@ const schemaNames = [
   "gemstone-rs.codegen-profiles.schema.json",
   "gemstone-rs.profile-check.schema.json",
   "gemstone-rs.compare.schema.json",
+  "gemstone-rs.py-native.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -86,6 +87,16 @@ const profileCheckOutput = childProcess.execFileSync(
 );
 assertProfileCheck(JSON.parse(lastJsonLine(profileCheckOutput)));
 assertProfiles(readJson("examples/codegen/gemstone-rs.codegen-profiles.json"));
+const pyNativeOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "capabilities", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+assertPyNativeCapabilities(JSON.parse(lastJsonLine(pyNativeOutput)));
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
@@ -107,7 +118,7 @@ for (const args of [
   );
 }
 
-console.log("gemstone-rs codegen and comparison schema checks passed");
+console.log("gemstone-rs codegen, comparison, and py-native schema checks passed");
 
 function runGemstoneRs(args) {
   return childProcess.execFileSync("cargo", ["run", "-p", "gemstone-rs-cli", "--", ...args], {
@@ -215,6 +226,83 @@ function assertProfileCheck(value) {
       profile.error === null || typeof profile.error === "string",
       `profiles[${index}].error`
     );
+  }
+}
+
+function assertPyNativeCapabilities(value) {
+  assert.strictEqual(value.name, "gemstone-py-native adapter contract");
+  assert.strictEqual(typeof value.contractVersion, "number");
+  assert(value.contractVersion >= 1);
+  assert.strictEqual(typeof value.threading, "string");
+  assert(value.threading.includes("non-Send/non-Sync"));
+  assertStringSet(
+    value.operations,
+    [
+      "login",
+      "logout",
+      "eval",
+      "eval_oop",
+      "execute",
+      "resolve",
+      "value_to_oop",
+      "perform",
+      "new_string",
+      "new_symbol",
+      "fetch_string",
+      "global_get",
+      "global_put",
+      "commit",
+      "abort",
+      "needs_commit",
+      "in_transaction",
+      "add_to_export_set",
+      "remove_from_export_set",
+    ],
+    "py-native.operations"
+  );
+  assertStringSet(
+    value.valueKinds,
+    ["nil", "bool", "smallInt", "char", "string", "symbol", "oop"],
+    "py-native.valueKinds"
+  );
+  assertStringSet(
+    value.errorKinds,
+    [
+      "gci",
+      "missingEnvironment",
+      "missingConfig",
+      "nul",
+      "notLoggedIn",
+      "gemStone",
+      "illegalOop",
+      "unexpectedType",
+      "mapping",
+      "workerStopped",
+      "workerPanicked",
+      "negativeSize",
+      "argumentCountTooLarge",
+    ],
+    "py-native.errorKinds"
+  );
+  assert(value.oopConstants && typeof value.oopConstants === "object");
+  for (const field of ["nil", "true", "false", "smallint7", "charA"]) {
+    assert.strictEqual(
+      typeof value.oopConstants[field],
+      "number",
+      `py-native.oopConstants.${field}`
+    );
+  }
+}
+
+function assertStringSet(actual, required, context) {
+  assert(Array.isArray(actual), context);
+  const values = new Set(actual);
+  assert.strictEqual(values.size, actual.length, `${context}: duplicate entries`);
+  for (const value of actual) {
+    assert.strictEqual(typeof value, "string", `${context}: entries must be strings`);
+  }
+  for (const value of required) {
+    assert(values.has(value), `${context}: missing ${value}`);
   }
 }
 
