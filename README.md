@@ -78,6 +78,8 @@ gemstone-rs compare all --parity
 gemstone-rs compare all --next
 gemstone-rs compare all --totals
 gemstone-rs compare all --batches
+gemstone-rs py-native capabilities
+gemstone-rs py-native capabilities --json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list

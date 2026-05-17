@@ -20,6 +20,8 @@ rust-check:
 examples-check:
 	cargo run -p gemstone-rs-cli -- hello
 	cargo run -p gemstone-rs-cli -- hello --json
+	cargo run -p gemstone-rs-cli -- py-native capabilities
+	cargo run -p gemstone-rs-cli -- py-native capabilities --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps

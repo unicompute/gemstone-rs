@@ -1,8 +1,9 @@
 use gemstone_rs::{
     browser::{Browser, ALL_PROTOCOLS},
     codegen::{self, DEFAULT_CONFIG_PATH},
-    gci_library_path, gci_library_resolution, profiles, BridgeKeyType, BridgeValue, Config,
-    Error as GemStoneError, Oop, Session, Value, DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
+    gci_library_path, gci_library_resolution, profiles, py_native, BridgeKeyType, BridgeValue,
+    Config, Error as GemStoneError, Oop, Session, Value, DEFAULT_BRIDGE_ROOT,
+    DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 use std::env;
 use std::error::Error as StdError;
@@ -38,6 +39,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         }
         Command::Hello { format } => {
             print_hello(format);
+            Ok(())
+        }
+        Command::PyNativeCapabilities { format } => {
+            print_py_native_capabilities(format);
             Ok(())
         }
         Command::CompareGemstonePy { view, format } => {
@@ -2509,6 +2514,62 @@ fn print_hello(format: OutputFormat) {
     }
 }
 
+const PY_NATIVE_VALUE_KINDS: &[&str] =
+    &["nil", "bool", "smallInt", "char", "string", "symbol", "oop"];
+const PY_NATIVE_ERROR_KINDS: &[&str] = &[
+    "gci",
+    "missingEnvironment",
+    "missingConfig",
+    "nul",
+    "notLoggedIn",
+    "gemStone",
+    "illegalOop",
+    "unexpectedType",
+    "mapping",
+    "workerStopped",
+    "workerPanicked",
+    "negativeSize",
+    "argumentCountTooLarge",
+];
+
+fn print_py_native_capabilities(format: OutputFormat) {
+    let capabilities = py_native::capabilities();
+    match format {
+        OutputFormat::Human => {
+            println!("gemstone-py-native adapter contract");
+            println!("  contract_version: {}", capabilities.contract_version);
+            println!("  threading: {}", capabilities.threading);
+            println!("  operations: {}", capabilities.operations.join(", "));
+            println!("  value_kinds: {}", PY_NATIVE_VALUE_KINDS.join(", "));
+            println!("  error_kinds: {}", PY_NATIVE_ERROR_KINDS.join(", "));
+            println!("  oop_constants:");
+            println!("    nil: {}", py_native::nil_oop());
+            println!("    true: {}", py_native::bool_oop(true));
+            println!("    false: {}", py_native::bool_oop(false));
+            println!("    smallint_7: {}", py_native::smallint_oop(7));
+            println!("    char_A: {}", py_native::char_oop('A'));
+        }
+        OutputFormat::Json => println!("{}", py_native_capabilities_json()),
+    }
+}
+
+fn py_native_capabilities_json() -> String {
+    let capabilities = py_native::capabilities();
+    format!(
+        r#"{{"name":"gemstone-py-native adapter contract","contractVersion":{},"threading":"{}","operations":[{}],"valueKinds":[{}],"errorKinds":[{}],"oopConstants":{{"nil":{},"true":{},"false":{},"smallint7":{},"charA":{}}}}}"#,
+        capabilities.contract_version,
+        escape_json(capabilities.threading),
+        json_hint_array(capabilities.operations),
+        json_hint_array(PY_NATIVE_VALUE_KINDS),
+        json_hint_array(PY_NATIVE_ERROR_KINDS),
+        py_native::nil_oop(),
+        py_native::bool_oop(true),
+        py_native::bool_oop(false),
+        py_native::smallint_oop(7),
+        py_native::char_oop('A')
+    )
+}
+
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
     match view {
         CompareView::Summary => print_gemstone_py_comparison_summary(format),
@@ -3857,6 +3918,9 @@ enum Command {
     Hello {
         format: OutputFormat,
     },
+    PyNativeCapabilities {
+        format: OutputFormat,
+    },
     CompareGemstonePy {
         view: CompareView,
         format: OutputFormat,
@@ -4080,6 +4144,7 @@ fn parse_command(args: &[String]) -> Result<Command, CliError> {
     match command {
         "-h" | "--help" | "help" => Ok(Command::Help),
         "hello" => parse_hello_command(&args[1..]),
+        "py-native" | "py_native" | "pynative" => parse_py_native_command(&args[1..]),
         "compare" => parse_compare_command(&args[1..]),
         "doctor" => parse_doctor_command(&args[1..]),
         "env" => parse_env_command(&args[1..]),
@@ -4193,6 +4258,30 @@ fn parse_env_write_command(args: &[String]) -> Result<Command, CliError> {
 
 fn parse_hello_command(args: &[String]) -> Result<Command, CliError> {
     parse_format_only_command(args, "hello [--json]", |format| Command::Hello { format })
+}
+
+fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
+    match args.first().map(String::as_str) {
+        None | Some("capabilities" | "contract") | Some("--json") => {
+            let offset = if matches!(
+                args.first().map(String::as_str),
+                Some("capabilities" | "contract")
+            ) {
+                1
+            } else {
+                0
+            };
+            parse_format_only_command(
+                &args[offset..],
+                "py-native capabilities [--json]",
+                |format| Command::PyNativeCapabilities { format },
+            )
+        }
+        Some("-h" | "--help") => Err(CliError::usage("expected: py-native capabilities [--json]")),
+        Some(command) => Err(CliError::usage(format!(
+            "unknown py-native command: {command}; expected capabilities"
+        ))),
+    }
 }
 
 fn parse_compare_command(args: &[String]) -> Result<Command, CliError> {
@@ -5196,6 +5285,7 @@ fn usage() -> &'static str {
     "usage:
   gemstone-rs [--env-file <path>] <command>
   gemstone-rs hello [--json]
+  gemstone-rs py-native capabilities [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -5346,6 +5436,24 @@ mod tests {
         assert_eq!(
             parse_command(&args(&["hello", "--json"])).unwrap(),
             Command::Hello {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "capabilities"])).unwrap(),
+            Command::PyNativeCapabilities {
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "--json"])).unwrap(),
+            Command::PyNativeCapabilities {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py_native", "contract", "--json"])).unwrap(),
+            Command::PyNativeCapabilities {
                 format: OutputFormat::Json,
             }
         );
@@ -6732,5 +6840,15 @@ GEMSTONE=/opt/gemstone # product root
                 error_count: 1,
             }
         );
+    }
+
+    #[test]
+    fn py_native_capabilities_json_is_stable() {
+        let json = py_native_capabilities_json();
+        assert!(json.contains(r#""contractVersion":1"#));
+        assert!(json.contains(r#""operations":["login","logout","eval""#));
+        assert!(json.contains(r#""valueKinds":["nil","bool","smallInt""#));
+        assert!(json.contains(r#""errorKinds":["gci","missingEnvironment""#));
+        assert!(json.contains(r#""oopConstants":"#));
     }
 }

@@ -403,11 +403,15 @@ wrap GemStone health checks in framework-specific blocking helpers.
 Use this when you are preparing `gemstone-py-native` to wrap the Rust core:
 
 ```bash
+gemstone-rs py-native capabilities
+gemstone-rs py-native capabilities --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 ```
 
-The live run logs in, evaluates `3 + 4`, performs `printString`, and round
-trips a `UserGlobals` string through `PyNativeSession`:
+The CLI command prints the contract version, threading rule, supported
+operations, value kinds, error kinds, and OOP constants. The live example logs
+in, evaluates `3 + 4`, performs `printString`, and round trips a `UserGlobals`
+string through `PyNativeSession`:
 
 ```bash
 cargo run -p gemstone-rs --example python_native_adapter

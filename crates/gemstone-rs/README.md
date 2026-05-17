@@ -118,6 +118,7 @@ cargo run -p gemstone-rs --example transactions
 cargo run -p gemstone-rs --example session_worker
 cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example async_worker
+cargo run -p gemstone-rs-cli -- py-native capabilities --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example oop_values
 cargo run -p gemstone-rs --example bridge_root_mapping

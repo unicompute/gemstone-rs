@@ -58,7 +58,16 @@ depending on internal `Session` details:
 - `PyNativeSession`
 - `capabilities()`
 
-Run the dry-run contract check from a source checkout:
+Print the adapter contract from the CLI when a wrapper build, CI job, or
+documentation generator needs a stable machine-readable surface:
+
+```bash
+gemstone-rs py-native capabilities
+gemstone-rs py-native capabilities --json
+```
+
+Run the dry-run contract check from a source checkout when you also want to
+exercise the example binary:
 
 ```bash
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
