@@ -116,7 +116,7 @@ gemstone-rs compare all --batches
 `compare all --batches` now reports only active gemstone-rs work. The
 gemstone-js comparison remains available as archived background reference, but
 it is no longer part of the active remaining-work estimate. Active remaining
-work is **2 batches**, roughly **10-17 hours** total.
+work is **1 batch**, roughly **6-10 hours** total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
@@ -133,10 +133,10 @@ remain, and the next recommended batch.
 
 Use `--parity` when you want a measured maturity view. It scores each area out
 of five and shows the current leader, status, and next action. The current
-Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 28/35**:
-Rust is at parity or ahead for core sessions, codegen/mapping, and the shared
-native-core direction; Python remains ahead for web frameworks, async/lifetime
-coverage, explorer polish, and release lane depth.
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 29/35**:
+Rust is at parity or ahead for core sessions, codegen/mapping, release
+verification, and the shared native-core direction; Python remains ahead for
+web frameworks, async/lifetime coverage, and explorer polish.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
@@ -145,7 +145,7 @@ coverage, explorer polish, and release lane depth.
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add more Rust framework examples only when a real service needs them. |
 | P2 | Async lifetime depth | gemstone-py has async examples and FastAPI integration. | Add deeper cancellation, shutdown, and lifetime tests around async worker futures. |
-| P2 | Release lane depth | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Exercise the full crates.io, Marketplace, GitHub Release, PDF, and checksum workflow regularly. |
+| P2 | Release lane discipline | gemstone-py has mature PyPI/TestPyPI/native wheel/VSIX release lanes. | Keep running the Release and Post-Release Verify workflows after each publish. |
 
 Use `--next` when you only want the first recommended implementation step:
 
@@ -168,10 +168,9 @@ gemstone-rs compare all --totals
 | Batch | Work | Estimate |
 | --- | --- | ---: |
 | 1 | Shared core with `gemstone-py-native` | 6-10 hours |
-| 2 | Release and live CI hardening | 4-7 hours |
 
-Total: roughly **10-17 hours** to bring `gemstone-rs` materially closer to
-`gemstone-py` across shared native-core integration and release depth.
+Total: roughly **6-10 hours** to bring `gemstone-rs` materially closer to
+`gemstone-py` across shared native-core integration.
 
 Recent codegen batch status: closed. `codegen discover` now records
 protocol/source documentation, prefers source-header argument names, generated

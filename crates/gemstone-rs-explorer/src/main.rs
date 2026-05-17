@@ -651,13 +651,13 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         comparison: "gemstone-py",
         view: include_view.then_some("status"),
         project_label: "gemstone-rs",
-        answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
+        answer: "gemstone-py remains more mature for Python apps and web examples; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, release-verifiable crates, and the future shared native core.",
         gemstone_py_score: 30,
-        project_score: 28,
+        project_score: 29,
         max_score: 35,
-        total_batches: 2,
-        hours_min: 10,
-        hours_max: 17,
+        total_batches: 1,
+        hours_min: 6,
+        hours_max: 10,
         next_number: 1,
         next_focus: "Shared core with gemstone-py-native",
         next_hours_min: 6,
@@ -676,7 +676,7 @@ fn gemstone_py_status_json(include_view: bool) -> String {
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","activeOnly":true,"totalBatches":2,"hoursMin":10,"hoursMax":17,"comparisons":[{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","activeOnly":true,"totalBatches":1,"hoursMin":6,"hoursMax":10,"comparisons":[{}]}}"#,
         gemstone_py_status_json(false)
     )
 }
@@ -3804,9 +3804,9 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
-        assert!(response.body.contains(r#""totalBatches":2"#));
-        assert!(response.body.contains(r#""hoursMin":10"#));
-        assert!(response.body.contains(r#""hoursMax":17"#));
+        assert!(response.body.contains(r#""totalBatches":1"#));
+        assert!(response.body.contains(r#""hoursMin":6"#));
+        assert!(response.body.contains(r#""hoursMax":10"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
         assert!(response.body.contains("Shared core"));
         assert!(response.body.contains("py_native adapter"));
@@ -3824,9 +3824,9 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""activeOnly":true"#));
-        assert!(response.body.contains(r#""totalBatches":2"#));
-        assert!(response.body.contains(r#""hoursMin":10"#));
-        assert!(response.body.contains(r#""hoursMax":17"#));
+        assert!(response.body.contains(r#""totalBatches":1"#));
+        assert!(response.body.contains(r#""hoursMin":6"#));
+        assert!(response.body.contains(r#""hoursMax":10"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(!response.body.contains(r#""comparison":"gemstone-js""#));
     }

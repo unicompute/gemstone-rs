@@ -2029,10 +2029,10 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
     ParityInfo {
         area: "Release and install lane",
         gemstone_py_score: 5,
-        project_score: 4,
-        leader: "gemstone-py",
-        status: "gemstone-py has more exercised PyPI/TestPyPI/native wheel/VSIX lanes; gemstone-rs has crates, VSIX, checksums, PDFs, and verification scripts.",
-        next_action: "Run full crates.io, Marketplace, GitHub Release, checksum, and live smoke verification regularly.",
+        project_score: 5,
+        leader: "tie",
+        status: "gemstone-rs has crates, VSIX, checksums, PDFs, release wrappers, post-release verification, and a shared live smoke lane.",
+        next_action: "Use the release and post-release workflows regularly so published artifacts and live GemStone smoke stay exercised.",
     },
     ParityInfo {
         area: "Shared native core",
@@ -2089,9 +2089,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Release lane depth",
         gemstone_py_strength: "gemstone-py has PyPI/TestPyPI, native wheel, VSIX, and post-publish verification lanes.",
-        gemstone_rs_gap: "gemstone-rs has crates/VSIX verification, but the full publish workflow is newer and less exercised.",
-        next_action: "Run the full release workflow regularly and keep crates.io, Marketplace, GitHub Release assets, PDFs, and checksums verified.",
-        verify_with: "scripts/publish_verify.sh <version>; scripts/verify_release_artifacts.py",
+        gemstone_rs_gap: "gemstone-rs has the release lane wired, but it should be exercised routinely after each publish.",
+        next_action: "Run the Release and Post-Release Verify workflows after publishing, with live smoke enabled when a test stone is available.",
+        verify_with: "scripts/publish_verify.sh <version>; scripts/live_smoke.sh",
     },
 ];
 
@@ -2103,14 +2103,6 @@ const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
         hours_max: 10,
         outcome: "Wire gemstone-py-native to the gemstone_rs::py_native adapter so Python and Rust share the native bridge.",
         verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
-    },
-    BatchInfo {
-        number: 2,
-        focus: "Release and live CI hardening",
-        hours_min: 4,
-        hours_max: 7,
-        outcome: "Exercise crates.io, Marketplace, GitHub Release assets, PDFs, checksums, and manual/scheduled live GemStone workflows.",
-        verify_with: "scripts/publish_verify.sh <version>; scripts/verify_release_artifacts.py",
     },
 ];
 
@@ -5751,16 +5743,16 @@ mod tests {
 
     #[test]
     fn comparison_batch_plans_are_actionable() {
-        assert_eq!(GEMSTONE_RS_BATCHES.len(), 2);
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 1);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (10, 17));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (6, 10));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
-                total_batches: 2,
-                hours_min: 10,
-                hours_max: 17,
+                total_batches: 1,
+                hours_min: 6,
+                hours_max: 10,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -5781,26 +5773,26 @@ mod tests {
         )
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
-            .contains(r#""totalBatches":2"#));
+            .contains(r#""totalBatches":1"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":2,"hoursMin":10,"hoursMax":17}"#));
+            .contains(r#""remaining":{"totalBatches":1,"hoursMin":6,"hoursMax":10}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
         );
         assert!(
             status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
-                .contains(r#""scoreGap":2"#)
+                .contains(r#""scoreGap":1"#)
         );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {
                 gemstone_py_score: 30,
-                project_score: 28,
+                project_score: 29,
                 max_score: 35,
-                score_gap: 2,
+                score_gap: 1,
             }
         );
         assert!(

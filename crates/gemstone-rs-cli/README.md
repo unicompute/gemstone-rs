@@ -135,7 +135,7 @@ totals, `--batches` for the detailed work batches, `--status` for the shortest
 answer with parity and batch count, `--scorecard` for the decision view, and
 `--parity` for area-by-area maturity scores.
 `compare all --totals` reports the active
-**2-batch**, **10-17 hour** gemstone-rs estimate. Add `--json` when an editor,
+**1-batch**, **6-10 hour** gemstone-rs estimate. Add `--json` when an editor,
 CI job, or release script needs
 structured output. The JSON shape is documented in
 `schemas/gemstone-rs.compare.schema.json` and checked by the repository schema

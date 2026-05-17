@@ -86,13 +86,13 @@ def run_one_smoke(auth_token: str | None) -> None:
         comparison = get_json(f"{base}/api/compare/gemstone-py/status{suffix}")
         assert comparison["comparison"] == "gemstone-py"
         assert comparison["view"] == "status"
-        assert comparison["remaining"]["totalBatches"] == 2
+        assert comparison["remaining"]["totalBatches"] == 1
         assert comparison["parity"]["project"] == "gemstone-rs"
 
         combined = get_json(f"{base}/api/compare/all/status{suffix}")
         assert combined["comparison"] == "all"
         assert combined["activeOnly"] is True
-        assert combined["totalBatches"] == 2
+        assert combined["totalBatches"] == 1
         assert len(combined["comparisons"]) == 1
 
         profiles = get_json(

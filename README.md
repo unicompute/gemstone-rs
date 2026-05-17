@@ -105,7 +105,7 @@ gemstone-rs-explorer --help
 ```
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
-**2 batches**, roughly **10-17 hours** total. Use
+**1 batch**, roughly **6-10 hours** total. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for
