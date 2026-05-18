@@ -17,7 +17,10 @@ fixture because it describes the active `gemstone-py-native` integration plan:
 wrap `PyNativeSession`, preserve Python return behavior, run live backend
 smoke, and publish wheels after the Python native path is green. The
 `py_native_pyo3_adapter` scaffold exposes the same report as
-`gemstone_py_native.migration_json()`.
+`gemstone_py_native.migration_json()` and includes
+`python/gemstone_py_native_compat.py`, which demonstrates
+`NativeCompatibilitySession`, `OopHandle`, and the backward-compatible return
+policy that should live above the thin PyO3 module.
 
 Verify it from a source checkout:
 

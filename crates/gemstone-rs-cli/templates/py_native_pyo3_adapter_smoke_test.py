@@ -1,6 +1,7 @@
 import json
 
 import gemstone_py_native
+import gemstone_py_native_compat
 
 
 def test_capabilities_json_names_contract():
@@ -62,3 +63,19 @@ def test_native_session_exposes_core_adapter_methods():
     }
     missing = {name for name in expected if not hasattr(gemstone_py_native.NativeSession, name)}
     assert missing == set()
+
+
+def test_compatibility_report_documents_return_policy():
+    report = gemstone_py_native_compat.compatibility_report()
+    assert report["targetPackage"] == "gemstone-py-native"
+    assert report["compatLayer"]["module"] == "gemstone_py_native_compat"
+    assert report["compatLayer"]["oopHandle"] == "OopHandle"
+    assert "typed helpers are opt-in" in report["compatLayer"]["returnPolicy"]
+
+
+def test_oop_handle_wraps_raw_oop_values():
+    handle = gemstone_py_native_compat.OopHandle(58)
+    assert handle.raw == 58
+    assert gemstone_py_native_compat.raw_oop(handle) == 58
+    assert gemstone_py_native_compat.raw_oop(58) == 58
+    assert gemstone_py_native_compat.raw_oops([handle, 60]) == [58, 60]

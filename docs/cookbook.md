@@ -431,7 +431,11 @@ PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `samples_json`, `smoke_dry_run_json`, `migration_json`, and an unsendable
 `NativeSession` wrapper over eval, execute, resolve, perform, globals,
-export-set retention, and transactions. The live
+export-set retention, and transactions. It also writes
+`python/gemstone_py_native_compat.py`, a Python package-layer shim with
+`NativeCompatibilitySession`, `OopHandle`, and a `compatibility_report()` that
+documents the return policy: object identity returns handles, raw native OOPs
+stay below the package boundary, and typed helpers are opt-in. The live
 example logs in, evaluates `3 + 4`,
 performs `printString`, and round trips a `UserGlobals` string through
 `PyNativeSession`:

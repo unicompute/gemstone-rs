@@ -884,6 +884,14 @@ also exposes the direct Rust adapter operations for eval, execute, resolve,
 perform, globals, export-set retention, commit, and abort, while leaving
 Pythonic return conversion in the Python package layer.
 
+The starter now includes that package layer as executable guidance:
+`python/gemstone_py_native_compat.py`. It defines `OopHandle` and
+`NativeCompatibilitySession`, so object identity returned by the direct native
+module is wrapped before normal Python package code sees it. That keeps the
+Rust/PyO3 boundary simple and still lets `gemstone-py-native` preserve its
+existing Python return behavior by default, with typed helpers kept as explicit
+opt-in calls.
+
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python
 native backend/live test suite through the Rust-backed path.

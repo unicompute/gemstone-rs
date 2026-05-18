@@ -110,7 +110,7 @@ sanity check after install.
 | Scaffold generated mapping | `gemstone-rs examples scaffold generated_mapping_app ./gemstone-rs-generated-mapping` | You want a standalone generated-style mapping app from the installed CLI. |
 | Scaffold HTTP service | `gemstone-rs examples scaffold http_service ./gemstone-rs-http-service` | You want a standalone HTTP health-service project from the installed CLI. |
 | Scaffold worker pool | `gemstone-rs examples scaffold session_worker_pool ./gemstone-rs-worker-pool` | You want a standalone bounded SessionWorkerPool project from the installed CLI. |
-| Scaffold PyO3 adapter | `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter` | You want a starter `gemstone-py-native` crate that wraps `gemstone_rs::py_native` with PyO3. |
+| Scaffold PyO3 adapter | `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter` | You want a starter `gemstone-py-native` crate that wraps `gemstone_rs::py_native` with PyO3 and includes a Python compatibility shim. |
 | Scaffold Axum service | `gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service` | You want a standalone Axum health-service project from the installed CLI. |
 | Scaffold Actix service | `gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service` | You want a standalone Actix Web health-service project from the installed CLI. |
 | Hello GemStone | `cargo run -p gemstone-rs --example hello_gemstone` | You want to verify env loading, login, session id, and a tiny eval. |

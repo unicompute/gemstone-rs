@@ -2540,6 +2540,10 @@ crate-type = ["cdylib", "rlib"]
                 source: include_str!("../templates/py_native_pyo3_adapter_python.md"),
             },
             ScaffoldFile {
+                path: "python/gemstone_py_native_compat.py",
+                source: include_str!("../templates/py_native_pyo3_adapter_compat.py"),
+            },
+            ScaffoldFile {
                 path: "tests/test_smoke.py",
                 source: include_str!("../templates/py_native_pyo3_adapter_smoke_test.py"),
             },
@@ -6629,6 +6633,15 @@ mod tests {
                 && file
                     .source
                     .contains("test_native_session_exposes_core_adapter_methods")
+                && file
+                    .source
+                    .contains("test_compatibility_report_documents_return_policy")
+        }));
+        assert!(py_native.extra_files.iter().any(|file| {
+            file.path == "python/gemstone_py_native_compat.py"
+                && file.source.contains("class NativeCompatibilitySession")
+                && file.source.contains("class OopHandle")
+                && file.source.contains("def compatibility_report")
         }));
 
         let err = scaffold_example_project(template, &target, false)
@@ -6661,6 +6674,10 @@ mod tests {
         assert!(py_native_target.join("pyproject.toml").exists());
         assert!(py_native_target.join("PYTHON.md").exists());
         assert!(py_native_target
+            .join("python")
+            .join("gemstone_py_native_compat.py")
+            .exists());
+        assert!(py_native_target
             .join("tests")
             .join("test_smoke.py")
             .exists());
@@ -6668,6 +6685,14 @@ mod tests {
         assert!(lib_rs.contains("PyNativeSession::login_from_env"));
         assert!(lib_rs.contains("samples_json"));
         assert!(lib_rs.contains("#[pyclass(unsendable)]"));
+        let compat_py = fs::read_to_string(
+            py_native_target
+                .join("python")
+                .join("gemstone_py_native_compat.py"),
+        )
+        .unwrap();
+        assert!(compat_py.contains("typed helpers are opt-in"));
+        assert!(compat_py.contains("def raw_oop"));
         let _ = fs::remove_dir_all(&py_native_target);
         let _ = fs::remove_dir_all(&target);
     }

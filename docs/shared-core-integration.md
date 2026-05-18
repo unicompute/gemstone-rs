@@ -113,13 +113,15 @@ source .venv/bin/activate
 python -m pip install maturin pytest
 maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
+python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["compatLayer"])'
 pytest
 ```
 
-The scaffold writes `pyproject.toml`, `src/lib.rs`, `PYTHON.md`, and a Python
-smoke test. It is deliberately thin: Python calls PyO3 functions/classes, and
-those delegate into `gemstone_rs::py_native`. The generated crate currently
-uses PyO3 0.28 for Python 3.14 compatibility and keeps PyO3's
+The scaffold writes `pyproject.toml`, `src/lib.rs`, `PYTHON.md`,
+`python/gemstone_py_native_compat.py`, and a Python smoke test. It is
+deliberately thin: Python calls PyO3 functions/classes, and those delegate
+into `gemstone_rs::py_native`. The generated crate currently uses PyO3 0.28
+for Python 3.14 compatibility and keeps PyO3's
 `extension-module` flag behind a Cargo feature so `cargo run` works while
 `maturin develop` still builds a proper Python extension. It exposes
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, and
@@ -127,8 +129,11 @@ uses PyO3 0.28 for Python 3.14 compatibility and keeps PyO3's
 and the remaining shared-core checklist from the generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
 execute, resolve, perform, globals, export-set retention, and transactions
-without adding Pythonic return conversion in the native layer. From a gemstone-rs
-source checkout, verify that the embedded scaffold still compiles against the
+without adding Pythonic return conversion in the native layer. The generated
+compatibility shim demonstrates the package-layer policy: direct object
+identity becomes `OopHandle`, raw native OOPs stay below the package boundary,
+and typed helpers are explicit opt-in methods. From a gemstone-rs source
+checkout, verify that the embedded scaffold still compiles against the
 local Rust core with:
 
 ```bash

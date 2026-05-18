@@ -99,6 +99,7 @@ gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-cod
 gemstone-rs examples scaffold generated_wrapper_app ./gemstone-rs-generated-wrapper
 gemstone-rs examples scaffold axum_service ./gemstone-rs-axum-service
 gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
+gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 gemstone-rs doctor
 gemstone-rs doctor --live --strict
 gemstone-rs doctor --env-file .env.gemstone-rs --live
@@ -129,6 +130,11 @@ The migration report tracks the remaining `gemstone-py-native` shared-core
 steps, including wrapping `PyNativeSession`, preserving Python return behavior,
 running live native backend smoke, and publishing wheels after the Python path
 is green.
+The `py_native_pyo3_adapter` scaffold now also writes
+`python/gemstone_py_native_compat.py`, a Python compatibility shim with
+`NativeCompatibilitySession` and `OopHandle`. That shim shows how the real
+Python package can keep existing return behavior stable while the direct PyO3
+module stays a thin wrapper over the Rust core.
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
 **1 batch**, roughly **6-10 hours** total. Use

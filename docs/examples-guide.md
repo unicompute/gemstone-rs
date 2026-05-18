@@ -86,7 +86,11 @@ writes a `pyproject.toml`, PyO3 `src/lib.rs`, and Python smoke tests that wrap
 the dependency-free `gemstone_rs::py_native` contract, including
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, and
 `migration_json`, plus direct `NativeSession` methods for eval, execute,
-resolve, perform, globals, export-set retention, and transactions. It uses PyO3 0.28 so the
+resolve, perform, globals, export-set retention, and transactions. It also
+writes `python/gemstone_py_native_compat.py`, which wraps raw native OOP
+returns in `OopHandle` through `NativeCompatibilitySession` so package code can
+preserve existing Python return behavior while typed helpers remain opt-in.
+It uses PyO3 0.28 so the
 generated starter remains compatible with current Python 3.14 interpreters,
 and `maturin` enables the `extension-module` Cargo feature only for Python
 extension builds. Source checkout verification also compiles and runs the

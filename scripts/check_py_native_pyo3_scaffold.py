@@ -129,6 +129,8 @@ def main() -> int:
     run(cargo_check, cwd=repo_root, retry_offline=not args.offline)
     run_result = run(cargo_run, cwd=repo_root, retry_offline=not args.offline)
     lib_source = (target / "src" / "lib.rs").read_text()
+    pyproject_source = (target / "pyproject.toml").read_text()
+    compat_source = (target / "python" / "gemstone_py_native_compat.py").read_text()
     for needle in [
         "samples_json:",
         "smoke_json:",
@@ -149,6 +151,20 @@ def main() -> int:
     ]:
         if method not in lib_source:
             raise RuntimeError(f"scaffold src/lib.rs missing {method!r}")
+    for needle in [
+        'python-source = "python"',
+    ]:
+        if needle not in pyproject_source:
+            raise RuntimeError(f"scaffold pyproject.toml missing {needle!r}")
+    for needle in [
+        "class NativeCompatibilitySession",
+        "class OopHandle",
+        "def compatibility_report",
+        "typed helpers are opt-in",
+        "def raw_oop",
+    ]:
+        if needle not in compat_source:
+            raise RuntimeError(f"scaffold compatibility shim missing {needle!r}")
     print(f"verified PyO3 scaffold at {target}")
     return 0
 

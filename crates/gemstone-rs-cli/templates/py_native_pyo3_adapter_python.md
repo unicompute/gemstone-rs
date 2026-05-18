@@ -17,6 +17,7 @@ maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.capabilities_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.samples_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
+python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["compatLayer"])'
 pytest
 ```
 
@@ -32,6 +33,13 @@ surface over the Rust core: `eval_oop`, `execute`, `resolve`,
 helpers, transaction status, `commit`, `abort`, and `logout`. Keep Pythonic
 return conversion in the Python package layer above this class.
 
+The generated `gemstone_py_native_compat.py` file demonstrates that package
+layer. It wraps raw native object identity in `OopHandle`, exposes
+`NativeCompatibilitySession`, and leaves typed conversions as explicit opt-in
+helpers. This is the pattern to use when wiring the real `gemstone-py-native`
+package to the Rust core without changing existing Python return behavior by
+default.
+
 Live smoke with GemStone credentials:
 
 ```bash
@@ -41,9 +49,9 @@ export GS_USERNAME=DataCurator
 export GS_PASSWORD=your-password
 
 python - <<'PY'
-import gemstone_py_native
+import gemstone_py_native_compat
 
-session = gemstone_py_native.NativeSession.login_from_env()
+session = gemstone_py_native_compat.NativeCompatibilitySession.login_from_env()
 try:
     assert session.eval_smallint("3 + 4") == 7
 finally:
