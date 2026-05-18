@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native-check-all.schema.json",
+  "title": "gemstone-rs py-native Check-All Output",
+  "description": "Machine-readable output from gemstone-rs py-native check-all --json for downstream gemstone-py-native shared-core gate checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ok",
+    "contractVersion",
+    "root",
+    "stepCount",
+    "okCount",
+    "errorCount",
+    "steps"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "root": {
+      "type": ["string", "null"]
+    },
+    "stepCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "okCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "errorCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "command", "ok", "error"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        }
+      }
+    }
+  }
+}

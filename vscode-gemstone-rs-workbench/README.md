@@ -98,6 +98,7 @@ For a source checkout:
 - `GemStone RS: Validate py-native Conformance Fixture`
 - `GemStone RS: Validate py-native Handoff Bundle`
 - `GemStone RS: Show py-native Handoff Bundle`
+- `GemStone RS: Validate py-native Shared Core Gate`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -132,7 +133,10 @@ fixture paths, and scaffold files expected from the downstream wrapper.
 `Validate py-native Handoff Bundle` runs `gemstone-rs py-native check-handoff
 --json` against `gemstoneRs.pyNativeHandoffFixture`, and `Show py-native
 Handoff Bundle` renders the downstream `gemstone-py-native` artifact list and
-acceptance criteria from `gemstone-rs py-native handoff --json`.
+acceptance criteria from `gemstone-rs py-native handoff --json`. `Validate
+py-native Shared Core Gate` runs `gemstone-rs py-native check-all --json`,
+validates every checked-in py-native fixture in one command, and renders a
+copyable downstream CI gate report.
 `Show Example Commands` uses `gemstone-rs examples list --json` to show the
 same curated example map that the CLI exposes, then lets you run a selected
 example in a terminal, copy its command, or open the examples guide. This is

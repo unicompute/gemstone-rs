@@ -78,6 +78,7 @@ function activate(context) {
   register(context, "gemstoneRs.validatePyNativeConformanceFixture", validatePyNativeConformanceFixture);
   register(context, "gemstoneRs.validatePyNativeHandoffBundle", validatePyNativeHandoffBundle);
   register(context, "gemstoneRs.showPyNativeHandoffBundle", showPyNativeHandoffBundle);
+  register(context, "gemstoneRs.validatePyNativeSharedCoreGate", validatePyNativeSharedCoreGate);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -219,6 +220,7 @@ class GemStoneTreeProvider {
         actionNode("Validate py-native Conformance Fixture", "gemstoneRs.validatePyNativeConformanceFixture"),
         actionNode("Validate py-native Handoff Bundle", "gemstoneRs.validatePyNativeHandoffBundle"),
         actionNode("Show py-native Handoff Bundle", "gemstoneRs.showPyNativeHandoffBundle"),
+        actionNode("Validate py-native Shared Core Gate", "gemstoneRs.validatePyNativeSharedCoreGate"),
       ];
     }
 
@@ -1542,6 +1544,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.validatePyNativeConformanceFixture",
     "gemstoneRs.validatePyNativeHandoffBundle",
     "gemstoneRs.showPyNativeHandoffBundle",
+    "gemstoneRs.validatePyNativeSharedCoreGate",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1936,6 +1939,29 @@ async function showPyNativeHandoffBundle() {
   }
 }
 
+async function validatePyNativeSharedCoreGate() {
+  const result = await runCli(["py-native", "check-all", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check-all returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeSharedCoreGateReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native shared-core gate passed: ${report.okCount ?? 0}/${report.stepCount ?? 0} checks.`
+    : `py-native shared-core gate failed: ${report.errorCount ?? 0} errors.`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report")
+    : await vscode.window.showErrorMessage(message, "Copy Report");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native shared-core gate report.");
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -2123,6 +2149,31 @@ function formatPyNativeHandoffBundleReport(result, report) {
   return `${lines.join("\n")}\n`;
 }
 
+function formatPyNativeSharedCoreGateReport(result, report) {
+  const steps = Array.isArray(report.steps) ? report.steps : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native shared-core gate",
+    `root: ${report.root || "."}`,
+    `ok: ${Boolean(report.ok)}`,
+    `summary: ${report.okCount ?? 0} ok, ${report.errorCount ?? 0} errors, ${report.stepCount ?? steps.length} total`,
+    "",
+  ];
+  for (const step of steps) {
+    lines.push(`${step.ok ? "ok" : "error"}\t${step.name || "(unnamed)"}`);
+    lines.push(`  path: ${step.path || "-"}`);
+    lines.push(`  command: ${step.command || "-"}`);
+    if (step.error) {
+      lines.push(`  error: ${step.error}`);
+    }
+  }
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 function formatProfileCheckReport(result, report) {
   const profiles = Array.isArray(report.profiles) ? report.profiles : [];
   const lines = [
@@ -2302,6 +2353,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.validatePyNativeConformanceFixture">Validate py-native Conformance Fixture</button>
       <button data-command="gemstoneRs.validatePyNativeHandoffBundle">Validate py-native Handoff Bundle</button>
       <button data-command="gemstoneRs.showPyNativeHandoffBundle">Show py-native Handoff Bundle</button>
+      <button data-command="gemstoneRs.validatePyNativeSharedCoreGate">Validate py-native Shared Core Gate</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>

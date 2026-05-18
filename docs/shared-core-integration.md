@@ -80,6 +80,8 @@ The wrapper conformance output is covered by
 [`schemas/gemstone-rs.py-native-conformance.schema.json`](../schemas/gemstone-rs.py-native-conformance.schema.json).
 The downstream handoff bundle output is covered by
 [`schemas/gemstone-rs.py-native-handoff.schema.json`](../schemas/gemstone-rs.py-native-handoff.schema.json).
+The one-command downstream gate output is covered by
+[`schemas/gemstone-rs.py-native-check-all.schema.json`](../schemas/gemstone-rs.py-native-check-all.schema.json).
 The VS Code workbench packages these schemas for editor validation. A
 checked-in fixture lives at
 [`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json),
@@ -116,6 +118,8 @@ gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native
 gemstone-rs py-native handoff
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native check-all
+gemstone-rs py-native check-all --json
 ```
 
 `py-native migration --json` is intentionally not a replacement for doing the
@@ -125,6 +129,9 @@ from its current native path to a thin wrapper around `gemstone_rs::py_native`.
 `py-native handoff --json` is the single manifest to hand to downstream
 `gemstone-py-native` work: it lists each artifact, schema, generation command,
 validation command, and required acceptance check.
+`py-native check-all --json` is the CI acceptance gate for that handoff: it
+validates the checked-in capabilities, samples, smoke, compatibility,
+conformance, and handoff fixtures in one report.
 
 To create a starter PyO3 wrapper crate from the installed CLI:
 

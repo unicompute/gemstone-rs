@@ -18,6 +18,7 @@ const schemaNames = [
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
   "gemstone-rs.py-native-handoff.schema.json",
+  "gemstone-rs.py-native-check-all.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -211,6 +212,16 @@ assert.deepStrictEqual(
   pyNativeHandoffFixture,
   "py-native handoff output drifted from examples/py-native/gemstone-rs.py-native-handoff.json"
 );
+const pyNativeCheckAllOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "check-all", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+assertPyNativeCheckAll(JSON.parse(lastJsonLine(pyNativeCheckAllOutput)));
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
@@ -650,6 +661,50 @@ function assertPyNativeHandoff(value) {
     "wheels_after_live_green",
   ]) {
     assert(acceptanceIds.has(required), `py-native-handoff.acceptance missing ${required}`);
+  }
+}
+
+function assertPyNativeCheckAll(value) {
+  assert.strictEqual(value.ok, true, "py-native-check-all.ok");
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-check-all.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-check-all.contractVersion");
+  assert(
+    value.root === null || typeof value.root === "string",
+    "py-native-check-all.root"
+  );
+  assert.strictEqual(typeof value.stepCount, "number", "py-native-check-all.stepCount");
+  assert.strictEqual(typeof value.okCount, "number", "py-native-check-all.okCount");
+  assert.strictEqual(typeof value.errorCount, "number", "py-native-check-all.errorCount");
+  assert(Array.isArray(value.steps), "py-native-check-all.steps");
+  assert.strictEqual(value.stepCount, value.steps.length, "py-native-check-all.stepCount");
+  assert.strictEqual(
+    value.okCount + value.errorCount,
+    value.stepCount,
+    "py-native-check-all summary counts"
+  );
+
+  const names = new Set();
+  for (const [index, step] of value.steps.entries()) {
+    assert.strictEqual(typeof step.name, "string", `py-native-check-all.steps[${index}].name`);
+    assert(!names.has(step.name), `py-native-check-all duplicate ${step.name}`);
+    names.add(step.name);
+    assert.strictEqual(typeof step.path, "string", `py-native-check-all.steps[${index}].path`);
+    assert.strictEqual(typeof step.command, "string", `py-native-check-all.steps[${index}].command`);
+    assert.strictEqual(typeof step.ok, "boolean", `py-native-check-all.steps[${index}].ok`);
+    assert(
+      step.error === null || typeof step.error === "string",
+      `py-native-check-all.steps[${index}].error`
+    );
+  }
+  for (const required of [
+    "capabilities",
+    "samples",
+    "smoke",
+    "compatibility",
+    "conformance",
+    "handoff",
+  ]) {
+    assert(names.has(required), `py-native-check-all.steps missing ${required}`);
   }
 }
 

@@ -21,6 +21,7 @@ const schemaNames = [
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
   "gemstone-rs.py-native-handoff.schema.json",
+  "gemstone-rs.py-native-check-all.schema.json",
 ];
 
 function includes(list, value) {
@@ -53,6 +54,7 @@ const requiredCommands = [
   "gemstoneRs.validatePyNativeConformanceFixture",
   "gemstoneRs.validatePyNativeHandoffBundle",
   "gemstoneRs.showPyNativeHandoffBundle",
+  "gemstoneRs.validatePyNativeSharedCoreGate",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
@@ -199,6 +201,7 @@ assert(readme.includes("Run py-native Smoke"), "README should mention py-native 
 assert(readme.includes("Validate py-native Conformance Fixture"), "README should mention py-native conformance fixture validation");
 assert(readme.includes("Validate py-native Handoff Bundle"), "README should mention py-native handoff bundle validation");
 assert(readme.includes("Show py-native Handoff Bundle"), "README should mention py-native handoff bundle display");
+assert(readme.includes("Validate py-native Shared Core Gate"), "README should mention py-native shared-core gate validation");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
@@ -272,6 +275,14 @@ assert(
 assert(
   extensionSource.includes("formatPyNativeHandoffBundleReport"),
   "py-native handoff bundle should render a readable report"
+);
+assert(
+  extensionSource.includes('"py-native", "check-all", "--json"'),
+  "py-native shared-core gate should use JSON output"
+);
+assert(
+  extensionSource.includes("formatPyNativeSharedCoreGateReport"),
+  "py-native shared-core gate should render a readable report"
 );
 assert(
   extensionSource.includes("pyNativeFixture"),
@@ -393,6 +404,12 @@ assert(
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-handoff"))
   ),
   "package.json should contribute JSON validation for py-native handoff reports"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-check-all"))
+  ),
+  "package.json should contribute JSON validation for py-native check-all reports"
 );
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],

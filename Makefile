@@ -33,6 +33,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- py-native migration --json
 	cargo run -p gemstone-rs-cli -- py-native conformance --json
 	cargo run -p gemstone-rs-cli -- py-native handoff --json
+	cargo run -p gemstone-rs-cli -- py-native check-all
+	cargo run -p gemstone-rs-cli -- py-native check-all --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
@@ -76,6 +78,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples run py_native_conformance_fixture
 	cargo run -p gemstone-rs-cli -- examples run py_native_handoff_bundle --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_handoff_bundle
+	cargo run -p gemstone-rs-cli -- examples run py_native_shared_core_gate --dry-run
+	cargo run -p gemstone-rs-cli -- examples run py_native_shared_core_gate
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker_pool --dry-run
@@ -140,6 +144,7 @@ schema-check:
 	cargo run -p gemstone-rs-cli -- py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 	cargo run -p gemstone-rs-cli -- py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 	cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+	cargo run -p gemstone-rs-cli -- py-native check-all
 	node scripts/validate_codegen_schemas.js
 
 profile-check:

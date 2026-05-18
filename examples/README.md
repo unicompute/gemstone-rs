@@ -51,11 +51,14 @@ gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs examples run py_native_migration_plan --dry-run
 gemstone-rs examples run py_native_conformance_fixture --dry-run
 gemstone-rs examples run py_native_handoff_bundle --dry-run
+gemstone-rs examples run py_native_shared_core_gate --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
 gemstone-rs py-native migration --json
 gemstone-rs py-native conformance --json
 gemstone-rs py-native handoff --json
+gemstone-rs py-native check-all
+gemstone-rs py-native check-all --json
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -101,6 +104,11 @@ The handoff bundle ties those fixtures together with the acceptance checks for
 the downstream wrapper release: scaffold compile, fixture freshness, preserved
 Python return policy, live native backend smoke, and wheel publication after
 the live path is green.
+`gemstone-rs py-native check-all` is the one-command fixture gate for
+downstream `gemstone-py-native` CI. It validates capabilities, samples, smoke,
+compatibility, conformance, and handoff fixtures together, and the
+`py_native_shared_core_gate` example exposes that gate through the installed
+examples catalog.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -141,7 +149,8 @@ sanity check after install.
 | Python native compatibility fixture | `gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run` | You want the Python compatibility shim method map and return policy checked against the Rust core. |
 | Python native conformance fixture | `gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json`; `gemstone-rs examples run py_native_conformance_fixture --dry-run` | You want the PyO3 module/session/shim surface checked as a downstream wrapper target. |
 | Python native handoff bundle | `gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json`; `gemstone-rs examples run py_native_handoff_bundle --dry-run` | You want the downstream `gemstone-py-native` handoff artifacts and acceptance criteria checked in one place. |
-| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_samples_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
+| Python native shared-core gate | `gemstone-rs py-native check-all`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | You want all checked-in py-native fixtures validated by one downstream CI gate. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_samples_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |

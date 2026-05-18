@@ -80,6 +80,9 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         Command::PyNativeHandoffCheck { path, format } => {
             run_py_native_handoff_check(&path, format)
         }
+        Command::PyNativeCheckAll { root, format } => {
+            run_py_native_check_all(root.as_deref(), format)
+        }
         Command::CompareGemstonePy { view, format } => {
             print_gemstone_py_comparison(view, format);
             Ok(())
@@ -1813,6 +1816,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Validate the checked-in downstream gemstone-py-native handoff manifest.",
     },
     ExampleInfo {
+        name: "py_native_shared_core_gate",
+        title: "py-native shared-core gate",
+        command: "gemstone-rs py-native check-all",
+        category: "native",
+        requires_live: false,
+        description: "Validate every checked-in py-native fixture used by downstream gemstone-py-native integration.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -2016,7 +2027,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "python_native_adapter, py_native_pyo3_adapter scaffold, shared-core integration plan",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, and starter scaffold exist; gemstone-py-native still needs to wrap it",
+        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, and starter scaffold exist; gemstone-py-native still needs to wrap it",
     },
 ];
 
@@ -2061,7 +2072,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
         topic: "Native bridge direction",
         gemstone_py: "Python API should eventually consume a thin PyO3 native layer",
         gemstone_rs: "Owns the long-term shared GCI core plus dependency-free py_native contract, compatibility, conformance, and handoff reports",
-        recommendation: "Wire gemstone-py-native to gemstone_rs::py_native and keep the handoff bundle green",
+        recommendation: "Wire gemstone-py-native to gemstone_rs::py_native and keep the shared-core gate green",
     },
 ];
 
@@ -2144,7 +2155,7 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         project_score: 5,
         leader: "gemstone-rs",
         status: "gemstone-rs owns the clean Rust GCI/session core and now exposes dependency-free py_native contract, compatibility, conformance, and handoff reports for a PyO3 wrapper.",
-        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep the handoff bundle green, and run the gemstone-py native backend checks.",
+        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep the shared-core gate green, and run the gemstone-py native backend checks.",
     },
 ];
 
@@ -2153,9 +2164,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Shared native core",
         gemstone_py_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
-        gemstone_rs_gap: "gemstone-rs now exposes py_native contract, compatibility, conformance, and handoff reports, but gemstone-py-native does not yet wrap it.",
-        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep Python return behavior backward compatible, and keep check-handoff green.",
-        verify_with: "gemstone-py native backend checks plus gemstone-rs py-native check-handoff and live smoke tests",
+        gemstone_rs_gap: "gemstone-rs now exposes py_native contract, compatibility, conformance, handoff, and check-all reports, but gemstone-py-native does not yet wrap it.",
+        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep Python return behavior backward compatible, and keep check-all green.",
+        verify_with: "gemstone-py native backend checks plus gemstone-rs py-native check-all and live smoke tests",
     },
     GapInfo {
         priority: "P2",
@@ -2700,6 +2711,204 @@ fn default_py_native_conformance_fixture_path() -> PathBuf {
 
 fn default_py_native_handoff_fixture_path() -> PathBuf {
     PathBuf::from("examples/py-native/gemstone-rs.py-native-handoff.json")
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct PyNativeCheckAllStep {
+    name: &'static str,
+    path: PathBuf,
+    command: &'static str,
+    ok: bool,
+    error: Option<String>,
+}
+
+impl PyNativeCheckAllStep {
+    fn to_json(&self) -> String {
+        let error = self
+            .error
+            .as_ref()
+            .map(|value| format!(r#""{}""#, escape_json(value)))
+            .unwrap_or_else(|| "null".to_string());
+        format!(
+            r#"{{"name":"{}","path":"{}","command":"{}","ok":{},"error":{}}}"#,
+            escape_json(self.name),
+            escape_json(&self.path.display().to_string()),
+            escape_json(self.command),
+            if self.ok { "true" } else { "false" },
+            error
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct PyNativeCheckAllReport {
+    contract_version: u16,
+    root: Option<PathBuf>,
+    steps: Vec<PyNativeCheckAllStep>,
+}
+
+impl PyNativeCheckAllReport {
+    fn ok(&self) -> bool {
+        self.steps.iter().all(|step| step.ok)
+    }
+
+    fn ok_count(&self) -> usize {
+        self.steps.iter().filter(|step| step.ok).count()
+    }
+
+    fn error_count(&self) -> usize {
+        self.steps.len() - self.ok_count()
+    }
+
+    fn to_json(&self) -> String {
+        let root = self
+            .root
+            .as_ref()
+            .map(|path| format!(r#""{}""#, escape_json(&path.display().to_string())))
+            .unwrap_or_else(|| "null".to_string());
+        let steps = self
+            .steps
+            .iter()
+            .map(PyNativeCheckAllStep::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"ok":{},"contractVersion":{},"root":{},"stepCount":{},"okCount":{},"errorCount":{},"steps":[{}]}}"#,
+            if self.ok() { "true" } else { "false" },
+            self.contract_version,
+            root,
+            self.steps.len(),
+            self.ok_count(),
+            self.error_count(),
+            steps
+        )
+    }
+}
+
+fn run_py_native_check_all(root: Option<&Path>, format: OutputFormat) -> Result<(), CliError> {
+    let report = build_py_native_check_all_report(root);
+    match format {
+        OutputFormat::Json => println!("{}", report.to_json()),
+        OutputFormat::Human => {
+            println!("py-native shared-core gate");
+            println!(
+                "  root: {}",
+                report
+                    .root
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| ".".to_string())
+            );
+            println!(
+                "  summary: {} ok, {} errors, {} total",
+                report.ok_count(),
+                report.error_count(),
+                report.steps.len()
+            );
+            for step in &report.steps {
+                println!(
+                    "  {}\t{}\t{}",
+                    if step.ok { "ok" } else { "error" },
+                    step.name,
+                    step.path.display()
+                );
+                if let Some(error) = &step.error {
+                    println!("    {error}");
+                }
+            }
+        }
+    }
+
+    if report.ok() {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "py-native shared-core gate failed: {} errors",
+            report.error_count()
+        )))
+    }
+}
+
+fn build_py_native_check_all_report(root: Option<&Path>) -> PyNativeCheckAllReport {
+    let mut steps = Vec::new();
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "capabilities",
+        default_py_native_fixture_path(),
+        py_native::capabilities().to_json(),
+        "gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "samples",
+        default_py_native_samples_fixture_path(),
+        py_native::samples_report().to_json(),
+        "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "smoke",
+        default_py_native_smoke_fixture_path(),
+        py_native::smoke_dry_run_report().to_json(),
+        "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "compatibility",
+        default_py_native_compatibility_fixture_path(),
+        py_native::compatibility_report().to_json(),
+        "gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "conformance",
+        default_py_native_conformance_fixture_path(),
+        py_native::conformance_report().to_json(),
+        "gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "handoff",
+        default_py_native_handoff_fixture_path(),
+        py_native::handoff_report().to_json(),
+        "gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json",
+    );
+    PyNativeCheckAllReport {
+        contract_version: py_native::capabilities().contract_version,
+        root: root.map(Path::to_path_buf),
+        steps,
+    }
+}
+
+fn push_py_native_check_all_step(
+    steps: &mut Vec<PyNativeCheckAllStep>,
+    root: Option<&Path>,
+    name: &'static str,
+    relative_path: PathBuf,
+    expected: String,
+    command: &'static str,
+) {
+    let path = root
+        .map(|root| root.join(&relative_path))
+        .unwrap_or(relative_path);
+    let error = match fs::read_to_string(&path) {
+        Ok(actual) if actual.trim_end() == expected => None,
+        Ok(_) => Some(format!("{} does not match `{}`", path.display(), command)),
+        Err(error) => Some(format!("{}: {}", path.display(), error)),
+    };
+    steps.push(PyNativeCheckAllStep {
+        name,
+        path,
+        command,
+        ok: error.is_none(),
+        error,
+    });
 }
 
 fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
@@ -4239,6 +4448,7 @@ fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
             "check-handoff",
             "examples/py-native/gemstone-rs.py-native-handoff.json",
         ]),
+        "py_native_shared_core_gate" => Some(&["py-native", "check-all"]),
         _ => None,
     }
 }
@@ -4544,6 +4754,10 @@ enum Command {
     },
     PyNativeHandoffCheck {
         path: PathBuf,
+        format: OutputFormat,
+    },
+    PyNativeCheckAll {
+        root: Option<PathBuf>,
         format: OutputFormat,
     },
     CompareGemstonePy {
@@ -4944,11 +5158,14 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
         Some("check-handoff" | "handoff-check" | "validate-handoff") => {
             parse_py_native_handoff_check_command(&args[1..])
         }
+        Some("check-all" | "validate-all" | "gate" | "acceptance") => {
+            parse_py_native_check_all_command(&args[1..])
+        }
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json] | py-native compatibility [--json] | py-native check-compat [path] [--json] | py-native conformance [--json] | py-native check-conformance [path] [--json] | py-native handoff [--json] | py-native check-handoff [path] [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json] | py-native compatibility [--json] | py-native check-compat [path] [--json] | py-native conformance [--json] | py-native check-conformance [path] [--json] | py-native handoff [--json] | py-native check-handoff [path] [--json] | py-native check-all [--root path] [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration|compatibility|check-compat|conformance|check-conformance|handoff|check-handoff"
+            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration|compatibility|check-compat|conformance|check-conformance|handoff|check-handoff|check-all"
         ))),
     }
 }
@@ -5084,6 +5301,47 @@ fn parse_py_native_handoff_check_command(args: &[String]) -> Result<Command, Cli
         path: path.unwrap_or_else(default_py_native_handoff_fixture_path),
         format,
     })
+}
+
+fn parse_py_native_check_all_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut root = None;
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--json" => {
+                format = OutputFormat::Json;
+                index += 1;
+            }
+            "--root" => {
+                let value = args.get(index + 1).ok_or_else(|| {
+                    CliError::usage("expected path after py-native check-all --root")
+                })?;
+                root = Some(PathBuf::from(value));
+                index += 2;
+            }
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: py-native check-all [--root path] [--json]",
+                ))
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native check-all option: {option}"
+                )))
+            }
+            value if root.is_none() => {
+                root = Some(PathBuf::from(value));
+                index += 1;
+            }
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native check-all argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativeCheckAll { root, format })
 }
 
 fn parse_py_native_smoke_check_command(args: &[String]) -> Result<Command, CliError> {
@@ -6157,6 +6415,7 @@ fn usage() -> &'static str {
   gemstone-rs py-native check-conformance [path] [--json]
   gemstone-rs py-native handoff [--json]
   gemstone-rs py-native check-handoff [path] [--json]
+  gemstone-rs py-native check-all [--root path] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -6488,6 +6747,27 @@ mod tests {
             .unwrap(),
             Command::PyNativeHandoffCheck {
                 path: PathBuf::from("examples/py-native/gemstone-rs.py-native-handoff.json"),
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "check-all", "--json"])).unwrap(),
+            Command::PyNativeCheckAll {
+                root: None,
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "py-native",
+                "gate",
+                "--root",
+                "/tmp/gemstone-rs-check",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::PyNativeCheckAll {
+                root: Some(PathBuf::from("/tmp/gemstone-rs-check")),
                 format: OutputFormat::Json,
             }
         );
@@ -6892,6 +7172,16 @@ mod tests {
         assert_eq!(
             example_run_command(py_native_handoff, &[]),
             "gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json"
+        );
+        let py_native_gate = find_example("py-native shared-core gate").unwrap();
+        assert!(!py_native_gate.requires_live);
+        assert_eq!(
+            example_cli_args(py_native_gate.name),
+            Some(&["py-native", "check-all"][..])
+        );
+        assert_eq!(
+            example_run_command(py_native_gate, &[]),
+            "gemstone-rs py-native check-all"
         );
     }
 
@@ -8158,6 +8448,62 @@ GEMSTONE=/opt/gemstone # product root
             .to_string();
         assert!(err.contains("does not match"));
         let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn py_native_check_all_reports_fixture_drift() {
+        let root = std::env::temp_dir().join(format!(
+            "gemstone-rs-py-native-check-all-{}",
+            std::process::id()
+        ));
+        let fixture_dir = root.join("examples").join("py-native");
+        fs::create_dir_all(&fixture_dir).unwrap();
+        fs::write(
+            root.join(default_py_native_fixture_path()),
+            py_native::capabilities().to_json(),
+        )
+        .unwrap();
+        fs::write(
+            root.join(default_py_native_samples_fixture_path()),
+            py_native::samples_report().to_json(),
+        )
+        .unwrap();
+        fs::write(
+            root.join(default_py_native_smoke_fixture_path()),
+            py_native::smoke_dry_run_report().to_json(),
+        )
+        .unwrap();
+        fs::write(
+            root.join(default_py_native_compatibility_fixture_path()),
+            py_native::compatibility_report().to_json(),
+        )
+        .unwrap();
+        fs::write(
+            root.join(default_py_native_conformance_fixture_path()),
+            py_native::conformance_report().to_json(),
+        )
+        .unwrap();
+        fs::write(
+            root.join(default_py_native_handoff_fixture_path()),
+            py_native::handoff_report().to_json(),
+        )
+        .unwrap();
+
+        let report = build_py_native_check_all_report(Some(&root));
+        assert!(report.ok());
+        assert_eq!(report.ok_count(), 6);
+        run_py_native_check_all(Some(&root), OutputFormat::Human).unwrap();
+
+        fs::write(root.join(default_py_native_handoff_fixture_path()), "{}").unwrap();
+        let report = build_py_native_check_all_report(Some(&root));
+        assert!(!report.ok());
+        assert_eq!(report.error_count(), 1);
+        assert!(report.to_json().contains(r#""name":"handoff""#));
+        let err = run_py_native_check_all(Some(&root), OutputFormat::Human)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("shared-core gate failed"));
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

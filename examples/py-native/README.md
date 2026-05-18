@@ -10,6 +10,7 @@ gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native conformance --json
 gemstone-rs py-native handoff --json
+gemstone-rs py-native check-all --json
 ```
 
 The fixtures are intentionally small and stable. They give a future
@@ -36,6 +37,9 @@ The handoff fixture is checked in as `gemstone-rs.py-native-handoff.json`; it
 bundles every py-native artifact, schema, regeneration command, validation
 command, and downstream acceptance check needed before `gemstone-py-native`
 uses the Rust core as its native backend.
+The check-all report is covered by
+`schemas/gemstone-rs.py-native-check-all.schema.json` and validates every
+checked-in fixture in one downstream CI gate.
 
 Verify it from a source checkout:
 
@@ -55,6 +59,8 @@ cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs-cli -- py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 cargo run -p gemstone-rs-cli -- py-native handoff --json
 cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+cargo run -p gemstone-rs-cli -- py-native check-all
+cargo run -p gemstone-rs-cli -- py-native check-all --json
 cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture --dry-run
@@ -63,6 +69,7 @@ cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_compatibility_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_conformance_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_handoff_bundle --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_shared_core_gate --dry-run
 node scripts/validate_codegen_schemas.js
 ```
 
@@ -76,4 +83,5 @@ schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
 schemas/gemstone-rs.py-native-conformance.schema.json
 schemas/gemstone-rs.py-native-handoff.schema.json
+schemas/gemstone-rs.py-native-check-all.schema.json
 ```

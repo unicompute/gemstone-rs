@@ -193,7 +193,9 @@ It can also print the machine-readable migration checklist with
 target with `gemstone-rs py-native conformance --json`. It also prints the
 downstream handoff manifest with `gemstone-rs py-native handoff --json`, which
 bundles every artifact, schema, validation command, and acceptance check for
-the eventual `gemstone-py-native` wrapper. The generated PyO3 starter exports
+the eventual `gemstone-py-native` wrapper. `gemstone-rs py-native check-all`
+validates those checked-in fixtures together as the downstream shared-core
+gate. The generated PyO3 starter exports
 those same reports through `gemstone_py_native.migration_json()`,
 `gemstone_py_native.compatibility_json()`, and
 `gemstone_py_native.conformance_json()`, plus

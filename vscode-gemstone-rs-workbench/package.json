@@ -85,6 +85,7 @@
     "onCommand:gemstoneRs.validatePyNativeConformanceFixture",
     "onCommand:gemstoneRs.validatePyNativeHandoffBundle",
     "onCommand:gemstoneRs.showPyNativeHandoffBundle",
+    "onCommand:gemstoneRs.validatePyNativeSharedCoreGate",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
   ],
@@ -352,6 +353,10 @@
         "title": "GemStone RS: Show py-native Handoff Bundle"
       },
       {
+        "command": "gemstoneRs.validatePyNativeSharedCoreGate",
+        "title": "GemStone RS: Validate py-native Shared Core Gate"
+      },
+      {
         "command": "gemstoneRs.compareGemstonePyStatus",
         "title": "GemStone RS: Compare with gemstone-py"
       },
@@ -475,6 +480,13 @@
           "*.gemstone-rs.py-native-handoff.json"
         ],
         "url": "./schemas/gemstone-rs.py-native-handoff.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native-check-all.json",
+          "*.gemstone-rs.py-native-check-all.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-check-all.schema.json"
       }
     ],
     "configuration": {

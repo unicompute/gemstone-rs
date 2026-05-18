@@ -417,6 +417,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native check-all
+gemstone-rs py-native check-all --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 ```
@@ -438,7 +440,10 @@ methods. `py-native conformance --json` adds the integration target: generated
 module functions, raw `NativeSession` methods, compatibility shim methods,
 fixture files, and scaffold files. `py-native handoff --json` adds the final
 downstream manifest tying the contract, samples, smoke, migration,
-compatibility, conformance, and acceptance checks together. The PyO3 scaffold
+compatibility, conformance, and acceptance checks together.
+The `py-native check-all` gate validates all checked-in py-native fixtures
+together, which is the shortest command to put in downstream `gemstone-py-native`
+CI before publishing native wheels. The PyO3 scaffold
 writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `samples_json`, `smoke_dry_run_json`, `migration_json`,

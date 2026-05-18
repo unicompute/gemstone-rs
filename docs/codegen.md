@@ -124,6 +124,7 @@ schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
 schemas/gemstone-rs.py-native-conformance.schema.json
 schemas/gemstone-rs.py-native-handoff.schema.json
+schemas/gemstone-rs.py-native-check-all.schema.json
 ```
 
 `gemstone-rs.codegen` remains the line-oriented CLI format. The config schema
@@ -135,7 +136,9 @@ py-native schemas match `gemstone-rs py-native capabilities --json`,
 `gemstone-rs py-native check`, `check-samples`, `check-smoke`,
 `check-compat`, `check-conformance`, and `check-handoff` to compare checked-in
 fixtures against those shared core renderers without linking against internal
-CLI code.
+CLI code. Use `gemstone-rs py-native check-all --json` when downstream
+`gemstone-py-native` CI wants one schema-backed gate for every checked-in
+fixture.
 The profile check schema matches `profile check --json` and the explorer
 `/api/codegen/profiles/check` endpoint.
 

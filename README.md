@@ -90,6 +90,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native check-all
+gemstone-rs py-native check-all --json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -102,6 +104,7 @@ gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples run py_native_compatibility_fixture --dry-run
 gemstone-rs examples run py_native_conformance_fixture --dry-run
 gemstone-rs examples run py_native_handoff_bundle --dry-run
+gemstone-rs examples run py_native_shared_core_gate --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -146,6 +149,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native check-all
+gemstone-rs py-native check-all --json
 ```
 
 The migration report tracks the remaining `gemstone-py-native` shared-core
@@ -164,6 +169,9 @@ should preserve.
 `py-native handoff --json` bundles the capabilities, samples, smoke,
 migration, compatibility, and conformance artifacts with acceptance criteria
 for the downstream `gemstone-py-native` wrapper release.
+`py-native check-all` is the downstream CI gate: it validates every checked-in
+py-native fixture in one command and emits `--json` for release bots, VS Code,
+and the future `gemstone-py-native` pipeline.
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
 **1 batch**, roughly **6-10 hours** total. Use

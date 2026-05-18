@@ -1101,7 +1101,7 @@ pub fn handoff_report() -> PyNativeHandoffReport {
             PyNativeAcceptanceCriterion {
                 id: "fixtures_current",
                 required: true,
-                verify: "cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json",
+                verify: "cargo run -p gemstone-rs-cli -- py-native check-all",
             },
             PyNativeAcceptanceCriterion {
                 id: "python_return_policy_preserved",

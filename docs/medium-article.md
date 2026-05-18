@@ -866,6 +866,7 @@ cargo run -p gemstone-rs-cli -- py-native migration --json
 cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs-cli -- py-native handoff --json
+cargo run -p gemstone-rs-cli -- py-native check-all --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
 ```
@@ -917,6 +918,12 @@ live native backend smoke, and wheel publication after the live path is green.
 The generated PyO3 starter exposes the same manifest as
 `gemstone_py_native.handoff_json()`, so the future Python wrapper can keep
 release gating close to the package that publishes the wheels.
+
+The release gate is `gemstone-rs py-native check-all`. It validates every
+checked-in Rust-side fixture in one pass: capabilities, samples, smoke,
+compatibility, conformance, and handoff. The JSON output is intentionally
+boring. That is the point. It gives the eventual `gemstone-py-native` workflow
+one stable command to run before wheels are published.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python
