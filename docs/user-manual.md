@@ -94,6 +94,8 @@ the same `Session` implementation:
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke
 gemstone-rs py-native migration --json
+gemstone-rs py-native compatibility --json
+gemstone-rs py-native conformance --json
 ```
 
 ```rust
@@ -104,8 +106,10 @@ assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
 session.logout()?;
 ```
 
-`py-native migration --json` prints the remaining shared-core checklist for
-making `gemstone-py-native` a thin PyO3 wrapper over the Rust core.
+`py-native migration --json` prints the remaining shared-core checklist,
+`py-native compatibility --json` prints the Python package-layer method map,
+and `py-native conformance --json` prints the PyO3 module/session/shim surface
+that downstream `gemstone-py-native` integration should preserve.
 
 ## Eval and Perform
 

@@ -86,6 +86,8 @@ gemstone-rs py-native smoke --dry-run --json
 gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
+gemstone-rs py-native conformance --json
+gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -96,6 +98,7 @@ gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples run py_native_compatibility_fixture --dry-run
+gemstone-rs examples run py_native_conformance_fixture --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -120,9 +123,12 @@ is checked in at `examples/py-native/gemstone-rs.py-native-samples.json`, and
 the dry-run smoke fixture is checked in at
 `examples/py-native/gemstone-rs.py-native-smoke.json`. The compatibility shim
 fixture is checked in at
-`examples/py-native/gemstone-rs.py-native-compat.json`. Together these files
-give downstream wrapper CI a stable Rust contract, payload samples, dry-run
-smoke report, and Python package-layer return policy.
+`examples/py-native/gemstone-rs.py-native-compat.json`, and the end-to-end
+wrapper conformance target is checked in at
+`examples/py-native/gemstone-rs.py-native-conformance.json`. Together these
+files give downstream wrapper CI a stable Rust contract, payload samples,
+dry-run smoke report, Python package-layer return policy, and generated PyO3
+scaffold surface to compare against.
 Validate it with:
 
 ```bash
@@ -131,6 +137,8 @@ gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-sam
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native migration --json
 gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
+gemstone-rs py-native conformance --json
+gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 ```
 
 The migration report tracks the remaining `gemstone-py-native` shared-core
@@ -142,6 +150,10 @@ The `py_native_pyo3_adapter` scaffold now also writes
 `NativeCompatibilitySession` and `OopHandle`. That shim shows how the real
 Python package can keep existing return behavior stable while the direct PyO3
 module stays a thin wrapper over the Rust core.
+`py-native conformance --json` lists the expected extension module functions,
+raw `NativeSession` methods, compatibility shim methods, checked-in fixtures,
+and generated scaffold files that the real `gemstone-py-native` integration
+should preserve.
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
 **1 batch**, roughly **6-10 hours** total. Use

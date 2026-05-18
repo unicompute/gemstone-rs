@@ -770,6 +770,185 @@ pub fn compatibility_report() -> PyNativeCompatibilityReport {
     }
 }
 
+pub const PY_NATIVE_MODULE_FUNCTIONS: &[&str] = &[
+    "capabilities_json",
+    "samples_json",
+    "smoke_dry_run_json",
+    "migration_json",
+    "compatibility_json",
+    "conformance_json",
+];
+
+pub const PY_NATIVE_SESSION_METHODS: &[&str] = &[
+    "login_from_env",
+    "session_id",
+    "eval_repr",
+    "eval_smallint",
+    "eval_oop",
+    "execute",
+    "resolve",
+    "perform_raw_oop",
+    "new_string",
+    "fetch_string",
+    "global_get",
+    "global_put_raw",
+    "global_put_string",
+    "global_put_smallint",
+    "add_to_export_set",
+    "remove_from_export_set",
+    "needs_commit",
+    "in_transaction",
+    "commit",
+    "abort",
+    "logout",
+];
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeConformanceFixture {
+    pub path: &'static str,
+    pub command: &'static str,
+    pub purpose: &'static str,
+}
+
+impl PyNativeConformanceFixture {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"path":"{}","command":"{}","purpose":"{}"}}"#,
+            json_escape(self.path),
+            json_escape(self.command),
+            json_escape(self.purpose)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeScaffoldFile {
+    pub path: &'static str,
+    pub purpose: &'static str,
+}
+
+impl PyNativeScaffoldFile {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"path":"{}","purpose":"{}"}}"#,
+            json_escape(self.path),
+            json_escape(self.purpose)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeConformanceReport {
+    pub contract_version: u16,
+    pub target_package: &'static str,
+    pub status: &'static str,
+    pub module_functions: &'static [&'static str],
+    pub native_session_methods: &'static [&'static str],
+    pub compatibility_methods: Vec<&'static str>,
+    pub fixtures: Vec<PyNativeConformanceFixture>,
+    pub scaffold_files: Vec<PyNativeScaffoldFile>,
+}
+
+impl PyNativeConformanceReport {
+    pub fn to_json(&self) -> String {
+        let fixtures = self
+            .fixtures
+            .iter()
+            .map(PyNativeConformanceFixture::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        let scaffold_files = self
+            .scaffold_files
+            .iter()
+            .map(PyNativeScaffoldFile::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"targetPackage":"{}","status":"{}","moduleFunctions":[{}],"nativeSessionMethods":[{}],"compatibilityMethods":[{}],"fixtures":[{}],"scaffoldFiles":[{}]}}"#,
+            self.contract_version,
+            json_escape(self.target_package),
+            json_escape(self.status),
+            json_string_array(self.module_functions),
+            json_string_array(self.native_session_methods),
+            json_string_array(&self.compatibility_methods),
+            fixtures,
+            scaffold_files
+        )
+    }
+}
+
+pub fn conformance_report() -> PyNativeConformanceReport {
+    PyNativeConformanceReport {
+        contract_version: capabilities().contract_version,
+        target_package: "gemstone-py-native",
+        status: "Generated PyO3 scaffold exposes the Rust-backed native surface; downstream gemstone-py-native package wiring is still pending",
+        module_functions: PY_NATIVE_MODULE_FUNCTIONS,
+        native_session_methods: PY_NATIVE_SESSION_METHODS,
+        compatibility_methods: compatibility_report()
+            .methods
+            .iter()
+            .map(|method| method.python_method)
+            .collect(),
+        fixtures: vec![
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native.json",
+                command: "gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json",
+                purpose: "Rust adapter capability contract",
+            },
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native-samples.json",
+                command: "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json",
+                purpose: "Value and structured error translation samples",
+            },
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native-smoke.json",
+                command: "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json",
+                purpose: "Dependency-free dry-run adapter smoke report",
+            },
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native-compat.json",
+                command: "gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json",
+                purpose: "Python compatibility shim method and return policy",
+            },
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native-conformance.json",
+                command: "gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json",
+                purpose: "End-to-end scaffold conformance target for wrapper integration",
+            },
+        ],
+        scaffold_files: vec![
+            PyNativeScaffoldFile {
+                path: "Cargo.toml",
+                purpose: "Rust package metadata and gemstone-rs dependency",
+            },
+            PyNativeScaffoldFile {
+                path: "pyproject.toml",
+                purpose: "maturin Python extension metadata",
+            },
+            PyNativeScaffoldFile {
+                path: "src/lib.rs",
+                purpose: "PyO3 extension module and NativeSession wrapper",
+            },
+            PyNativeScaffoldFile {
+                path: "src/main.rs",
+                purpose: "Rust-side scaffold smoke executable",
+            },
+            PyNativeScaffoldFile {
+                path: "PYTHON.md",
+                purpose: "Python build and live smoke instructions",
+            },
+            PyNativeScaffoldFile {
+                path: "python/gemstone_py_native_compat.py",
+                purpose: "Python package-layer compatibility shim",
+            },
+            PyNativeScaffoldFile {
+                path: "tests/test_smoke.py",
+                purpose: "pytest smoke tests for module functions, session methods, and compatibility policy",
+            },
+        ],
+    }
+}
+
 pub fn nil_oop() -> u64 {
     Oop::NIL.raw()
 }
@@ -1469,5 +1648,28 @@ mod tests {
         }));
         assert!(json.contains(r#""pythonMethod":"perform_oop""#));
         assert!(json.contains(r#""nativeMethod":"NativeSession.perform_raw_oop""#));
+    }
+
+    #[test]
+    fn conformance_report_lists_scaffold_contract_surface() {
+        let report = conformance_report();
+        let json = report.to_json();
+        assert_eq!(report.contract_version, 1);
+        assert_eq!(report.target_package, "gemstone-py-native");
+        assert!(report.module_functions.contains(&"compatibility_json"));
+        assert!(report.module_functions.contains(&"conformance_json"));
+        assert!(report.native_session_methods.contains(&"perform_raw_oop"));
+        assert!(report.compatibility_methods.contains(&"perform_oop"));
+        assert!(report
+            .fixtures
+            .iter()
+            .any(|fixture| fixture.path.ends_with("gemstone-rs.py-native-compat.json")));
+        assert!(report
+            .scaffold_files
+            .iter()
+            .any(|file| file.path == "python/gemstone_py_native_compat.py"));
+        assert!(json.contains(r#""targetPackage":"gemstone-py-native""#));
+        assert!(json.contains(r#""moduleFunctions":["capabilities_json""#));
+        assert!(json.contains(r#""nativeSessionMethods":["login_from_env""#));
     }
 }

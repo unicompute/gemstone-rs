@@ -864,6 +864,7 @@ The live smoke example is intentionally small:
 cargo run -p gemstone-rs-cli -- py-native samples --json
 cargo run -p gemstone-rs-cli -- py-native migration --json
 cargo run -p gemstone-rs-cli -- py-native compatibility --json
+cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
 ```
@@ -899,6 +900,13 @@ shim method, the underlying `NativeSession` method, the native return type, and
 the Python return type. That turns a vague "keep Python compatible" requirement
 into a fixture-backed checklist that wrapper CI can diff before the real
 `gemstone-py-native` package is changed.
+
+The next layer is a conformance report:
+`gemstone-rs py-native conformance --json`. It names the extension module
+functions, raw `NativeSession` methods, compatibility shim methods, checked-in
+fixtures, and generated scaffold files that the real `gemstone-py-native`
+wrapper should expose. That makes the shared-core handoff testable from Rust
+CI, Python CI, and the VS Code workbench without requiring a live stone.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python

@@ -188,8 +188,12 @@ plain Rust config, value, error, capability, and session wrappers. The
 installed CLI can now scaffold a starter PyO3 crate with
 `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter`.
 It can also print the machine-readable migration checklist with
-`gemstone-rs py-native migration --json`, and the generated PyO3 starter now
-exports that same report through `gemstone_py_native.migration_json()`.
+`gemstone-rs py-native migration --json`, the compatibility shim map with
+`gemstone-rs py-native compatibility --json`, and the wrapper conformance
+target with `gemstone-rs py-native conformance --json`. The generated PyO3
+starter exports those same reports through `gemstone_py_native.migration_json()`,
+`gemstone_py_native.compatibility_json()`, and
+`gemstone_py_native.conformance_json()`.
 The remaining work is Python-side wiring and compatibility testing in
 `gemstone-py`.
 
@@ -258,6 +262,8 @@ clean boundary:
 - `gemstone-rs py-native migration --json` keeps the remaining wrapper,
   compatibility, live-smoke, and wheel-publish steps visible to CLI, CI, and
   VS Code.
+- `gemstone-rs py-native conformance --json` keeps the expected PyO3
+  module/session/shim surface fixture-backed for downstream wrapper CI.
 - `gemstone-py` remains the Python API, examples, and Python web integration.
 - The Python and Rust explorers can share concepts and eventually converge on
   common codegen workflows.

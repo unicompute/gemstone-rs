@@ -48,6 +48,17 @@ def test_compatibility_json_tracks_python_shim_work():
     assert methods["perform_oop"]["nativeMethod"] == "NativeSession.perform_raw_oop"
 
 
+def test_conformance_json_tracks_backend_surface():
+    report = json.loads(gemstone_py_native.conformance_json())
+    assert report["targetPackage"] == "gemstone-py-native"
+    assert "compatibility_json" in report["moduleFunctions"]
+    assert "conformance_json" in report["moduleFunctions"]
+    assert "perform_raw_oop" in report["nativeSessionMethods"]
+    assert "perform_oop" in report["compatibilityMethods"]
+    fixture_paths = {entry["path"] for entry in report["fixtures"]}
+    assert "examples/py-native/gemstone-rs.py-native-conformance.json" in fixture_paths
+
+
 def test_native_session_exposes_core_adapter_methods():
     expected = {
         "login_from_env",

@@ -8,6 +8,7 @@ gemstone-rs py-native samples --json
 gemstone-rs py-native smoke --dry-run --json
 gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
+gemstone-rs py-native conformance --json
 ```
 
 The fixtures are intentionally small and stable. They give a future
@@ -25,6 +26,11 @@ policy that should live above the thin PyO3 module.
 The compatibility fixture is checked in as
 `gemstone-rs.py-native-compat.json`; it maps each generated Python shim method
 to the underlying native method and expected Python return type.
+The conformance fixture is checked in as
+`gemstone-rs.py-native-conformance.json`; it lists the generated PyO3 module
+functions, raw `NativeSession` methods, compatibility shim methods, fixture
+paths, and scaffold files that downstream `gemstone-py-native` integration
+should preserve.
 
 Verify it from a source checkout:
 
@@ -40,12 +46,15 @@ cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
 cargo run -p gemstone-rs-cli -- py-native migration --json
 cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs-cli -- py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
+cargo run -p gemstone-rs-cli -- py-native conformance --json
+cargo run -p gemstone-rs-cli -- py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_compatibility_fixture --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_conformance_fixture --dry-run
 node scripts/validate_codegen_schemas.js
 ```
 
@@ -57,4 +66,5 @@ schemas/gemstone-rs.py-native-samples.schema.json
 schemas/gemstone-rs.py-native-smoke.schema.json
 schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
+schemas/gemstone-rs.py-native-conformance.schema.json
 ```

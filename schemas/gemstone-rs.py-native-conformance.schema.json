@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native-conformance.schema.json",
+  "title": "gemstone-rs py-native Conformance Output",
+  "description": "Machine-readable output from gemstone-rs py-native conformance --json for downstream gemstone-py-native wrapper integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "targetPackage",
+    "status",
+    "moduleFunctions",
+    "nativeSessionMethods",
+    "compatibilityMethods",
+    "fixtures",
+    "scaffoldFiles"
+  ],
+  "properties": {
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "targetPackage": {
+      "type": "string",
+      "const": "gemstone-py-native"
+    },
+    "status": {
+      "type": "string"
+    },
+    "moduleFunctions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "nativeSessionMethods": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "compatibilityMethods": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "command", "purpose"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scaffoldFiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "purpose"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

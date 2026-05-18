@@ -16,6 +16,7 @@ const schemaNames = [
   "gemstone-rs.py-native-smoke.schema.json",
   "gemstone-rs.py-native-migration.schema.json",
   "gemstone-rs.py-native-compat.schema.json",
+  "gemstone-rs.py-native-conformance.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -172,6 +173,24 @@ assert.deepStrictEqual(
   pyNativeCompatibility,
   pyNativeCompatibilityFixture,
   "py-native compatibility output drifted from examples/py-native/gemstone-rs.py-native-compat.json"
+);
+const pyNativeConformanceFixture = readJson("examples/py-native/gemstone-rs.py-native-conformance.json");
+assertPyNativeConformance(pyNativeConformanceFixture);
+const pyNativeConformanceOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "conformance", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativeConformance = JSON.parse(lastJsonLine(pyNativeConformanceOutput));
+assertPyNativeConformance(pyNativeConformance);
+assert.deepStrictEqual(
+  pyNativeConformance,
+  pyNativeConformanceFixture,
+  "py-native conformance output drifted from examples/py-native/gemstone-rs.py-native-conformance.json"
 );
 
 for (const args of [
@@ -471,6 +490,92 @@ function assertPyNativeCompatibility(value) {
     "logout",
   ]) {
     assert(names.has(required), `py-native-compat.methods missing ${required}`);
+  }
+}
+
+function assertPyNativeConformance(value) {
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-conformance.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-conformance.contractVersion");
+  assert.strictEqual(value.targetPackage, "gemstone-py-native", "py-native-conformance.targetPackage");
+  assert.strictEqual(typeof value.status, "string", "py-native-conformance.status");
+  assertStringSet(
+    value.moduleFunctions,
+    [
+      "capabilities_json",
+      "samples_json",
+      "smoke_dry_run_json",
+      "migration_json",
+      "compatibility_json",
+      "conformance_json",
+    ],
+    "py-native-conformance.moduleFunctions"
+  );
+  assertStringSet(
+    value.nativeSessionMethods,
+    [
+      "login_from_env",
+      "session_id",
+      "eval_repr",
+      "eval_smallint",
+      "eval_oop",
+      "execute",
+      "resolve",
+      "perform_raw_oop",
+      "new_string",
+      "fetch_string",
+      "global_get",
+      "global_put_raw",
+      "global_put_string",
+      "global_put_smallint",
+      "add_to_export_set",
+      "remove_from_export_set",
+      "needs_commit",
+      "in_transaction",
+      "commit",
+      "abort",
+      "logout",
+    ],
+    "py-native-conformance.nativeSessionMethods"
+  );
+  assertStringSet(
+    value.compatibilityMethods,
+    [
+      "login_from_env",
+      "eval_oop",
+      "perform_oop",
+      "global_get",
+      "global_put_oop",
+      "add_to_export_set",
+      "commit",
+      "abort",
+      "logout",
+    ],
+    "py-native-conformance.compatibilityMethods"
+  );
+  assert(Array.isArray(value.fixtures), "py-native-conformance.fixtures");
+  const fixturePaths = new Set();
+  for (const [index, fixture] of value.fixtures.entries()) {
+    assert.strictEqual(typeof fixture.path, "string", `py-native-conformance.fixtures[${index}].path`);
+    assert.strictEqual(typeof fixture.command, "string", `py-native-conformance.fixtures[${index}].command`);
+    assert.strictEqual(typeof fixture.purpose, "string", `py-native-conformance.fixtures[${index}].purpose`);
+    fixturePaths.add(fixture.path);
+  }
+  for (const required of [
+    "examples/py-native/gemstone-rs.py-native.json",
+    "examples/py-native/gemstone-rs.py-native-compat.json",
+    "examples/py-native/gemstone-rs.py-native-conformance.json",
+  ]) {
+    assert(fixturePaths.has(required), `py-native-conformance.fixtures missing ${required}`);
+  }
+  assert(Array.isArray(value.scaffoldFiles), "py-native-conformance.scaffoldFiles");
+  const scaffoldPaths = new Set();
+  for (const [index, file] of value.scaffoldFiles.entries()) {
+    assert.strictEqual(typeof file.path, "string", `py-native-conformance.scaffoldFiles[${index}].path`);
+    assert.strictEqual(typeof file.purpose, "string", `py-native-conformance.scaffoldFiles[${index}].purpose`);
+    scaffoldPaths.add(file.path);
+  }
+  for (const required of ["src/lib.rs", "python/gemstone_py_native_compat.py", "tests/test_smoke.py"]) {
+    assert(scaffoldPaths.has(required), `py-native-conformance.scaffoldFiles missing ${required}`);
   }
 }
 

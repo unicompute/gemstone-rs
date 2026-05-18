@@ -82,6 +82,7 @@
     "onCommand:gemstoneRs.validatePyNativeSmokeFixture",
     "onCommand:gemstoneRs.runPyNativeSmoke",
     "onCommand:gemstoneRs.showPyNativeMigrationPlan",
+    "onCommand:gemstoneRs.validatePyNativeConformanceFixture",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
   ],
@@ -337,6 +338,10 @@
         "title": "GemStone RS: Show py-native Migration Plan"
       },
       {
+        "command": "gemstoneRs.validatePyNativeConformanceFixture",
+        "title": "GemStone RS: Validate py-native Conformance Fixture"
+      },
+      {
         "command": "gemstoneRs.compareGemstonePyStatus",
         "title": "GemStone RS: Compare with gemstone-py"
       },
@@ -446,6 +451,13 @@
           "*.gemstone-rs.py-native-compat.json"
         ],
         "url": "./schemas/gemstone-rs.py-native-compat.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native-conformance.json",
+          "*.gemstone-rs.py-native-conformance.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-conformance.schema.json"
       }
     ],
     "configuration": {
@@ -500,6 +512,11 @@
           "type": "string",
           "default": "examples/py-native/gemstone-rs.py-native-smoke.json",
           "description": "Default py-native smoke fixture checked by gemstone-rs py-native check-smoke."
+        },
+        "gemstoneRs.pyNativeConformanceFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native-conformance.json",
+          "description": "Default py-native conformance fixture checked by gemstone-rs py-native check-conformance."
         },
         "gemstoneRs.bridgeRoot": {
           "type": "string",

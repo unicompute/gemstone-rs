@@ -154,6 +154,7 @@ Commands:
 - `GemStone RS: Validate py-native Smoke Fixture`
 - `GemStone RS: Run py-native Smoke`
 - `GemStone RS: Show py-native Migration Plan`
+- `GemStone RS: Validate py-native Conformance Fixture`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -208,8 +209,10 @@ checkout.
    from VS Code.
 11. Run `GemStone RS: Show py-native Migration Plan` when you want the
    remaining `gemstone-py-native` shared-core checklist.
-12. Run `GemStone RS: Open Generated Output`.
-13. Run `GemStone RS: Codegen Generate`.
+12. Run `GemStone RS: Validate py-native Conformance Fixture` when you want the
+   PyO3 module/session/shim surface checked against the Rust core.
+13. Run `GemStone RS: Open Generated Output`.
+14. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -235,7 +238,10 @@ for the dry-run adapter smoke report. `Run py-native Smoke` runs
 `gemstone-rs py-native smoke --json`, prompts for dry-run or live mode, and shows
 every adapter step with copyable output. `Show py-native Migration Plan` runs
 `gemstone-rs py-native migration --json` and renders the current
-`gemstone-py-native` wrapper migration checklist.
+`gemstone-py-native` wrapper migration checklist. `Validate py-native
+Conformance Fixture` runs `gemstone-rs py-native check-conformance --json`
+against `gemstoneRs.pyNativeConformanceFixture`, then renders module function,
+session method, compatibility method, fixture, and scaffold-file counts.
 
 Inside `GemStone RS: Open Explorer Webview`, the Codegen buttons use the same
 config/profile settings but keep the review loop in one pane. `Preview/Edit

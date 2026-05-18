@@ -18,6 +18,7 @@ python -c 'import gemstone_py_native; print(gemstone_py_native.capabilities_json
 python -c 'import gemstone_py_native; print(gemstone_py_native.samples_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.compatibility_json())'
+python -c 'import gemstone_py_native; print(gemstone_py_native.conformance_json())'
 python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["returnPolicy"])'
 pytest
 ```
@@ -29,6 +30,10 @@ release notes because it names the remaining steps for making
 `compatibility_json()` exposes the generated Python shim contract from
 `gemstone-rs py-native compatibility --json`: every compatibility method, the
 underlying native method, and the Python return type.
+`conformance_json()` exposes the wrapper conformance target from
+`gemstone-rs py-native conformance --json`: required module functions,
+`NativeSession` methods, compatibility shim methods, fixture checks, and
+scaffold files.
 
 The generated `NativeSession` class exposes a deliberately direct adapter
 surface over the Rust core: `eval_oop`, `execute`, `resolve`,

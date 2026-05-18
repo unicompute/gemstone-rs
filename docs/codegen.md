@@ -122,6 +122,7 @@ schemas/gemstone-rs.py-native-samples.schema.json
 schemas/gemstone-rs.py-native-smoke.schema.json
 schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
+schemas/gemstone-rs.py-native-conformance.schema.json
 ```
 
 `gemstone-rs.codegen` remains the line-oriented CLI format. The config schema
@@ -129,10 +130,10 @@ describes an equivalent structured JSON model for editor panels and generated
 summaries, while the explain schema matches `codegen explain --json`. The
 py-native schemas match `gemstone-rs py-native capabilities --json`,
 `samples --json`, `smoke --dry-run --json`, `migration --json`, and
-`compatibility --json`. Use `gemstone-rs py-native check`,
-`check-samples`, `check-smoke`, and `check-compat` to compare checked-in
-fixtures against those shared core renderers without linking against internal
-CLI code.
+`compatibility --json`, and `conformance --json`. Use
+`gemstone-rs py-native check`, `check-samples`, `check-smoke`,
+`check-compat`, and `check-conformance` to compare checked-in fixtures against
+those shared core renderers without linking against internal CLI code.
 The profile check schema matches `profile check --json` and the explorer
 `/api/codegen/profiles/check` endpoint.
 

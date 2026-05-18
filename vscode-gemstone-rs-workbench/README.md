@@ -95,6 +95,7 @@ For a source checkout:
 - `GemStone RS: Validate py-native Smoke Fixture`
 - `GemStone RS: Run py-native Smoke`
 - `GemStone RS: Show py-native Migration Plan`
+- `GemStone RS: Validate py-native Conformance Fixture`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -121,7 +122,11 @@ fixture before Python adapter work consumes it. `Run py-native Smoke` runs
 `gemstone-rs py-native smoke --json` in either dry-run or live mode and renders
 each adapter step in the output panel. `Show py-native Migration Plan` runs
 `gemstone-rs py-native migration --json` and renders the remaining
-`gemstone-py-native` shared-core checklist in the same output panel.
+`gemstone-py-native` shared-core checklist in the same output panel. `Validate
+py-native Conformance Fixture` runs `gemstone-rs py-native check-conformance
+--json` against `gemstoneRs.pyNativeConformanceFixture` and verifies the PyO3
+module functions, raw `NativeSession` methods, compatibility shim methods,
+fixture paths, and scaffold files expected from the downstream wrapper.
 `Show Example Commands` uses `gemstone-rs examples list --json` to show the
 same curated example map that the CLI exposes, then lets you run a selected
 example in a terminal, copy its command, or open the examples guide. This is

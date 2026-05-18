@@ -75,6 +75,7 @@ function activate(context) {
   register(context, "gemstoneRs.validatePyNativeSmokeFixture", validatePyNativeSmokeFixture);
   register(context, "gemstoneRs.runPyNativeSmoke", runPyNativeSmoke);
   register(context, "gemstoneRs.showPyNativeMigrationPlan", showPyNativeMigrationPlan);
+  register(context, "gemstoneRs.validatePyNativeConformanceFixture", validatePyNativeConformanceFixture);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -213,6 +214,7 @@ class GemStoneTreeProvider {
         actionNode("Validate py-native Smoke Fixture", "gemstoneRs.validatePyNativeSmokeFixture"),
         actionNode("Run py-native Smoke", "gemstoneRs.runPyNativeSmoke"),
         actionNode("Show py-native Migration Plan", "gemstoneRs.showPyNativeMigrationPlan"),
+        actionNode("Validate py-native Conformance Fixture", "gemstoneRs.validatePyNativeConformanceFixture"),
       ];
     }
 
@@ -1533,6 +1535,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.validatePyNativeSmokeFixture",
     "gemstoneRs.runPyNativeSmoke",
     "gemstoneRs.showPyNativeMigrationPlan",
+    "gemstoneRs.validatePyNativeConformanceFixture",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1838,6 +1841,39 @@ async function showPyNativeMigrationPlan() {
   }
 }
 
+async function validatePyNativeConformanceFixture() {
+  const fixturePath = await vscode.window.showInputBox({
+    title: "Validate py-native Conformance Fixture",
+    prompt: "Path to gemstone-rs.py-native-conformance.json",
+    value: settings().pyNativeConformanceFixture,
+  });
+  if (!fixturePath) {
+    return;
+  }
+  const result = await runCli(["py-native", "check-conformance", fixturePath, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check-conformance returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeConformanceFixtureReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native conformance fixture is current: ${report.path || fixturePath}`
+    : `py-native conformance fixture drifted: ${report.path || fixturePath}`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report", "Open Fixture")
+    : await vscode.window.showErrorMessage(message, "Copy Report", "Open Fixture");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native conformance fixture report.");
+  } else if (action === "Open Fixture") {
+    await openPathInEditor(fixturePath);
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -1946,6 +1982,26 @@ function formatPyNativeMigrationReport(result, report) {
     lines.push(`  ${step.detail || ""}`);
     lines.push(`  verify: ${step.verify || ""}`);
   }
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeConformanceFixtureReport(result, report) {
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native conformance fixture check",
+    `path: ${report.path || "-"}`,
+    `ok: ${Boolean(report.ok)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `moduleFunctions: ${report.moduleFunctionCount ?? "-"}`,
+    `nativeSessionMethods: ${report.sessionMethodCount ?? "-"}`,
+    `compatibilityMethods: ${report.compatibilityMethodCount ?? "-"}`,
+    `fixtures: ${report.fixtureCount ?? "-"}`,
+    `scaffoldFiles: ${report.scaffoldFileCount ?? "-"}`,
+  ];
   if (result.stderr.trim()) {
     lines.push("");
     lines.push(result.stderr.trimEnd());
@@ -2129,6 +2185,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.validatePyNativeSmokeFixture">Validate py-native Smoke Fixture</button>
       <button data-command="gemstoneRs.runPyNativeSmoke">Run py-native Smoke</button>
       <button data-command="gemstoneRs.showPyNativeMigrationPlan">Show py-native Migration Plan</button>
+      <button data-command="gemstoneRs.validatePyNativeConformanceFixture">Validate py-native Conformance Fixture</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
@@ -2899,6 +2956,7 @@ function settings() {
     pyNativeFixture: cfg.get("pyNativeFixture", "examples/py-native/gemstone-rs.py-native.json"),
     pyNativeSamplesFixture: cfg.get("pyNativeSamplesFixture", "examples/py-native/gemstone-rs.py-native-samples.json"),
     pyNativeSmokeFixture: cfg.get("pyNativeSmokeFixture", "examples/py-native/gemstone-rs.py-native-smoke.json"),
+    pyNativeConformanceFixture: cfg.get("pyNativeConformanceFixture", "examples/py-native/gemstone-rs.py-native-conformance.json"),
     bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),
