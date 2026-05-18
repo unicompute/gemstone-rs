@@ -127,7 +127,16 @@ def main() -> int:
         cargo_run.append("--offline")
 
     run(cargo_check, cwd=repo_root, retry_offline=not args.offline)
-    run(cargo_run, cwd=repo_root, retry_offline=not args.offline)
+    run_result = run(cargo_run, cwd=repo_root, retry_offline=not args.offline)
+    for needle in [
+        "samples_json:",
+        "smoke_json:",
+        "migration_json:",
+        '"targetPackage":"gemstone-py-native"',
+        '"id":"wrap_py_native_session"',
+    ]:
+        if needle not in run_result.stdout:
+            raise RuntimeError(f"scaffold cargo run output missing {needle!r}")
     print(f"verified PyO3 scaffold at {target}")
     return 0
 

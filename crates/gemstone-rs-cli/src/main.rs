@@ -6612,6 +6612,18 @@ mod tests {
         assert!(py_native_toml.contains(r#"pyo3 = "0.28""#));
         assert!(py_native_toml.contains(r#"extension-module = ["pyo3/extension-module"]"#));
         assert!(py_native_toml.contains(r#"name = "gemstone_py_native""#));
+        assert!(py_native.main_rs.contains("migration_json"));
+        assert!(py_native.extra_files.iter().any(|file| {
+            file.path == "src/lib.rs"
+                && file.source.contains("fn migration_json()")
+                && file.source.contains("migration_report().to_json()")
+        }));
+        assert!(py_native.extra_files.iter().any(|file| {
+            file.path == "tests/test_smoke.py"
+                && file
+                    .source
+                    .contains("test_migration_json_tracks_python_wrapper_work")
+        }));
 
         let err = scaffold_example_project(template, &target, false)
             .unwrap_err()

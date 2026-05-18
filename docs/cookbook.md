@@ -429,7 +429,8 @@ the Python API, run live backend smoke, and publish wheels once that path is
 green. The
 PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
-`smoke_dry_run_json`, and an unsendable `NativeSession` wrapper. The live
+`samples_json`, `smoke_dry_run_json`, `migration_json`, and an unsendable
+`NativeSession` wrapper. The live
 example logs in, evaluates `3 + 4`,
 performs `printString`, and round trips a `UserGlobals` string through
 `PyNativeSession`:

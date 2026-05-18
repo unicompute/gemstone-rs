@@ -16,8 +16,14 @@ python -m pip install maturin pytest
 maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.capabilities_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.samples_json())'
+python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
 pytest
 ```
+
+`migration_json()` exposes the same shared-core checklist as
+`gemstone-rs py-native migration --json`. It is useful in Python wrapper CI and
+release notes because it names the remaining steps for making
+`gemstone-py-native` a thin PyO3 wrapper over `gemstone_rs::py_native`.
 
 Live smoke with GemStone credentials:
 

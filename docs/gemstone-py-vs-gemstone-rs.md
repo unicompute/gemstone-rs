@@ -188,7 +188,8 @@ plain Rust config, value, error, capability, and session wrappers. The
 installed CLI can now scaffold a starter PyO3 crate with
 `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter`.
 It can also print the machine-readable migration checklist with
-`gemstone-rs py-native migration --json`.
+`gemstone-rs py-native migration --json`, and the generated PyO3 starter now
+exports that same report through `gemstone_py_native.migration_json()`.
 The remaining work is Python-side wiring and compatibility testing in
 `gemstone-py`.
 

@@ -24,3 +24,13 @@ def test_samples_json_covers_value_and_error_shapes():
     error_kinds = {entry["error"]["kind"] for entry in report["errors"]}
     assert {"nil", "bool", "smallInt", "char", "string", "symbol", "oop"} <= value_kinds
     assert {"missingConfig", "illegalOop", "unexpectedType", "mapping"} <= error_kinds
+
+
+def test_migration_json_tracks_python_wrapper_work():
+    report = json.loads(gemstone_py_native.migration_json())
+    assert report["targetPackage"] == "gemstone-py-native"
+    assert report["contractVersion"] == 1
+    assert report["pendingCount"] >= 1
+    step_ids = {entry["id"] for entry in report["steps"]}
+    assert "wrap_py_native_session" in step_ids
+    assert "preserve_python_api" in step_ids

@@ -1,6 +1,6 @@
 use gemstone_rs::py_native::{
-    capabilities, samples_report, smoke_dry_run_report, PyNativeErrorInfo, PyNativeSession,
-    PyNativeValue,
+    capabilities, migration_report, samples_report, smoke_dry_run_report, PyNativeErrorInfo,
+    PyNativeSession, PyNativeValue,
 };
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -19,6 +19,11 @@ fn smoke_dry_run_json() -> String {
 #[pyfunction]
 fn samples_json() -> String {
     samples_report().to_json()
+}
+
+#[pyfunction]
+fn migration_json() -> String {
+    migration_report().to_json()
 }
 
 #[pyclass(unsendable)]
@@ -95,6 +100,7 @@ fn py_native_error(error: gemstone_rs::Error) -> PyErr {
 #[pymodule]
 fn gemstone_py_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(capabilities_json, m)?)?;
+    m.add_function(wrap_pyfunction!(migration_json, m)?)?;
     m.add_function(wrap_pyfunction!(samples_json, m)?)?;
     m.add_function(wrap_pyfunction!(smoke_dry_run_json, m)?)?;
     m.add_class::<NativeSession>()?;

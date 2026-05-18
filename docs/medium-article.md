@@ -877,6 +877,10 @@ remaining Python-side steps: wrap `PyNativeSession`, preserve existing Python
 return behavior, run the native/live smoke suite through the Rust-backed path,
 and publish wheels only after that path is green.
 
+The generated PyO3 starter also exposes that report as
+`gemstone_py_native.migration_json()`, so a future Python wrapper can show the
+same checklist from Python CI or release tooling.
+
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python
 native backend/live test suite through the Rust-backed path.
