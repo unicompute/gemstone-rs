@@ -17,6 +17,7 @@ const schemaNames = [
   "gemstone-rs.py-native-migration.schema.json",
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
+  "gemstone-rs.py-native-handoff.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -191,6 +192,24 @@ assert.deepStrictEqual(
   pyNativeConformance,
   pyNativeConformanceFixture,
   "py-native conformance output drifted from examples/py-native/gemstone-rs.py-native-conformance.json"
+);
+const pyNativeHandoffFixture = readJson("examples/py-native/gemstone-rs.py-native-handoff.json");
+assertPyNativeHandoff(pyNativeHandoffFixture);
+const pyNativeHandoffOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "handoff", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativeHandoff = JSON.parse(lastJsonLine(pyNativeHandoffOutput));
+assertPyNativeHandoff(pyNativeHandoff);
+assert.deepStrictEqual(
+  pyNativeHandoff,
+  pyNativeHandoffFixture,
+  "py-native handoff output drifted from examples/py-native/gemstone-rs.py-native-handoff.json"
 );
 
 for (const args of [
@@ -507,6 +526,7 @@ function assertPyNativeConformance(value) {
       "migration_json",
       "compatibility_json",
       "conformance_json",
+      "handoff_json",
     ],
     "py-native-conformance.moduleFunctions"
   );
@@ -564,6 +584,7 @@ function assertPyNativeConformance(value) {
     "examples/py-native/gemstone-rs.py-native.json",
     "examples/py-native/gemstone-rs.py-native-compat.json",
     "examples/py-native/gemstone-rs.py-native-conformance.json",
+    "examples/py-native/gemstone-rs.py-native-handoff.json",
   ]) {
     assert(fixturePaths.has(required), `py-native-conformance.fixtures missing ${required}`);
   }
@@ -576,6 +597,59 @@ function assertPyNativeConformance(value) {
   }
   for (const required of ["src/lib.rs", "python/gemstone_py_native_compat.py", "tests/test_smoke.py"]) {
     assert(scaffoldPaths.has(required), `py-native-conformance.scaffoldFiles missing ${required}`);
+  }
+}
+
+function assertPyNativeHandoff(value) {
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-handoff.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-handoff.contractVersion");
+  assert.strictEqual(value.targetPackage, "gemstone-py-native", "py-native-handoff.targetPackage");
+  assert.strictEqual(value.adapterModule, "gemstone_rs::py_native", "py-native-handoff.adapterModule");
+  assert.strictEqual(typeof value.scaffold, "string", "py-native-handoff.scaffold");
+  assert.strictEqual(typeof value.status, "string", "py-native-handoff.status");
+  assert(Array.isArray(value.artifacts), "py-native-handoff.artifacts");
+  assert(value.artifacts.length > 0, "py-native-handoff.artifacts should not be empty");
+
+  const artifactNames = new Set();
+  for (const [index, artifact] of value.artifacts.entries()) {
+    assert.strictEqual(typeof artifact.name, "string", `py-native-handoff.artifacts[${index}].name`);
+    assert(!artifactNames.has(artifact.name), `py-native-handoff.artifacts duplicate ${artifact.name}`);
+    artifactNames.add(artifact.name);
+    assert.strictEqual(typeof artifact.path, "string", `py-native-handoff.artifacts[${index}].path`);
+    assert.strictEqual(typeof artifact.schema, "string", `py-native-handoff.artifacts[${index}].schema`);
+    assert.strictEqual(typeof artifact.command, "string", `py-native-handoff.artifacts[${index}].command`);
+    assert.strictEqual(typeof artifact.checkCommand, "string", `py-native-handoff.artifacts[${index}].checkCommand`);
+    assert.strictEqual(typeof artifact.purpose, "string", `py-native-handoff.artifacts[${index}].purpose`);
+  }
+  for (const required of [
+    "capabilities",
+    "samples",
+    "smoke",
+    "migration",
+    "compatibility",
+    "conformance",
+  ]) {
+    assert(artifactNames.has(required), `py-native-handoff.artifacts missing ${required}`);
+  }
+
+  assert(Array.isArray(value.acceptance), "py-native-handoff.acceptance");
+  assert(value.acceptance.length > 0, "py-native-handoff.acceptance should not be empty");
+  const acceptanceIds = new Set();
+  for (const [index, criterion] of value.acceptance.entries()) {
+    assert.strictEqual(typeof criterion.id, "string", `py-native-handoff.acceptance[${index}].id`);
+    assert(!acceptanceIds.has(criterion.id), `py-native-handoff.acceptance duplicate ${criterion.id}`);
+    acceptanceIds.add(criterion.id);
+    assert.strictEqual(typeof criterion.required, "boolean", `py-native-handoff.acceptance[${index}].required`);
+    assert.strictEqual(typeof criterion.verify, "string", `py-native-handoff.acceptance[${index}].verify`);
+  }
+  for (const required of [
+    "scaffold_compiles",
+    "fixtures_current",
+    "python_return_policy_preserved",
+    "live_native_backend_green",
+    "wheels_after_live_green",
+  ]) {
+    assert(acceptanceIds.has(required), `py-native-handoff.acceptance missing ${required}`);
   }
 }
 

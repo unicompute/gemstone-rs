@@ -9,6 +9,7 @@ gemstone-rs py-native smoke --dry-run --json
 gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native conformance --json
+gemstone-rs py-native handoff --json
 ```
 
 The fixtures are intentionally small and stable. They give a future
@@ -31,6 +32,10 @@ The conformance fixture is checked in as
 functions, raw `NativeSession` methods, compatibility shim methods, fixture
 paths, and scaffold files that downstream `gemstone-py-native` integration
 should preserve.
+The handoff fixture is checked in as `gemstone-rs.py-native-handoff.json`; it
+bundles every py-native artifact, schema, regeneration command, validation
+command, and downstream acceptance check needed before `gemstone-py-native`
+uses the Rust core as its native backend.
 
 Verify it from a source checkout:
 
@@ -48,6 +53,8 @@ cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs-cli -- py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs-cli -- py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
+cargo run -p gemstone-rs-cli -- py-native handoff --json
+cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
 cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture --dry-run
@@ -55,6 +62,7 @@ cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_compatibility_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_conformance_fixture --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_handoff_bundle --dry-run
 node scripts/validate_codegen_schemas.js
 ```
 
@@ -67,4 +75,5 @@ schemas/gemstone-rs.py-native-smoke.schema.json
 schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
 schemas/gemstone-rs.py-native-conformance.schema.json
+schemas/gemstone-rs.py-native-handoff.schema.json
 ```

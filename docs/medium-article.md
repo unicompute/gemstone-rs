@@ -865,6 +865,7 @@ cargo run -p gemstone-rs-cli -- py-native samples --json
 cargo run -p gemstone-rs-cli -- py-native migration --json
 cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs-cli -- py-native conformance --json
+cargo run -p gemstone-rs-cli -- py-native handoff --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
 ```
@@ -907,6 +908,15 @@ functions, raw `NativeSession` methods, compatibility shim methods, checked-in
 fixtures, and generated scaffold files that the real `gemstone-py-native`
 wrapper should expose. That makes the shared-core handoff testable from Rust
 CI, Python CI, and the VS Code workbench without requiring a live stone.
+
+The final Rust-side bundle is `gemstone-rs py-native handoff --json`. It
+collects the capabilities, samples, smoke, migration, compatibility, and
+conformance artifacts into one manifest and adds the required acceptance
+checks: scaffold compile, fixture freshness, preserved Python return policy,
+live native backend smoke, and wheel publication after the live path is green.
+The generated PyO3 starter exposes the same manifest as
+`gemstone_py_native.handoff_json()`, so the future Python wrapper can keep
+release gating close to the package that publishes the wheels.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python

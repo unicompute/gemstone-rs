@@ -19,6 +19,7 @@ python -c 'import gemstone_py_native; print(gemstone_py_native.samples_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.compatibility_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.conformance_json())'
+python -c 'import gemstone_py_native; print(gemstone_py_native.handoff_json())'
 python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["returnPolicy"])'
 pytest
 ```
@@ -34,6 +35,9 @@ underlying native method, and the Python return type.
 `gemstone-rs py-native conformance --json`: required module functions,
 `NativeSession` methods, compatibility shim methods, fixture checks, and
 scaffold files.
+`handoff_json()` exposes the final downstream handoff manifest from
+`gemstone-rs py-native handoff --json`: artifact paths, schemas, regeneration
+commands, validation commands, and release acceptance checks.
 
 The generated `NativeSession` class exposes a deliberately direct adapter
 surface over the Rust core: `eval_oop`, `execute`, `resolve`,

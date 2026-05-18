@@ -1,6 +1,6 @@
 use gemstone_rs::py_native::{
-    capabilities, compatibility_report, conformance_report, migration_report, samples_report,
-    smoke_dry_run_report,
+    capabilities, compatibility_report, conformance_report, handoff_report, migration_report,
+    samples_report, smoke_dry_run_report,
 };
 
 fn main() {
@@ -13,6 +13,7 @@ fn main() {
     println!("  migration_json: {}", migration_report().to_json());
     println!("  compatibility_json: {}", compatibility_report().to_json());
     println!("  conformance_json: {}", conformance_report().to_json());
+    println!("  handoff_json: {}", handoff_report().to_json());
     println!();
     println!("Build the Python extension with:");
     println!("  python -m pip install maturin");
@@ -21,4 +22,5 @@ fn main() {
     println!("  python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'");
     println!("  python -c 'import gemstone_py_native; print(gemstone_py_native.compatibility_json())'");
     println!("  python -c 'import gemstone_py_native; print(gemstone_py_native.conformance_json())'");
+    println!("  python -c 'import gemstone_py_native; print(gemstone_py_native.handoff_json())'");
 }

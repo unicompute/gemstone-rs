@@ -83,6 +83,8 @@
     "onCommand:gemstoneRs.runPyNativeSmoke",
     "onCommand:gemstoneRs.showPyNativeMigrationPlan",
     "onCommand:gemstoneRs.validatePyNativeConformanceFixture",
+    "onCommand:gemstoneRs.validatePyNativeHandoffBundle",
+    "onCommand:gemstoneRs.showPyNativeHandoffBundle",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
   ],
@@ -342,6 +344,14 @@
         "title": "GemStone RS: Validate py-native Conformance Fixture"
       },
       {
+        "command": "gemstoneRs.validatePyNativeHandoffBundle",
+        "title": "GemStone RS: Validate py-native Handoff Bundle"
+      },
+      {
+        "command": "gemstoneRs.showPyNativeHandoffBundle",
+        "title": "GemStone RS: Show py-native Handoff Bundle"
+      },
+      {
         "command": "gemstoneRs.compareGemstonePyStatus",
         "title": "GemStone RS: Compare with gemstone-py"
       },
@@ -458,6 +468,13 @@
           "*.gemstone-rs.py-native-conformance.json"
         ],
         "url": "./schemas/gemstone-rs.py-native-conformance.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native-handoff.json",
+          "*.gemstone-rs.py-native-handoff.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-handoff.schema.json"
       }
     ],
     "configuration": {
@@ -517,6 +534,11 @@
           "type": "string",
           "default": "examples/py-native/gemstone-rs.py-native-conformance.json",
           "description": "Default py-native conformance fixture checked by gemstone-rs py-native check-conformance."
+        },
+        "gemstoneRs.pyNativeHandoffFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native-handoff.json",
+          "description": "Default py-native handoff bundle checked by gemstone-rs py-native check-handoff."
         },
         "gemstoneRs.bridgeRoot": {
           "type": "string",

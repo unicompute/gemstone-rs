@@ -20,6 +20,7 @@ const schemaNames = [
   "gemstone-rs.py-native-migration.schema.json",
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
+  "gemstone-rs.py-native-handoff.schema.json",
 ];
 
 function includes(list, value) {
@@ -50,6 +51,8 @@ const requiredCommands = [
   "gemstoneRs.runPyNativeSmoke",
   "gemstoneRs.showPyNativeMigrationPlan",
   "gemstoneRs.validatePyNativeConformanceFixture",
+  "gemstoneRs.validatePyNativeHandoffBundle",
+  "gemstoneRs.showPyNativeHandoffBundle",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
@@ -194,6 +197,8 @@ assert(readme.includes("Validate py-native Samples Fixture"), "README should men
 assert(readme.includes("Validate py-native Smoke Fixture"), "README should mention py-native smoke fixture validation");
 assert(readme.includes("Run py-native Smoke"), "README should mention py-native smoke");
 assert(readme.includes("Validate py-native Conformance Fixture"), "README should mention py-native conformance fixture validation");
+assert(readme.includes("Validate py-native Handoff Bundle"), "README should mention py-native handoff bundle validation");
+assert(readme.includes("Show py-native Handoff Bundle"), "README should mention py-native handoff bundle display");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
 assert(readme.includes("List Project Profiles"), "README should mention profile listing");
@@ -253,6 +258,22 @@ assert(
   "py-native conformance fixture should render a readable report"
 );
 assert(
+  extensionSource.includes('"py-native", "check-handoff", fixturePath, "--json"'),
+  "py-native handoff bundle validation should use JSON output"
+);
+assert(
+  extensionSource.includes('"py-native", "handoff", "--json"'),
+  "py-native handoff bundle display should use JSON output"
+);
+assert(
+  extensionSource.includes("formatPyNativeHandoffCheckReport"),
+  "py-native handoff bundle check should render a readable report"
+);
+assert(
+  extensionSource.includes("formatPyNativeHandoffBundleReport"),
+  "py-native handoff bundle should render a readable report"
+);
+assert(
   extensionSource.includes("pyNativeFixture"),
   "Workbench should expose a py-native fixture setting"
 );
@@ -267,6 +288,10 @@ assert(
 assert(
   extensionSource.includes("pyNativeConformanceFixture"),
   "Workbench should expose a py-native conformance fixture setting"
+);
+assert(
+  extensionSource.includes("pyNativeHandoffFixture"),
+  "Workbench should expose a py-native handoff fixture setting"
 );
 assert(
   extensionSource.includes('"compare", target, "--status", "--json"'),
@@ -364,6 +389,12 @@ assert(
   "package.json should contribute JSON validation for py-native conformance reports"
 );
 assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-handoff"))
+  ),
+  "package.json should contribute JSON validation for py-native handoff reports"
+);
+assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],
   "package.json should expose gemstoneRs.envFile"
 );
@@ -382,6 +413,10 @@ assert(
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.pyNativeConformanceFixture"],
   "package.json should expose gemstoneRs.pyNativeConformanceFixture"
+);
+assert(
+  packageJson.contributes.configuration.properties["gemstoneRs.pyNativeHandoffFixture"],
+  "package.json should expose gemstoneRs.pyNativeHandoffFixture"
 );
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

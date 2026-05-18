@@ -76,6 +76,8 @@ function activate(context) {
   register(context, "gemstoneRs.runPyNativeSmoke", runPyNativeSmoke);
   register(context, "gemstoneRs.showPyNativeMigrationPlan", showPyNativeMigrationPlan);
   register(context, "gemstoneRs.validatePyNativeConformanceFixture", validatePyNativeConformanceFixture);
+  register(context, "gemstoneRs.validatePyNativeHandoffBundle", validatePyNativeHandoffBundle);
+  register(context, "gemstoneRs.showPyNativeHandoffBundle", showPyNativeHandoffBundle);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -215,6 +217,8 @@ class GemStoneTreeProvider {
         actionNode("Run py-native Smoke", "gemstoneRs.runPyNativeSmoke"),
         actionNode("Show py-native Migration Plan", "gemstoneRs.showPyNativeMigrationPlan"),
         actionNode("Validate py-native Conformance Fixture", "gemstoneRs.validatePyNativeConformanceFixture"),
+        actionNode("Validate py-native Handoff Bundle", "gemstoneRs.validatePyNativeHandoffBundle"),
+        actionNode("Show py-native Handoff Bundle", "gemstoneRs.showPyNativeHandoffBundle"),
       ];
     }
 
@@ -1536,6 +1540,8 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.runPyNativeSmoke",
     "gemstoneRs.showPyNativeMigrationPlan",
     "gemstoneRs.validatePyNativeConformanceFixture",
+    "gemstoneRs.validatePyNativeHandoffBundle",
+    "gemstoneRs.showPyNativeHandoffBundle",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1874,6 +1880,62 @@ async function validatePyNativeConformanceFixture() {
   }
 }
 
+async function validatePyNativeHandoffBundle() {
+  const fixturePath = await vscode.window.showInputBox({
+    title: "Validate py-native Handoff Bundle",
+    prompt: "Path to gemstone-rs.py-native-handoff.json",
+    value: settings().pyNativeHandoffFixture,
+  });
+  if (!fixturePath) {
+    return;
+  }
+  const result = await runCli(["py-native", "check-handoff", fixturePath, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check-handoff returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeHandoffCheckReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native handoff bundle is current: ${report.path || fixturePath}`
+    : `py-native handoff bundle drifted: ${report.path || fixturePath}`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report", "Open Fixture")
+    : await vscode.window.showErrorMessage(message, "Copy Report", "Open Fixture");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native handoff bundle report.");
+  } else if (action === "Open Fixture") {
+    await openPathInEditor(fixturePath);
+  }
+}
+
+async function showPyNativeHandoffBundle() {
+  const result = await runCli(["py-native", "handoff", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native handoff returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeHandoffBundleReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const artifactCount = Array.isArray(report.artifacts) ? report.artifacts.length : 0;
+  const acceptanceCount = Array.isArray(report.acceptance) ? report.acceptance.length : 0;
+  const message = `py-native handoff bundle: ${artifactCount} artifacts, ${acceptanceCount} acceptance criteria.`;
+  const action = result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report")
+    : await vscode.window.showErrorMessage(message, "Copy Report");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native handoff bundle.");
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -2002,6 +2064,58 @@ function formatPyNativeConformanceFixtureReport(result, report) {
     `fixtures: ${report.fixtureCount ?? "-"}`,
     `scaffoldFiles: ${report.scaffoldFileCount ?? "-"}`,
   ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeHandoffCheckReport(result, report) {
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native handoff bundle check",
+    `path: ${report.path || "-"}`,
+    `ok: ${Boolean(report.ok)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `artifacts: ${report.artifactCount ?? "-"}`,
+    `acceptance: ${report.acceptanceCount ?? "-"}`,
+  ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeHandoffBundleReport(result, report) {
+  const artifacts = Array.isArray(report.artifacts) ? report.artifacts : [];
+  const acceptance = Array.isArray(report.acceptance) ? report.acceptance : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native gemstone-py handoff",
+    `targetPackage: ${report.targetPackage || "-"}`,
+    `adapterModule: ${report.adapterModule || "-"}`,
+    `scaffold: ${report.scaffold || "-"}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `status: ${report.status || "-"}`,
+    "",
+    "artifacts:",
+  ];
+  for (const artifact of artifacts) {
+    lines.push(`  ${artifact.name || "(unnamed)"}`);
+    lines.push(`    path: ${artifact.path || "-"}`);
+    lines.push(`    schema: ${artifact.schema || "-"}`);
+    lines.push(`    command: ${artifact.command || "-"}`);
+    lines.push(`    check: ${artifact.checkCommand || "-"}`);
+    lines.push(`    purpose: ${artifact.purpose || "-"}`);
+  }
+  lines.push("");
+  lines.push("acceptance:");
+  for (const criterion of acceptance) {
+    lines.push(`  ${criterion.id || "(unnamed)"}${criterion.required ? " [required]" : ""}`);
+    lines.push(`    verify: ${criterion.verify || "-"}`);
+  }
   if (result.stderr.trim()) {
     lines.push("");
     lines.push(result.stderr.trimEnd());
@@ -2186,6 +2300,8 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.runPyNativeSmoke">Run py-native Smoke</button>
       <button data-command="gemstoneRs.showPyNativeMigrationPlan">Show py-native Migration Plan</button>
       <button data-command="gemstoneRs.validatePyNativeConformanceFixture">Validate py-native Conformance Fixture</button>
+      <button data-command="gemstoneRs.validatePyNativeHandoffBundle">Validate py-native Handoff Bundle</button>
+      <button data-command="gemstoneRs.showPyNativeHandoffBundle">Show py-native Handoff Bundle</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>
@@ -2957,6 +3073,7 @@ function settings() {
     pyNativeSamplesFixture: cfg.get("pyNativeSamplesFixture", "examples/py-native/gemstone-rs.py-native-samples.json"),
     pyNativeSmokeFixture: cfg.get("pyNativeSmokeFixture", "examples/py-native/gemstone-rs.py-native-smoke.json"),
     pyNativeConformanceFixture: cfg.get("pyNativeConformanceFixture", "examples/py-native/gemstone-rs.py-native-conformance.json"),
+    pyNativeHandoffFixture: cfg.get("pyNativeHandoffFixture", "examples/py-native/gemstone-rs.py-native-handoff.json"),
     bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),

@@ -53,10 +53,22 @@ def test_conformance_json_tracks_backend_surface():
     assert report["targetPackage"] == "gemstone-py-native"
     assert "compatibility_json" in report["moduleFunctions"]
     assert "conformance_json" in report["moduleFunctions"]
+    assert "handoff_json" in report["moduleFunctions"]
     assert "perform_raw_oop" in report["nativeSessionMethods"]
     assert "perform_oop" in report["compatibilityMethods"]
     fixture_paths = {entry["path"] for entry in report["fixtures"]}
     assert "examples/py-native/gemstone-rs.py-native-conformance.json" in fixture_paths
+    assert "examples/py-native/gemstone-rs.py-native-handoff.json" in fixture_paths
+
+
+def test_handoff_json_tracks_downstream_acceptance():
+    report = json.loads(gemstone_py_native.handoff_json())
+    assert report["targetPackage"] == "gemstone-py-native"
+    artifact_names = {entry["name"] for entry in report["artifacts"]}
+    assert {"capabilities", "samples", "smoke", "migration", "compatibility", "conformance"} <= artifact_names
+    acceptance_ids = {entry["id"] for entry in report["acceptance"]}
+    assert "fixtures_current" in acceptance_ids
+    assert "live_native_backend_green" in acceptance_ids
 
 
 def test_native_session_exposes_core_adapter_methods():

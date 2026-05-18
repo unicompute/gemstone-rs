@@ -415,6 +415,8 @@ gemstone-rs py-native compatibility --json
 gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
+gemstone-rs py-native handoff --json
+gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 ```
@@ -434,12 +436,15 @@ green. `py-native compatibility --json` adds a method-by-method map for the
 generated Python shim, including `OopHandle` return points and typed helper
 methods. `py-native conformance --json` adds the integration target: generated
 module functions, raw `NativeSession` methods, compatibility shim methods,
-fixture files, and scaffold files. The PyO3 scaffold writes a minimal
+fixture files, and scaffold files. `py-native handoff --json` adds the final
+downstream manifest tying the contract, samples, smoke, migration,
+compatibility, conformance, and acceptance checks together. The PyO3 scaffold
+writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `samples_json`, `smoke_dry_run_json`, `migration_json`,
-`compatibility_json`, `conformance_json`, and an unsendable `NativeSession`
-wrapper over eval, execute, resolve, perform, globals, export-set retention,
-and transactions. It
+`compatibility_json`, `conformance_json`, `handoff_json`, and an unsendable
+`NativeSession` wrapper over eval, execute, resolve, perform, globals,
+export-set retention, and transactions. It
 also writes
 `python/gemstone_py_native_compat.py`, a Python package-layer shim with
 `NativeCompatibilitySession`, `OopHandle`, and a `compatibility_report()` that

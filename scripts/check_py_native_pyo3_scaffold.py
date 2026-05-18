@@ -137,8 +137,10 @@ def main() -> int:
         "migration_json:",
         "compatibility_json:",
         "conformance_json:",
+        "handoff_json:",
         '"targetPackage":"gemstone-py-native"',
         '"id":"wrap_py_native_session"',
+        '"id":"fixtures_current"',
         '"module":"gemstone_py_native_compat"',
         '"pythonMethod":"eval_oop"',
         '"moduleFunctions":["capabilities_json"',
@@ -156,6 +158,7 @@ def main() -> int:
         "fn abort(",
         "fn compatibility_json()",
         "fn conformance_json()",
+        "fn handoff_json()",
     ]:
         if method not in lib_source:
             raise RuntimeError(f"scaffold src/lib.rs missing {method!r}")

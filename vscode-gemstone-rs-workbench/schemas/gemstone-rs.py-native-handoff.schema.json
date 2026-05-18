@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native-handoff.schema.json",
+  "title": "gemstone-rs py-native Handoff Output",
+  "description": "Machine-readable output from gemstone-rs py-native handoff --json for downstream gemstone-py-native wrapper integration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "targetPackage",
+    "adapterModule",
+    "scaffold",
+    "status",
+    "artifacts",
+    "acceptance"
+  ],
+  "properties": {
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "targetPackage": {
+      "type": "string",
+      "const": "gemstone-py-native"
+    },
+    "adapterModule": {
+      "type": "string",
+      "const": "gemstone_rs::py_native"
+    },
+    "scaffold": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "schema", "command", "checkCommand", "purpose"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "checkCommand": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "required", "verify"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "verify": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

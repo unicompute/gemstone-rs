@@ -190,10 +190,14 @@ installed CLI can now scaffold a starter PyO3 crate with
 It can also print the machine-readable migration checklist with
 `gemstone-rs py-native migration --json`, the compatibility shim map with
 `gemstone-rs py-native compatibility --json`, and the wrapper conformance
-target with `gemstone-rs py-native conformance --json`. The generated PyO3
-starter exports those same reports through `gemstone_py_native.migration_json()`,
+target with `gemstone-rs py-native conformance --json`. It also prints the
+downstream handoff manifest with `gemstone-rs py-native handoff --json`, which
+bundles every artifact, schema, validation command, and acceptance check for
+the eventual `gemstone-py-native` wrapper. The generated PyO3 starter exports
+those same reports through `gemstone_py_native.migration_json()`,
 `gemstone_py_native.compatibility_json()`, and
-`gemstone_py_native.conformance_json()`.
+`gemstone_py_native.conformance_json()`, plus
+`gemstone_py_native.handoff_json()`.
 The remaining work is Python-side wiring and compatibility testing in
 `gemstone-py`.
 

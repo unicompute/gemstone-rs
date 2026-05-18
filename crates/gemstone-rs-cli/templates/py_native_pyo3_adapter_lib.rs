@@ -1,6 +1,6 @@
 use gemstone_rs::py_native::{
-    capabilities, compatibility_report, conformance_report, migration_report, samples_report,
-    smoke_dry_run_report, PyNativeErrorInfo, PyNativeSession, PyNativeValue,
+    capabilities, compatibility_report, conformance_report, handoff_report, migration_report,
+    samples_report, smoke_dry_run_report, PyNativeErrorInfo, PyNativeSession, PyNativeValue,
 };
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -34,6 +34,11 @@ fn compatibility_json() -> String {
 #[pyfunction]
 fn conformance_json() -> String {
     conformance_report().to_json()
+}
+
+#[pyfunction]
+fn handoff_json() -> String {
+    handoff_report().to_json()
 }
 
 #[pyclass(unsendable)]
@@ -216,6 +221,7 @@ fn gemstone_py_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(capabilities_json, m)?)?;
     m.add_function(wrap_pyfunction!(compatibility_json, m)?)?;
     m.add_function(wrap_pyfunction!(conformance_json, m)?)?;
+    m.add_function(wrap_pyfunction!(handoff_json, m)?)?;
     m.add_function(wrap_pyfunction!(migration_json, m)?)?;
     m.add_function(wrap_pyfunction!(samples_json, m)?)?;
     m.add_function(wrap_pyfunction!(smoke_dry_run_json, m)?)?;

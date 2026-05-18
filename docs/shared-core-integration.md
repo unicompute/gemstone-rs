@@ -78,6 +78,8 @@ The Python compatibility shim output is covered by
 [`schemas/gemstone-rs.py-native-compat.schema.json`](../schemas/gemstone-rs.py-native-compat.schema.json).
 The wrapper conformance output is covered by
 [`schemas/gemstone-rs.py-native-conformance.schema.json`](../schemas/gemstone-rs.py-native-conformance.schema.json).
+The downstream handoff bundle output is covered by
+[`schemas/gemstone-rs.py-native-handoff.schema.json`](../schemas/gemstone-rs.py-native-handoff.schema.json).
 The VS Code workbench packages these schemas for editor validation. A
 checked-in fixture lives at
 [`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json),
@@ -89,6 +91,8 @@ with the compatibility fixture at
 [`examples/py-native/gemstone-rs.py-native-compat.json`](../examples/py-native/gemstone-rs.py-native-compat.json),
 and the conformance fixture at
 [`examples/py-native/gemstone-rs.py-native-conformance.json`](../examples/py-native/gemstone-rs.py-native-conformance.json),
+with the final handoff bundle at
+[`examples/py-native/gemstone-rs.py-native-handoff.json`](../examples/py-native/gemstone-rs.py-native-handoff.json),
 so downstream wrapper CI can diff the contract without requiring a live stone.
 Use the CLI check in CI:
 
@@ -109,12 +113,18 @@ gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-comp
 gemstone-rs py-native conformance
 gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
+gemstone-rs py-native handoff
+gemstone-rs py-native handoff --json
+gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
 ```
 
 `py-native migration --json` is intentionally not a replacement for doing the
 Python-side work. It is the shared Rust-side checklist that CLI, CI, docs, and
 the VS Code workbench can render consistently while `gemstone-py-native` moves
 from its current native path to a thin wrapper around `gemstone_rs::py_native`.
+`py-native handoff --json` is the single manifest to hand to downstream
+`gemstone-py-native` work: it lists each artifact, schema, generation command,
+validation command, and required acceptance check.
 
 To create a starter PyO3 wrapper crate from the installed CLI:
 
@@ -129,6 +139,7 @@ maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.compatibility_json())'
 python -c 'import gemstone_py_native; print(gemstone_py_native.conformance_json())'
+python -c 'import gemstone_py_native; print(gemstone_py_native.handoff_json())'
 python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["returnPolicy"])'
 pytest
 ```
@@ -141,9 +152,10 @@ for Python 3.14 compatibility and keeps PyO3's
 `extension-module` flag behind a Cargo feature so `cargo run` works while
 `maturin develop` still builds a proper Python extension. It exposes
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, `migration_json`,
-`compatibility_json`, and `conformance_json`, so Python wrapper CI can inspect
-the adapter contract, compatibility method map, conformance target, and
-remaining shared-core checklist from the generated module. The
+`compatibility_json`, `conformance_json`, and `handoff_json`, so Python wrapper
+CI can inspect the adapter contract, compatibility method map, conformance
+target, handoff manifest, and remaining shared-core checklist from the
+generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
 execute, resolve, perform, globals, export-set retention, and transactions
 without adding Pythonic return conversion in the native layer. The generated

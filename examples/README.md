@@ -50,10 +50,12 @@ gemstone-rs examples run py_native_samples_fixture --dry-run
 gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs examples run py_native_migration_plan --dry-run
 gemstone-rs examples run py_native_conformance_fixture --dry-run
+gemstone-rs examples run py_native_handoff_bundle --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
 gemstone-rs py-native migration --json
 gemstone-rs py-native conformance --json
+gemstone-rs py-native handoff --json
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -80,9 +82,10 @@ Some scaffolds write supporting project files as well as Rust source;
 `gemstone-rs.codegen-profiles.json`, while `py_native_pyo3_adapter` includes a
 `pyproject.toml`, `src/lib.rs`, and Python smoke tests for a thin PyO3 wrapper.
 That scaffold exposes `capabilities_json`, `samples_json`,
-`smoke_dry_run_json`, `migration_json`, `compatibility_json`, and
-`conformance_json`, plus direct `NativeSession` methods for eval, execute,
-resolve, perform, globals, export-set retention, and transactions.
+`smoke_dry_run_json`, `migration_json`, `compatibility_json`,
+`conformance_json`, and `handoff_json`, plus direct `NativeSession` methods
+for eval, execute, resolve, perform, globals, export-set retention, and
+transactions.
 The PyO3 scaffold uses PyO3 0.28 for Python 3.14 compatibility. Source
 checkouts can prove the generated starter still compiles against the local
 Rust core with `python3 scripts/check_py_native_pyo3_scaffold.py`. The
@@ -94,6 +97,10 @@ symbols, OOPs, and structured error translation without a live stone.
 They also include a conformance fixture that lists the generated PyO3 module
 functions, raw session methods, compatibility shim methods, fixture paths, and
 scaffold files expected from a real `gemstone-py-native` wrapper.
+The handoff bundle ties those fixtures together with the acceptance checks for
+the downstream wrapper release: scaffold compile, fixture freshness, preserved
+Python return policy, live native backend smoke, and wheel publication after
+the live path is green.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -133,7 +140,8 @@ sanity check after install.
 | Python native migration plan | `gemstone-rs py-native migration --json`; `gemstone-rs examples run py_native_migration_plan --dry-run` | You want the remaining gemstone-py-native shared-core migration steps as a CLI/VS Code friendly report. |
 | Python native compatibility fixture | `gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run` | You want the Python compatibility shim method map and return policy checked against the Rust core. |
 | Python native conformance fixture | `gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json`; `gemstone-rs examples run py_native_conformance_fixture --dry-run` | You want the PyO3 module/session/shim surface checked as a downstream wrapper target. |
-| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_samples_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
+| Python native handoff bundle | `gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json`; `gemstone-rs examples run py_native_handoff_bundle --dry-run` | You want the downstream `gemstone-py-native` handoff artifacts and acceptance criteria checked in one place. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_samples_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |

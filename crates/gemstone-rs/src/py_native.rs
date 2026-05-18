@@ -777,6 +777,7 @@ pub const PY_NATIVE_MODULE_FUNCTIONS: &[&str] = &[
     "migration_json",
     "compatibility_json",
     "conformance_json",
+    "handoff_json",
 ];
 
 pub const PY_NATIVE_SESSION_METHODS: &[&str] = &[
@@ -915,6 +916,11 @@ pub fn conformance_report() -> PyNativeConformanceReport {
                 command: "gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json",
                 purpose: "End-to-end scaffold conformance target for wrapper integration",
             },
+            PyNativeConformanceFixture {
+                path: "examples/py-native/gemstone-rs.py-native-handoff.json",
+                command: "gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json",
+                purpose: "Downstream wrapper handoff manifest and acceptance criteria",
+            },
         ],
         scaffold_files: vec![
             PyNativeScaffoldFile {
@@ -944,6 +950,173 @@ pub fn conformance_report() -> PyNativeConformanceReport {
             PyNativeScaffoldFile {
                 path: "tests/test_smoke.py",
                 purpose: "pytest smoke tests for module functions, session methods, and compatibility policy",
+            },
+        ],
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeHandoffArtifact {
+    pub name: &'static str,
+    pub path: &'static str,
+    pub schema: &'static str,
+    pub command: &'static str,
+    pub check_command: &'static str,
+    pub purpose: &'static str,
+}
+
+impl PyNativeHandoffArtifact {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","path":"{}","schema":"{}","command":"{}","checkCommand":"{}","purpose":"{}"}}"#,
+            json_escape(self.name),
+            json_escape(self.path),
+            json_escape(self.schema),
+            json_escape(self.command),
+            json_escape(self.check_command),
+            json_escape(self.purpose)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeAcceptanceCriterion {
+    pub id: &'static str,
+    pub required: bool,
+    pub verify: &'static str,
+}
+
+impl PyNativeAcceptanceCriterion {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"id":"{}","required":{},"verify":"{}"}}"#,
+            json_escape(self.id),
+            if self.required { "true" } else { "false" },
+            json_escape(self.verify)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeHandoffReport {
+    pub contract_version: u16,
+    pub target_package: &'static str,
+    pub adapter_module: &'static str,
+    pub scaffold: &'static str,
+    pub status: &'static str,
+    pub artifacts: Vec<PyNativeHandoffArtifact>,
+    pub acceptance: Vec<PyNativeAcceptanceCriterion>,
+}
+
+impl PyNativeHandoffReport {
+    pub fn to_json(&self) -> String {
+        let artifacts = self
+            .artifacts
+            .iter()
+            .map(PyNativeHandoffArtifact::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        let acceptance = self
+            .acceptance
+            .iter()
+            .map(PyNativeAcceptanceCriterion::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"targetPackage":"{}","adapterModule":"{}","scaffold":"{}","status":"{}","artifacts":[{}],"acceptance":[{}]}}"#,
+            self.contract_version,
+            json_escape(self.target_package),
+            json_escape(self.adapter_module),
+            json_escape(self.scaffold),
+            json_escape(self.status),
+            artifacts,
+            acceptance
+        )
+    }
+}
+
+pub fn handoff_report() -> PyNativeHandoffReport {
+    PyNativeHandoffReport {
+        contract_version: capabilities().contract_version,
+        target_package: "gemstone-py-native",
+        adapter_module: "gemstone_rs::py_native",
+        scaffold: "py_native_pyo3_adapter",
+        status: "Rust-side handoff bundle is ready for downstream gemstone-py-native wrapper integration",
+        artifacts: vec![
+            PyNativeHandoffArtifact {
+                name: "capabilities",
+                path: "examples/py-native/gemstone-rs.py-native.json",
+                schema: "schemas/gemstone-rs.py-native.schema.json",
+                command: "gemstone-rs py-native capabilities --json",
+                check_command: "gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json",
+                purpose: "Adapter operations, value kinds, error kinds, threading policy, and OOP constants",
+            },
+            PyNativeHandoffArtifact {
+                name: "samples",
+                path: "examples/py-native/gemstone-rs.py-native-samples.json",
+                schema: "schemas/gemstone-rs.py-native-samples.schema.json",
+                command: "gemstone-rs py-native samples --json",
+                check_command: "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json",
+                purpose: "Value and structured error payloads for Python wrapper translation tests",
+            },
+            PyNativeHandoffArtifact {
+                name: "smoke",
+                path: "examples/py-native/gemstone-rs.py-native-smoke.json",
+                schema: "schemas/gemstone-rs.py-native-smoke.schema.json",
+                command: "gemstone-rs py-native smoke --dry-run --json",
+                check_command: "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json",
+                purpose: "Dependency-free adapter smoke report for CI without a live stone",
+            },
+            PyNativeHandoffArtifact {
+                name: "migration",
+                path: "",
+                schema: "schemas/gemstone-rs.py-native-migration.schema.json",
+                command: "gemstone-rs py-native migration --json",
+                check_command: "",
+                purpose: "Remaining downstream wrapper, live-smoke, and wheel-publish checklist",
+            },
+            PyNativeHandoffArtifact {
+                name: "compatibility",
+                path: "examples/py-native/gemstone-rs.py-native-compat.json",
+                schema: "schemas/gemstone-rs.py-native-compat.schema.json",
+                command: "gemstone-rs py-native compatibility --json",
+                check_command: "gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json",
+                purpose: "Python package-layer return policy and method mapping",
+            },
+            PyNativeHandoffArtifact {
+                name: "conformance",
+                path: "examples/py-native/gemstone-rs.py-native-conformance.json",
+                schema: "schemas/gemstone-rs.py-native-conformance.schema.json",
+                command: "gemstone-rs py-native conformance --json",
+                check_command: "gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json",
+                purpose: "PyO3 module functions, raw session methods, shim methods, fixtures, and scaffold files",
+            },
+        ],
+        acceptance: vec![
+            PyNativeAcceptanceCriterion {
+                id: "scaffold_compiles",
+                required: true,
+                verify: "python3 scripts/check_py_native_pyo3_scaffold.py",
+            },
+            PyNativeAcceptanceCriterion {
+                id: "fixtures_current",
+                required: true,
+                verify: "cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json",
+            },
+            PyNativeAcceptanceCriterion {
+                id: "python_return_policy_preserved",
+                required: true,
+                verify: "gemstone-py sync and async test suites keep existing Session.execute()/perform() behavior",
+            },
+            PyNativeAcceptanceCriterion {
+                id: "live_native_backend_green",
+                required: true,
+                verify: "GS_RUN_LIVE=1 gemstone-py native/backend smoke through the Rust-backed PyO3 module",
+            },
+            PyNativeAcceptanceCriterion {
+                id: "wheels_after_live_green",
+                required: true,
+                verify: "publish gemstone-py-native wheels only after TestPyPI/PyPI install verification",
             },
         ],
     }
@@ -1658,6 +1831,7 @@ mod tests {
         assert_eq!(report.target_package, "gemstone-py-native");
         assert!(report.module_functions.contains(&"compatibility_json"));
         assert!(report.module_functions.contains(&"conformance_json"));
+        assert!(report.module_functions.contains(&"handoff_json"));
         assert!(report.native_session_methods.contains(&"perform_raw_oop"));
         assert!(report.compatibility_methods.contains(&"perform_oop"));
         assert!(report
@@ -1665,11 +1839,41 @@ mod tests {
             .iter()
             .any(|fixture| fixture.path.ends_with("gemstone-rs.py-native-compat.json")));
         assert!(report
+            .fixtures
+            .iter()
+            .any(|fixture| fixture.path.ends_with("gemstone-rs.py-native-handoff.json")));
+        assert!(report
             .scaffold_files
             .iter()
             .any(|file| file.path == "python/gemstone_py_native_compat.py"));
         assert!(json.contains(r#""targetPackage":"gemstone-py-native""#));
         assert!(json.contains(r#""moduleFunctions":["capabilities_json""#));
         assert!(json.contains(r#""nativeSessionMethods":["login_from_env""#));
+    }
+
+    #[test]
+    fn handoff_report_lists_downstream_wrapper_artifacts() {
+        let report = handoff_report();
+        let json = report.to_json();
+        assert_eq!(report.contract_version, 1);
+        assert_eq!(report.target_package, "gemstone-py-native");
+        assert_eq!(report.adapter_module, "gemstone_rs::py_native");
+        assert!(report
+            .artifacts
+            .iter()
+            .any(|artifact| artifact.name == "conformance"
+                && artifact.check_command.contains("check-conformance")));
+        assert!(report
+            .artifacts
+            .iter()
+            .any(|artifact| artifact.name == "migration" && artifact.path.is_empty()));
+        assert!(report
+            .acceptance
+            .iter()
+            .any(|criterion| criterion.id == "live_native_backend_green" && criterion.required));
+        assert!(json.contains(r#""targetPackage":"gemstone-py-native""#));
+        assert!(json.contains(r#""adapterModule":"gemstone_rs::py_native""#));
+        assert!(json.contains(r#""name":"conformance""#));
+        assert!(json.contains(r#""id":"fixtures_current""#));
     }
 }

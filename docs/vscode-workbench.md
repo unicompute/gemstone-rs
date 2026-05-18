@@ -155,6 +155,8 @@ Commands:
 - `GemStone RS: Run py-native Smoke`
 - `GemStone RS: Show py-native Migration Plan`
 - `GemStone RS: Validate py-native Conformance Fixture`
+- `GemStone RS: Validate py-native Handoff Bundle`
+- `GemStone RS: Show py-native Handoff Bundle`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -211,8 +213,11 @@ checkout.
    remaining `gemstone-py-native` shared-core checklist.
 12. Run `GemStone RS: Validate py-native Conformance Fixture` when you want the
    PyO3 module/session/shim surface checked against the Rust core.
-13. Run `GemStone RS: Open Generated Output`.
-14. Run `GemStone RS: Codegen Generate`.
+13. Run `GemStone RS: Validate py-native Handoff Bundle` or `GemStone RS: Show
+   py-native Handoff Bundle` when you want the downstream wrapper manifest and
+   acceptance criteria.
+14. Run `GemStone RS: Open Generated Output`.
+15. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -242,6 +247,10 @@ every adapter step with copyable output. `Show py-native Migration Plan` runs
 Conformance Fixture` runs `gemstone-rs py-native check-conformance --json`
 against `gemstoneRs.pyNativeConformanceFixture`, then renders module function,
 session method, compatibility method, fixture, and scaffold-file counts.
+`Validate py-native Handoff Bundle` runs `gemstone-rs py-native check-handoff
+--json` against `gemstoneRs.pyNativeHandoffFixture`, and `Show py-native
+Handoff Bundle` runs `gemstone-rs py-native handoff --json` to render the
+artifacts, schemas, commands, checks, and downstream acceptance criteria.
 
 Inside `GemStone RS: Open Explorer Webview`, the Codegen buttons use the same
 config/profile settings but keep the review loop in one pane. `Preview/Edit
