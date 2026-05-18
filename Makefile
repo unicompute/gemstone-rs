@@ -29,6 +29,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
+	cargo run -p gemstone-rs-cli -- py-native migration
+	cargo run -p gemstone-rs-cli -- py-native migration --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --json
 	cargo run -p gemstone-rs-cli -- compare gemstone-py --gaps
@@ -66,6 +68,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture
 	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture
+	cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan --dry-run
+	cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker --dry-run
 	cargo run -p gemstone-rs-cli -- examples run session_worker_pool --dry-run
@@ -126,6 +130,7 @@ schema-check:
 	cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
 	cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 	cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
+	cargo run -p gemstone-rs-cli -- py-native migration --json
 	node scripts/validate_codegen_schemas.js
 
 profile-check:

@@ -14,6 +14,7 @@ const schemaNames = [
   "gemstone-rs.py-native.schema.json",
   "gemstone-rs.py-native-samples.schema.json",
   "gemstone-rs.py-native-smoke.schema.json",
+  "gemstone-rs.py-native-migration.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -143,6 +144,16 @@ assert.deepStrictEqual(
   pyNativeSmokeFixture,
   "py-native smoke output drifted from examples/py-native/gemstone-rs.py-native-smoke.json"
 );
+const pyNativeMigrationOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "migration", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+assertPyNativeMigration(JSON.parse(lastJsonLine(pyNativeMigrationOutput)));
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
@@ -367,6 +378,38 @@ function assertPyNativeSmoke(value, options = {}) {
     "structured_error_mapping",
   ]) {
     assert(names.has(required), `py-native-smoke.steps missing ${required}`);
+  }
+}
+
+function assertPyNativeMigration(value) {
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-migration.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-migration.contractVersion");
+  assert.strictEqual(value.targetPackage, "gemstone-py-native", "py-native-migration.targetPackage");
+  assert.strictEqual(typeof value.status, "string", "py-native-migration.status");
+  assert.strictEqual(typeof value.doneCount, "number", "py-native-migration.doneCount");
+  assert.strictEqual(typeof value.pendingCount, "number", "py-native-migration.pendingCount");
+  assert(Array.isArray(value.steps), "py-native-migration.steps");
+  assert(value.steps.length > 0, "py-native-migration.steps should not be empty");
+
+  const ids = new Set();
+  for (const [index, step] of value.steps.entries()) {
+    assert.strictEqual(typeof step.id, "string", `py-native-migration.steps[${index}].id`);
+    assert(!ids.has(step.id), `py-native-migration.steps duplicate ${step.id}`);
+    ids.add(step.id);
+    assert.strictEqual(typeof step.title, "string", `py-native-migration.steps[${index}].title`);
+    assert(["done", "pending"].includes(step.status), `py-native-migration.steps[${index}].status`);
+    assert.strictEqual(typeof step.detail, "string", `py-native-migration.steps[${index}].detail`);
+    assert.strictEqual(typeof step.verify, "string", `py-native-migration.steps[${index}].verify`);
+  }
+
+  for (const required of [
+    "scaffold_pyo3_adapter",
+    "wrap_py_native_session",
+    "preserve_python_api",
+    "live_backend_smoke",
+    "publish_wheels",
+  ]) {
+    assert(ids.has(required), `py-native-migration.steps missing ${required}`);
   }
 }
 

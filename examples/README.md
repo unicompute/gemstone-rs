@@ -48,8 +48,10 @@ gemstone-rs examples run py_native_capabilities --dry-run
 gemstone-rs examples run py_native_contract_fixture --dry-run
 gemstone-rs examples run py_native_samples_fixture --dry-run
 gemstone-rs examples run py_native_smoke_fixture --dry-run
+gemstone-rs examples run py_native_migration_plan --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
+gemstone-rs py-native migration --json
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -119,7 +121,8 @@ sanity check after install.
 | Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | You want to inspect and smoke-test the Rust contract that a future `gemstone-py-native` PyO3 wrapper should expose. |
 | Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | You want stable capability and smoke JSON samples for wrapper CI. |
 | Python native value/error samples | `gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json` | You want concrete value and error payload samples for Python wrapper translation tests. |
-| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
+| Python native migration plan | `gemstone-rs py-native migration --json`; `gemstone-rs examples run py_native_migration_plan --dry-run` | You want the remaining gemstone-py-native shared-core migration steps as a CLI/VS Code friendly report. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |

@@ -450,6 +450,115 @@ pub fn capabilities() -> PyNativeCapabilities {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeMigrationStep {
+    pub id: &'static str,
+    pub title: &'static str,
+    pub status: &'static str,
+    pub detail: &'static str,
+    pub verify: &'static str,
+}
+
+impl PyNativeMigrationStep {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"id":"{}","title":"{}","status":"{}","detail":"{}","verify":"{}"}}"#,
+            json_escape(self.id),
+            json_escape(self.title),
+            json_escape(self.status),
+            json_escape(self.detail),
+            json_escape(self.verify)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeMigrationReport {
+    pub contract_version: u16,
+    pub target_package: &'static str,
+    pub status: &'static str,
+    pub steps: Vec<PyNativeMigrationStep>,
+}
+
+impl PyNativeMigrationReport {
+    pub fn done_count(&self) -> usize {
+        self.steps
+            .iter()
+            .filter(|step| step.status == "done")
+            .count()
+    }
+
+    pub fn pending_count(&self) -> usize {
+        self.steps
+            .iter()
+            .filter(|step| step.status == "pending")
+            .count()
+    }
+
+    pub fn to_json(&self) -> String {
+        let steps = self
+            .steps
+            .iter()
+            .map(PyNativeMigrationStep::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"targetPackage":"{}","status":"{}","doneCount":{},"pendingCount":{},"steps":[{}]}}"#,
+            self.contract_version,
+            json_escape(self.target_package),
+            json_escape(self.status),
+            self.done_count(),
+            self.pending_count(),
+            steps
+        )
+    }
+}
+
+pub fn migration_report() -> PyNativeMigrationReport {
+    PyNativeMigrationReport {
+        contract_version: capabilities().contract_version,
+        target_package: "gemstone-py-native",
+        status: "Rust adapter contract is ready; Python wrapper migration is pending",
+        steps: vec![
+            PyNativeMigrationStep {
+                id: "scaffold_pyo3_adapter",
+                title: "Keep the PyO3 starter scaffold current",
+                status: "done",
+                detail: "gemstone-rs can scaffold and verify a thin PyO3 adapter over gemstone_rs::py_native.",
+                verify: "python3 scripts/check_py_native_pyo3_scaffold.py",
+            },
+            PyNativeMigrationStep {
+                id: "wrap_py_native_session",
+                title: "Wrap PyNativeSession in gemstone-py-native",
+                status: "pending",
+                detail: "Move gemstone-py-native toward PyO3 classes/functions that delegate login, eval, perform, OOP conversion, globals, transactions, and export-set calls to gemstone_rs::py_native.",
+                verify: "gemstone-py native backend checks",
+            },
+            PyNativeMigrationStep {
+                id: "preserve_python_api",
+                title: "Preserve existing Python return behavior",
+                status: "pending",
+                detail: "Keep gemstone-py sync APIs backward-compatible and expose Rust-managed handles behind opt-in/native paths until Python callers intentionally choose them.",
+                verify: "gemstone-py sync and async test suites",
+            },
+            PyNativeMigrationStep {
+                id: "live_backend_smoke",
+                title: "Run live GemStone smoke through the Rust-backed native path",
+                status: "pending",
+                detail: "Validate login/logout, 3 + 4, perform, globals, commit/abort, and lifetime/export-set behavior against a real stone through the Python package.",
+                verify: "GS_RUN_LIVE=1 gemstone-py native/live smoke",
+            },
+            PyNativeMigrationStep {
+                id: "publish_wheels",
+                title: "Publish wheels after the wrapper is green",
+                status: "pending",
+                detail: "Build and publish gemstone-py-native wheels that bundle the PyO3 wrapper while using gemstone-rs as the shared Rust core.",
+                verify: "TestPyPI/PyPI install plus native backend verification",
+            },
+        ],
+    }
+}
+
 pub fn nil_oop() -> u64 {
     Oop::NIL.raw()
 }
@@ -1115,5 +1224,18 @@ mod tests {
         assert!(json.contains(r#""name":"symbol","value":{"kind":"symbol","value":"printString"}"#));
         assert!(json.contains(r#""name":"mapping","error":{"kind":"mapping""#));
         assert!(json.contains(r#""field":"booking.customer.name""#));
+    }
+
+    #[test]
+    fn migration_report_tracks_python_wrapper_work() {
+        let report = migration_report();
+        let json = report.to_json();
+        assert_eq!(report.contract_version, 1);
+        assert_eq!(report.target_package, "gemstone-py-native");
+        assert_eq!(report.done_count(), 1);
+        assert_eq!(report.pending_count(), 4);
+        assert!(json.contains(r#""id":"wrap_py_native_session""#));
+        assert!(json.contains(r#""status":"pending""#));
+        assert!(json.contains("gemstone-py native backend checks"));
     }
 }

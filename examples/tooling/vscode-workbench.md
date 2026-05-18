@@ -77,7 +77,9 @@ From the `Codegen Config` tree:
    checked-in Rust contract fixtures.
 9. Run `Run py-native Smoke` when you want dry-run or live adapter smoke output
    in the VS Code output panel.
-10. Run `Open Codegen Docs`.
+10. Run `Show py-native Migration Plan` when you want the remaining
+    `gemstone-py-native` shared-core checklist in the output panel.
+11. Run `Open Codegen Docs`.
 
 `Generate Wrappers` shows the generated diff before writing if output would
 change.
@@ -91,8 +93,9 @@ save the edited text back to the output path after confirmation.
 The py-native actions call `gemstone-rs py-native check --json`,
 `gemstone-rs py-native check-samples --json`,
 `gemstone-rs py-native check-smoke --json`, and
-`gemstone-rs py-native smoke --json`, so VS Code uses the same adapter contract
-and smoke reports as terminal and CI workflows.
+`gemstone-rs py-native smoke --json`, and
+`gemstone-rs py-native migration --json`, so VS Code uses the same adapter
+contract, smoke, and migration reports as terminal and CI workflows.
 
 ## Explorer Walkthrough
 

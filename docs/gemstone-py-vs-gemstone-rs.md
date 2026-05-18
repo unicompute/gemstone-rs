@@ -187,6 +187,8 @@ Recent shared-core batch status: Rust-side contract added. The new
 plain Rust config, value, error, capability, and session wrappers. The
 installed CLI can now scaffold a starter PyO3 crate with
 `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter`.
+It can also print the machine-readable migration checklist with
+`gemstone-rs py-native migration --json`.
 The remaining work is Python-side wiring and compatibility testing in
 `gemstone-py`.
 
@@ -252,6 +254,9 @@ clean boundary:
 - `gemstone-py-native` can become a thin PyO3 layer over the Rust core.
 - `gemstone-rs examples scaffold py_native_pyo3_adapter` provides the starter
   wrapper shape for that migration.
+- `gemstone-rs py-native migration --json` keeps the remaining wrapper,
+  compatibility, live-smoke, and wheel-publish steps visible to CLI, CI, and
+  VS Code.
 - `gemstone-py` remains the Python API, examples, and Python web integration.
 - The Python and Rust explorers can share concepts and eventually converge on
   common codegen workflows.

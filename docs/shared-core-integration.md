@@ -72,6 +72,8 @@ and the smoke output is covered by
 [`schemas/gemstone-rs.py-native-smoke.schema.json`](../schemas/gemstone-rs.py-native-smoke.schema.json).
 Value/error samples are covered by
 [`schemas/gemstone-rs.py-native-samples.schema.json`](../schemas/gemstone-rs.py-native-samples.schema.json).
+The migration checklist output is covered by
+[`schemas/gemstone-rs.py-native-migration.schema.json`](../schemas/gemstone-rs.py-native-migration.schema.json).
 The VS Code workbench packages these schemas for editor validation. A
 checked-in fixture lives at
 [`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json),
@@ -91,7 +93,14 @@ gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
+gemstone-rs py-native migration
+gemstone-rs py-native migration --json
 ```
+
+`py-native migration --json` is intentionally not a replacement for doing the
+Python-side work. It is the shared Rust-side checklist that CLI, CI, docs, and
+the VS Code workbench can render consistently while `gemstone-py-native` moves
+from its current native path to a thin wrapper around `gemstone_rs::py_native`.
 
 To create a starter PyO3 wrapper crate from the installed CLI:
 

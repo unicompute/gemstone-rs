@@ -410,6 +410,7 @@ gemstone-rs py-native samples --json
 gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 gemstone-rs py-native smoke --dry-run
+gemstone-rs py-native migration --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 ```
@@ -422,6 +423,10 @@ wrapper CI concrete payloads for `nil`, booleans, small integers, characters,
 strings, symbols, OOPs, and structured errors. The smoke command checks
 capabilities, OOP constants, value conversion, config error mapping, and
 structured error mapping without a live stone when `--dry-run` is passed. The
+`py-native migration --json` report turns the remaining shared-core work into
+a concrete checklist for `gemstone-py-native`: wrap `PyNativeSession`, preserve
+the Python API, run live backend smoke, and publish wheels once that path is
+green. The
 PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `smoke_dry_run_json`, and an unsendable `NativeSession` wrapper. The live

@@ -74,6 +74,7 @@ function activate(context) {
   register(context, "gemstoneRs.validatePyNativeSamplesFixture", validatePyNativeSamplesFixture);
   register(context, "gemstoneRs.validatePyNativeSmokeFixture", validatePyNativeSmokeFixture);
   register(context, "gemstoneRs.runPyNativeSmoke", runPyNativeSmoke);
+  register(context, "gemstoneRs.showPyNativeMigrationPlan", showPyNativeMigrationPlan);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
 }
@@ -211,6 +212,7 @@ class GemStoneTreeProvider {
         actionNode("Validate py-native Samples Fixture", "gemstoneRs.validatePyNativeSamplesFixture"),
         actionNode("Validate py-native Smoke Fixture", "gemstoneRs.validatePyNativeSmokeFixture"),
         actionNode("Run py-native Smoke", "gemstoneRs.runPyNativeSmoke"),
+        actionNode("Show py-native Migration Plan", "gemstoneRs.showPyNativeMigrationPlan"),
       ];
     }
 
@@ -1530,6 +1532,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.validatePyNativeSamplesFixture",
     "gemstoneRs.validatePyNativeSmokeFixture",
     "gemstoneRs.runPyNativeSmoke",
+    "gemstoneRs.showPyNativeMigrationPlan",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
   ]);
@@ -1813,6 +1816,28 @@ async function runPyNativeSmoke() {
   }
 }
 
+async function showPyNativeMigrationPlan() {
+  const result = await runCli(["py-native", "migration", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native migration returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeMigrationReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const stepCount = Array.isArray(report.steps) ? report.steps.length : 0;
+  const message = `py-native migration plan: ${report.doneCount ?? 0} done, ${report.pendingCount ?? 0} pending across ${stepCount} steps.`;
+  const action = result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report")
+    : await vscode.window.showErrorMessage(message, "Copy Report");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native migration report.");
+  }
+}
+
 function parseJsonCommandResult(result, errorMessage) {
   try {
     return JSON.parse(result.stdout);
@@ -1896,6 +1921,30 @@ function formatPyNativeSmokeReport(result, report) {
   for (const step of steps) {
     lines.push(`${step.ok ? "ok" : "error"}\t${step.name || "(unnamed)"}`);
     lines.push(`  ${step.detail || ""}`);
+  }
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeMigrationReport(result, report) {
+  const steps = Array.isArray(report.steps) ? report.steps : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native gemstone-py migration",
+    `targetPackage: ${report.targetPackage || "-"}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `status: ${report.status || "-"}`,
+    `progress: ${report.doneCount ?? 0} done, ${report.pendingCount ?? 0} pending`,
+    "",
+  ];
+  for (const step of steps) {
+    lines.push(`${step.status || "unknown"}\t${step.id || "(unnamed)"}`);
+    lines.push(`  ${step.title || ""}`);
+    lines.push(`  ${step.detail || ""}`);
+    lines.push(`  verify: ${step.verify || ""}`);
   }
   if (result.stderr.trim()) {
     lines.push("");
@@ -2079,6 +2128,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.validatePyNativeSamplesFixture">Validate py-native Samples Fixture</button>
       <button data-command="gemstoneRs.validatePyNativeSmokeFixture">Validate py-native Smoke Fixture</button>
       <button data-command="gemstoneRs.runPyNativeSmoke">Run py-native Smoke</button>
+      <button data-command="gemstoneRs.showPyNativeMigrationPlan">Show py-native Migration Plan</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
       <button data-command="gemstoneRs.checkProjectProfiles">Check Project Profiles in VS Code</button>

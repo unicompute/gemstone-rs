@@ -45,6 +45,7 @@ const requiredCommands = [
   "gemstoneRs.validatePyNativeSamplesFixture",
   "gemstoneRs.validatePyNativeSmokeFixture",
   "gemstoneRs.runPyNativeSmoke",
+  "gemstoneRs.showPyNativeMigrationPlan",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
   "gemstoneRs.codegenCheckProfile",
@@ -231,6 +232,14 @@ assert(
   "py-native smoke should render a readable report"
 );
 assert(
+  extensionSource.includes('"py-native", "migration", "--json"'),
+  "py-native migration plan should use JSON output"
+);
+assert(
+  extensionSource.includes("formatPyNativeMigrationReport"),
+  "py-native migration plan should render a readable report"
+);
+assert(
   extensionSource.includes("pyNativeFixture"),
   "Workbench should expose a py-native fixture setting"
 );
@@ -318,6 +327,12 @@ assert(
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-smoke"))
   ),
   "package.json should contribute JSON validation for py-native smoke reports"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-migration"))
+  ),
+  "package.json should contribute JSON validation for py-native migration reports"
 );
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.envFile"],

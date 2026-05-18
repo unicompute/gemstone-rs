@@ -55,6 +55,10 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         }
         Command::PyNativeSmokeCheck { path, format } => run_py_native_smoke_check(&path, format),
         Command::PyNativeSmoke { dry_run, format } => run_py_native_smoke(dry_run, format),
+        Command::PyNativeMigration { format } => {
+            print_py_native_migration(format);
+            Ok(())
+        }
         Command::CompareGemstonePy { view, format } => {
             print_gemstone_py_comparison(view, format);
             Ok(())
@@ -1756,6 +1760,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Validate the checked-in dry-run py-native smoke fixture against the Rust core.",
     },
     ExampleInfo {
+        name: "py_native_migration_plan",
+        title: "py-native migration plan",
+        command: "gemstone-rs py-native migration",
+        category: "native",
+        requires_live: false,
+        description: "Print the shared-core migration checklist for wiring gemstone-py-native to gemstone-rs.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -2792,6 +2804,30 @@ fn print_py_native_smoke_human(report: &py_native::PyNativeSmokeReport) {
 
 fn print_py_native_smoke_json(report: &py_native::PyNativeSmokeReport) {
     println!("{}", report.to_json());
+}
+
+fn print_py_native_migration(format: OutputFormat) {
+    let report = py_native::migration_report();
+    match format {
+        OutputFormat::Json => println!("{}", report.to_json()),
+        OutputFormat::Human => {
+            println!("py-native gemstone-py migration");
+            println!("  target_package: {}", report.target_package);
+            println!("  contract_version: {}", report.contract_version);
+            println!("  status: {}", report.status);
+            println!(
+                "  progress: {} done, {} pending",
+                report.done_count(),
+                report.pending_count()
+            );
+            println!("  steps:");
+            for step in &report.steps {
+                println!("    {} {}: {}", step.status, step.id, step.title);
+                println!("      {}", step.detail);
+                println!("      verify: {}", step.verify);
+            }
+        }
+    }
 }
 
 fn print_gemstone_py_comparison(view: CompareView, format: OutputFormat) {
@@ -3927,6 +3963,7 @@ fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
             "check-smoke",
             "examples/py-native/gemstone-rs.py-native-smoke.json",
         ]),
+        "py_native_migration_plan" => Some(&["py-native", "migration"]),
         _ => None,
     }
 }
@@ -4200,6 +4237,9 @@ enum Command {
     },
     PyNativeSmoke {
         dry_run: bool,
+        format: OutputFormat,
+    },
+    PyNativeMigration {
         format: OutputFormat,
     },
     CompareGemstonePy {
@@ -4571,11 +4611,16 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
             parse_py_native_smoke_check_command(&args[1..])
         }
         Some("smoke") => parse_py_native_smoke_command(&args[1..]),
+        Some("migration" | "plan" | "roadmap" | "checklist") => parse_format_only_command(
+            &args[1..],
+            "py-native migration [--json]",
+            |format| Command::PyNativeMigration { format },
+        ),
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke"
+            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration"
         ))),
     }
 }
@@ -5702,6 +5747,7 @@ fn usage() -> &'static str {
   gemstone-rs py-native check-samples [path] [--json]
   gemstone-rs py-native check-smoke [path] [--json]
   gemstone-rs py-native smoke [--dry-run] [--json]
+  gemstone-rs py-native migration [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -5944,6 +5990,18 @@ mod tests {
             Command::PyNativeSmoke {
                 dry_run: true,
                 format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "migration", "--json"])).unwrap(),
+            Command::PyNativeMigration {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "checklist"])).unwrap(),
+            Command::PyNativeMigration {
+                format: OutputFormat::Human,
             }
         );
         assert_eq!(

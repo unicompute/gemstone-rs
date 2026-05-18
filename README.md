@@ -83,6 +83,7 @@ gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
+gemstone-rs py-native migration --json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -121,7 +122,13 @@ Validate it with:
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
 gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 gemstone-rs py-native smoke --dry-run
+gemstone-rs py-native migration --json
 ```
+
+The migration report tracks the remaining `gemstone-py-native` shared-core
+steps, including wrapping `PyNativeSession`, preserving Python return behavior,
+running live native backend smoke, and publishing wheels after the Python path
+is green.
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
 **1 batch**, roughly **6-10 hours** total. Use

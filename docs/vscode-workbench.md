@@ -153,6 +153,7 @@ Commands:
 - `GemStone RS: Validate py-native Samples Fixture`
 - `GemStone RS: Validate py-native Smoke Fixture`
 - `GemStone RS: Run py-native Smoke`
+- `GemStone RS: Show py-native Migration Plan`
 - `GemStone RS: Compare with gemstone-py`
 - `GemStone RS: Show All Comparison Status`
 
@@ -205,8 +206,10 @@ checkout.
    the checked-in dry-run smoke report for adapter consumers.
 10. Run `GemStone RS: Run py-native Smoke` when you want adapter smoke checks
    from VS Code.
-11. Run `GemStone RS: Open Generated Output`.
-12. Run `GemStone RS: Codegen Generate`.
+11. Run `GemStone RS: Show py-native Migration Plan` when you want the
+   remaining `gemstone-py-native` shared-core checklist.
+12. Run `GemStone RS: Open Generated Output`.
+13. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -230,7 +233,9 @@ value count, and error count. `Validate py-native Smoke Fixture` runs
 `gemstoneRs.pyNativeSmokeFixture`, then renders the same fixture freshness view
 for the dry-run adapter smoke report. `Run py-native Smoke` runs
 `gemstone-rs py-native smoke --json`, prompts for dry-run or live mode, and shows
-every adapter step with copyable output.
+every adapter step with copyable output. `Show py-native Migration Plan` runs
+`gemstone-rs py-native migration --json` and renders the current
+`gemstone-py-native` wrapper migration checklist.
 
 Inside `GemStone RS: Open Explorer Webview`, the Codegen buttons use the same
 config/profile settings but keep the review loop in one pane. `Preview/Edit

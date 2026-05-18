@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native-migration.schema.json",
+  "title": "gemstone-rs py-native Migration Output",
+  "description": "Machine-readable output from gemstone-rs py-native migration --json for tracking gemstone-py-native shared-core migration work.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "targetPackage", "status", "doneCount", "pendingCount", "steps"],
+  "properties": {
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "targetPackage": {
+      "type": "string",
+      "const": "gemstone-py-native"
+    },
+    "status": {
+      "type": "string"
+    },
+    "doneCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pendingCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "status", "detail", "verify"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "scaffold_pyo3_adapter",
+              "wrap_py_native_session",
+              "preserve_python_api",
+              "live_backend_smoke",
+              "publish_wheels"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["done", "pending"]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "verify": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
