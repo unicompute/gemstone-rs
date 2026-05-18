@@ -641,6 +641,13 @@ pub fn compatibility_report() -> PyNativeCompatibilityReport {
                 note: "debug representation helper for diagnostics",
             },
             PyNativeCompatibilityMethod {
+                python_method: "eval_value",
+                native_method: "NativeSession.eval_json",
+                native_return: "str",
+                python_return: "dict",
+                note: "returns the stable PyNativeValue JSON shape as a Python dictionary",
+            },
+            PyNativeCompatibilityMethod {
                 python_method: "eval_smallint",
                 native_method: "NativeSession.eval_smallint",
                 native_return: "int",
@@ -676,11 +683,25 @@ pub fn compatibility_report() -> PyNativeCompatibilityReport {
                 note: "accepts OopHandle or int arguments and returns a handle",
             },
             PyNativeCompatibilityMethod {
+                python_method: "perform_value",
+                native_method: "NativeSession.perform_json",
+                native_return: "str",
+                python_return: "dict",
+                note: "accepts OopHandle or int arguments and returns the stable PyNativeValue JSON shape as a Python dictionary",
+            },
+            PyNativeCompatibilityMethod {
                 python_method: "new_string",
                 native_method: "NativeSession.new_string",
                 native_return: "u64",
                 python_return: "OopHandle",
                 note: "returns the GemStone string object identity as a handle",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "new_symbol",
+                native_method: "NativeSession.new_symbol",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "returns the GemStone symbol object identity as a handle",
             },
             PyNativeCompatibilityMethod {
                 python_method: "fetch_string",
@@ -716,6 +737,55 @@ pub fn compatibility_report() -> PyNativeCompatibilityReport {
                 native_return: "None",
                 python_return: "None",
                 note: "typed helper remains explicit opt-in",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_nil",
+                native_method: "NativeSession.value_to_oop_nil",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for nil",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_bool",
+                native_method: "NativeSession.value_to_oop_bool",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for booleans",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_smallint",
+                native_method: "NativeSession.value_to_oop_smallint",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for small integers",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_char",
+                native_method: "NativeSession.value_to_oop_char",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for single-character strings",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_string",
+                native_method: "NativeSession.value_to_oop_string",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for GemStone strings",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_symbol",
+                native_method: "NativeSession.value_to_oop_symbol",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "explicit typed conversion helper for GemStone symbols",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "value_to_oop_raw",
+                native_method: "NativeSession.value_to_oop_raw",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "preserves raw OOP identity while wrapping it at the Python package boundary",
             },
             PyNativeCompatibilityMethod {
                 python_method: "add_to_export_set",
@@ -784,12 +854,22 @@ pub const PY_NATIVE_SESSION_METHODS: &[&str] = &[
     "login_from_env",
     "session_id",
     "eval_repr",
+    "eval_json",
     "eval_smallint",
     "eval_oop",
     "execute",
     "resolve",
+    "value_to_oop_nil",
+    "value_to_oop_bool",
+    "value_to_oop_smallint",
+    "value_to_oop_char",
+    "value_to_oop_string",
+    "value_to_oop_symbol",
+    "value_to_oop_raw",
     "perform_raw_oop",
+    "perform_json",
     "new_string",
+    "new_symbol",
     "fetch_string",
     "global_get",
     "global_put_raw",
@@ -1819,8 +1899,15 @@ mod tests {
         assert!(report.methods.iter().any(|method| {
             method.python_method == "eval_smallint" && method.python_return == "int"
         }));
+        assert!(report.methods.iter().any(|method| {
+            method.python_method == "eval_value"
+                && method.native_method == "NativeSession.eval_json"
+                && method.python_return == "dict"
+        }));
         assert!(json.contains(r#""pythonMethod":"perform_oop""#));
+        assert!(json.contains(r#""pythonMethod":"perform_value""#));
         assert!(json.contains(r#""nativeMethod":"NativeSession.perform_raw_oop""#));
+        assert!(json.contains(r#""nativeMethod":"NativeSession.value_to_oop_symbol""#));
     }
 
     #[test]
@@ -1832,8 +1919,14 @@ mod tests {
         assert!(report.module_functions.contains(&"compatibility_json"));
         assert!(report.module_functions.contains(&"conformance_json"));
         assert!(report.module_functions.contains(&"handoff_json"));
+        assert!(report.native_session_methods.contains(&"eval_json"));
         assert!(report.native_session_methods.contains(&"perform_raw_oop"));
+        assert!(report.native_session_methods.contains(&"perform_json"));
+        assert!(report
+            .native_session_methods
+            .contains(&"value_to_oop_symbol"));
         assert!(report.compatibility_methods.contains(&"perform_oop"));
+        assert!(report.compatibility_methods.contains(&"perform_value"));
         assert!(report
             .fixtures
             .iter()

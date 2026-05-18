@@ -97,11 +97,14 @@ the dependency-free `gemstone_rs::py_native` contract, including
 `migration_json`, `compatibility_json`, `conformance_json`, and
 `handoff_json`, plus direct
 `NativeSession` methods for
-eval, execute, resolve, perform, globals, export-set retention, and
-transactions. It also
+eval, execute, resolve, value-to-OOP conversion, perform, strings, symbols,
+globals, export-set retention, and transactions. `eval_json` and
+`perform_json` return the stable `PyNativeValue` JSON shape for Python package
+code to decode. It also
 writes `python/gemstone_py_native_compat.py`, which wraps raw native OOP
 returns in `OopHandle` through `NativeCompatibilitySession` so package code can
-preserve existing Python return behavior while typed helpers remain opt-in.
+preserve existing Python return behavior while typed helpers and value
+conversion remain opt-in.
 It uses PyO3 0.28 so the
 generated starter remains compatible with current Python 3.14 interpreters,
 and `maturin` enables the `extension-module` Cargo feature only for Python

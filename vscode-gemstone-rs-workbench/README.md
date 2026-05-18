@@ -129,7 +129,9 @@ each adapter step in the output panel. `Show py-native Migration Plan` runs
 py-native Conformance Fixture` runs `gemstone-rs py-native check-conformance
 --json` against `gemstoneRs.pyNativeConformanceFixture` and verifies the PyO3
 module functions, raw `NativeSession` methods, compatibility shim methods,
-fixture paths, and scaffold files expected from the downstream wrapper.
+fixture paths, and scaffold files expected from the downstream wrapper,
+including value-level methods such as `eval_json`, `perform_json`,
+`new_symbol`, and `value_to_oop_*`.
 `Validate py-native Handoff Bundle` runs `gemstone-rs py-native check-handoff
 --json` against `gemstoneRs.pyNativeHandoffFixture`, and `Show py-native
 Handoff Bundle` renders the downstream `gemstone-py-native` artifact list and

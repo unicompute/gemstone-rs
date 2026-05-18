@@ -885,8 +885,11 @@ The generated PyO3 starter also exposes that report as
 `gemstone_py_native.migration_json()`, so a future Python wrapper can show the
 same checklist from Python CI or release tooling. Its `NativeSession` now
 also exposes the direct Rust adapter operations for eval, execute, resolve,
-perform, globals, export-set retention, commit, and abort, while leaving
-Pythonic return conversion in the Python package layer.
+value-to-OOP conversion, perform, strings, symbols, globals, export-set
+retention, commit, and abort, while leaving Pythonic return conversion in the
+Python package layer. `eval_json` and `perform_json` return the stable
+`PyNativeValue` JSON shape so the Python package can decode values without
+duplicating native classification rules.
 
 The starter now includes that package layer as executable guidance:
 `python/gemstone_py_native_compat.py`. It defines `OopHandle` and
@@ -894,7 +897,9 @@ The starter now includes that package layer as executable guidance:
 module is wrapped before normal Python package code sees it. That keeps the
 Rust/PyO3 boundary simple and still lets `gemstone-py-native` preserve its
 existing Python return behavior by default, with typed helpers kept as explicit
-opt-in calls.
+opt-in calls. Value-returning helpers become Python dictionaries and object
+identity becomes `OopHandle`, which keeps the backward-compatible policy
+visible in code instead of hidden inside the extension module.
 
 There is now a machine-readable compatibility report too:
 `gemstone-rs py-native compatibility --json`. It lists each generated Python

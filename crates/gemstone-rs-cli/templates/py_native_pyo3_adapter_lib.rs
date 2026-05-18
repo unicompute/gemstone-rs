@@ -70,6 +70,15 @@ impl NativeSession {
         })
     }
 
+    fn eval_json(&self, source: &str) -> PyResult<String> {
+        with_session(&self.inner, |session| {
+            session
+                .eval(source)
+                .map(|value| value.to_json())
+                .map_err(py_native_error)
+        })
+    }
+
     fn eval_smallint(&self, source: &str) -> PyResult<i64> {
         with_session(&self.inner, |session| match session.eval(source) {
             Ok(PyNativeValue::SmallInt(value)) => Ok(value),
@@ -98,6 +107,69 @@ impl NativeSession {
         })
     }
 
+    fn value_to_oop_nil(&self) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::Nil)
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_bool(&self, value: bool) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::Bool(value))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_smallint(&self, value: i64) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::SmallInt(value))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_char(&self, value: &str) -> PyResult<u64> {
+        let mut chars = value.chars();
+        let ch = chars
+            .next()
+            .ok_or_else(|| PyValueError::new_err("expected exactly one character"))?;
+        if chars.next().is_some() {
+            return Err(PyValueError::new_err("expected exactly one character"));
+        }
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::Char(ch))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_string(&self, value: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::String(value.to_string()))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_symbol(&self, value: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::Symbol(value.to_string()))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn value_to_oop_raw(&self, value: u64) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .value_to_oop(PyNativeValue::Oop(value))
+                .map_err(py_native_error)
+        })
+    }
+
     fn perform_raw_oop(&self, receiver: u64, selector: &str, args: Vec<u64>) -> PyResult<u64> {
         with_session(&self.inner, |session| {
             session
@@ -106,9 +178,24 @@ impl NativeSession {
         })
     }
 
+    fn perform_json(&self, receiver: u64, selector: &str, args: Vec<u64>) -> PyResult<String> {
+        with_session(&self.inner, |session| {
+            session
+                .perform_raw(receiver, selector, &args)
+                .map(|value| value.to_json())
+                .map_err(py_native_error)
+        })
+    }
+
     fn new_string(&self, value: &str) -> PyResult<u64> {
         with_session(&self.inner, |session| {
             session.new_string(value).map_err(py_native_error)
+        })
+    }
+
+    fn new_symbol(&self, value: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.new_symbol(value).map_err(py_native_error)
         })
     }
 

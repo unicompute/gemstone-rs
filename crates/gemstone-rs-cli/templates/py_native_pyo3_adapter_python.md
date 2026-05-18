@@ -41,17 +41,20 @@ commands, validation commands, and release acceptance checks.
 
 The generated `NativeSession` class exposes a deliberately direct adapter
 surface over the Rust core: `eval_oop`, `execute`, `resolve`,
-`perform_raw_oop`, `new_string`, `fetch_string`, `global_get`,
-`global_put_raw`, `global_put_string`, `global_put_smallint`, export-set
-helpers, transaction status, `commit`, `abort`, and `logout`. Keep Pythonic
-return conversion in the Python package layer above this class.
+`eval_json`, `perform_raw_oop`, `perform_json`, `new_string`, `new_symbol`,
+`fetch_string`, `value_to_oop_*`, `global_get`, `global_put_raw`,
+`global_put_string`, `global_put_smallint`, export-set helpers, transaction
+status, `commit`, `abort`, and `logout`. Keep Pythonic return conversion in
+the Python package layer above this class.
 
 The generated `gemstone_py_native_compat.py` file demonstrates that package
 layer. It wraps raw native object identity in `OopHandle`, exposes
 `NativeCompatibilitySession`, and leaves typed conversions as explicit opt-in
-helpers. This is the pattern to use when wiring the real `gemstone-py-native`
-package to the Rust core without changing existing Python return behavior by
-default.
+helpers. `eval_value()` and `perform_value()` decode the stable Rust
+`PyNativeValue` JSON shape into dictionaries, while OOP-returning calls produce
+`OopHandle`. This is the pattern to use when wiring the real
+`gemstone-py-native` package to the Rust core without changing existing Python
+return behavior by default.
 
 Live smoke with GemStone credentials:
 

@@ -24,7 +24,10 @@ smoke, and publish wheels after the Python native path is green. The
 `gemstone_py_native.migration_json()` and includes
 `python/gemstone_py_native_compat.py`, which demonstrates
 `NativeCompatibilitySession`, `OopHandle`, and the backward-compatible return
-policy that should live above the thin PyO3 module.
+policy that should live above the thin PyO3 module. The generated native
+surface now includes `eval_json`, `perform_json`, `new_symbol`, and explicit
+`value_to_oop_*` helpers; the compatibility shim decodes value JSON into
+Python dictionaries and wraps object identity in `OopHandle`.
 The compatibility fixture is checked in as
 `gemstone-rs.py-native-compat.json`; it maps each generated Python shim method
 to the underlying native method and expected Python return type.

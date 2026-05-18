@@ -45,7 +45,7 @@
           },
           "pythonReturn": {
             "type": "string",
-            "enum": ["NativeCompatibilitySession", "OopHandle", "int", "str", "bool", "None"]
+            "enum": ["NativeCompatibilitySession", "OopHandle", "dict", "int", "str", "bool", "None"]
           },
           "note": {
             "type": "string"

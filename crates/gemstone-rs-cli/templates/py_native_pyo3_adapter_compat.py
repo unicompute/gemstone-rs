@@ -60,6 +60,9 @@ class NativeCompatibilitySession:
     def eval_repr(self, source: str) -> str:
         return self._native.eval_repr(source)
 
+    def eval_value(self, source: str) -> Dict[str, object]:
+        return json.loads(self._native.eval_json(source))
+
     def eval_smallint(self, source: str) -> int:
         return self._native.eval_smallint(source)
 
@@ -82,8 +85,21 @@ class NativeCompatibilitySession:
             self._native.perform_raw_oop(raw_oop(receiver), selector, raw_oops(args))
         )
 
+    def perform_value(
+        self,
+        receiver: OopLike,
+        selector: str,
+        args: Iterable[OopLike] = (),
+    ) -> Dict[str, object]:
+        return json.loads(
+            self._native.perform_json(raw_oop(receiver), selector, raw_oops(args))
+        )
+
     def new_string(self, value: str) -> OopHandle:
         return OopHandle(self._native.new_string(value))
+
+    def new_symbol(self, value: str) -> OopHandle:
+        return OopHandle(self._native.new_symbol(value))
 
     def fetch_string(self, oop: OopLike) -> str:
         return self._native.fetch_string(raw_oop(oop))
@@ -99,6 +115,27 @@ class NativeCompatibilitySession:
 
     def global_put_smallint(self, symbol_name: str, value: int) -> None:
         self._native.global_put_smallint(symbol_name, value)
+
+    def value_to_oop_nil(self) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_nil())
+
+    def value_to_oop_bool(self, value: bool) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_bool(value))
+
+    def value_to_oop_smallint(self, value: int) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_smallint(value))
+
+    def value_to_oop_char(self, value: str) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_char(value))
+
+    def value_to_oop_string(self, value: str) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_string(value))
+
+    def value_to_oop_symbol(self, value: str) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_symbol(value))
+
+    def value_to_oop_raw(self, value: OopLike) -> OopHandle:
+        return OopHandle(self._native.value_to_oop_raw(raw_oop(value)))
 
     def add_to_export_set(self, oop: OopLike) -> None:
         self._native.add_to_export_set(raw_oop(oop))

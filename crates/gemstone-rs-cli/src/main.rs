@@ -7451,7 +7451,11 @@ mod tests {
                 && file.source.contains("compatibility_report().to_json()")
                 && file.source.contains("conformance_report().to_json()")
                 && file.source.contains("handoff_report().to_json()")
+                && file.source.contains("fn eval_json(")
+                && file.source.contains("fn value_to_oop_symbol(")
                 && file.source.contains("fn perform_raw_oop(")
+                && file.source.contains("fn perform_json(")
+                && file.source.contains("fn new_symbol(")
                 && file.source.contains("fn global_put_string(")
                 && file.source.contains("fn commit(")
         }));
@@ -7477,6 +7481,9 @@ mod tests {
             file.path == "python/gemstone_py_native_compat.py"
                 && file.source.contains("class NativeCompatibilitySession")
                 && file.source.contains("class OopHandle")
+                && file.source.contains("def eval_value")
+                && file.source.contains("def perform_value")
+                && file.source.contains("def value_to_oop_symbol")
                 && file.source.contains("def compatibility_report")
         }));
 
@@ -7523,6 +7530,9 @@ mod tests {
         assert!(lib_rs.contains("compatibility_json"));
         assert!(lib_rs.contains("conformance_json"));
         assert!(lib_rs.contains("handoff_json"));
+        assert!(lib_rs.contains("fn eval_json"));
+        assert!(lib_rs.contains("fn value_to_oop_symbol"));
+        assert!(lib_rs.contains("fn perform_json"));
         assert!(lib_rs.contains("#[pyclass(unsendable)]"));
         let compat_py = fs::read_to_string(
             py_native_target
@@ -7532,6 +7542,8 @@ mod tests {
         .unwrap();
         assert!(compat_py.contains("compatibility_json"));
         assert!(compat_py.contains("def raw_oop"));
+        assert!(compat_py.contains("def eval_value"));
+        assert!(compat_py.contains("def perform_value"));
         let _ = fs::remove_dir_all(&py_native_target);
         let _ = fs::remove_dir_all(&target);
     }

@@ -161,7 +161,11 @@ The `py_native_pyo3_adapter` scaffold now also writes
 `python/gemstone_py_native_compat.py`, a Python compatibility shim with
 `NativeCompatibilitySession` and `OopHandle`. That shim shows how the real
 Python package can keep existing return behavior stable while the direct PyO3
-module stays a thin wrapper over the Rust core.
+module stays a thin wrapper over the Rust core. The scaffold now exposes the
+value-level native surface as well: `eval_json`, `perform_json`, `new_symbol`,
+and explicit `value_to_oop_*` helpers are part of the generated
+`NativeSession`, while the compatibility shim turns those into Python
+dictionaries or `OopHandle` values at the package boundary.
 `py-native conformance --json` lists the expected extension module functions,
 raw `NativeSession` methods, compatibility shim methods, checked-in fixtures,
 and generated scaffold files that the real `gemstone-py-native` integration

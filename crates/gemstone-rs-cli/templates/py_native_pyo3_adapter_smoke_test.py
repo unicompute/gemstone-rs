@@ -43,9 +43,12 @@ def test_compatibility_json_tracks_python_shim_work():
     assert report["sessionClass"] == "NativeCompatibilitySession"
     assert report["handleClass"] == "OopHandle"
     methods = {entry["pythonMethod"]: entry for entry in report["methods"]}
+    assert methods["eval_value"]["pythonReturn"] == "dict"
     assert methods["eval_oop"]["pythonReturn"] == "OopHandle"
     assert methods["eval_smallint"]["pythonReturn"] == "int"
     assert methods["perform_oop"]["nativeMethod"] == "NativeSession.perform_raw_oop"
+    assert methods["perform_value"]["nativeMethod"] == "NativeSession.perform_json"
+    assert methods["value_to_oop_symbol"]["pythonReturn"] == "OopHandle"
 
 
 def test_conformance_json_tracks_backend_surface():
@@ -54,8 +57,11 @@ def test_conformance_json_tracks_backend_surface():
     assert "compatibility_json" in report["moduleFunctions"]
     assert "conformance_json" in report["moduleFunctions"]
     assert "handoff_json" in report["moduleFunctions"]
+    assert "eval_json" in report["nativeSessionMethods"]
     assert "perform_raw_oop" in report["nativeSessionMethods"]
+    assert "perform_json" in report["nativeSessionMethods"]
     assert "perform_oop" in report["compatibilityMethods"]
+    assert "perform_value" in report["compatibilityMethods"]
     fixture_paths = {entry["path"] for entry in report["fixtures"]}
     assert "examples/py-native/gemstone-rs.py-native-conformance.json" in fixture_paths
     assert "examples/py-native/gemstone-rs.py-native-handoff.json" in fixture_paths
@@ -76,12 +82,22 @@ def test_native_session_exposes_core_adapter_methods():
         "login_from_env",
         "session_id",
         "eval_repr",
+        "eval_json",
         "eval_smallint",
         "eval_oop",
         "execute",
         "resolve",
+        "value_to_oop_nil",
+        "value_to_oop_bool",
+        "value_to_oop_smallint",
+        "value_to_oop_char",
+        "value_to_oop_string",
+        "value_to_oop_symbol",
+        "value_to_oop_raw",
         "perform_raw_oop",
+        "perform_json",
         "new_string",
+        "new_symbol",
         "fetch_string",
         "global_get",
         "global_put_raw",

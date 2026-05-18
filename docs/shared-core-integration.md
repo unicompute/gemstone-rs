@@ -164,14 +164,18 @@ CI can inspect the adapter contract, compatibility method map, conformance
 target, handoff manifest, and remaining shared-core checklist from the
 generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
-execute, resolve, perform, globals, export-set retention, and transactions
-without adding Pythonic return conversion in the native layer. The generated
+execute, resolve, value-to-OOP conversion, perform, strings, symbols, globals,
+export-set retention, and transactions without adding Pythonic return
+conversion in the native layer. It includes JSON value helpers such as
+`eval_json` and `perform_json` so Python code can translate the stable
+`PyNativeValue` shape without reimplementing Rust value classification. The generated
 compatibility shim demonstrates the package-layer policy: direct object
 identity becomes `OopHandle`, raw native OOPs stay below the package boundary,
-and typed helpers are explicit opt-in methods. The CLI exposes the same method
-map as `py-native compatibility --json`, including every generated Python
-method, the underlying `NativeSession` method, the native return type, and the
-Python return type.
+typed value-to-OOP helpers are explicit opt-in methods, and value-returning
+calls become dictionaries decoded from the Rust JSON contract. The CLI exposes
+the same method map as `py-native compatibility --json`, including every
+generated Python method, the underlying `NativeSession` method, the native
+return type, and the Python return type.
 The generated `conformance_json()` output is the higher-level integration
 target: extension module functions, raw `NativeSession` methods,
 compatibility shim methods, fixture paths, and scaffold files.
