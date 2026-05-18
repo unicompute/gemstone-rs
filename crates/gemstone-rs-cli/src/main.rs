@@ -59,6 +59,13 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             print_py_native_migration(format);
             Ok(())
         }
+        Command::PyNativeCompatibility { format } => {
+            print_py_native_compatibility(format);
+            Ok(())
+        }
+        Command::PyNativeCompatibilityCheck { path, format } => {
+            run_py_native_compatibility_check(&path, format)
+        }
         Command::CompareGemstonePy { view, format } => {
             print_gemstone_py_comparison(view, format);
             Ok(())
@@ -1768,6 +1775,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Print the shared-core migration checklist for wiring gemstone-py-native to gemstone-rs.",
     },
     ExampleInfo {
+        name: "py_native_compatibility_fixture",
+        title: "py-native compatibility fixture",
+        command: "gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json",
+        category: "native",
+        requires_live: false,
+        description: "Validate the checked-in Python compatibility shim contract for gemstone-py-native.",
+    },
+    ExampleInfo {
         name: "oop_values",
         title: "OOP values",
         command: "cargo run -p gemstone-rs --example oop_values",
@@ -2645,6 +2660,10 @@ fn default_py_native_samples_fixture_path() -> PathBuf {
     PathBuf::from("examples/py-native/gemstone-rs.py-native-samples.json")
 }
 
+fn default_py_native_compatibility_fixture_path() -> PathBuf {
+    PathBuf::from("examples/py-native/gemstone-rs.py-native-compat.json")
+}
+
 fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
     let expected = py_native::capabilities().to_json();
     let actual = fs::read_to_string(path)?;
@@ -2726,6 +2745,65 @@ fn run_py_native_samples_check(path: &Path, format: OutputFormat) -> Result<(), 
     } else {
         Err(CliError::CodegenCheck(format!(
             "{} does not match `gemstone-rs py-native samples --json`; regenerate or review the samples contract change",
+            path.display()
+        )))
+    }
+}
+
+fn print_py_native_compatibility(format: OutputFormat) {
+    let report = py_native::compatibility_report();
+    match format {
+        OutputFormat::Json => println!("{}", report.to_json()),
+        OutputFormat::Human => {
+            println!("py-native compatibility API");
+            println!("  contract_version: {}", report.contract_version);
+            println!("  module: {}", report.module);
+            println!("  session_class: {}", report.session_class);
+            println!("  handle_class: {}", report.handle_class);
+            println!("  return_policy: {}", report.return_policy);
+            println!("  methods:");
+            for method in &report.methods {
+                println!(
+                    "    {} -> {}: {} -> {}",
+                    method.python_method,
+                    method.native_method,
+                    method.native_return,
+                    method.python_return
+                );
+            }
+        }
+    }
+}
+
+fn run_py_native_compatibility_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
+    let report = py_native::compatibility_report();
+    let expected = report.to_json();
+    let actual = fs::read_to_string(path)?;
+    let actual = actual.trim_end();
+    let matches = actual == expected;
+
+    match format {
+        OutputFormat::Human => {
+            if matches {
+                println!("py-native compatibility contract ok: {}", path.display());
+            }
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"path":"{}","ok":{},"contractVersion":{},"methodCount":{}}}"#,
+                escape_json(&path.display().to_string()),
+                if matches { "true" } else { "false" },
+                report.contract_version,
+                report.methods.len()
+            );
+        }
+    }
+
+    if matches {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "{} does not match `gemstone-rs py-native compatibility --json`; regenerate or review the compatibility contract change",
             path.display()
         )))
     }
@@ -3968,6 +4046,11 @@ fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
             "examples/py-native/gemstone-rs.py-native-smoke.json",
         ]),
         "py_native_migration_plan" => Some(&["py-native", "migration"]),
+        "py_native_compatibility_fixture" => Some(&[
+            "py-native",
+            "check-compat",
+            "examples/py-native/gemstone-rs.py-native-compat.json",
+        ]),
         _ => None,
     }
 }
@@ -4244,6 +4327,13 @@ enum Command {
         format: OutputFormat,
     },
     PyNativeMigration {
+        format: OutputFormat,
+    },
+    PyNativeCompatibility {
+        format: OutputFormat,
+    },
+    PyNativeCompatibilityCheck {
+        path: PathBuf,
         format: OutputFormat,
     },
     CompareGemstonePy {
@@ -4620,11 +4710,19 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
             "py-native migration [--json]",
             |format| Command::PyNativeMigration { format },
         ),
+        Some("compat" | "compatibility" | "api") => parse_format_only_command(
+            &args[1..],
+            "py-native compatibility [--json]",
+            |format| Command::PyNativeCompatibility { format },
+        ),
+        Some("check-compat" | "compat-check" | "validate-compat") => {
+            parse_py_native_compatibility_check_command(&args[1..])
+        }
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json] | py-native compatibility [--json] | py-native check-compat [path] [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration"
+            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration|compatibility|check-compat"
         ))),
     }
 }
@@ -4683,6 +4781,31 @@ fn parse_py_native_samples_check_command(args: &[String]) -> Result<Command, Cli
     }
     Ok(Command::PyNativeSamplesCheck {
         path: path.unwrap_or_else(default_py_native_samples_fixture_path),
+        format,
+    })
+}
+
+fn parse_py_native_compatibility_check_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut path = None;
+    for value in args {
+        match value.as_str() {
+            "--json" => format = OutputFormat::Json,
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native check-compat option: {option}"
+                )))
+            }
+            _ if path.is_none() => path = Some(PathBuf::from(value)),
+            _ => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native check-compat argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativeCompatibilityCheck {
+        path: path.unwrap_or_else(default_py_native_compatibility_fixture_path),
         format,
     })
 }
@@ -5752,6 +5875,8 @@ fn usage() -> &'static str {
   gemstone-rs py-native check-smoke [path] [--json]
   gemstone-rs py-native smoke [--dry-run] [--json]
   gemstone-rs py-native migration [--json]
+  gemstone-rs py-native compatibility [--json]
+  gemstone-rs py-native check-compat [path] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
   gemstone-rs env sample
@@ -6006,6 +6131,32 @@ mod tests {
             parse_command(&args(&["py-native", "checklist"])).unwrap(),
             Command::PyNativeMigration {
                 format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "compatibility", "--json"])).unwrap(),
+            Command::PyNativeCompatibility {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "check-compat"])).unwrap(),
+            Command::PyNativeCompatibilityCheck {
+                path: default_py_native_compatibility_fixture_path(),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "py-native",
+                "validate-compat",
+                "examples/py-native/gemstone-rs.py-native-compat.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::PyNativeCompatibilityCheck {
+                path: PathBuf::from("examples/py-native/gemstone-rs.py-native-compat.json"),
+                format: OutputFormat::Json,
             }
         );
         assert_eq!(
@@ -6362,6 +6513,22 @@ mod tests {
             example_run_command(py_native_samples, &[]),
             "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json"
         );
+        let py_native_compat = find_example("py-native compatibility fixture").unwrap();
+        assert!(!py_native_compat.requires_live);
+        assert_eq!(
+            example_cli_args(py_native_compat.name),
+            Some(
+                &[
+                    "py-native",
+                    "check-compat",
+                    "examples/py-native/gemstone-rs.py-native-compat.json",
+                ][..]
+            )
+        );
+        assert_eq!(
+            example_run_command(py_native_compat, &[]),
+            "gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json"
+        );
     }
 
     #[test]
@@ -6617,10 +6784,13 @@ mod tests {
         assert!(py_native_toml.contains(r#"extension-module = ["pyo3/extension-module"]"#));
         assert!(py_native_toml.contains(r#"name = "gemstone_py_native""#));
         assert!(py_native.main_rs.contains("migration_json"));
+        assert!(py_native.main_rs.contains("compatibility_json"));
         assert!(py_native.extra_files.iter().any(|file| {
             file.path == "src/lib.rs"
                 && file.source.contains("fn migration_json()")
+                && file.source.contains("fn compatibility_json()")
                 && file.source.contains("migration_report().to_json()")
+                && file.source.contains("compatibility_report().to_json()")
                 && file.source.contains("fn perform_raw_oop(")
                 && file.source.contains("fn global_put_string(")
                 && file.source.contains("fn commit(")
@@ -6684,6 +6854,7 @@ mod tests {
         let lib_rs = fs::read_to_string(py_native_target.join("src").join("lib.rs")).unwrap();
         assert!(lib_rs.contains("PyNativeSession::login_from_env"));
         assert!(lib_rs.contains("samples_json"));
+        assert!(lib_rs.contains("compatibility_json"));
         assert!(lib_rs.contains("#[pyclass(unsendable)]"));
         let compat_py = fs::read_to_string(
             py_native_target
@@ -6691,7 +6862,7 @@ mod tests {
                 .join("gemstone_py_native_compat.py"),
         )
         .unwrap();
-        assert!(compat_py.contains("typed helpers are opt-in"));
+        assert!(compat_py.contains("compatibility_json"));
         assert!(compat_py.contains("def raw_oop"));
         let _ = fs::remove_dir_all(&py_native_target);
         let _ = fs::remove_dir_all(&target);
@@ -7554,6 +7725,23 @@ GEMSTONE=/opt/gemstone # product root
 
         fs::write(&path, r#"{"contractVersion":999,"values":[],"errors":[]}"#).unwrap();
         let err = run_py_native_samples_check(&path, OutputFormat::Human)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("does not match"));
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn py_native_compatibility_check_detects_contract_drift() {
+        let path = std::env::temp_dir().join(format!(
+            "gemstone-rs-py-native-compat-check-{}.json",
+            std::process::id()
+        ));
+        fs::write(&path, py_native::compatibility_report().to_json()).unwrap();
+        run_py_native_compatibility_check(&path, OutputFormat::Human).unwrap();
+
+        fs::write(&path, r#"{"contractVersion":999,"methods":[]}"#).unwrap();
+        let err = run_py_native_compatibility_check(&path, OutputFormat::Human)
             .unwrap_err()
             .to_string();
         assert!(err.contains("does not match"));

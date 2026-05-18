@@ -863,6 +863,7 @@ The live smoke example is intentionally small:
 ```bash
 cargo run -p gemstone-rs-cli -- py-native samples --json
 cargo run -p gemstone-rs-cli -- py-native migration --json
+cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
 ```
@@ -891,6 +892,13 @@ module is wrapped before normal Python package code sees it. That keeps the
 Rust/PyO3 boundary simple and still lets `gemstone-py-native` preserve its
 existing Python return behavior by default, with typed helpers kept as explicit
 opt-in calls.
+
+There is now a machine-readable compatibility report too:
+`gemstone-rs py-native compatibility --json`. It lists each generated Python
+shim method, the underlying `NativeSession` method, the native return type, and
+the Python return type. That turns a vague "keep Python compatible" requirement
+into a fixture-backed checklist that wrapper CI can diff before the real
+`gemstone-py-native` package is changed.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python

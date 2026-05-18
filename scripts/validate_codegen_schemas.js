@@ -15,6 +15,7 @@ const schemaNames = [
   "gemstone-rs.py-native-samples.schema.json",
   "gemstone-rs.py-native-smoke.schema.json",
   "gemstone-rs.py-native-migration.schema.json",
+  "gemstone-rs.py-native-compat.schema.json",
 ];
 
 function readJson(relativePath) {
@@ -154,6 +155,24 @@ const pyNativeMigrationOutput = childProcess.execFileSync(
   }
 );
 assertPyNativeMigration(JSON.parse(lastJsonLine(pyNativeMigrationOutput)));
+const pyNativeCompatibilityFixture = readJson("examples/py-native/gemstone-rs.py-native-compat.json");
+assertPyNativeCompatibility(pyNativeCompatibilityFixture);
+const pyNativeCompatibilityOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "compatibility", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativeCompatibility = JSON.parse(lastJsonLine(pyNativeCompatibilityOutput));
+assertPyNativeCompatibility(pyNativeCompatibility);
+assert.deepStrictEqual(
+  pyNativeCompatibility,
+  pyNativeCompatibilityFixture,
+  "py-native compatibility output drifted from examples/py-native/gemstone-rs.py-native-compat.json"
+);
 
 for (const args of [
   ["compare", "gemstone-py", "--json"],
@@ -410,6 +429,48 @@ function assertPyNativeMigration(value) {
     "publish_wheels",
   ]) {
     assert(ids.has(required), `py-native-migration.steps missing ${required}`);
+  }
+}
+
+function assertPyNativeCompatibility(value) {
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-compat.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-compat.contractVersion");
+  assert.strictEqual(value.module, "gemstone_py_native_compat", "py-native-compat.module");
+  assert.strictEqual(
+    value.sessionClass,
+    "NativeCompatibilitySession",
+    "py-native-compat.sessionClass"
+  );
+  assert.strictEqual(value.handleClass, "OopHandle", "py-native-compat.handleClass");
+  assert.strictEqual(typeof value.returnPolicy, "string", "py-native-compat.returnPolicy");
+  assert(value.returnPolicy.includes("typed helpers are opt-in"), "py-native-compat.returnPolicy");
+  assert(Array.isArray(value.methods), "py-native-compat.methods");
+  assert(value.methods.length > 0, "py-native-compat.methods should not be empty");
+
+  const names = new Set();
+  for (const [index, method] of value.methods.entries()) {
+    assert.strictEqual(typeof method.pythonMethod, "string", `py-native-compat.methods[${index}].pythonMethod`);
+    assert(!names.has(method.pythonMethod), `py-native-compat duplicate ${method.pythonMethod}`);
+    names.add(method.pythonMethod);
+    assert.strictEqual(typeof method.nativeMethod, "string", `py-native-compat.methods[${index}].nativeMethod`);
+    assert.strictEqual(typeof method.nativeReturn, "string", `py-native-compat.methods[${index}].nativeReturn`);
+    assert.strictEqual(typeof method.pythonReturn, "string", `py-native-compat.methods[${index}].pythonReturn`);
+    assert.strictEqual(typeof method.note, "string", `py-native-compat.methods[${index}].note`);
+  }
+
+  for (const required of [
+    "login_from_env",
+    "eval_oop",
+    "eval_smallint",
+    "perform_oop",
+    "global_get",
+    "global_put_oop",
+    "add_to_export_set",
+    "commit",
+    "abort",
+    "logout",
+  ]) {
+    assert(names.has(required), `py-native-compat.methods missing ${required}`);
   }
 }
 

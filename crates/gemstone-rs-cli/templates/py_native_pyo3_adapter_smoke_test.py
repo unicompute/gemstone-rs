@@ -37,6 +37,17 @@ def test_migration_json_tracks_python_wrapper_work():
     assert "preserve_python_api" in step_ids
 
 
+def test_compatibility_json_tracks_python_shim_work():
+    report = json.loads(gemstone_py_native.compatibility_json())
+    assert report["module"] == "gemstone_py_native_compat"
+    assert report["sessionClass"] == "NativeCompatibilitySession"
+    assert report["handleClass"] == "OopHandle"
+    methods = {entry["pythonMethod"]: entry for entry in report["methods"]}
+    assert methods["eval_oop"]["pythonReturn"] == "OopHandle"
+    assert methods["eval_smallint"]["pythonReturn"] == "int"
+    assert methods["perform_oop"]["nativeMethod"] == "NativeSession.perform_raw_oop"
+
+
 def test_native_session_exposes_core_adapter_methods():
     expected = {
         "login_from_env",
@@ -67,10 +78,9 @@ def test_native_session_exposes_core_adapter_methods():
 
 def test_compatibility_report_documents_return_policy():
     report = gemstone_py_native_compat.compatibility_report()
-    assert report["targetPackage"] == "gemstone-py-native"
-    assert report["compatLayer"]["module"] == "gemstone_py_native_compat"
-    assert report["compatLayer"]["oopHandle"] == "OopHandle"
-    assert "typed helpers are opt-in" in report["compatLayer"]["returnPolicy"]
+    assert report["module"] == "gemstone_py_native_compat"
+    assert report["handleClass"] == "OopHandle"
+    assert "typed helpers are opt-in" in report["returnPolicy"]
 
 
 def test_oop_handle_wraps_raw_oop_values():

@@ -84,6 +84,8 @@ gemstone-rs py-native samples --json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
 gemstone-rs py-native migration --json
+gemstone-rs py-native compatibility --json
+gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 gemstone-rs env sample
 gemstone-rs env write
 gemstone-rs examples list
@@ -93,6 +95,7 @@ gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples run python_native_adapter --dry-run
+gemstone-rs examples run py_native_compatibility_fixture --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -115,8 +118,11 @@ The py-native JSON fixture is checked in at
 `examples/py-native/gemstone-rs.py-native.json`, the value/error sample fixture
 is checked in at `examples/py-native/gemstone-rs.py-native-samples.json`, and
 the dry-run smoke fixture is checked in at
-`examples/py-native/gemstone-rs.py-native-smoke.json`, for downstream wrapper
-CI.
+`examples/py-native/gemstone-rs.py-native-smoke.json`. The compatibility shim
+fixture is checked in at
+`examples/py-native/gemstone-rs.py-native-compat.json`. Together these files
+give downstream wrapper CI a stable Rust contract, payload samples, dry-run
+smoke report, and Python package-layer return policy.
 Validate it with:
 
 ```bash
@@ -124,6 +130,7 @@ gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
 gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native migration --json
+gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 ```
 
 The migration report tracks the remaining `gemstone-py-native` shared-core

@@ -439,6 +439,13 @@
           "*.gemstone-rs.py-native-migration.json"
         ],
         "url": "./schemas/gemstone-rs.py-native-migration.schema.json"
+      },
+      {
+        "fileMatch": [
+          "gemstone-rs.py-native-compat.json",
+          "*.gemstone-rs.py-native-compat.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-compat.schema.json"
       }
     ],
     "configuration": {

@@ -131,6 +131,7 @@ schema-check:
 	cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 	cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 	cargo run -p gemstone-rs-cli -- py-native migration --json
+	cargo run -p gemstone-rs-cli -- py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 	node scripts/validate_codegen_schemas.js
 
 profile-check:

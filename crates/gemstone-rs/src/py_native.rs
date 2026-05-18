@@ -559,6 +559,217 @@ pub fn migration_report() -> PyNativeMigrationReport {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeCompatibilityMethod {
+    pub python_method: &'static str,
+    pub native_method: &'static str,
+    pub native_return: &'static str,
+    pub python_return: &'static str,
+    pub note: &'static str,
+}
+
+impl PyNativeCompatibilityMethod {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"pythonMethod":"{}","nativeMethod":"{}","nativeReturn":"{}","pythonReturn":"{}","note":"{}"}}"#,
+            json_escape(self.python_method),
+            json_escape(self.native_method),
+            json_escape(self.native_return),
+            json_escape(self.python_return),
+            json_escape(self.note)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeCompatibilityReport {
+    pub contract_version: u16,
+    pub module: &'static str,
+    pub session_class: &'static str,
+    pub handle_class: &'static str,
+    pub return_policy: &'static str,
+    pub methods: Vec<PyNativeCompatibilityMethod>,
+}
+
+impl PyNativeCompatibilityReport {
+    pub fn to_json(&self) -> String {
+        let methods = self
+            .methods
+            .iter()
+            .map(PyNativeCompatibilityMethod::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"module":"{}","sessionClass":"{}","handleClass":"{}","returnPolicy":"{}","methods":[{}]}}"#,
+            self.contract_version,
+            json_escape(self.module),
+            json_escape(self.session_class),
+            json_escape(self.handle_class),
+            json_escape(self.return_policy),
+            methods
+        )
+    }
+}
+
+pub fn compatibility_report() -> PyNativeCompatibilityReport {
+    PyNativeCompatibilityReport {
+        contract_version: capabilities().contract_version,
+        module: "gemstone_py_native_compat",
+        session_class: "NativeCompatibilitySession",
+        handle_class: "OopHandle",
+        return_policy: "object identity returns OopHandle, raw native OOPs stay below the package boundary, and typed helpers are opt-in",
+        methods: vec![
+            PyNativeCompatibilityMethod {
+                python_method: "login_from_env",
+                native_method: "NativeSession.login_from_env",
+                native_return: "NativeSession",
+                python_return: "NativeCompatibilitySession",
+                note: "constructs the package-level compatibility wrapper",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "session_id",
+                native_method: "NativeSession.session_id",
+                native_return: "int",
+                python_return: "int",
+                note: "passes the native session id through unchanged",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "eval_repr",
+                native_method: "NativeSession.eval_repr",
+                native_return: "str",
+                python_return: "str",
+                note: "debug representation helper for diagnostics",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "eval_smallint",
+                native_method: "NativeSession.eval_smallint",
+                native_return: "int",
+                python_return: "int",
+                note: "typed helper remains explicit opt-in",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "eval_oop",
+                native_method: "NativeSession.eval_oop",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "wraps raw object identity before package callers see it",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "execute",
+                native_method: "NativeSession.execute",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "wraps raw object identity before package callers see it",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "resolve",
+                native_method: "NativeSession.resolve",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "wraps resolved globals/classes as handles",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "perform_oop",
+                native_method: "NativeSession.perform_raw_oop",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "accepts OopHandle or int arguments and returns a handle",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "new_string",
+                native_method: "NativeSession.new_string",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "returns the GemStone string object identity as a handle",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "fetch_string",
+                native_method: "NativeSession.fetch_string",
+                native_return: "str",
+                python_return: "str",
+                note: "accepts OopHandle or int and returns a Python string",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "global_get",
+                native_method: "NativeSession.global_get",
+                native_return: "u64",
+                python_return: "OopHandle",
+                note: "wraps UserGlobals values as handles",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "global_put_oop",
+                native_method: "NativeSession.global_put_raw",
+                native_return: "None",
+                python_return: "None",
+                note: "accepts OopHandle or int and writes the raw OOP below the package boundary",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "global_put_string",
+                native_method: "NativeSession.global_put_string",
+                native_return: "None",
+                python_return: "None",
+                note: "typed helper remains explicit opt-in",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "global_put_smallint",
+                native_method: "NativeSession.global_put_smallint",
+                native_return: "None",
+                python_return: "None",
+                note: "typed helper remains explicit opt-in",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "add_to_export_set",
+                native_method: "NativeSession.add_to_export_set",
+                native_return: "None",
+                python_return: "None",
+                note: "accepts OopHandle or int for lifetime retention",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "remove_from_export_set",
+                native_method: "NativeSession.remove_from_export_set",
+                native_return: "None",
+                python_return: "None",
+                note: "accepts OopHandle or int for lifetime release",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "needs_commit",
+                native_method: "NativeSession.needs_commit",
+                native_return: "bool",
+                python_return: "bool",
+                note: "passes transaction state through unchanged",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "in_transaction",
+                native_method: "NativeSession.in_transaction",
+                native_return: "bool",
+                python_return: "bool",
+                note: "passes transaction state through unchanged",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "commit",
+                native_method: "NativeSession.commit",
+                native_return: "None",
+                python_return: "None",
+                note: "commits through the shared Rust core",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "abort",
+                native_method: "NativeSession.abort",
+                native_return: "None",
+                python_return: "None",
+                note: "aborts through the shared Rust core",
+            },
+            PyNativeCompatibilityMethod {
+                python_method: "logout",
+                native_method: "NativeSession.logout",
+                native_return: "None",
+                python_return: "None",
+                note: "logs out through the shared Rust core",
+            },
+        ],
+    }
+}
+
 pub fn nil_oop() -> u64 {
     Oop::NIL.raw()
 }
@@ -1237,5 +1448,26 @@ mod tests {
         assert!(json.contains(r#""id":"wrap_py_native_session""#));
         assert!(json.contains(r#""status":"pending""#));
         assert!(json.contains("gemstone-py native backend checks"));
+    }
+
+    #[test]
+    fn compatibility_report_documents_python_return_policy() {
+        let report = compatibility_report();
+        let json = report.to_json();
+        assert_eq!(report.contract_version, 1);
+        assert_eq!(report.module, "gemstone_py_native_compat");
+        assert_eq!(report.session_class, "NativeCompatibilitySession");
+        assert_eq!(report.handle_class, "OopHandle");
+        assert!(report.return_policy.contains("typed helpers are opt-in"));
+        assert!(report.methods.iter().any(|method| {
+            method.python_method == "eval_oop"
+                && method.native_method == "NativeSession.eval_oop"
+                && method.python_return == "OopHandle"
+        }));
+        assert!(report.methods.iter().any(|method| {
+            method.python_method == "eval_smallint" && method.python_return == "int"
+        }));
+        assert!(json.contains(r#""pythonMethod":"perform_oop""#));
+        assert!(json.contains(r#""nativeMethod":"NativeSession.perform_raw_oop""#));
     }
 }

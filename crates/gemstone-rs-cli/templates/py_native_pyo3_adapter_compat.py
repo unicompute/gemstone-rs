@@ -123,16 +123,6 @@ class NativeCompatibilitySession:
 
 
 def compatibility_report() -> Dict[str, object]:
-    """Return the Rust migration report plus Python return-policy notes."""
+    """Return the Rust compatibility report for the generated Python shim."""
 
-    report = json.loads(gemstone_py_native.migration_json())
-    report["compatLayer"] = {
-        "module": "gemstone_py_native_compat",
-        "session": "NativeCompatibilitySession",
-        "oopHandle": "OopHandle",
-        "returnPolicy": (
-            "object identity returns OopHandle, raw native OOPs stay below the "
-            "package boundary, and typed helpers are opt-in"
-        ),
-    }
-    return report
+    return json.loads(gemstone_py_native.compatibility_json())

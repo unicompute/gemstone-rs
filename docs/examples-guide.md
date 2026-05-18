@@ -56,9 +56,11 @@ gemstone-rs examples run py_native_contract_fixture --dry-run
 gemstone-rs examples run py_native_samples_fixture --dry-run
 gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs examples run py_native_migration_plan --dry-run
+gemstone-rs examples run py_native_compatibility_fixture --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
 gemstone-rs py-native migration --json
+gemstone-rs py-native compatibility --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
 gemstone-rs examples scaffold profile_codegen_workflow ./gemstone-rs-profile-codegen
@@ -85,8 +87,9 @@ dynamic nested BridgeRoot read-back and `python_native_adapter` for the future
 writes a `pyproject.toml`, PyO3 `src/lib.rs`, and Python smoke tests that wrap
 the dependency-free `gemstone_rs::py_native` contract, including
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, and
-`migration_json`, plus direct `NativeSession` methods for eval, execute,
-resolve, perform, globals, export-set retention, and transactions. It also
+`migration_json`, `compatibility_json`, plus direct `NativeSession` methods for
+eval, execute, resolve, perform, globals, export-set retention, and
+transactions. It also
 writes `python/gemstone_py_native_compat.py`, which wraps raw native OOP
 returns in `OopHandle` through `NativeCompatibilitySession` so package code can
 preserve existing Python return behavior while typed helpers remain opt-in.
@@ -113,6 +116,11 @@ integers, characters, strings, symbols, OOPs, and structured errors. The
 `gemstone-py-native` work: wrapping `PyNativeSession`, preserving existing
 Python return behavior, running the live backend smoke, and publishing wheels
 once the Python native path is green.
+`py-native compatibility --json` and the checked-in
+`examples/py-native/gemstone-rs.py-native-compat.json` fixture document the
+generated compatibility shim: `NativeCompatibilitySession`, `OopHandle`, and
+the method-by-method mapping from Python-facing calls to raw native adapter
+calls.
 
 Aliases include `bridge`, `mapping`, `derive`, `codegen`, `discover`,
 `profiles`, `wrapper`, `framework`, `axum`, `actix`, and `http`.

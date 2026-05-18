@@ -74,6 +74,8 @@ Value/error samples are covered by
 [`schemas/gemstone-rs.py-native-samples.schema.json`](../schemas/gemstone-rs.py-native-samples.schema.json).
 The migration checklist output is covered by
 [`schemas/gemstone-rs.py-native-migration.schema.json`](../schemas/gemstone-rs.py-native-migration.schema.json).
+The Python compatibility shim output is covered by
+[`schemas/gemstone-rs.py-native-compat.schema.json`](../schemas/gemstone-rs.py-native-compat.schema.json).
 The VS Code workbench packages these schemas for editor validation. A
 checked-in fixture lives at
 [`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json),
@@ -81,6 +83,8 @@ the value/error sample fixture lives at
 [`examples/py-native/gemstone-rs.py-native-samples.json`](../examples/py-native/gemstone-rs.py-native-samples.json),
 and the dry-run smoke fixture lives at
 [`examples/py-native/gemstone-rs.py-native-smoke.json`](../examples/py-native/gemstone-rs.py-native-smoke.json),
+with the compatibility fixture at
+[`examples/py-native/gemstone-rs.py-native-compat.json`](../examples/py-native/gemstone-rs.py-native-compat.json),
 so downstream wrapper CI can diff the contract without requiring a live stone.
 Use the CLI check in CI:
 
@@ -95,6 +99,9 @@ gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
 gemstone-rs py-native migration
 gemstone-rs py-native migration --json
+gemstone-rs py-native compatibility
+gemstone-rs py-native compatibility --json
+gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 ```
 
 `py-native migration --json` is intentionally not a replacement for doing the
@@ -113,7 +120,8 @@ source .venv/bin/activate
 python -m pip install maturin pytest
 maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.migration_json())'
-python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["compatLayer"])'
+python -c 'import gemstone_py_native; print(gemstone_py_native.compatibility_json())'
+python -c 'import gemstone_py_native_compat; print(gemstone_py_native_compat.compatibility_report()["returnPolicy"])'
 pytest
 ```
 
@@ -124,17 +132,22 @@ into `gemstone_rs::py_native`. The generated crate currently uses PyO3 0.28
 for Python 3.14 compatibility and keeps PyO3's
 `extension-module` flag behind a Cargo feature so `cargo run` works while
 `maturin develop` still builds a proper Python extension. It exposes
-`capabilities_json`, `samples_json`, `smoke_dry_run_json`, and
-`migration_json`, so Python wrapper CI can inspect both the adapter contract
-and the remaining shared-core checklist from the generated module. The
+`capabilities_json`, `samples_json`, `smoke_dry_run_json`, `migration_json`,
+and `compatibility_json`, so Python wrapper CI can inspect the adapter
+contract, compatibility method map, and remaining shared-core checklist from
+the generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
 execute, resolve, perform, globals, export-set retention, and transactions
 without adding Pythonic return conversion in the native layer. The generated
 compatibility shim demonstrates the package-layer policy: direct object
 identity becomes `OopHandle`, raw native OOPs stay below the package boundary,
-and typed helpers are explicit opt-in methods. From a gemstone-rs source
-checkout, verify that the embedded scaffold still compiles against the
-local Rust core with:
+and typed helpers are explicit opt-in methods. The CLI exposes the same method
+map as `py-native compatibility --json`, including every generated Python
+method, the underlying `NativeSession` method, the native return type, and the
+Python return type.
+
+From a gemstone-rs source checkout, verify that the embedded scaffold still
+compiles against the local Rust core with:
 
 ```bash
 python3 scripts/check_py_native_pyo3_scaffold.py

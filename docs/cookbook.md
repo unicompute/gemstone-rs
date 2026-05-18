@@ -411,6 +411,8 @@ gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-sam
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native migration --json
+gemstone-rs py-native compatibility --json
+gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter
 ```
@@ -426,12 +428,15 @@ structured error mapping without a live stone when `--dry-run` is passed. The
 `py-native migration --json` report turns the remaining shared-core work into
 a concrete checklist for `gemstone-py-native`: wrap `PyNativeSession`, preserve
 the Python API, run live backend smoke, and publish wheels once that path is
-green. The
+green. `py-native compatibility --json` adds a method-by-method map for the
+generated Python shim, including `OopHandle` return points and typed helper
+methods. The
 PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
-`samples_json`, `smoke_dry_run_json`, `migration_json`, and an unsendable
-`NativeSession` wrapper over eval, execute, resolve, perform, globals,
-export-set retention, and transactions. It also writes
+`samples_json`, `smoke_dry_run_json`, `migration_json`,
+`compatibility_json`, and an unsendable `NativeSession` wrapper over eval,
+execute, resolve, perform, globals, export-set retention, and transactions. It
+also writes
 `python/gemstone_py_native_compat.py`, a Python package-layer shim with
 `NativeCompatibilitySession`, `OopHandle`, and a `compatibility_report()` that
 documents the return policy: object identity returns handles, raw native OOPs

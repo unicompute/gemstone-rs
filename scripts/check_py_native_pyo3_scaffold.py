@@ -135,8 +135,11 @@ def main() -> int:
         "samples_json:",
         "smoke_json:",
         "migration_json:",
+        "compatibility_json:",
         '"targetPackage":"gemstone-py-native"',
         '"id":"wrap_py_native_session"',
+        '"module":"gemstone_py_native_compat"',
+        '"pythonMethod":"eval_oop"',
     ]:
         if needle not in run_result.stdout:
             raise RuntimeError(f"scaffold cargo run output missing {needle!r}")
@@ -148,6 +151,7 @@ def main() -> int:
         "fn global_put_string(",
         "fn commit(",
         "fn abort(",
+        "fn compatibility_json()",
     ]:
         if method not in lib_source:
             raise RuntimeError(f"scaffold src/lib.rs missing {method!r}")
@@ -160,7 +164,7 @@ def main() -> int:
         "class NativeCompatibilitySession",
         "class OopHandle",
         "def compatibility_report",
-        "typed helpers are opt-in",
+        "compatibility_json",
         "def raw_oop",
     ]:
         if needle not in compat_source:
