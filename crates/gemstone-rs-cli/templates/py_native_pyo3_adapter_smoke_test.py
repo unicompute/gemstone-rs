@@ -34,3 +34,31 @@ def test_migration_json_tracks_python_wrapper_work():
     step_ids = {entry["id"] for entry in report["steps"]}
     assert "wrap_py_native_session" in step_ids
     assert "preserve_python_api" in step_ids
+
+
+def test_native_session_exposes_core_adapter_methods():
+    expected = {
+        "login_from_env",
+        "session_id",
+        "eval_repr",
+        "eval_smallint",
+        "eval_oop",
+        "execute",
+        "resolve",
+        "perform_raw_oop",
+        "new_string",
+        "fetch_string",
+        "global_get",
+        "global_put_raw",
+        "global_put_string",
+        "global_put_smallint",
+        "add_to_export_set",
+        "remove_from_export_set",
+        "needs_commit",
+        "in_transaction",
+        "commit",
+        "abort",
+        "logout",
+    }
+    missing = {name for name in expected if not hasattr(gemstone_py_native.NativeSession, name)}
+    assert missing == set()

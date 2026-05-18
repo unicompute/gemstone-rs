@@ -879,7 +879,10 @@ and publish wheels only after that path is green.
 
 The generated PyO3 starter also exposes that report as
 `gemstone_py_native.migration_json()`, so a future Python wrapper can show the
-same checklist from Python CI or release tooling.
+same checklist from Python CI or release tooling. Its `NativeSession` now
+also exposes the direct Rust adapter operations for eval, execute, resolve,
+perform, globals, export-set retention, commit, and abort, while leaving
+Pythonic return conversion in the Python package layer.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python

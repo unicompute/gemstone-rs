@@ -25,6 +25,13 @@ pytest
 release notes because it names the remaining steps for making
 `gemstone-py-native` a thin PyO3 wrapper over `gemstone_rs::py_native`.
 
+The generated `NativeSession` class exposes a deliberately direct adapter
+surface over the Rust core: `eval_oop`, `execute`, `resolve`,
+`perform_raw_oop`, `new_string`, `fetch_string`, `global_get`,
+`global_put_raw`, `global_put_string`, `global_put_smallint`, export-set
+helpers, transaction status, `commit`, `abort`, and `logout`. Keep Pythonic
+return conversion in the Python package layer above this class.
+
 Live smoke with GemStone credentials:
 
 ```bash

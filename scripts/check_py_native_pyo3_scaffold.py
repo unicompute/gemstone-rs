@@ -128,6 +128,7 @@ def main() -> int:
 
     run(cargo_check, cwd=repo_root, retry_offline=not args.offline)
     run_result = run(cargo_run, cwd=repo_root, retry_offline=not args.offline)
+    lib_source = (target / "src" / "lib.rs").read_text()
     for needle in [
         "samples_json:",
         "smoke_json:",
@@ -137,6 +138,17 @@ def main() -> int:
     ]:
         if needle not in run_result.stdout:
             raise RuntimeError(f"scaffold cargo run output missing {needle!r}")
+    for method in [
+        "fn eval_oop(",
+        "fn execute(",
+        "fn resolve(",
+        "fn perform_raw_oop(",
+        "fn global_put_string(",
+        "fn commit(",
+        "fn abort(",
+    ]:
+        if method not in lib_source:
+            raise RuntimeError(f"scaffold src/lib.rs missing {method!r}")
     print(f"verified PyO3 scaffold at {target}")
     return 0
 

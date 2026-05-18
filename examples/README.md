@@ -78,7 +78,9 @@ Some scaffolds write supporting project files as well as Rust source;
 `gemstone-rs.codegen-profiles.json`, while `py_native_pyo3_adapter` includes a
 `pyproject.toml`, `src/lib.rs`, and Python smoke tests for a thin PyO3 wrapper.
 That scaffold exposes `capabilities_json`, `samples_json`,
-`smoke_dry_run_json`, and `migration_json` from `gemstone_rs::py_native`.
+`smoke_dry_run_json`, `migration_json`, and direct `NativeSession` methods for
+eval, execute, resolve, perform, globals, export-set retention, and
+transactions.
 The PyO3 scaffold uses PyO3 0.28 for Python 3.14 compatibility. Source
 checkouts can prove the generated starter still compiles against the local
 Rust core with `python3 scripts/check_py_native_pyo3_scaffold.py`. The

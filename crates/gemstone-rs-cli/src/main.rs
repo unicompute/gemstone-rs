@@ -6617,12 +6617,18 @@ mod tests {
             file.path == "src/lib.rs"
                 && file.source.contains("fn migration_json()")
                 && file.source.contains("migration_report().to_json()")
+                && file.source.contains("fn perform_raw_oop(")
+                && file.source.contains("fn global_put_string(")
+                && file.source.contains("fn commit(")
         }));
         assert!(py_native.extra_files.iter().any(|file| {
             file.path == "tests/test_smoke.py"
                 && file
                     .source
                     .contains("test_migration_json_tracks_python_wrapper_work")
+                && file
+                    .source
+                    .contains("test_native_session_exposes_core_adapter_methods")
         }));
 
         let err = scaffold_example_project(template, &target, false)

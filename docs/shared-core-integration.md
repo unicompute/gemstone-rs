@@ -124,7 +124,10 @@ uses PyO3 0.28 for Python 3.14 compatibility and keeps PyO3's
 `maturin develop` still builds a proper Python extension. It exposes
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, and
 `migration_json`, so Python wrapper CI can inspect both the adapter contract
-and the remaining shared-core checklist from the generated module. From a gemstone-rs
+and the remaining shared-core checklist from the generated module. The
+generated `NativeSession` also maps the Rust session operations for eval,
+execute, resolve, perform, globals, export-set retention, and transactions
+without adding Pythonic return conversion in the native layer. From a gemstone-rs
 source checkout, verify that the embedded scaffold still compiles against the
 local Rust core with:
 

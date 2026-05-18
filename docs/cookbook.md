@@ -430,7 +430,8 @@ green. The
 PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `samples_json`, `smoke_dry_run_json`, `migration_json`, and an unsendable
-`NativeSession` wrapper. The live
+`NativeSession` wrapper over eval, execute, resolve, perform, globals,
+export-set retention, and transactions. The live
 example logs in, evaluates `3 + 4`,
 performs `printString`, and round trips a `UserGlobals` string through
 `PyNativeSession`:

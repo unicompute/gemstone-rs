@@ -65,6 +65,110 @@ impl NativeSession {
         })
     }
 
+    fn eval_oop(&self, source: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.eval_oop(source).map_err(py_native_error)
+        })
+    }
+
+    fn execute(&self, source: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.execute(source).map_err(py_native_error)
+        })
+    }
+
+    fn resolve(&self, name: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.resolve(name).map_err(py_native_error)
+        })
+    }
+
+    fn perform_raw_oop(&self, receiver: u64, selector: &str, args: Vec<u64>) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session
+                .perform_oop_raw(receiver, selector, &args)
+                .map_err(py_native_error)
+        })
+    }
+
+    fn new_string(&self, value: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.new_string(value).map_err(py_native_error)
+        })
+    }
+
+    fn fetch_string(&self, oop: u64) -> PyResult<String> {
+        with_session(&self.inner, |session| {
+            session.fetch_string(oop).map_err(py_native_error)
+        })
+    }
+
+    fn global_get(&self, symbol_name: &str) -> PyResult<u64> {
+        with_session(&self.inner, |session| {
+            session.global_get(symbol_name).map_err(py_native_error)
+        })
+    }
+
+    fn global_put_raw(&self, symbol_name: &str, value: u64) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session
+                .global_put_raw(symbol_name, value)
+                .map_err(py_native_error)
+        })
+    }
+
+    fn global_put_string(&self, symbol_name: &str, value: &str) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session
+                .global_put_value(symbol_name, PyNativeValue::String(value.to_string()))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn global_put_smallint(&self, symbol_name: &str, value: i64) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session
+                .global_put_value(symbol_name, PyNativeValue::SmallInt(value))
+                .map_err(py_native_error)
+        })
+    }
+
+    fn add_to_export_set(&self, oop: u64) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session.add_to_export_set(oop).map_err(py_native_error)
+        })
+    }
+
+    fn remove_from_export_set(&self, oop: u64) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session.remove_from_export_set(oop).map_err(py_native_error)
+        })
+    }
+
+    fn needs_commit(&self) -> PyResult<bool> {
+        with_session(&self.inner, |session| {
+            session.needs_commit().map_err(py_native_error)
+        })
+    }
+
+    fn in_transaction(&self) -> PyResult<bool> {
+        with_session(&self.inner, |session| {
+            session.in_transaction().map_err(py_native_error)
+        })
+    }
+
+    fn commit(&self) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session.commit().map_err(py_native_error)
+        })
+    }
+
+    fn abort(&self) -> PyResult<()> {
+        with_session(&self.inner, |session| {
+            session.abort().map_err(py_native_error)
+        })
+    }
+
     fn logout(&self) -> PyResult<()> {
         if let Some(mut session) = self.inner.borrow_mut().take() {
             session.logout().map_err(py_native_error)?;
