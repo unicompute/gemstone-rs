@@ -12,6 +12,7 @@ const schemaNames = [
   "gemstone-rs.profile-check.schema.json",
   "gemstone-rs.compare.schema.json",
   "gemstone-rs.py-native.schema.json",
+  "gemstone-rs.py-native-samples.schema.json",
   "gemstone-rs.py-native-smoke.schema.json",
 ];
 
@@ -105,6 +106,24 @@ assert.deepStrictEqual(
   pyNativeCapabilities,
   pyNativeFixture,
   "py-native capabilities output drifted from examples/py-native/gemstone-rs.py-native.json"
+);
+const pyNativeSamplesFixture = readJson("examples/py-native/gemstone-rs.py-native-samples.json");
+assertPyNativeSamples(pyNativeSamplesFixture);
+const pyNativeSamplesOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "samples", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativeSamples = JSON.parse(lastJsonLine(pyNativeSamplesOutput));
+assertPyNativeSamples(pyNativeSamples);
+assert.deepStrictEqual(
+  pyNativeSamples,
+  pyNativeSamplesFixture,
+  "py-native samples output drifted from examples/py-native/gemstone-rs.py-native-samples.json"
 );
 const pyNativeSmokeFixture = readJson("examples/py-native/gemstone-rs.py-native-smoke.json");
 assertPyNativeSmoke(pyNativeSmokeFixture, { dryRun: true });
@@ -348,6 +367,41 @@ function assertPyNativeSmoke(value, options = {}) {
     "structured_error_mapping",
   ]) {
     assert(names.has(required), `py-native-smoke.steps missing ${required}`);
+  }
+}
+
+function assertPyNativeSamples(value) {
+  assert.strictEqual(typeof value.contractVersion, "number", "py-native-samples.contractVersion");
+  assert(value.contractVersion >= 1, "py-native-samples.contractVersion");
+  assert(Array.isArray(value.values), "py-native-samples.values");
+  assert(Array.isArray(value.errors), "py-native-samples.errors");
+
+  const valueNames = new Set();
+  for (const [index, entry] of value.values.entries()) {
+    assert.strictEqual(typeof entry.name, "string", `py-native-samples.values[${index}].name`);
+    assert(!valueNames.has(entry.name), `py-native-samples.values duplicate ${entry.name}`);
+    valueNames.add(entry.name);
+    assert(entry.value && typeof entry.value === "object", `py-native-samples.values[${index}].value`);
+    assert(
+      ["nil", "bool", "smallInt", "char", "string", "symbol", "oop"].includes(entry.value.kind),
+      `py-native-samples.values[${index}].value.kind`
+    );
+  }
+  for (const required of ["nil", "true", "smallint", "char", "string", "symbol", "oop"]) {
+    assert(valueNames.has(required), `py-native-samples.values missing ${required}`);
+  }
+
+  const errorNames = new Set();
+  for (const [index, entry] of value.errors.entries()) {
+    assert.strictEqual(typeof entry.name, "string", `py-native-samples.errors[${index}].name`);
+    assert(!errorNames.has(entry.name), `py-native-samples.errors duplicate ${entry.name}`);
+    errorNames.add(entry.name);
+    assert(entry.error && typeof entry.error === "object", `py-native-samples.errors[${index}].error`);
+    assert.strictEqual(typeof entry.error.kind, "string", `py-native-samples.errors[${index}].error.kind`);
+    assert.strictEqual(typeof entry.error.message, "string", `py-native-samples.errors[${index}].error.message`);
+  }
+  for (const required of ["missingConfig", "illegalOop", "unexpectedType", "mapping"]) {
+    assert(errorNames.has(required), `py-native-samples.errors missing ${required}`);
   }
 }
 

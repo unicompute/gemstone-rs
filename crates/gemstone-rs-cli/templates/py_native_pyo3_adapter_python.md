@@ -15,6 +15,7 @@ source .venv/bin/activate
 python -m pip install maturin pytest
 maturin develop
 python -c 'import gemstone_py_native; print(gemstone_py_native.capabilities_json())'
+python -c 'import gemstone_py_native; print(gemstone_py_native.samples_json())'
 pytest
 ```
 

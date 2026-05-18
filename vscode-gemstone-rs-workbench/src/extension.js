@@ -71,6 +71,7 @@ function activate(context) {
   register(context, "gemstoneRs.openMethodSource", openMethodSource);
   register(context, "gemstoneRs.openCodegenDocs", openCodegenDocs);
   register(context, "gemstoneRs.validatePyNativeContract", validatePyNativeContract);
+  register(context, "gemstoneRs.validatePyNativeSamplesFixture", validatePyNativeSamplesFixture);
   register(context, "gemstoneRs.validatePyNativeSmokeFixture", validatePyNativeSmokeFixture);
   register(context, "gemstoneRs.runPyNativeSmoke", runPyNativeSmoke);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
@@ -207,6 +208,7 @@ class GemStoneTreeProvider {
         actionNode("Check Project Profiles", "gemstoneRs.checkProjectProfiles"),
         actionNode("Open Codegen Docs", "gemstoneRs.openCodegenDocs"),
         actionNode("Validate py-native Contract", "gemstoneRs.validatePyNativeContract"),
+        actionNode("Validate py-native Samples Fixture", "gemstoneRs.validatePyNativeSamplesFixture"),
         actionNode("Validate py-native Smoke Fixture", "gemstoneRs.validatePyNativeSmokeFixture"),
         actionNode("Run py-native Smoke", "gemstoneRs.runPyNativeSmoke"),
       ];
@@ -1525,6 +1527,7 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.listBridgeRootKeys",
     "gemstoneRs.openCodegenDocs",
     "gemstoneRs.validatePyNativeContract",
+    "gemstoneRs.validatePyNativeSamplesFixture",
     "gemstoneRs.validatePyNativeSmokeFixture",
     "gemstoneRs.runPyNativeSmoke",
     "gemstoneRs.compareGemstonePyStatus",
@@ -1699,6 +1702,39 @@ async function validatePyNativeContract() {
   }
 }
 
+async function validatePyNativeSamplesFixture() {
+  const fixturePath = await vscode.window.showInputBox({
+    title: "Validate py-native Samples Fixture",
+    prompt: "Path to gemstone-rs.py-native-samples.json",
+    value: settings().pyNativeSamplesFixture,
+  });
+  if (!fixturePath) {
+    return;
+  }
+  const result = await runCli(["py-native", "check-samples", fixturePath, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check-samples returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativeSamplesFixtureReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native samples fixture is current: ${report.path || fixturePath}`
+    : `py-native samples fixture drifted: ${report.path || fixturePath}`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report", "Open Fixture")
+    : await vscode.window.showErrorMessage(message, "Copy Report", "Open Fixture");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native samples fixture report.");
+  } else if (action === "Open Fixture") {
+    await openPathInEditor(fixturePath);
+  }
+}
+
 async function validatePyNativeSmokeFixture() {
   const fixturePath = await vscode.window.showInputBox({
     title: "Validate py-native Smoke Fixture",
@@ -1822,6 +1858,23 @@ function formatPyNativeSmokeFixtureReport(result, report) {
     `path: ${report.path || "-"}`,
     `ok: ${Boolean(report.ok)}`,
     `contractVersion: ${report.contractVersion || "-"}`,
+  ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativeSamplesFixtureReport(result, report) {
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native samples fixture check",
+    `path: ${report.path || "-"}`,
+    `ok: ${Boolean(report.ok)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `valueCount: ${report.valueCount ?? "-"}`,
+    `errorCount: ${report.errorCount ?? "-"}`,
   ];
   if (result.stderr.trim()) {
     lines.push("");
@@ -2023,6 +2076,7 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <label class="field">BridgeRoot<input id="bridgeRoot" value="${escapeHtml(cfg.bridgeRoot)}"></label>
       <button data-command="gemstoneRs.openCodegenDocs">Open Codegen Docs</button>
       <button data-command="gemstoneRs.validatePyNativeContract">Validate py-native Contract</button>
+      <button data-command="gemstoneRs.validatePyNativeSamplesFixture">Validate py-native Samples Fixture</button>
       <button data-command="gemstoneRs.validatePyNativeSmokeFixture">Validate py-native Smoke Fixture</button>
       <button data-command="gemstoneRs.runPyNativeSmoke">Run py-native Smoke</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
@@ -2793,6 +2847,7 @@ function settings() {
     codegenConfig: cfg.get("codegenConfig", "gemstone-rs.codegen"),
     codegenProfiles: cfg.get("codegenProfiles", "gemstone-rs.codegen-profiles.json"),
     pyNativeFixture: cfg.get("pyNativeFixture", "examples/py-native/gemstone-rs.py-native.json"),
+    pyNativeSamplesFixture: cfg.get("pyNativeSamplesFixture", "examples/py-native/gemstone-rs.py-native-samples.json"),
     pyNativeSmokeFixture: cfg.get("pyNativeSmokeFixture", "examples/py-native/gemstone-rs.py-native-smoke.json"),
     bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),

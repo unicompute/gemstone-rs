@@ -91,6 +91,7 @@ For a source checkout:
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
 - `GemStone RS: Validate py-native Contract`
+- `GemStone RS: Validate py-native Samples Fixture`
 - `GemStone RS: Validate py-native Smoke Fixture`
 - `GemStone RS: Run py-native Smoke`
 - `GemStone RS: Compare with gemstone-py`
@@ -109,7 +110,10 @@ named project profile in `gemstone-rs.codegen-profiles.json`.
 `Validate py-native Contract` runs
 `gemstone-rs py-native check --json` against `gemstoneRs.pyNativeFixture` so a
 future `gemstone-py-native` wrapper can verify the Rust adapter contract from
-the editor. `Validate py-native Smoke Fixture` runs
+the editor. `Validate py-native Samples Fixture` runs
+`gemstone-rs py-native check-samples --json` against
+`gemstoneRs.pyNativeSamplesFixture`, which gives wrapper work concrete value
+and structured-error payloads to translate. `Validate py-native Smoke Fixture` runs
 `gemstone-rs py-native check-smoke --json` against
 `gemstoneRs.pyNativeSmokeFixture`, which catches drift in the dry-run smoke
 fixture before Python adapter work consumes it. `Run py-native Smoke` runs

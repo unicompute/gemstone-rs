@@ -861,9 +861,15 @@ let printed = session.perform_values(PyNativeValue::SmallInt(7), "printString", 
 The live smoke example is intentionally small:
 
 ```bash
+cargo run -p gemstone-rs-cli -- py-native samples --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
 ```
+
+The samples JSON is useful for wrapper tests because it contains concrete
+payloads for `nil`, booleans, small integers, characters, strings, symbols,
+OOPs, and structured errors such as `missingConfig`, `illegalOop`,
+`unexpectedType`, and path-aware mapping failures.
 
 The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
 with PyO3, preserve the existing Python return behavior, and run the Python

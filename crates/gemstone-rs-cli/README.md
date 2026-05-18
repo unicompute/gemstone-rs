@@ -47,6 +47,8 @@ cargo run -p gemstone-rs-cli -- compare all --batches --json
 cargo run -p gemstone-rs-cli -- py-native capabilities
 cargo run -p gemstone-rs-cli -- py-native capabilities --json
 cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
+cargo run -p gemstone-rs-cli -- py-native samples --json
+cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
 cargo run -p gemstone-rs-cli -- env sample

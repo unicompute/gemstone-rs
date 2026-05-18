@@ -80,6 +80,7 @@ gemstone-rs compare all --totals
 gemstone-rs compare all --batches
 gemstone-rs py-native capabilities
 gemstone-rs py-native capabilities --json
+gemstone-rs py-native samples --json
 gemstone-rs py-native smoke --dry-run
 gemstone-rs py-native smoke --dry-run --json
 gemstone-rs env sample
@@ -109,13 +110,16 @@ gemstone-rs-explorer --help
 ```
 
 The py-native JSON fixture is checked in at
-`examples/py-native/gemstone-rs.py-native.json`, and the dry-run smoke fixture
-is checked in at `examples/py-native/gemstone-rs.py-native-smoke.json`, for
-downstream wrapper CI.
+`examples/py-native/gemstone-rs.py-native.json`, the value/error sample fixture
+is checked in at `examples/py-native/gemstone-rs.py-native-samples.json`, and
+the dry-run smoke fixture is checked in at
+`examples/py-native/gemstone-rs.py-native-smoke.json`, for downstream wrapper
+CI.
 Validate it with:
 
 ```bash
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
+gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 gemstone-rs py-native smoke --dry-run
 ```
 

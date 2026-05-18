@@ -406,6 +406,8 @@ Use this when you are preparing `gemstone-py-native` to wrap the Rust core:
 gemstone-rs py-native capabilities
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
+gemstone-rs py-native samples --json
+gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 gemstone-rs py-native smoke --dry-run
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
@@ -414,10 +416,13 @@ gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starte
 
 The CLI command prints the contract version, threading rule, supported
 operations, value kinds, error kinds, and OOP constants. The fixture checks
-compare the checked-in capability and dry-run smoke JSON against the shared
-core renderer. The smoke command checks capabilities, OOP constants, value
-conversion, config error mapping, and structured error mapping without a live
-stone when `--dry-run` is passed. The PyO3 scaffold writes a minimal
+compare the checked-in capability, value/error sample, and dry-run smoke JSON
+against the shared core renderer. `py-native samples --json` gives Python
+wrapper CI concrete payloads for `nil`, booleans, small integers, characters,
+strings, symbols, OOPs, and structured errors. The smoke command checks
+capabilities, OOP constants, value conversion, config error mapping, and
+structured error mapping without a live stone when `--dry-run` is passed. The
+PyO3 scaffold writes a minimal
 `gemstone_py_native` extension module with `capabilities_json`,
 `smoke_dry_run_json`, and an unsendable `NativeSession` wrapper. The live
 example logs in, evaluates `3 + 4`,

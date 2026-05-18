@@ -70,9 +70,13 @@ The JSON output is covered by
 [`schemas/gemstone-rs.py-native.schema.json`](../schemas/gemstone-rs.py-native.schema.json)
 and the smoke output is covered by
 [`schemas/gemstone-rs.py-native-smoke.schema.json`](../schemas/gemstone-rs.py-native-smoke.schema.json).
-The VS Code workbench packages both schemas for editor validation. A
+Value/error samples are covered by
+[`schemas/gemstone-rs.py-native-samples.schema.json`](../schemas/gemstone-rs.py-native-samples.schema.json).
+The VS Code workbench packages these schemas for editor validation. A
 checked-in fixture lives at
-[`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json)
+[`examples/py-native/gemstone-rs.py-native.json`](../examples/py-native/gemstone-rs.py-native.json),
+the value/error sample fixture lives at
+[`examples/py-native/gemstone-rs.py-native-samples.json`](../examples/py-native/gemstone-rs.py-native-samples.json),
 and the dry-run smoke fixture lives at
 [`examples/py-native/gemstone-rs.py-native-smoke.json`](../examples/py-native/gemstone-rs.py-native-smoke.json),
 so downstream wrapper CI can diff the contract without requiring a live stone.
@@ -81,6 +85,8 @@ Use the CLI check in CI:
 ```bash
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json
 gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json --json
+gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
+gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json --json
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json
 gemstone-rs py-native smoke --dry-run

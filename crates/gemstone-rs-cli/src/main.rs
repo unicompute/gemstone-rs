@@ -46,6 +46,13 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             Ok(())
         }
         Command::PyNativeCheck { path, format } => run_py_native_check(&path, format),
+        Command::PyNativeSamples { format } => {
+            print_py_native_samples(format);
+            Ok(())
+        }
+        Command::PyNativeSamplesCheck { path, format } => {
+            run_py_native_samples_check(&path, format)
+        }
         Command::PyNativeSmokeCheck { path, format } => run_py_native_smoke_check(&path, format),
         Command::PyNativeSmoke { dry_run, format } => run_py_native_smoke(dry_run, format),
         Command::CompareGemstonePy { view, format } => {
@@ -1733,6 +1740,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Validate the checked-in py-native capabilities fixture against the Rust core.",
     },
     ExampleInfo {
+        name: "py_native_samples_fixture",
+        title: "py-native samples fixture",
+        command: "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json",
+        category: "native",
+        requires_live: false,
+        description: "Validate checked-in py-native value and error samples for wrapper CI.",
+    },
+    ExampleInfo {
         name: "py_native_smoke_fixture",
         title: "py-native smoke fixture",
         command: "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json",
@@ -2610,6 +2625,10 @@ fn default_py_native_smoke_fixture_path() -> PathBuf {
     PathBuf::from("examples/py-native/gemstone-rs.py-native-smoke.json")
 }
 
+fn default_py_native_samples_fixture_path() -> PathBuf {
+    PathBuf::from("examples/py-native/gemstone-rs.py-native-samples.json")
+}
+
 fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
     let expected = py_native::capabilities().to_json();
     let actual = fs::read_to_string(path)?;
@@ -2637,6 +2656,60 @@ fn run_py_native_check(path: &Path, format: OutputFormat) -> Result<(), CliError
     } else {
         Err(CliError::CodegenCheck(format!(
             "{} does not match `gemstone-rs py-native capabilities --json`; regenerate or review the contract change",
+            path.display()
+        )))
+    }
+}
+
+fn print_py_native_samples(format: OutputFormat) {
+    let report = py_native::samples_report();
+    match format {
+        OutputFormat::Human => {
+            println!("py-native adapter samples");
+            println!("  contract_version: {}", report.contract_version);
+            println!("  values:");
+            for sample in &report.values {
+                println!("    {}: {}", sample.name, sample.value.to_json());
+            }
+            println!("  errors:");
+            for sample in &report.errors {
+                println!("    {}: {}", sample.name, sample.error.to_json());
+            }
+        }
+        OutputFormat::Json => println!("{}", report.to_json()),
+    }
+}
+
+fn run_py_native_samples_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
+    let report = py_native::samples_report();
+    let expected = report.to_json();
+    let actual = fs::read_to_string(path)?;
+    let actual = actual.trim_end();
+    let matches = actual == expected;
+
+    match format {
+        OutputFormat::Human => {
+            if matches {
+                println!("py-native samples contract ok: {}", path.display());
+            }
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"path":"{}","ok":{},"contractVersion":{},"valueCount":{},"errorCount":{}}}"#,
+                escape_json(&path.display().to_string()),
+                if matches { "true" } else { "false" },
+                report.contract_version,
+                report.values.len(),
+                report.errors.len()
+            );
+        }
+    }
+
+    if matches {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "{} does not match `gemstone-rs py-native samples --json`; regenerate or review the samples contract change",
             path.display()
         )))
     }
@@ -3844,6 +3917,11 @@ fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
             "check",
             "examples/py-native/gemstone-rs.py-native.json",
         ]),
+        "py_native_samples_fixture" => Some(&[
+            "py-native",
+            "check-samples",
+            "examples/py-native/gemstone-rs.py-native-samples.json",
+        ]),
         "py_native_smoke_fixture" => Some(&[
             "py-native",
             "check-smoke",
@@ -4106,6 +4184,13 @@ enum Command {
         format: OutputFormat,
     },
     PyNativeCheck {
+        path: PathBuf,
+        format: OutputFormat,
+    },
+    PyNativeSamples {
+        format: OutputFormat,
+    },
+    PyNativeSamplesCheck {
         path: PathBuf,
         format: OutputFormat,
     },
@@ -4474,15 +4559,23 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
             )
         }
         Some("check" | "validate") => parse_py_native_check_command(&args[1..]),
+        Some("samples" | "sample-values" | "values") => parse_format_only_command(
+            &args[1..],
+            "py-native samples [--json]",
+            |format| Command::PyNativeSamples { format },
+        ),
+        Some("check-samples" | "samples-check" | "validate-samples") => {
+            parse_py_native_samples_check_command(&args[1..])
+        }
         Some("check-smoke" | "smoke-check" | "validate-smoke") => {
             parse_py_native_smoke_check_command(&args[1..])
         }
         Some("smoke") => parse_py_native_smoke_command(&args[1..]),
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check|check-smoke|smoke"
+            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke"
         ))),
     }
 }
@@ -4511,6 +4604,36 @@ fn parse_py_native_check_command(args: &[String]) -> Result<Command, CliError> {
     }
     Ok(Command::PyNativeCheck {
         path: path.unwrap_or_else(default_py_native_fixture_path),
+        format,
+    })
+}
+
+fn parse_py_native_samples_check_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut path = None;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => format = OutputFormat::Json,
+            "-h" | "--help" => {
+                return Err(CliError::usage(
+                    "expected: py-native check-samples [path] [--json]",
+                ))
+            }
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native check-samples option: {option}"
+                )));
+            }
+            value if path.is_none() => path = Some(PathBuf::from(value)),
+            value => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native check-samples argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativeSamplesCheck {
+        path: path.unwrap_or_else(default_py_native_samples_fixture_path),
         format,
     })
 }
@@ -5575,6 +5698,8 @@ fn usage() -> &'static str {
   gemstone-rs hello [--json]
   gemstone-rs py-native capabilities [--json]
   gemstone-rs py-native check [path] [--json]
+  gemstone-rs py-native samples [--json]
+  gemstone-rs py-native check-samples [path] [--json]
   gemstone-rs py-native check-smoke [path] [--json]
   gemstone-rs py-native smoke [--dry-run] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
@@ -5765,6 +5890,32 @@ mod tests {
             .unwrap(),
             Command::PyNativeCheck {
                 path: PathBuf::from("examples/py-native/gemstone-rs.py-native.json"),
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "samples", "--json"])).unwrap(),
+            Command::PyNativeSamples {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "check-samples"])).unwrap(),
+            Command::PyNativeSamplesCheck {
+                path: default_py_native_samples_fixture_path(),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "py-native",
+                "validate-samples",
+                "examples/py-native/gemstone-rs.py-native-samples.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::PyNativeSamplesCheck {
+                path: PathBuf::from("examples/py-native/gemstone-rs.py-native-samples.json"),
                 format: OutputFormat::Json,
             }
         );
@@ -6133,6 +6284,22 @@ mod tests {
             example_run_command(py_native_fixture, &["--json".to_string()]),
             "gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json --json"
         );
+        let py_native_samples = find_example("py-native samples fixture").unwrap();
+        assert!(!py_native_samples.requires_live);
+        assert_eq!(
+            example_cli_args(py_native_samples.name),
+            Some(
+                &[
+                    "py-native",
+                    "check-samples",
+                    "examples/py-native/gemstone-rs.py-native-samples.json",
+                ][..]
+            )
+        );
+        assert_eq!(
+            example_run_command(py_native_samples, &[]),
+            "gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json"
+        );
     }
 
     #[test]
@@ -6423,6 +6590,7 @@ mod tests {
             .exists());
         let lib_rs = fs::read_to_string(py_native_target.join("src").join("lib.rs")).unwrap();
         assert!(lib_rs.contains("PyNativeSession::login_from_env"));
+        assert!(lib_rs.contains("samples_json"));
         assert!(lib_rs.contains("#[pyclass(unsendable)]"));
         let _ = fs::remove_dir_all(&py_native_target);
         let _ = fs::remove_dir_all(&target);
@@ -7275,6 +7443,23 @@ GEMSTONE=/opt/gemstone # product root
     }
 
     #[test]
+    fn py_native_samples_check_detects_contract_drift() {
+        let path = std::env::temp_dir().join(format!(
+            "gemstone-rs-py-native-samples-check-{}.json",
+            std::process::id()
+        ));
+        fs::write(&path, py_native::samples_report().to_json()).unwrap();
+        run_py_native_samples_check(&path, OutputFormat::Human).unwrap();
+
+        fs::write(&path, r#"{"contractVersion":999,"values":[],"errors":[]}"#).unwrap();
+        let err = run_py_native_samples_check(&path, OutputFormat::Human)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("does not match"));
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
     fn py_native_smoke_contract_steps_pass_without_live_stone() {
         let report = py_native::smoke_dry_run_report();
         assert!(report.ok());
@@ -7289,5 +7474,14 @@ GEMSTONE=/opt/gemstone # product root
             .steps
             .iter()
             .any(|step| step.name == "structured_error_mapping"));
+    }
+
+    #[test]
+    fn py_native_samples_report_includes_wrapper_payload_shapes() {
+        let report = py_native::samples_report();
+        let json = report.to_json();
+        assert_eq!(report.values.len(), py_native::PY_NATIVE_VALUE_KINDS.len());
+        assert!(json.contains(r#""kind":"symbol""#));
+        assert!(json.contains(r#""kind":"mapping""#));
     }
 }

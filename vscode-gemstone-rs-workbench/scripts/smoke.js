@@ -15,6 +15,7 @@ const schemaNames = [
   "gemstone-rs.profile-check.schema.json",
   "gemstone-rs.compare.schema.json",
   "gemstone-rs.py-native.schema.json",
+  "gemstone-rs.py-native-samples.schema.json",
   "gemstone-rs.py-native-smoke.schema.json",
 ];
 
@@ -41,6 +42,7 @@ const requiredCommands = [
   "gemstoneRs.openGeneratedOutput",
   "gemstoneRs.codegenGenerate",
   "gemstoneRs.validatePyNativeContract",
+  "gemstoneRs.validatePyNativeSamplesFixture",
   "gemstoneRs.validatePyNativeSmokeFixture",
   "gemstoneRs.runPyNativeSmoke",
   "gemstoneRs.codegenPreviewProfile",
@@ -183,6 +185,7 @@ assert(readme.includes("Open Codegen Config"), "README should mention opening th
 assert(readme.includes("Open Project Profiles"), "README should mention opening project profiles");
 assert(readme.includes("Open Generated Output"), "README should mention generated output opening");
 assert(readme.includes("Validate py-native Contract"), "README should mention py-native contract validation");
+assert(readme.includes("Validate py-native Samples Fixture"), "README should mention py-native samples fixture validation");
 assert(readme.includes("Validate py-native Smoke Fixture"), "README should mention py-native smoke fixture validation");
 assert(readme.includes("Run py-native Smoke"), "README should mention py-native smoke");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
@@ -212,6 +215,10 @@ assert(
   "py-native contract validation should use JSON output"
 );
 assert(
+  extensionSource.includes('"py-native", "check-samples", fixturePath, "--json"'),
+  "py-native samples fixture validation should use JSON output"
+);
+assert(
   extensionSource.includes('"py-native", "check-smoke", fixturePath, "--json"'),
   "py-native smoke fixture validation should use JSON output"
 );
@@ -226,6 +233,10 @@ assert(
 assert(
   extensionSource.includes("pyNativeFixture"),
   "Workbench should expose a py-native fixture setting"
+);
+assert(
+  extensionSource.includes("pyNativeSamplesFixture"),
+  "Workbench should expose a py-native samples fixture setting"
 );
 assert(
   extensionSource.includes("pyNativeSmokeFixture"),
@@ -295,6 +306,12 @@ assert(
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native"))
   ),
   "package.json should contribute JSON validation for py-native capability reports"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-samples"))
+  ),
+  "package.json should contribute JSON validation for py-native sample reports"
 );
 assert(
   packageJson.contributes.jsonValidation.some((entry) =>

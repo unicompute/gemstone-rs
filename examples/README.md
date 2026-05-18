@@ -46,8 +46,10 @@ gemstone-rs examples run codegen_preview --dry-run
 gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples run py_native_capabilities --dry-run
 gemstone-rs examples run py_native_contract_fixture --dry-run
+gemstone-rs examples run py_native_samples_fixture --dry-run
 gemstone-rs examples run py_native_smoke_fixture --dry-run
 gemstone-rs py-native capabilities --json
+gemstone-rs py-native samples --json
 gemstone-rs examples run axum_service --dry-run -- --routes
 gemstone-rs examples run actix_service --dry-run -- --routes
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -78,6 +80,9 @@ checkouts can prove the generated starter still compiles against the local
 Rust core with `python3 scripts/check_py_native_pyo3_scaffold.py`. The
 `extension-module` feature is enabled by `maturin`, not by plain `cargo run`,
 so the starter binary remains runnable during local smoke checks.
+The py-native fixture examples now include separate value/error samples, so a
+Python wrapper can test `nil`, booleans, small integers, characters, strings,
+symbols, OOPs, and structured error translation without a live stone.
 
 `gemstone-rs hello` and `gemstone-rs examples hello` do not connect to
 GemStone. They mirror `gemstone-examples hello` and are useful as the first CLI
@@ -113,6 +118,7 @@ sanity check after install.
 | Async worker facade | `cargo run -p gemstone-rs --example async_worker` | You want awaitable worker-pool calls without moving `Session` across threads. |
 | Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | You want to inspect and smoke-test the Rust contract that a future `gemstone-py-native` PyO3 wrapper should expose. |
 | Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | You want stable capability and smoke JSON samples for wrapper CI. |
+| Python native value/error samples | `gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json` | You want concrete value and error payload samples for Python wrapper translation tests. |
 | Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |

@@ -78,6 +78,7 @@
     "onCommand:gemstoneRs.openMethodSource",
     "onCommand:gemstoneRs.openCodegenDocs",
     "onCommand:gemstoneRs.validatePyNativeContract",
+    "onCommand:gemstoneRs.validatePyNativeSamplesFixture",
     "onCommand:gemstoneRs.validatePyNativeSmokeFixture",
     "onCommand:gemstoneRs.runPyNativeSmoke",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
@@ -319,6 +320,10 @@
         "title": "GemStone RS: Validate py-native Contract"
       },
       {
+        "command": "gemstoneRs.validatePyNativeSamplesFixture",
+        "title": "GemStone RS: Validate py-native Samples Fixture"
+      },
+      {
         "command": "gemstoneRs.validatePyNativeSmokeFixture",
         "title": "GemStone RS: Validate py-native Smoke Fixture"
       },
@@ -411,6 +416,13 @@
       },
       {
         "fileMatch": [
+          "gemstone-rs.py-native-samples.json",
+          "*.gemstone-rs.py-native-samples.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-samples.schema.json"
+      },
+      {
+        "fileMatch": [
           "gemstone-rs.py-native-smoke.json",
           "*.gemstone-rs.py-native-smoke.json"
         ],
@@ -459,6 +471,11 @@
           "type": "string",
           "default": "examples/py-native/gemstone-rs.py-native.json",
           "description": "Default py-native contract fixture checked by gemstone-rs py-native check."
+        },
+        "gemstoneRs.pyNativeSamplesFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native-samples.json",
+          "description": "Default py-native value/error samples fixture checked by gemstone-rs py-native check-samples."
         },
         "gemstoneRs.pyNativeSmokeFixture": {
           "type": "string",

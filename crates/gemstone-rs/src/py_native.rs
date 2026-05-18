@@ -113,7 +113,7 @@ pub struct PyNativeConfigSummary {
     pub host_password_set: bool,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PyNativeValue {
     Nil,
     Bool(bool),
@@ -125,6 +125,18 @@ pub enum PyNativeValue {
 }
 
 impl PyNativeValue {
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::Nil => "nil",
+            Self::Bool(_) => "bool",
+            Self::SmallInt(_) => "smallInt",
+            Self::Char(_) => "char",
+            Self::String(_) => "string",
+            Self::Symbol(_) => "symbol",
+            Self::Oop(_) => "oop",
+        }
+    }
+
     pub fn raw_oop(&self) -> Option<u64> {
         match self {
             Self::Oop(raw) => Some(*raw),
@@ -166,6 +178,28 @@ impl PyNativeValue {
             Self::Oop(raw) => Ok(Oop(*raw)),
         }
     }
+
+    pub fn to_json(&self) -> String {
+        match self {
+            Self::Nil => r#"{"kind":"nil"}"#.to_string(),
+            Self::Bool(value) => format!(
+                r#"{{"kind":"bool","value":{}}}"#,
+                if *value { "true" } else { "false" }
+            ),
+            Self::SmallInt(value) => format!(r#"{{"kind":"smallInt","value":{value}}}"#),
+            Self::Char(value) => format!(
+                r#"{{"kind":"char","value":"{}"}}"#,
+                json_escape(&value.to_string())
+            ),
+            Self::String(value) => {
+                format!(r#"{{"kind":"string","value":"{}"}}"#, json_escape(value))
+            }
+            Self::Symbol(value) => {
+                format!(r#"{{"kind":"symbol","value":"{}"}}"#, json_escape(value))
+            }
+            Self::Oop(raw) => format!(r#"{{"kind":"oop","raw":{raw}}}"#),
+        }
+    }
 }
 
 impl From<Value> for PyNativeValue {
@@ -195,6 +229,26 @@ pub enum PyNativeErrorKind {
     WorkerPanicked,
     NegativeSize,
     ArgumentCountTooLarge,
+}
+
+impl PyNativeErrorKind {
+    pub fn as_json_name(self) -> &'static str {
+        match self {
+            Self::Gci => "gci",
+            Self::MissingEnvironment => "missingEnvironment",
+            Self::MissingConfig => "missingConfig",
+            Self::Nul => "nul",
+            Self::NotLoggedIn => "notLoggedIn",
+            Self::GemStone => "gemStone",
+            Self::IllegalOop => "illegalOop",
+            Self::UnexpectedType => "unexpectedType",
+            Self::Mapping => "mapping",
+            Self::WorkerStopped => "workerStopped",
+            Self::WorkerPanicked => "workerPanicked",
+            Self::NegativeSize => "negativeSize",
+            Self::ArgumentCountTooLarge => "argumentCountTooLarge",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -287,6 +341,35 @@ impl PyNativeErrorInfo {
             expected: None,
             actual: None,
         }
+    }
+
+    pub fn to_json(&self) -> String {
+        let mut fields = vec![
+            format!(r#""kind":"{}""#, self.kind.as_json_name()),
+            format!(r#""message":"{}""#, json_escape(&self.message)),
+        ];
+        if let Some(number) = self.gemstone_number {
+            fields.push(format!(r#""gemstoneNumber":{number}"#));
+        }
+        if let Some(fatal) = self.fatal {
+            fields.push(format!(
+                r#""fatal":{}"#,
+                if fatal { "true" } else { "false" }
+            ));
+        }
+        if let Some(operation) = self.operation {
+            fields.push(format!(r#""operation":"{}""#, json_escape(operation)));
+        }
+        if let Some(field) = &self.field {
+            fields.push(format!(r#""field":"{}""#, json_escape(field)));
+        }
+        if let Some(expected) = self.expected {
+            fields.push(format!(r#""expected":"{}""#, json_escape(expected)));
+        }
+        if let Some(actual) = &self.actual {
+            fields.push(format!(r#""actual":"{}""#, json_escape(actual)));
+        }
+        format!("{{{}}}", fields.join(","))
     }
 }
 
@@ -448,6 +531,127 @@ pub fn smoke_live_report() -> PyNativeSmokeReport {
         dry_run: false,
         contract_version: capabilities().contract_version,
         steps,
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeValueSample {
+    pub name: &'static str,
+    pub value: PyNativeValue,
+}
+
+impl PyNativeValueSample {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","value":{}}}"#,
+            json_escape(self.name),
+            self.value.to_json()
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeErrorSample {
+    pub name: &'static str,
+    pub error: PyNativeErrorInfo,
+}
+
+impl PyNativeErrorSample {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"name":"{}","error":{}}}"#,
+            json_escape(self.name),
+            self.error.to_json()
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativeSamplesReport {
+    pub contract_version: u16,
+    pub values: Vec<PyNativeValueSample>,
+    pub errors: Vec<PyNativeErrorSample>,
+}
+
+impl PyNativeSamplesReport {
+    pub fn to_json(&self) -> String {
+        let values = self
+            .values
+            .iter()
+            .map(PyNativeValueSample::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        let errors = self
+            .errors
+            .iter()
+            .map(PyNativeErrorSample::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"values":[{}],"errors":[{}]}}"#,
+            self.contract_version, values, errors
+        )
+    }
+}
+
+pub fn samples_report() -> PyNativeSamplesReport {
+    PyNativeSamplesReport {
+        contract_version: capabilities().contract_version,
+        values: vec![
+            PyNativeValueSample {
+                name: "nil",
+                value: PyNativeValue::Nil,
+            },
+            PyNativeValueSample {
+                name: "true",
+                value: PyNativeValue::Bool(true),
+            },
+            PyNativeValueSample {
+                name: "smallint",
+                value: PyNativeValue::SmallInt(7),
+            },
+            PyNativeValueSample {
+                name: "char",
+                value: PyNativeValue::Char('A'),
+            },
+            PyNativeValueSample {
+                name: "string",
+                value: PyNativeValue::String("hello gemstone".to_string()),
+            },
+            PyNativeValueSample {
+                name: "symbol",
+                value: PyNativeValue::Symbol("printString".to_string()),
+            },
+            PyNativeValueSample {
+                name: "oop",
+                value: PyNativeValue::Oop(Oop::from_smallint(7).raw()),
+            },
+        ],
+        errors: vec![
+            PyNativeErrorSample {
+                name: "missingConfig",
+                error: PyNativeErrorInfo::from_error(&Error::MissingConfig("username")),
+            },
+            PyNativeErrorSample {
+                name: "illegalOop",
+                error: PyNativeErrorInfo::from_error(&Error::IllegalOop { operation: "eval" }),
+            },
+            PyNativeErrorSample {
+                name: "unexpectedType",
+                error: PyNativeErrorInfo::from_error(&Error::UnexpectedType {
+                    expected: "SmallInt",
+                    actual: "String(\"7\")".to_string(),
+                }),
+            },
+            PyNativeErrorSample {
+                name: "mapping",
+                error: PyNativeErrorInfo::from_error(&Error::Mapping {
+                    field: "booking.customer.name".to_string(),
+                    expected: "String",
+                    actual: "SmallInt(7)".to_string(),
+                }),
+            },
+        ],
     }
 }
 
@@ -824,6 +1028,11 @@ mod tests {
         );
         assert_eq!(PyNativeValue::Symbol("abc".to_string()).to_value(), None);
         assert_eq!(PyNativeValue::Oop(20).to_value(), Some(Value::Oop(Oop(20))));
+        assert_eq!(PyNativeValue::String("abc".to_string()).kind(), "string");
+        assert_eq!(
+            PyNativeValue::Symbol("abc".to_string()).to_json(),
+            r#"{"kind":"symbol","value":"abc"}"#
+        );
         assert_eq!(nil_oop(), Oop::NIL.raw());
         assert_eq!(bool_oop(true), Oop::TRUE.raw());
         assert_eq!(smallint_oop(7), Oop::from_smallint(7).raw());
@@ -846,6 +1055,8 @@ mod tests {
         let info = PyNativeErrorInfo::from_error(&err);
         assert_eq!(info.kind, PyNativeErrorKind::IllegalOop);
         assert_eq!(info.operation, Some("eval"));
+        assert_eq!(info.kind.as_json_name(), "illegalOop");
+        assert!(info.to_json().contains(r#""operation":"eval""#));
     }
 
     #[test]
@@ -893,5 +1104,16 @@ mod tests {
             step.to_json(),
             r#"{"name":"quoted","ok":false,"detail":"a\"b\\c\n"}"#
         );
+    }
+
+    #[test]
+    fn samples_report_covers_value_and_error_shapes() {
+        let report = samples_report();
+        let json = report.to_json();
+        assert_eq!(report.contract_version, 1);
+        assert_eq!(report.values.len(), PY_NATIVE_VALUE_KINDS.len());
+        assert!(json.contains(r#""name":"symbol","value":{"kind":"symbol","value":"printString"}"#));
+        assert!(json.contains(r#""name":"mapping","error":{"kind":"mapping""#));
+        assert!(json.contains(r#""field":"booking.customer.name""#));
     }
 }

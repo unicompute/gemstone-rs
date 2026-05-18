@@ -23,6 +23,9 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- py-native capabilities
 	cargo run -p gemstone-rs-cli -- py-native capabilities --json
 	cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
+	cargo run -p gemstone-rs-cli -- py-native samples
+	cargo run -p gemstone-rs-cli -- py-native samples --json
+	cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 	cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 	cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
@@ -59,6 +62,8 @@ examples-check:
 	cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_contract_fixture
+	cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture --dry-run
+	cargo run -p gemstone-rs-cli -- examples run py_native_samples_fixture
 	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture --dry-run
 	cargo run -p gemstone-rs-cli -- examples run py_native_smoke_fixture
 	cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
@@ -119,6 +124,7 @@ codegen-check:
 
 schema-check:
 	cargo run -p gemstone-rs-cli -- py-native check examples/py-native/gemstone-rs.py-native.json
+	cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 	cargo run -p gemstone-rs-cli -- py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json
 	node scripts/validate_codegen_schemas.js
 

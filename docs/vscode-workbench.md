@@ -150,6 +150,7 @@ Commands:
 - `GemStone RS: Open Method Source`
 - `GemStone RS: Open Codegen Docs`
 - `GemStone RS: Validate py-native Contract`
+- `GemStone RS: Validate py-native Samples Fixture`
 - `GemStone RS: Validate py-native Smoke Fixture`
 - `GemStone RS: Run py-native Smoke`
 - `GemStone RS: Compare with gemstone-py`
@@ -198,12 +199,14 @@ checkout.
    when you want to edit configured files in VS Code.
 7. Run `GemStone RS: Validate py-native Contract` when you want to confirm the
    checked-in Rust adapter contract for `gemstone-py-native`.
-8. Run `GemStone RS: Validate py-native Smoke Fixture` when you want to confirm
+8. Run `GemStone RS: Validate py-native Samples Fixture` when you want to
+   confirm the checked-in value/error payload examples for wrapper tests.
+9. Run `GemStone RS: Validate py-native Smoke Fixture` when you want to confirm
    the checked-in dry-run smoke report for adapter consumers.
-9. Run `GemStone RS: Run py-native Smoke` when you want adapter smoke checks
+10. Run `GemStone RS: Run py-native Smoke` when you want adapter smoke checks
    from VS Code.
-10. Run `GemStone RS: Open Generated Output`.
-11. Run `GemStone RS: Codegen Generate`.
+11. Run `GemStone RS: Open Generated Output`.
+12. Run `GemStone RS: Codegen Generate`.
 
 `Codegen Generate` runs the diff first. If output would change, it opens the
 diff and asks before writing.
@@ -219,7 +222,10 @@ current generated wrapper file directly.
 `Validate py-native Contract` runs
 `gemstone-rs py-native check --json` against `gemstoneRs.pyNativeFixture`, then
 renders the path, status, and contract version in the output panel with actions
-to copy the report or open the fixture. `Validate py-native Smoke Fixture` runs
+to copy the report or open the fixture. `Validate py-native Samples Fixture`
+runs `gemstone-rs py-native check-samples --json` against
+`gemstoneRs.pyNativeSamplesFixture`, then renders the fixture freshness,
+value count, and error count. `Validate py-native Smoke Fixture` runs
 `gemstone-rs py-native check-smoke --json` against
 `gemstoneRs.pyNativeSmokeFixture`, then renders the same fixture freshness view
 for the dry-run adapter smoke report. `Run py-native Smoke` runs

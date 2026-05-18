@@ -247,7 +247,8 @@
 //!
 //! `py_native` provides a narrow, dependency-free contract that a future
 //! `gemstone-py-native` PyO3 wrapper can expose to Python without duplicating
-//! GCI/session logic:
+//! GCI/session logic. Use `py_native::samples_report()` when wrapper tests need
+//! stable JSON examples for value and structured-error translation:
 //!
 //! ```no_run
 //! use gemstone_rs::py_native::{PyNativeSession, PyNativeValue};
