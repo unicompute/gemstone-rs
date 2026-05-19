@@ -110,6 +110,7 @@ Regenerate PDFs after refreshing screenshots:
 
 ```bash
 python3 docs/build_pdf_docs.py
+python3 docs/build_pdf_docs.py --check
 ```
 
 For a release pass, run:

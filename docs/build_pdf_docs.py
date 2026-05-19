@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import html
 import re
 import shutil
@@ -249,13 +250,10 @@ def _render_pdf(target: BuildTarget) -> Path:
     return pdf_path
 
 
-def main() -> int:
-    if HTML_DIR.exists():
-        shutil.rmtree(HTML_DIR)
-
+def build_targets() -> tuple[BuildTarget, ...]:
     funny_dir = DOCS_DIR / "funny-introduction"
     cover = DOCS_DIR / "assets" / "gemstone-rs-graphic.png"
-    targets = (
+    return (
         BuildTarget("setup-guide", "gemstone-rs Setup Guide", "Install, configure, and complete the first GemStone login", (DOCS_DIR / "setup-guide.md",), cover),
         BuildTarget("user-manual", "gemstone-rs User Manual", "Core Rust API usage for sessions, OOPs, browser operations, and transactions", (DOCS_DIR / "user-manual.md",), cover),
         BuildTarget("examples-guide", "gemstone-rs Examples Guide", "A tour of Rust examples and tooling workflows", (DOCS_DIR / "examples-guide.md",), cover),
@@ -313,9 +311,61 @@ def main() -> int:
         ),
     )
 
+
+def expected_pdf_paths() -> set[Path]:
+    return {PDF_DIR / f"{target.slug}.pdf" for target in build_targets()}
+
+
+def check_pdf_set() -> int:
+    errors: list[str] = []
+
+    for target in build_targets():
+        for source_path in target.source_paths:
+            if not source_path.exists():
+                errors.append(f"{target.slug}: missing source {source_path.relative_to(DOCS_DIR.parent)}")
+        if target.cover_image is not None and not target.cover_image.exists():
+            errors.append(f"{target.slug}: missing cover image {target.cover_image.relative_to(DOCS_DIR.parent)}")
+
+    expected = expected_pdf_paths()
+    actual = set(PDF_DIR.glob("*.pdf"))
+    for path in sorted(expected - actual):
+        errors.append(f"missing generated PDF {path.relative_to(DOCS_DIR.parent)}")
+    for path in sorted(actual - expected):
+        errors.append(f"unexpected generated PDF {path.relative_to(DOCS_DIR.parent)}")
+    for path in sorted(expected & actual):
+        if path.stat().st_size == 0:
+            errors.append(f"empty generated PDF {path.relative_to(DOCS_DIR.parent)}")
+
+    if errors:
+        for error in errors:
+            print(f"docs-pdf-check: {error}")
+        return 1
+
+    print(f"docs-pdf-check ok: {len(expected)} PDFs match build targets")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="check that docs/pdf exactly matches the configured PDF target set",
+    )
+    args = parser.parse_args()
+
+    if args.check:
+        return check_pdf_set()
+
+    if HTML_DIR.exists():
+        shutil.rmtree(HTML_DIR)
+
     try:
-        for target in targets:
+        for target in build_targets():
             print(_render_pdf(target))
+        check_result = check_pdf_set()
+        if check_result:
+            return check_result
         return 0
     finally:
         if HTML_DIR.exists():

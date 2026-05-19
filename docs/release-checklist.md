@@ -90,7 +90,8 @@ DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
 `make verify` includes version and crate metadata checks, then checks that PDF
-generation completes and produces non-empty PDF files. The release wrapper
+generation completes, produces non-empty PDF files, and exactly matches the
+configured PDF target set. The release wrapper
 writes repository-relative SHA256 entries and verifies the expected VSIX plus
 every PDF with `scripts/verify_release_artifacts.py`. `make verify` also runs
 an offline release-asset verifier smoke test so checksum mismatches and missing
