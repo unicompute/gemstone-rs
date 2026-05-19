@@ -247,7 +247,7 @@ The `Comparison Status` buttons call read-only local endpoints:
 - `Compare with gemstone-py` renders the same short answer as
   `gemstone-rs compare gemstone-py --status`
 - `Show All Comparison Status` renders the active gemstone-rs batch count,
-  currently **1 batch** and roughly **1-2 hours**
+  currently **0 batches** and roughly **0-0 hours**
 
 Read-only endpoints:
 

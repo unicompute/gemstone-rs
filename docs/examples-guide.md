@@ -124,10 +124,10 @@ gemstone-rs py-native migration --json
 
 That fixture gives wrapper CI concrete payloads for `nil`, booleans, small
 integers, characters, strings, symbols, OOPs, and structured errors. The
-`py-native migration --json` report tracks the remaining
-`gemstone-py-native` work: wrapping `PyNativeSession`, preserving existing
-Python return behavior, keeping the live backend smoke green, and publishing
-wheels once the Python native path is verified from TestPyPI/PyPI installs.
+`py-native migration --json` report tracks the `gemstone-py-native` shared-core
+path: wrapping `PyNativeSession`, preserving existing Python return behavior,
+keeping the live backend smoke green, and verifying published wheels from
+TestPyPI/PyPI installs.
 `py-native compatibility --json` and the checked-in
 `examples/py-native/gemstone-rs.py-native-compat.json` fixture document the
 generated compatibility shim: `NativeCompatibilitySession`, `OopHandle`, and

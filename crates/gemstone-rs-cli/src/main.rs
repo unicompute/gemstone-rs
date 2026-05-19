@@ -2154,20 +2154,12 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 3,
         project_score: 5,
         leader: "gemstone-rs",
-        status: "gemstone-rs owns the clean Rust GCI/session core, exposes the py_native contract, and gemstone-py-native now has an additive RustCoreSession bridge plus wheel/sdist Rust-core smoke checks.",
-        next_action: "Publish Rust-backed native wheels and run TestPyPI/PyPI install verification through the Rust-backed native path.",
+        status: "gemstone-rs owns the clean Rust GCI/session core, exposes the py_native contract, and gemstone-py-native now has an additive RustCoreSession bridge plus verified TestPyPI/PyPI wheels.",
+        next_action: "Keep the shared native-core release lane exercised with native-wheels TestPyPI/PyPI install verification on each publish.",
     },
 ];
 
 const GEMSTONE_PY_GAPS: &[GapInfo] = &[
-    GapInfo {
-        priority: "P1",
-        area: "Shared native core live/publish verification",
-        gemstone_py_strength: "gemstone-py already has the Python package, native wheel, TestPyPI/PyPI, and post-install verification lane.",
-        gemstone_rs_gap: "gemstone-py-native now wraps gemstone_rs::py_native through an additive RustCoreSession bridge, wheel/sdist checks run the Rust-core smoke dry-run, and local live smoke has passed; the remaining gap is published wheel verification.",
-        next_action: "Publish the Rust-backed native wheels and verify TestPyPI/PyPI installs.",
-        verify_with: "scripts/run_native_checks.sh; native-wheels workflow; TestPyPI/PyPI install verification",
-    },
     GapInfo {
         priority: "P2",
         area: "Explorer product polish",
@@ -2210,15 +2202,7 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
 ];
 
-const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[BatchInfo {
-    number: 1,
-    focus: "Shared-core live and publish hardening",
-    hours_min: 1,
-    hours_max: 2,
-    outcome: "Publish Rust-backed gemstone-py-native wheels and verify TestPyPI/PyPI installs.",
-    verify_with:
-        "scripts/run_native_checks.sh plus native-wheels workflow TestPyPI/PyPI install checks",
-}];
+const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[];
 
 const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
     JsComparisonInfo {
@@ -3676,10 +3660,7 @@ fn print_gemstone_js_gap_report(format: OutputFormat) {
 
 fn print_scorecard(info: ScorecardInfo, format: OutputFormat) {
     let (hours_min, hours_max) = total_batch_hours(info.batches);
-    let next_batch = info
-        .batches
-        .first()
-        .expect("comparison batch plans must contain at least one batch");
+    let next_batch = info.batches.first();
     let top_gap = info
         .gaps
         .first()
@@ -3709,12 +3690,16 @@ fn print_scorecard(info: ScorecardInfo, format: OutputFormat) {
                 &format!("{} is stronger today at", info.project_label),
                 info.project_strengths,
             );
-            println!(
-                "Next batch: {}. {} ({}-{} hours)",
-                next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
-            );
-            println!("  Outcome: {}", next_batch.outcome);
-            println!("  Verify with: {}", next_batch.verify_with);
+            if let Some(next_batch) = next_batch {
+                println!(
+                    "Next batch: {}. {} ({}-{} hours)",
+                    next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
+                );
+                println!("  Outcome: {}", next_batch.outcome);
+                println!("  Verify with: {}", next_batch.verify_with);
+            } else {
+                println!("Next batch: none. Active gemstone-rs parity batches are closed.");
+            }
             println!();
             println!("Top gap: {} {}", top_gap.priority, top_gap.area);
             println!("  Next action: {}", top_gap.next_action);
@@ -3744,10 +3729,7 @@ fn print_status(
 ) {
     let (hours_min, hours_max) = total_batch_hours(info.batches);
     let parity = parity_totals(parity_rows);
-    let next_batch = info
-        .batches
-        .first()
-        .expect("comparison batch plans must contain at least one batch");
+    let next_batch = info.batches.first();
     let top_gap = info
         .gaps
         .first()
@@ -3772,10 +3754,14 @@ fn print_status(
                 hours_min,
                 hours_max
             );
-            println!(
-                "  Next batch: {}. {} ({}-{} hours)",
-                next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
-            );
+            if let Some(next_batch) = next_batch {
+                println!(
+                    "  Next batch: {}. {} ({}-{} hours)",
+                    next_batch.number, next_batch.focus, next_batch.hours_min, next_batch.hours_max
+                );
+            } else {
+                println!("  Next batch: none; active parity batches are closed");
+            }
             println!("  Top gap: {} {}", top_gap.priority, top_gap.area);
             println!("  Next action: {}", top_gap.next_action);
             println!();
@@ -3908,11 +3894,7 @@ fn scorecard_json_body(info: ScorecardInfo) -> String {
         json_hint_array(info.gemstone_py_strengths),
         json_hint_array(info.project_strengths),
         remaining_json(info.batches),
-        batch_json(
-            info.batches
-                .first()
-                .expect("comparison batch plans must contain at least one batch")
-        ),
+        optional_batch_json(info.batches.first()),
         generic_gap_json(
             info.gaps
                 .first()
@@ -3936,11 +3918,7 @@ fn status_json_body(info: ScorecardInfo, parity_rows: &[ParityInfo]) -> String {
         escape_json(info.answer),
         remaining_json(info.batches),
         parity_totals_json(parity_totals(parity_rows)),
-        batch_json(
-            info.batches
-                .first()
-                .expect("comparison batch plans must contain at least one batch")
-        ),
+        optional_batch_json(info.batches.first()),
         generic_gap_json(
             info.gaps
                 .first()
@@ -3993,9 +3971,6 @@ fn print_next_action(
     project_label: &str,
     format: OutputFormat,
 ) {
-    let Some(batch) = batches.first() else {
-        return;
-    };
     let Some(gap) = gaps.first() else {
         return;
     };
@@ -4004,12 +3979,16 @@ fn print_next_action(
             println!("{title}");
             println!("  Full guide: {guide}");
             println!();
-            println!(
-                "Next batch: {}. {} ({}-{} hours)",
-                batch.number, batch.focus, batch.hours_min, batch.hours_max
-            );
-            println!("  Outcome: {}", batch.outcome);
-            println!("  Verify with: {}", batch.verify_with);
+            if let Some(batch) = batches.first() {
+                println!(
+                    "Next batch: {}. {} ({}-{} hours)",
+                    batch.number, batch.focus, batch.hours_min, batch.hours_max
+                );
+                println!("  Outcome: {}", batch.outcome);
+                println!("  Verify with: {}", batch.verify_with);
+            } else {
+                println!("Next batch: none. Active gemstone-rs parity batches are closed.");
+            }
             println!();
             println!("Top gap: {} {}", gap.priority, gap.area);
             println!("  gemstone-py strength: {}", gap.gemstone_py_strength);
@@ -4021,7 +4000,7 @@ fn print_next_action(
             println!(
                 r#"{{"comparison":"{}","view":"next","batch":{},"gap":{}}}"#,
                 escape_json(comparison),
-                batch_json(batch),
+                optional_batch_json(batches.first()),
                 generic_gap_json(gap, project_label)
             );
         }
@@ -4034,16 +4013,13 @@ fn next_action_json_entry(
     gaps: &[GapInfo],
     project_label: &str,
 ) -> String {
-    let batch = batches
-        .first()
-        .expect("comparison batch plans must contain at least one batch");
     let gap = gaps
         .first()
         .expect("comparison gap reports must contain at least one gap");
     format!(
         r#"{{"comparison":"{}","batch":{},"gap":{}}}"#,
         escape_json(comparison),
-        batch_json(batch),
+        optional_batch_json(batches.first()),
         generic_gap_json(gap, project_label)
     )
 }
@@ -4228,6 +4204,10 @@ fn batch_json(batch: &BatchInfo) -> String {
         escape_json(batch.outcome),
         escape_json(batch.verify_with)
     )
+}
+
+fn optional_batch_json(batch: Option<&BatchInfo>) -> String {
+    batch.map(batch_json).unwrap_or_else(|| "null".to_string())
 }
 
 fn generic_gap_json(gap: &GapInfo, project_label: &str) -> String {
@@ -7259,21 +7239,18 @@ mod tests {
 
     #[test]
     fn comparison_batch_plans_are_actionable() {
-        assert_eq!(GEMSTONE_RS_BATCHES.len(), 1);
+        assert_eq!(GEMSTONE_RS_BATCHES.len(), 0);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (1, 2));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (0, 0));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
-                total_batches: 1,
-                hours_min: 1,
-                hours_max: 2,
+                total_batches: 0,
+                hours_min: 0,
+                hours_max: 0,
             }
         );
-        assert!(GEMSTONE_RS_BATCHES
-            .iter()
-            .any(|batch| batch.focus.contains("Shared-core live")));
         assert!(GEMSTONE_JS_BATCHES
             .iter()
             .any(|batch| batch.focus.contains("Visual tooling")));
@@ -7289,11 +7266,12 @@ mod tests {
         )
         .contains(r#""comparison":"gemstone-js""#));
         assert!(batch_plan_json_entry("gemstone-py", GEMSTONE_RS_BATCHES)
-            .contains(r#""totalBatches":1"#));
+            .contains(r#""totalBatches":0"#));
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":1,"hoursMin":1,"hoursMax":2}"#));
+            .contains(r#""remaining":{"totalBatches":0,"hoursMin":0,"hoursMax":0}"#));
+        assert!(scorecard_json_entry(gemstone_py_scorecard_info()).contains(r#""nextBatch":null"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -7321,13 +7299,9 @@ mod tests {
 
     #[test]
     fn gap_report_prioritizes_actionable_gemstone_py_gaps() {
-        assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
-            gap.priority == "P1"
-                && gap.area == "Shared native core live/publish verification"
-                && gap
-                    .next_action
-                    .contains("Publish the Rust-backed native wheels")
-        }));
+        assert!(!GEMSTONE_PY_GAPS
+            .iter()
+            .any(|gap| gap.area == "Shared native core live/publish verification"));
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P2"
                 && gap.area == "Web framework adapters"

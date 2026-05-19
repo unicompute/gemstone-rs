@@ -109,7 +109,7 @@
           "$ref": "#/$defs/parityOverall"
         },
         "nextBatch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "topGap": {
           "$ref": "#/$defs/genericGap"
@@ -161,7 +161,7 @@
           "$ref": "#/$defs/remaining"
         },
         "nextBatch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "topGap": {
           "$ref": "#/$defs/genericGap"
@@ -227,7 +227,7 @@
           "const": "next"
         },
         "batch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "gap": {
           "$ref": "#/$defs/genericGap"
@@ -552,7 +552,7 @@
           "$ref": "#/$defs/parityOverall"
         },
         "nextBatch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "topGap": {
           "$ref": "#/$defs/genericGap"
@@ -600,7 +600,7 @@
           "$ref": "#/$defs/remaining"
         },
         "nextBatch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "topGap": {
           "$ref": "#/$defs/genericGap"
@@ -657,7 +657,7 @@
           "$ref": "#/$defs/comparisonName"
         },
         "batch": {
-          "$ref": "#/$defs/batch"
+          "$ref": "#/$defs/optionalBatch"
         },
         "gap": {
           "$ref": "#/$defs/genericGap"
@@ -999,6 +999,16 @@
           "type": "string"
         }
       }
+    },
+    "optionalBatch": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/batch"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "nonEmptyStringArray": {
       "type": "array",

@@ -106,7 +106,7 @@ assert_eq!(session.eval("3 + 4")?, PyNativeValue::SmallInt(7));
 session.logout()?;
 ```
 
-`py-native migration --json` prints the remaining shared-core checklist,
+`py-native migration --json` prints the shared-core checklist and current status,
 `py-native compatibility --json` prints the Python package-layer method map,
 and `py-native conformance --json` prints the PyO3 module/session/shim surface
 that downstream `gemstone-py-native` integration should preserve.

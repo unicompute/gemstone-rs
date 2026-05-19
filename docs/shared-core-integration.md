@@ -162,7 +162,7 @@ for Python 3.14 compatibility and keeps PyO3's
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, `migration_json`,
 `compatibility_json`, `conformance_json`, and `handoff_json`, so Python wrapper
 CI can inspect the adapter contract, compatibility method map, conformance
-target, handoff manifest, and remaining live/publish checklist from the
+target, handoff manifest, and live/publish verification checklist from the
 generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
 execute, resolve, value-to-OOP conversion, perform, strings, symbols, globals,

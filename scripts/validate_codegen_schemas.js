@@ -819,7 +819,7 @@ function assertCompareEntry(value, view, context) {
       }
       break;
     case "next":
-      assertBatch(value.batch, `${context}.batch`);
+      assertOptionalBatch(value.batch, `${context}.batch`);
       assertGenericGap(value.gap, `${context}.gap`);
       break;
     case "totals":
@@ -846,7 +846,7 @@ function assertStatus(value, context) {
   assert.strictEqual(typeof value.parity.projectScore, "number", `${context}.parity.projectScore`);
   assert.strictEqual(typeof value.parity.maxScore, "number", `${context}.parity.maxScore`);
   assert.strictEqual(typeof value.parity.scoreGap, "number", `${context}.parity.scoreGap`);
-  assertBatch(value.nextBatch, `${context}.nextBatch`);
+  assertOptionalBatch(value.nextBatch, `${context}.nextBatch`);
   assertGenericGap(value.topGap, `${context}.topGap`);
   assert(value.commands && typeof value.commands === "object", `${context}.commands`);
   for (const field of ["scorecard", "parity", "batches", "totals"]) {
@@ -888,7 +888,7 @@ function assertScorecard(value, context) {
     }
   }
   assertTotals(value.remaining, `${context}.remaining`);
-  assertBatch(value.nextBatch, `${context}.nextBatch`);
+  assertOptionalBatch(value.nextBatch, `${context}.nextBatch`);
   assertGenericGap(value.topGap, `${context}.topGap`);
 }
 
@@ -943,4 +943,11 @@ function assertBatch(batch, context) {
   assert.strictEqual(typeof batch.outcome, "string", `${context}.outcome`);
   assert.strictEqual(typeof batch.verifyWith, "string", `${context}.verifyWith`);
   assert(batch.hoursMax >= batch.hoursMin, `${context}: hoursMax must be >= hoursMin`);
+}
+
+function assertOptionalBatch(batch, context) {
+  if (batch === null) {
+    return;
+  }
+  assertBatch(batch, context);
 }

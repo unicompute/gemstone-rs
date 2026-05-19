@@ -153,10 +153,10 @@ gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 ```
 
-The migration report tracks the remaining `gemstone-py-native` shared-core
-steps, including wrapping `PyNativeSession`, preserving Python return behavior,
-running live native backend smoke, and publishing wheels after the Python path
-is green.
+The migration report tracks the `gemstone-py-native` shared-core path:
+wrapping `PyNativeSession`, preserving Python return behavior, running live
+native backend smoke, and verifying the published TestPyPI/PyPI wheels after
+the Python path is green.
 The `py_native_pyo3_adapter` scaffold now also writes
 `python/gemstone_py_native_compat.py`, a Python compatibility shim with
 `NativeCompatibilitySession` and `OopHandle`. That shim shows how the real
@@ -178,7 +178,8 @@ py-native fixture in one command and emits `--json` for release bots, VS Code,
 and the future `gemstone-py-native` pipeline.
 
 `gemstone-rs compare all --totals` prints only the active gemstone-rs estimate:
-**1 batch**, roughly **6-10 hours** total. Use
+**0 batches**, roughly **0-0 hours** total now that the Rust-backed
+`gemstone-py-native` wheel publish has passed. Use
 `gemstone-rs compare gemstone-py --status` for the shortest answer with
 parity score and batch count, `gemstone-rs compare gemstone-py --scorecard`
 for the decision view, `gemstone-rs compare gemstone-py --parity` for

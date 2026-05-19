@@ -38,9 +38,9 @@ gemstone-rs examples scaffold actix_service ./gemstone-rs-actix-service
 guide. `compare gemstone-js` remains available as archived background
 reference, but active planning now focuses on gemstone-rs. The `--status`
 forms give the shortest answer with the direct recommendation, parity score,
-remaining batch count, next batch, top gap, and follow-up commands. The `--scorecard`
+remaining batch count, next batch when one exists, top gap, and follow-up commands. The `--scorecard`
 forms print the shortest decision view: when to use each project, current
-strengths, the remaining batch count, the next batch, and the top gap. The
+strengths, the remaining batch count, the next batch when one exists, and the top gap. The
 `--parity` forms print area-by-area maturity scores for API, web, async,
 codegen, explorer, release, and native-core work. The `--gaps`
 forms print remaining parity gaps with next actions and verification commands.
@@ -49,7 +49,8 @@ The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print the active gemstone-rs track; `compare all --batches`
-reports **1 batch** and roughly **1-2 hours**.
+reports **0 batches** and roughly **0-0 hours** after the Rust-backed
+`gemstone-py-native` TestPyPI/PyPI wheel verification passed.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,

@@ -651,32 +651,32 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         comparison: "gemstone-py",
         view: include_view.then_some("status"),
         project_label: "gemstone-rs",
-        answer: "gemstone-py remains more mature for Python apps and web examples; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, release-verifiable crates, and the future shared native core.",
+        answer: "gemstone-py remains more mature for Python apps and web examples; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, release-verifiable crates, and the shared Rust native core that now backs gemstone-py-native.",
         gemstone_py_score: 30,
-        project_score: 29,
+        project_score: 30,
         max_score: 35,
-        total_batches: 1,
-        hours_min: 6,
-        hours_max: 10,
-        next_number: 1,
-        next_focus: "Shared core with gemstone-py-native",
-        next_hours_min: 6,
-        next_hours_max: 10,
-        next_outcome: "Wire gemstone-py-native to the gemstone_rs::py_native adapter so Python and Rust share the native bridge.",
-        next_verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
-        top_gap_priority: "P1",
-        top_gap_area: "Shared native core",
-        top_gap_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
-        top_gap_project_gap: "gemstone-rs now exposes a py_native adapter contract, but gemstone-py-native does not yet wrap it.",
-        top_gap_next_action: "Wire gemstone-py-native to gemstone_rs::py_native and keep Python return behavior backward compatible.",
-        top_gap_verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+        total_batches: 0,
+        hours_min: 0,
+        hours_max: 0,
+        next_number: 0,
+        next_focus: "",
+        next_hours_min: 0,
+        next_hours_max: 0,
+        next_outcome: "",
+        next_verify_with: "",
+        top_gap_priority: "P2",
+        top_gap_area: "Explorer product polish",
+        top_gap_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
+        top_gap_project_gap: "gemstone-rs-explorer and the VS Code webview now cover setup, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot values, comparison status, and visuals; it still needs more polished editing flows and richer live object navigation.",
+        top_gap_next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
+        top_gap_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         command_target: "gemstone-py",
     })
 }
 
 fn all_status_json() -> String {
     format!(
-        r#"{{"success":true,"comparison":"all","view":"status","activeOnly":true,"totalBatches":1,"hoursMin":6,"hoursMax":10,"comparisons":[{}]}}"#,
+        r#"{{"success":true,"comparison":"all","view":"status","activeOnly":true,"totalBatches":0,"hoursMin":0,"hoursMax":0,"comparisons":[{}]}}"#,
         gemstone_py_status_json(false)
     )
 }
@@ -714,7 +714,7 @@ fn status_json(status: StatusJson) -> String {
         .map(|view| format!(r#","view":"{}""#, escape_json(view)))
         .unwrap_or_default();
     format!(
-        r#"{{"success":true,"comparison":"{}"{},"answer":"{}","remaining":{{"totalBatches":{},"hoursMin":{},"hoursMax":{}}},"parity":{{"gemstonePyScore":{},"project":"{}","projectScore":{},"maxScore":{},"scoreGap":{}}},"nextBatch":{{"number":{},"focus":"{}","hoursMin":{},"hoursMax":{},"outcome":"{}","verifyWith":"{}"}},"topGap":{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","project":"{}","projectGap":"{}","nextAction":"{}","verifyWith":"{}"}},"commands":{{"status":"gemstone-rs compare {} --status","scorecard":"gemstone-rs compare {} --scorecard","parity":"gemstone-rs compare {} --parity","batches":"gemstone-rs compare {} --batches","totals":"gemstone-rs compare {} --totals"}}}}"#,
+        r#"{{"success":true,"comparison":"{}"{},"answer":"{}","remaining":{{"totalBatches":{},"hoursMin":{},"hoursMax":{}}},"parity":{{"gemstonePyScore":{},"project":"{}","projectScore":{},"maxScore":{},"scoreGap":{}}},"nextBatch":{},"topGap":{{"priority":"{}","area":"{}","gemstonePyStrength":"{}","project":"{}","projectGap":"{}","nextAction":"{}","verifyWith":"{}"}},"commands":{{"status":"gemstone-rs compare {} --status","scorecard":"gemstone-rs compare {} --scorecard","parity":"gemstone-rs compare {} --parity","batches":"gemstone-rs compare {} --batches","totals":"gemstone-rs compare {} --totals"}}}}"#,
         escape_json(status.comparison),
         view,
         escape_json(status.answer),
@@ -728,12 +728,19 @@ fn status_json(status: StatusJson) -> String {
         status
             .gemstone_py_score
             .saturating_sub(status.project_score),
-        status.next_number,
-        escape_json(status.next_focus),
-        status.next_hours_min,
-        status.next_hours_max,
-        escape_json(status.next_outcome),
-        escape_json(status.next_verify_with),
+        if status.total_batches == 0 {
+            "null".to_string()
+        } else {
+            format!(
+                r#"{{"number":{},"focus":"{}","hoursMin":{},"hoursMax":{},"outcome":"{}","verifyWith":"{}"}}"#,
+                status.next_number,
+                escape_json(status.next_focus),
+                status.next_hours_min,
+                status.next_hours_max,
+                escape_json(status.next_outcome),
+                escape_json(status.next_verify_with)
+            )
+        },
         escape_json(status.top_gap_priority),
         escape_json(status.top_gap_area),
         escape_json(status.top_gap_strength),
@@ -3796,7 +3803,7 @@ mod tests {
     }
 
     #[test]
-    fn compare_status_endpoint_reports_remaining_batches() {
+    fn compare_status_endpoint_reports_closed_active_batches() {
         let response = handle_request(
             "GET /api/compare/gemstone-py/status HTTP/1.1",
             &ExplorerConfig::default(),
@@ -3804,12 +3811,12 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(response.body.contains(r#""view":"status""#));
-        assert!(response.body.contains(r#""totalBatches":1"#));
-        assert!(response.body.contains(r#""hoursMin":6"#));
-        assert!(response.body.contains(r#""hoursMax":10"#));
+        assert!(response.body.contains(r#""totalBatches":0"#));
+        assert!(response.body.contains(r#""hoursMin":0"#));
+        assert!(response.body.contains(r#""hoursMax":0"#));
+        assert!(response.body.contains(r#""nextBatch":null"#));
         assert!(response.body.contains(r#""project":"gemstone-rs""#));
-        assert!(response.body.contains("Shared core"));
-        assert!(response.body.contains("py_native adapter"));
+        assert!(response.body.contains("Explorer product polish"));
         assert!(response
             .body
             .contains("gemstone-rs compare gemstone-py --batches"));
@@ -3824,9 +3831,9 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""comparison":"all""#));
         assert!(response.body.contains(r#""activeOnly":true"#));
-        assert!(response.body.contains(r#""totalBatches":1"#));
-        assert!(response.body.contains(r#""hoursMin":6"#));
-        assert!(response.body.contains(r#""hoursMax":10"#));
+        assert!(response.body.contains(r#""totalBatches":0"#));
+        assert!(response.body.contains(r#""hoursMin":0"#));
+        assert!(response.body.contains(r#""hoursMax":0"#));
         assert!(response.body.contains(r#""comparison":"gemstone-py""#));
         assert!(!response.body.contains(r#""comparison":"gemstone-js""#));
     }

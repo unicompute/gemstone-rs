@@ -431,10 +431,10 @@ wrapper CI concrete payloads for `nil`, booleans, small integers, characters,
 strings, symbols, OOPs, and structured errors. The smoke command checks
 capabilities, OOP constants, value conversion, config error mapping, and
 structured error mapping without a live stone when `--dry-run` is passed. The
-`py-native migration --json` report turns the remaining shared-core work into
-a concrete checklist for `gemstone-py-native`: wrap `PyNativeSession`, preserve
-the Python API, keep live backend smoke green, and publish wheels once
-TestPyPI/PyPI install verification passes. `py-native compatibility --json`
+`py-native migration --json` report turns the shared-core path into a concrete
+checklist for `gemstone-py-native`: wrap `PyNativeSession`, preserve the Python
+API, keep live backend smoke green, and verify published wheels from
+TestPyPI/PyPI. `py-native compatibility --json`
 adds a method-by-method map for the generated Python shim, including
 `OopHandle` return points and typed helper methods. The
 `py-native conformance --json` report adds the integration target: generated

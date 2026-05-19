@@ -876,11 +876,11 @@ payloads for `nil`, booleans, small integers, characters, strings, symbols,
 OOPs, and structured errors such as `missingConfig`, `illegalOop`,
 `unexpectedType`, and path-aware mapping failures.
 
-The migration JSON is useful for release work because it names the actual
-remaining shared-core steps: keep the downstream `RustCoreSession` bridge
+The migration JSON is useful for release work because it names the shared-core
+steps and their current status: keep the downstream `RustCoreSession` bridge
 green, preserve existing Python return behavior, run the native/live smoke
-suite through the Rust-backed path, and publish wheels only after that path is
-green.
+suite through the Rust-backed path, and verify published wheels from
+TestPyPI/PyPI.
 
 The generated PyO3 starter also exposes that report as
 `gemstone_py_native.migration_json()`, and the real downstream bridge exposes
@@ -921,8 +921,8 @@ The final Rust-side bundle is `gemstone-rs py-native handoff --json`. It
 collects the capabilities, samples, smoke, migration, compatibility, and
 conformance artifacts into one manifest and adds the required acceptance
 checks: scaffold compile, fixture freshness, preserved Python return policy,
-live Rust-core native smoke, and wheel publication after TestPyPI/PyPI install
-verification passes.
+live Rust-core native smoke, and published wheel verification from TestPyPI and
+PyPI.
 The generated PyO3 starter exposes the same manifest as
 `gemstone_py_native.handoff_json()`, and the real native package exposes the
 Rust-core report functions under `gemstone_py_native._gci`, so release gating
@@ -934,6 +934,7 @@ compatibility, conformance, and handoff. The JSON output is intentionally
 boring. That is the point. It gives the eventual `gemstone-py-native` workflow
 one stable command to run before wheels are published.
 
-The remaining shared-core work is no longer initial wiring. Local live GemStone
-smoke through the Rust-backed native path has passed; the remaining step is
-TestPyPI/PyPI install verification for the published wheels.
+The shared-core release path is now closed for this phase. Local live GemStone
+smoke through the Rust-backed native path passed, the Rust-backed
+`gemstone-py-native` wheels were published, and TestPyPI/PyPI install
+verification passed for those wheels.

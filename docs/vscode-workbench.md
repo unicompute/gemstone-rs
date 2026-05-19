@@ -211,7 +211,7 @@ checkout.
 10. Run `GemStone RS: Run py-native Smoke` when you want adapter smoke checks
    from VS Code.
 11. Run `GemStone RS: Show py-native Migration Plan` when you want the
-   remaining `gemstone-py-native` shared-core checklist.
+   `gemstone-py-native` shared-core checklist and publish-verification status.
 12. Run `GemStone RS: Validate py-native Conformance Fixture` when you want the
    PyO3 module/session/shim surface checked against the Rust core.
 13. Run `GemStone RS: Validate py-native Handoff Bundle` or `GemStone RS: Show
@@ -392,7 +392,7 @@ actions.
 
 The webview also exposes comparison status commands. `Compare with gemstone-py`
 runs `gemstone-rs compare gemstone-py --status --json` and renders the answer,
-parity score, remaining batch count, next batch, top gap, and follow-up CLI
+parity score, remaining batch count, next batch when one exists, top gap, and follow-up CLI
 commands in the GemStone RS output panel. `Show All Comparison Status` renders
 the aggregate status for every comparison target, including the combined
 batch/hour estimate.
