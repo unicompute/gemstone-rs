@@ -72,6 +72,15 @@ That check verifies the VSIX icon path, required Marketplace/GitHub assets,
 local Markdown image links, and repository `raw.githubusercontent.com` image
 links that point back into this project.
 
+Validate local Markdown links and same-repository raw GitHub links:
+
+```bash
+make docs-link-check
+```
+
+That check is offline; it does not probe public websites, but it does catch
+missing local files, missing directories, and broken Markdown heading anchors.
+
 The screenshot path does not require GemStone credentials because the explorer
 home page renders before live endpoints are called. Live browse/codegen data
 still requires the normal `GS_*` environment.
@@ -107,6 +116,7 @@ For a release pass, run:
 
 ```bash
 make visual-asset-check
+make docs-link-check
 make verify
 make vscode-package
 ```
