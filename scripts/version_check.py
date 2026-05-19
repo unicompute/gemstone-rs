@@ -116,6 +116,17 @@ def main() -> int:
         f"release workflow default version {workflow_version} does not match {release_version}",
     )
 
+    post_release_workflow = read_text(ROOT / ".github/workflows/post-release-verify.yml")
+    post_release_version = first_match(
+        r'^\s+default: "([^"]+)"$',
+        post_release_workflow,
+        "post-release workflow default version",
+    )
+    check(
+        post_release_version == release_version,
+        f"post-release workflow default version {post_release_version} does not match {release_version}",
+    )
+
     ci_workflow = read_text(ROOT / ".github/workflows/ci.yml")
     smoke_versions = re.findall(r"scripts/release_all\.sh ([0-9]+\.[0-9]+\.[0-9]+)", ci_workflow)
     check(bool(smoke_versions), "CI release smoke does not call scripts/release_all.sh with an explicit version")
@@ -134,6 +145,68 @@ def main() -> int:
         root_lock_package.get("version") == vscode_version,
         f"package-lock root package version {root_lock_package.get('version')} does not match package.json {vscode_version}",
     )
+
+    release_snippet_paths = [
+        "README.md",
+        "docs/release-checklist.md",
+        "docs/setup-guide.md",
+        "docs/medium-article.md",
+    ]
+    release_snippet_patterns = [
+        (r"scripts/release_all\.sh ([0-9]+\.[0-9]+\.[0-9]+)", "release_all.sh snippet"),
+        (r"scripts/publish_verify\.sh ([0-9]+\.[0-9]+\.[0-9]+)", "publish_verify.sh snippet"),
+        (r"-f version=([0-9]+\.[0-9]+\.[0-9]+)", "workflow version input"),
+    ]
+    for relative_path in release_snippet_paths:
+        text = read_text(ROOT / relative_path)
+        for pattern, label in release_snippet_patterns:
+            for version in re.findall(pattern, text):
+                check(
+                    version == release_version,
+                    f"{relative_path}: {label} version {version} does not match {release_version}",
+                )
+
+    vsix_filename_paths = [
+        "README.md",
+        "docs/release-checklist.md",
+        "docs/vscode-workbench.md",
+    ]
+    for relative_path in vsix_filename_paths:
+        text = read_text(ROOT / relative_path)
+        for version in re.findall(r"gemstone-rs-workbench-([0-9]+\.[0-9]+\.[0-9]+)\.vsix", text):
+            check(
+                version == vscode_version,
+                f"{relative_path}: VSIX filename version {version} does not match {vscode_version}",
+            )
+
+    release_checklist = read_text(ROOT / "docs/release-checklist.md")
+    notes_versions = re.findall(
+        r"^## ([0-9]+\.[0-9]+\.[0-9]+) / Workbench ([0-9]+\.[0-9]+\.[0-9]+) Notes$",
+        release_checklist,
+        re.MULTILINE,
+    )
+    if not notes_versions:
+        raise AssertionError("could not find release checklist current notes heading")
+    check(
+        (release_version, vscode_version) in notes_versions,
+        f"release checklist is missing {release_version} / Workbench {vscode_version} notes",
+    )
+
+    cli_source = read_text(ROOT / "crates/gemstone-rs-cli/src/main.rs")
+    for adapter_crate in ["gemstone-rs-axum", "gemstone-rs-actix"]:
+        check(
+            f'{adapter_crate} = "{{gemstone_rs_version}}"' in cli_source,
+            f"CLI scaffold for {adapter_crate} should use {{gemstone_rs_version}}",
+        )
+        hardcoded_versions = re.findall(
+            rf'{re.escape(adapter_crate)} = "([0-9]+\.[0-9]+\.[0-9]+)"',
+            cli_source,
+        )
+        for version in hardcoded_versions:
+            check(
+                version == crate_versions[adapter_crate],
+                f"CLI scaffold {adapter_crate} version {version} does not match {crate_versions[adapter_crate]}",
+            )
 
     if errors:
         for error in errors:

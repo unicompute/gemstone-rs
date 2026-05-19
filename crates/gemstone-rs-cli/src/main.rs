@@ -1669,6 +1669,8 @@ struct ScaffoldFile {
     source: &'static str,
 }
 
+const GEMSTONE_RS_VERSION_TOKEN: &str = "{gemstone_rs_version}";
+
 const EXAMPLES: &[ExampleInfo] = &[
     ExampleInfo {
         name: "hello",
@@ -2610,7 +2612,7 @@ crate-type = ["cdylib", "rlib"]
         description: "Standalone Axum service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/axum_service.rs"),
         extra_dependencies: r#"axum = "0.8"
-gemstone-rs-axum = "0.2.2"
+gemstone-rs-axum = "{gemstone_rs_version}"
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 "#,
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
@@ -2622,7 +2624,7 @@ tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
         description: "Standalone Actix Web service with /, /health/local, and /health/gemstone.",
         main_rs: include_str!("../templates/actix_service.rs"),
         extra_dependencies: r#"actix-web = "4"
-gemstone-rs-actix = "0.2.2"
+gemstone-rs-actix = "{gemstone_rs_version}"
 "#,
         extra_files: NO_EXTRA_SCAFFOLD_FILES,
     },
@@ -4638,7 +4640,10 @@ gemstone-rs = "{}"
         env!("CARGO_PKG_VERSION")
     );
     if !template.extra_dependencies.is_empty() {
-        cargo_toml.push_str(template.extra_dependencies);
+        let extra_dependencies = template
+            .extra_dependencies
+            .replace(GEMSTONE_RS_VERSION_TOKEN, env!("CARGO_PKG_VERSION"));
+        cargo_toml.push_str(&extra_dependencies);
     }
     cargo_toml
 }
@@ -7560,14 +7565,20 @@ mod tests {
         let axum_toml = scaffold_cargo_toml(axum);
         assert!(axum_toml.contains(r#"name = "gemstone-rs-axum-service""#));
         assert!(axum_toml.contains(r#"axum = "0.8""#));
-        assert!(axum_toml.contains(r#"gemstone-rs-axum = "0.2.2""#));
+        assert!(axum_toml.contains(&format!(
+            r#"gemstone-rs-axum = "{}""#,
+            env!("CARGO_PKG_VERSION")
+        )));
         assert!(axum_toml.contains(r#"tokio = { version = "1""#));
 
         let actix = find_scaffold_template("actix").unwrap();
         let actix_toml = scaffold_cargo_toml(actix);
         assert!(actix_toml.contains(r#"name = "gemstone-rs-actix-service""#));
         assert!(actix_toml.contains(r#"actix-web = "4""#));
-        assert!(actix_toml.contains(r#"gemstone-rs-actix = "0.2.2""#));
+        assert!(actix_toml.contains(&format!(
+            r#"gemstone-rs-actix = "{}""#,
+            env!("CARGO_PKG_VERSION")
+        )));
 
         let py_native = find_scaffold_template("py_native_pyo3_adapter").unwrap();
         let py_native_toml = scaffold_cargo_toml(py_native);
