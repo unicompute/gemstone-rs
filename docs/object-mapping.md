@@ -256,6 +256,78 @@ loaded labels: {"source": "manual"}
 loaded symbol labels: {"source": "manual"}
 ```
 
+## Dictionary Mapping Patterns
+
+Dictionary mapping shows up in three different places. Keep them separate:
+
+| Surface | What the key policy controls | Best API |
+| --- | --- | --- |
+| BridgeRoot entry | the key used under `GemStoneRsBridgeRoot` | `put_with_key_type`, `get_*_with_key_type` |
+| Dictionary value | the keys inside the stored GemStone `Dictionary` | `BridgeValue::dictionary`, `BridgeValue::keyed_dictionary` |
+| Rust map field | string-keyed metadata or lookup values | `BTreeMap<String, T>`, `put_map`, `at_map` |
+
+Use `BTreeMap<String, T>` when the dictionary is JSON-like metadata. It stores
+and reads back string-keyed GemStone dictionary entries:
+
+```rust
+use gemstone_rs::{Config, Session};
+use std::collections::BTreeMap;
+
+let mut session = Session::login(Config::from_env()?)?;
+let mut bridge_root = session.bridge_root()?;
+
+let labels = BTreeMap::from([
+    ("channel".to_string(), "web".to_string()),
+    ("priority".to_string(), "high".to_string()),
+]);
+
+bridge_root.put_map("BookingLabels", &labels)?;
+let loaded: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
+assert_eq!(loaded["channel"], "web");
+```
+
+Use `BridgeValue::keyed_dictionary` when the dictionary entries themselves must
+use Smalltalk symbols or a deliberate mix of string and symbol keys:
+
+```rust
+use gemstone_rs::{BridgeKey, BridgeKeyType, BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let mut bridge_root = session.bridge_root()?;
+
+let payload = BridgeValue::keyed_dictionary([
+    (BridgeKey::symbol("status"), BridgeValue::from("ready")),
+    (BridgeKey::symbol("amount"), BridgeValue::from(100_i64)),
+    (BridgeKey::string("externalId"), BridgeValue::from("web-42")),
+]);
+
+bridge_root.put("SmalltalkBooking", payload)?;
+
+let dynamic = bridge_root.get_bridge_value("SmalltalkBooking")?;
+assert!(matches!(dynamic, BridgeValue::KeyedDictionary(_)));
+
+let mut dictionary = bridge_root.get_dictionary("SmalltalkBooking")?;
+assert_eq!(
+    dictionary.at_string_with_key_type("status", BridgeKeyType::Symbol)?,
+    "ready"
+);
+assert_eq!(
+    dictionary.at_smallint_with_key_type("amount", BridgeKeyType::Symbol)?,
+    100
+);
+assert_eq!(dictionary.at_string("externalId")?, "web-42");
+```
+
+`BridgeValue::from_oop` reads a dictionary with only string keys as
+`BridgeValue::Dictionary`. If any key is a symbol, it preserves the per-entry
+policy as `BridgeValue::KeyedDictionary`. That makes explorer output and shape
+reports honest about what Smalltalk code will see.
+
+One subtle point: `put_map_with_key_type("BookingLabels", BridgeKeyType::Symbol,
+&labels)` changes the key used to store `BookingLabels` in the containing
+dictionary. It does not make the entries inside `labels` symbol-keyed. To
+control entry keys inside the value, build a `BridgeValue::keyed_dictionary`.
+
 ## Dynamic BridgeValue Inspection
 
 When you do not want a typed struct yet, read a BridgeRoot value back as a
@@ -520,6 +592,10 @@ bridge_root.put_field_with_key_type("BookingLabels", BridgeKeyType::Symbol, &dra
 let labels: BTreeMap<String, String> =
     bridge_root.get_map_with_key_type("BookingLabels", BridgeKeyType::Symbol)?;
 ```
+
+Those variants choose the lookup key in the containing dictionary. For
+symbol-keyed entries inside the dictionary value itself, use the dictionary
+mapping pattern above.
 
 Use string keys when interoperating with JSON-like payloads and symbol keys when
 you want Smalltalk-style dictionary access.

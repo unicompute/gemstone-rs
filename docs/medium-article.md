@@ -446,6 +446,54 @@ GemStone dictionary represents metadata or lookup values, and use a nested
 also accepts `Map<String, T>` as a shorter spelling and `Dictionary<T>` as an
 alias for `BTreeMap<String, T>`.
 
+There is one important distinction: the key used to store a value in
+BridgeRoot is not the same as the keys inside a stored GemStone dictionary.
+`BTreeMap<String, T>` creates a string-keyed dictionary value:
+
+```rust
+use std::collections::BTreeMap;
+
+let labels = BTreeMap::from([
+    ("channel".to_string(), "web".to_string()),
+    ("priority".to_string(), "high".to_string()),
+]);
+
+bridge_root.put_map("BookingLabels", &labels)?;
+let labels: BTreeMap<String, String> = bridge_root.get_map("BookingLabels")?;
+assert_eq!(labels["channel"], "web");
+```
+
+When Smalltalk code expects symbol keys inside the dictionary, build that
+dictionary explicitly:
+
+```rust
+use gemstone_rs::{BridgeKey, BridgeKeyType, BridgeValue};
+
+let payload = BridgeValue::keyed_dictionary([
+    (BridgeKey::symbol("status"), BridgeValue::from("ready")),
+    (BridgeKey::symbol("amount"), BridgeValue::from(100_i64)),
+    (BridgeKey::string("externalId"), BridgeValue::from("web-42")),
+]);
+
+bridge_root.put("SmalltalkBooking", payload)?;
+
+let mut dictionary = bridge_root.get_dictionary("SmalltalkBooking")?;
+assert_eq!(
+    dictionary.at_string_with_key_type("status", BridgeKeyType::Symbol)?,
+    "ready"
+);
+assert_eq!(
+    dictionary.at_smallint_with_key_type("amount", BridgeKeyType::Symbol)?,
+    100
+);
+assert_eq!(dictionary.at_string("externalId")?, "web-42");
+```
+
+Dynamic read-back preserves that distinction. A dictionary with only string keys
+comes back as `BridgeValue::Dictionary`; a dictionary with any symbol key comes
+back as `BridgeValue::KeyedDictionary`, so the explorer and VS Code webview can
+show the real Smalltalk-facing shape.
+
 For one-off scripts, the typed BridgeRoot helpers avoid manual conversion:
 
 ```rust
@@ -520,13 +568,17 @@ still reviews field names, symbol/string key policy, optional fields, opaque
 OOPs, and repeated object references before generating code.
 
 When a Smalltalk-facing dictionary should use symbols, use the matching
-key-policy variants:
+key-policy variants for the containing dictionary lookup:
 
 ```rust
 bridge_root.put_map_with_key_type("BookingLabels", BridgeKeyType::Symbol, &draft.labels)?;
 let labels: BTreeMap<String, String> =
     bridge_root.get_map_with_key_type("BookingLabels", BridgeKeyType::Symbol)?;
 ```
+
+That stores the `BookingLabels` entry under a symbol key in BridgeRoot. The map
+entries themselves remain string-keyed; use `BridgeValue::keyed_dictionary` for
+symbol-keyed entries inside the stored dictionary value.
 
 Generate a mapping proposal from a live stone:
 

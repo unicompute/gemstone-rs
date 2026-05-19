@@ -511,6 +511,10 @@ are suitable for CI checks.
 `bridge mapping-preview <key> --mapped BookingDraft --depth 4` converts a live
 BridgeRoot value into a reviewable mapping config, and `bridge put` and
 `bridge remove` make explicit committed BridgeRoot edits.
+Dictionary mapping distinguishes the key used to store a BridgeRoot entry from
+the keys inside a stored dictionary value: `BTreeMap<String, T>` maps
+string-keyed metadata, while `BridgeValue::keyed_dictionary` preserves
+Smalltalk symbol keys inside the value.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
 line-oriented config, explain what will be generated, preview generated Rust

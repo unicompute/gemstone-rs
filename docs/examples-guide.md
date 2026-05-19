@@ -335,6 +335,10 @@ gemstone-rs HTTP service example
   GET /health/gemstone
 ```
 
+The mapping examples use `BTreeMap<String, T>` for string-keyed dictionary
+metadata. Use `BridgeValue::keyed_dictionary` when the entries inside the
+GemStone dictionary must be symbol-keyed for Smalltalk code.
+
 Offline examples should run without GemStone:
 
 ```text

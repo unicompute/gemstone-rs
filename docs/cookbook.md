@@ -194,6 +194,42 @@ assert_eq!(symbol_labels["source"], "cookbook");
 Use map fields for string-keyed metadata or lookup tables. Use nested
 `BridgeMapped` structs when the related value has a stable domain shape.
 
+## Recipe 10C: Store a Symbol-Keyed Dictionary
+
+Use `BTreeMap<String, T>` for string-keyed metadata. When the GemStone
+dictionary entries themselves need symbol keys, build a keyed dictionary
+explicitly:
+
+```rust
+use gemstone_rs::{BridgeKey, BridgeKeyType, BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let mut bridge_root = session.bridge_root()?;
+
+let payload = BridgeValue::keyed_dictionary([
+    (BridgeKey::symbol("status"), BridgeValue::from("ready")),
+    (BridgeKey::symbol("amount"), BridgeValue::from(100_i64)),
+    (BridgeKey::string("externalId"), BridgeValue::from("web-42")),
+]);
+
+bridge_root.put("CookbookSymbolDictionary", payload)?;
+
+let mut dictionary = bridge_root.get_dictionary("CookbookSymbolDictionary")?;
+assert_eq!(
+    dictionary.at_string_with_key_type("status", BridgeKeyType::Symbol)?,
+    "ready"
+);
+assert_eq!(
+    dictionary.at_smallint_with_key_type("amount", BridgeKeyType::Symbol)?,
+    100
+);
+assert_eq!(dictionary.at_string("externalId")?, "web-42");
+```
+
+`put_map_with_key_type` changes the key used to store the map in the containing
+dictionary. It does not change the entry keys inside the stored map. Use
+`BridgeValue::keyed_dictionary` for symbol-keyed entries inside the value.
+
 ## Recipe 11: Browse Dictionaries
 
 ```rust
