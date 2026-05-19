@@ -921,7 +921,8 @@ The final Rust-side bundle is `gemstone-rs py-native handoff --json`. It
 collects the capabilities, samples, smoke, migration, compatibility, and
 conformance artifacts into one manifest and adds the required acceptance
 checks: scaffold compile, fixture freshness, preserved Python return policy,
-live native backend smoke, and wheel publication after the live path is green.
+live Rust-core native smoke, and wheel publication after the live path is
+green.
 The generated PyO3 starter exposes the same manifest as
 `gemstone_py_native.handoff_json()`, and the real native package exposes the
 Rust-core report functions under `gemstone_py_native._gci`, so release gating

@@ -116,7 +116,7 @@ gemstone-rs compare all --batches
 `compare all --batches` now reports only active gemstone-rs work. The
 gemstone-js comparison remains available as archived background reference, but
 it is no longer part of the active remaining-work estimate. Active remaining
-work is **1 batch**, roughly **6-10 hours** total.
+work is **1 batch**, roughly **2-4 hours** total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
@@ -167,9 +167,9 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Shared-core live and publish hardening | 3-5 hours |
+| 1 | Shared-core live and publish hardening | 2-4 hours |
 
-Total: roughly **3-5 hours** to finish the live and published-artifact checks
+Total: roughly **2-4 hours** to finish the live and published-artifact checks
 for shared native-core integration.
 
 Recent codegen batch status: closed. `codegen discover` now records

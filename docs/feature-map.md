@@ -49,7 +49,7 @@ The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print the active gemstone-rs track; `compare all --batches`
-reports **1 batch** and roughly **6-10 hours**.
+reports **1 batch** and roughly **2-4 hours**.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,
