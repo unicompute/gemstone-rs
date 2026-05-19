@@ -309,11 +309,16 @@ http://127.0.0.1:8787/api/bridge/root?root=GemStoneRsBridgeRoot
 Use the embedded explorer's `BridgeRoot Value` action when you want the richer
 view. The response includes the raw OOP/class/printString summary and a nested
 `BridgeValue` tree, so dictionaries, arrays, symbol values, and depth-limited
-object references are visible before you settle on a generated mapping.
-Use `Shape Report` to turn that tree into relationship paths, node kinds, key
-policy, nil counts, opaque OOP counts, report-local identity ids, and repeated
-object references.
-Use `Preview Mapping Config` in that same BridgeRoot panel to infer a starter
+object references are visible before you settle on a generated mapping. The
+`BridgeRoot Keys` result includes `Use` buttons that copy a live key into the
+inspector fields, and the `Bridge key type`, `Bridge depth`, and `Mapped name`
+inputs are reused by the value, shape, and mapping-preview probes.
+Use `BridgeRoot Shape` to turn that tree into relationship paths, node kinds,
+key policy, nil counts, opaque OOP counts, report-local identity ids, and
+repeated object references. The webview renders both the per-path table and a
+separate repeated-identity table when the same GemStone object is seen from
+multiple paths.
+Use `BridgeRoot Mapping Preview` in that same panel to infer a starter
 `BridgeMapped` codegen config from the selected live value before saving it to
 the project.
 
@@ -391,8 +396,9 @@ iframe remains the full browser UI, while the side inspector renders structured
 setup checks, live dictionary/class/protocol/method browsing, method source
 previews, project profile freshness tables with Preview/Diff/Check/Generate
 buttons, Codegen explain summaries, generated source, colorized diffs,
-BridgeRoot identity, key, and value summaries, and comparison status cards. The
-same shell can hand off to native VS Code commands for generated wrapper
+BridgeRoot key pickers, nested `BridgeValue` trees, shape reports with repeated
+identity groups, mapping previews, and comparison status cards. The same shell
+can hand off to native VS Code commands for generated wrapper
 preview, diff, check, opening config/profile/generated files, editing generated
 source in the webview, saving edited generated output with confirmation,
 generate-with-confirmation, profile checks, docs, and opening the last generated

@@ -148,11 +148,17 @@ check for every profile so stale generated wrappers are visible before commit.
 Profile-specific commands use a QuickPick loaded from the project profile file.
 Imports summarize new, replaced, and unchanged profiles. Use the
 BridgeRoot key/value type selectors to test string keys, symbol keys, strings,
-symbols, small integers, and bools before saving those choices in codegen config. The
-detail pane shows generated source, generated mapping config, unified diff
-output, or side-by-side diff output, and the page remembers the current fields
-locally across reloads. Config saves use a POST body, so the editor can handle
-realistic config files instead of being limited by URL length.
+symbols, small integers, and bools before saving those choices in codegen
+config. The webview inspector also has `BridgeRoot Keys`, `BridgeRoot Value`,
+`BridgeRoot Shape`, and `BridgeRoot Mapping Preview` actions. `BridgeRoot Keys`
+can copy a live key into the key field, `BridgeRoot Value` renders a nested
+`BridgeValue` tree, `BridgeRoot Shape` shows relationship paths and repeated
+identity groups, and `BridgeRoot Mapping Preview` proposes a starter mapping
+for the selected key. The detail pane shows generated source, generated mapping
+config, unified diff output, or side-by-side diff output, and the page
+remembers the current fields locally across reloads. Config saves use a POST
+body, so the editor can handle realistic config files instead of being limited
+by URL length.
 Workbench buttons can open the current codegen config, project profile file,
 and generated output directly in VS Code for review or edits. The webview save
 path is intentionally constrained to the configured checkout or active

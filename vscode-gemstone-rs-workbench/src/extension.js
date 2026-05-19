@@ -2417,6 +2417,10 @@ a { color: var(--vscode-textLink-foreground); }
 .diff-meta { color: var(--vscode-descriptionForeground); }
 .key-list { display: grid; gap: 4px; margin: 8px 0 0; }
 .key-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
+.bridge-tree { display: grid; gap: 4px; margin-top: 8px; }
+.bridge-node { border-left: 2px solid var(--vscode-panel-border); padding-left: 8px; margin-left: 4px; }
+.bridge-node strong { color: var(--vscode-foreground); }
+.bridge-node span { color: var(--vscode-descriptionForeground); }
 .browse-list { display: grid; gap: 4px; margin-top: 8px; }
 .browse-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; align-items: center; gap: 6px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px; }
 .browse-row button { padding: 3px 6px; }
@@ -2487,11 +2491,18 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
     </div>
     <div class="group">
       <h2>Live Inspector</h2>
+      <label class="field">Bridge key<input id="bridgeKey" value="BookingDraft"></label>
+      <label class="field">Bridge key type<input id="bridgeKeyType" value="String"></label>
+      <label class="field">Bridge depth<input id="bridgeDepth" value="4"></label>
+      <label class="field">Mapped name<input id="bridgeMappedName" value="BookingDraft"></label>
       <button data-probe="/api/status">Explorer Status</button>
       <button data-probe="/api/setup/assistant">Setup Assistant</button>
       <button data-probe="/api/codegen/profiles/check">Profile Status</button>
       <button data-probe="/api/bridge/root">BridgeRoot</button>
       <button data-probe="/api/bridge/keys">BridgeRoot Keys</button>
+      <button data-probe="/api/bridge/get">BridgeRoot Value</button>
+      <button data-probe="/api/bridge/shape">BridgeRoot Shape</button>
+      <button data-probe="/api/bridge/mapping-preview">BridgeRoot Mapping Preview</button>
       <button data-open-last>Open Last Output File</button>
     </div>
     <div class="group">
@@ -2563,6 +2574,17 @@ function apiUrl(path) {
   }
   if (path.includes('/api/bridge/') && bridgeRoot && !url.searchParams.has('root')) {
     url.searchParams.set('root', bridgeRoot);
+  }
+  if (path.includes('/api/bridge/get') || path.includes('/api/bridge/shape') || path.includes('/api/bridge/mapping-preview')) {
+    const key = configValue('bridgeKey') || 'BookingDraft';
+    const keyType = configValue('bridgeKeyType') || 'String';
+    const depth = configValue('bridgeDepth') || '4';
+    url.searchParams.set('key', key);
+    url.searchParams.set('key_type', keyType);
+    url.searchParams.set('depth', depth);
+  }
+  if (path.includes('/api/bridge/mapping-preview')) {
+    url.searchParams.set('mapped', configValue('bridgeMappedName') || configValue('bridgeKey') || 'BookingDraft');
   }
   return url;
 }
@@ -2648,6 +2670,8 @@ function renderProbeResult(parsed, ok) {
       renderBrowseSource(parsed, ok);
     } else if (Array.isArray(parsed.keys)) {
       renderBridgeKeys(parsed, ok);
+    } else if (parsed.shape && typeof parsed.shape === 'object') {
+      renderBridgeShape(parsed, ok);
     } else if (parsed.value && typeof parsed.value === 'object') {
       renderBridgeValue(parsed, ok);
     } else if (parsed.name && typeof parsed.oop !== 'undefined' && typeof parsed.identityId !== 'undefined') {
@@ -2840,13 +2864,18 @@ function renderBridgeRoot(data, ok) {
 function renderBridgeKeys(data, ok) {
   const keys = Array.isArray(data.keys) ? data.keys : [];
   const rows = keys.map(key =>
-    '<div class="key-row"><span><strong>' + escapeHtml(key.printString || '-') + '</strong><br><span class="muted">oop=' + escapeHtml(key.oop || '-') + ' class=' + escapeHtml(key.classOop || '-') + '</span></span><span class="muted">identity=' + escapeHtml(key.identityId || '-') + '</span></div>'
+    '<div class="key-row"><span><strong>' + escapeHtml(key.printString || '-') + '</strong><br><span class="muted">oop=' + escapeHtml(key.oop || '-') + ' class=' + escapeHtml(key.classOop || '-') + ' identity=' + escapeHtml(key.identityId || '-') + '</span></span><button data-bridge-key="' + escapeHtml(String(key.printString || '').replace(/^#/, '')) + '">Use</button></div>'
   ).join('');
   setInspectorHtml(
     resultTitle('BridgeRoot Keys', data.root || '-') +
     (rows ? '<div class="key-list">' + rows + '</div>' : '<p class="muted">No keys reported.</p>'),
     !ok
   );
+  inspector.querySelectorAll('button[data-bridge-key]').forEach(button => {
+    button.addEventListener('click', () => {
+      document.getElementById('bridgeKey').value = button.dataset.bridgeKey || '';
+    });
+  });
 }
 
 function renderBrowseList(title, values, targetField, ok) {
@@ -2890,6 +2919,9 @@ function renderBrowseSource(data, ok) {
 
 function renderBridgeValue(data, ok) {
   const value = data.value || {};
+  const bridgeTree = data.bridgeValue
+    ? '<p><strong>BridgeValue:</strong></p><div class="bridge-tree">' + renderBridgeValueNode(data.bridgeValue, 'value') + '</div>'
+    : '';
   setInspectorHtml(
     resultTitle('BridgeRoot Value', data.root || '-') +
     '<div class="summary-grid">' +
@@ -2898,7 +2930,62 @@ function renderBridgeValue(data, ok) {
       metric('oop', String(value.oop || '-')) +
       metric('class oop', String(value.classOop || '-')) +
     '</div>' +
-    '<p><strong>printString:</strong></p><pre>' + escapeHtml(value.printString || '-') + '</pre>',
+    '<p><strong>printString:</strong></p><pre>' + escapeHtml(value.printString || '-') + '</pre>' +
+    bridgeTree,
+    !ok
+  );
+}
+
+function renderBridgeValueNode(value, label) {
+  if (!value || typeof value !== 'object') {
+    return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong>: <span>' + escapeHtml(String(value)) + '</span></div>';
+  }
+  const type = value.type || 'unknown';
+  if (type === 'dictionary') {
+    const entries = value.entries || {};
+    const rows = Object.keys(entries).sort().map(key => renderBridgeValueNode(entries[key], key)).join('');
+    return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong> <span>dictionary</span>' + rows + '</div>';
+  }
+  if (type === 'keyedDictionary') {
+    const rows = (value.entries || []).map(entry => {
+      const key = (entry.keyType === 'Symbol' ? '#' : '') + (entry.key || '-');
+      return renderBridgeValueNode(entry.value, key);
+    }).join('');
+    return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong> <span>keyed dictionary</span>' + rows + '</div>';
+  }
+  if (type === 'array') {
+    const rows = (value.values || []).map((entry, index) => renderBridgeValueNode(entry, '[' + (index + 1) + ']')).join('');
+    return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong> <span>array[' + Number((value.values || []).length) + ']</span>' + rows + '</div>';
+  }
+  if (type === 'oop') {
+    return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong>: <span>OOP ' + escapeHtml(String(value.oop || '-')) + '</span></div>';
+  }
+  const rendered = type === 'nil' ? 'nil' : String(value.value);
+  return '<div class="bridge-node"><strong>' + escapeHtml(label) + '</strong>: <span>' + escapeHtml(type + ' ' + rendered) + '</span></div>';
+}
+
+function renderBridgeShape(data, ok) {
+  const shape = data.shape || {};
+  const nodes = Array.isArray(shape.nodes) ? shape.nodes : [];
+  const groups = Array.isArray(shape.identityGroups) ? shape.identityGroups : [];
+  const nodeRows = nodes.map(node =>
+    '<tr><td>' + escapeHtml(node.path || '-') + '</td><td>' + escapeHtml(node.kind || '-') + '</td><td>' + escapeHtml(String(node.depth ?? '-')) + '</td><td>' + escapeHtml(String(node.childCount ?? '-')) + '</td><td>' + escapeHtml(node.identityId ? '#' + node.identityId : '-') + (node.repeatedIdentity ? ' <span class="status-stale">repeated</span>' : '') + '</td><td>' + escapeHtml(node.note || '-') + '</td></tr>'
+  ).join('');
+  const groupRows = groups.map(group =>
+    '<tr><td>#' + escapeHtml(String(group.identityId || '-')) + '</td><td>' + escapeHtml(String(group.oop || '-')) + '</td><td>' + escapeHtml((group.paths || []).join(', ')) + '</td></tr>'
+  ).join('');
+  setInspectorHtml(
+    resultTitle('BridgeRoot Shape', data.root || '-') +
+    '<div class="summary-grid">' +
+      metric('nodes', Number(shape.totalNodes || 0)) +
+      metric('scalars', Number(shape.scalarNodes || 0)) +
+      metric('dictionaries', Number(shape.dictionaryNodes || 0)) +
+      metric('arrays', Number(shape.arrayNodes || 0)) +
+      metric('opaque OOPs', Number(shape.opaqueOops || 0)) +
+      metric('repeated refs', Number(shape.repeatedOopRefs || 0)) +
+    '</div>' +
+    '<table class="profile-table"><thead><tr><th>Path</th><th>Kind</th><th>Depth</th><th>Children</th><th>Identity</th><th>Note</th></tr></thead><tbody>' + nodeRows + '</tbody></table>' +
+    (groupRows ? '<p><strong>Repeated identities:</strong></p><table class="profile-table"><thead><tr><th>Identity</th><th>OOP</th><th>Paths</th></tr></thead><tbody>' + groupRows + '</tbody></table>' : ''),
     !ok
   );
 }

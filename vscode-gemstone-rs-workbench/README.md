@@ -187,9 +187,10 @@ The webview wraps the explorer in a workbench shell: the iframe remains the
 full browser UI, while the side inspector renders structured setup checks,
 live dictionary/class/protocol/method browsing, method source previews, project
 profile freshness tables with Preview/Diff/Check/Generate buttons, Codegen
-explain summaries, editable generated source, colorized diffs, BridgeRoot
-identity/key/value summaries, and comparison status cards. Workbench buttons
-can hand off to native VS Code commands for previewing wrappers, opening diffs,
+explain summaries, editable generated source, colorized diffs, BridgeRoot key
+pickers, nested `BridgeValue` trees, shape reports with repeated identity
+groups, mapping previews, and comparison status cards. Workbench buttons can
+hand off to native VS Code commands for previewing wrappers, opening diffs,
 opening config/profile/generated files, generating with confirmation, checking
 project profiles, and opening docs. Generated wrapper preview/output responses
 open in a webview editor with `Open Output File`, `Open Editable Draft`, and

@@ -180,6 +180,13 @@ assert(extensionSource.includes('"--key-type", keyType'), "BridgeRoot commands s
 assert(extensionSource.includes("bridgeRootArgs"), "BridgeRoot commands should pass the configured root");
 assert(extensionSource.includes("explorerUrlWithParams"), "BridgeRoot explorer URLs should pass root=");
 assert(extensionSource.includes("BridgeRoot:"), "sidebar should show the configured BridgeRoot");
+assert(extensionSource.includes('data-probe="/api/bridge/get"'), "webview should expose BridgeRoot value inspection");
+assert(extensionSource.includes('data-probe="/api/bridge/shape"'), "webview should expose BridgeRoot shape inspection");
+assert(extensionSource.includes('data-probe="/api/bridge/mapping-preview"'), "webview should expose BridgeRoot mapping preview");
+assert(extensionSource.includes("data-bridge-key"), "BridgeRoot key rows should populate the selected key");
+assert(extensionSource.includes("renderBridgeValueNode"), "webview should render nested BridgeValue trees");
+assert(extensionSource.includes("renderBridgeShape"), "webview should render BridgeRoot shape reports");
+assert(extensionSource.includes("identityGroups"), "webview should render repeated BridgeRoot identity groups");
 assert(extensionSource.includes("put-symbol"), "BridgeRoot symbol command should use put-symbol");
 assert(extensionSource.includes("put-smallint"), "BridgeRoot SmallInt command should use put-smallint");
 assert(extensionSource.includes("put-bool"), "BridgeRoot Bool command should use put-bool");
