@@ -18,8 +18,9 @@ The fixtures are intentionally small and stable. They give a future
 contract sample, value/error translation sample, and dry-run smoke report
 without requiring a live GemStone/S stone. The migration report is not a
 fixture because it describes the active `gemstone-py-native` integration plan:
-wrap `PyNativeSession`, preserve Python return behavior, run live backend
-smoke, and publish wheels after the Python native path is green. The
+wrap `PyNativeSession`, preserve Python return behavior, keep live backend
+smoke green, and publish wheels after TestPyPI/PyPI install verification
+passes. The
 `py_native_pyo3_adapter` scaffold exposes the same report as
 `gemstone_py_native.migration_json()` and includes
 `python/gemstone_py_native_compat.py`, which demonstrates

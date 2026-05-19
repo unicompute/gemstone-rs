@@ -126,7 +126,7 @@ gemstone-rs py-native check-all --json
 Python-side work. It is the shared Rust-side checklist that CLI, CI, docs, and
 the VS Code workbench can render consistently while `gemstone-py-native`
 keeps its additive `RustCoreSession` bridge over `gemstone_rs::py_native`
-green through live and published-wheel verification.
+green through live smoke and published-wheel verification.
 `py-native handoff --json` is the single manifest to hand to downstream
 `gemstone-py-native` work: it lists each artifact, schema, generation command,
 validation command, and required acceptance check.

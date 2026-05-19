@@ -49,7 +49,7 @@ The `--totals` forms print only the batch/hour totals for planning and CI.
 The `--batches` forms answer how much work remains, including batch counts,
 hour ranges, outcomes, and verification commands. Use `compare all` with the
 same flags to print the active gemstone-rs track; `compare all --batches`
-reports **1 batch** and roughly **2-4 hours**.
+reports **1 batch** and roughly **1-2 hours**.
 `examples scaffold` creates standalone Cargo
 projects from installed templates for quickstart, browser, BridgeRoot mapping,
 derive mapping, generated wrappers, live discovery, profile-driven codegen,
@@ -74,7 +74,7 @@ prints.
 | 8 | VS Code workbench | `vscode-gemstone-rs-workbench` | `tooling/vscode-workbench.md` | `docs/vscode-workbench.md` | `gemstone-py Workbench` | Command workflow and embedded webview now render setup checks, profile status, codegen summaries/diffs/editable output files, BridgeRoot keys/nested values, comparison status, and Marketplace/GitHub visuals. |
 | 9 | Rust web services | `gemstone-rs::web`, `gemstone-rs-axum`, `gemstone-rs-actix`, `SessionWorkerPool`, async worker futures, checked Axum/Actix services, and installed scaffolds | `session_worker`, `session_worker_pool`, `async_worker`, `http_service`, `examples/axum-service`, `examples/actix-service`, `framework_route_smoke.py`, `examples scaffold session_worker_pool/axum_service/actix_service` | `docs/examples-guide.md`, `docs/cookbook.md` | FastAPI, Litestar, Django examples | Shared JSON health helpers, standard-library HTTP, graceful health-pool startup, diagnostic, request-trace, lifecycle, duration, production-style service/cache/security middleware headers, packaged Axum/Actix adapters, checked services, async health handlers, local/live route smoke coverage, installed scaffolds, and a dependency-free async worker facade exist. |
 | 10 | Release and verification | `scripts`, `Makefile`, GitHub Actions | Release verification commands | `docs/release-checklist.md` | PyPI/TestPyPI/native wheel/VSIX release tooling | Crates/VSIX verification path exists; Python release lane is more complete. |
-| 11 | Shared native core | `gemstone-gci`, `gemstone-rs::py_native`, `gemstone-py-native` wrapper | `python_native_adapter`, `py_native_pyo3_adapter` scaffold, downstream `gemstone-py-native` bridge | `docs/shared-core-integration.md` | `gemstone-py-native` | Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream `gemstone-py-native` `RustCoreSession` bridge are wired; live-stone and published-wheel verification remain. |
+| 11 | Shared native core | `gemstone-gci`, `gemstone-rs::py_native`, `gemstone-py-native` wrapper | `python_native_adapter`, `py_native_pyo3_adapter` scaffold, downstream `gemstone-py-native` bridge | `docs/shared-core-integration.md` | `gemstone-py-native` | Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream `gemstone-py-native` `RustCoreSession` bridge are wired; local live-stone smoke passed and published-wheel verification remains. |
 
 ## What This Says Compared With gemstone-py
 

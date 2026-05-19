@@ -2027,7 +2027,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "python_native_adapter, py_native_pyo3_adapter scaffold, downstream gemstone-py-native bridge",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream gemstone-py-native RustCoreSession bridge are wired; live-stone and published-wheel verification remain",
+        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream gemstone-py-native RustCoreSession bridge are wired; local live-stone smoke passed and published-wheel verification remains",
     },
 ];
 
@@ -2155,7 +2155,7 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         project_score: 5,
         leader: "gemstone-rs",
         status: "gemstone-rs owns the clean Rust GCI/session core, exposes the py_native contract, and gemstone-py-native now has an additive RustCoreSession bridge plus wheel/sdist Rust-core smoke checks.",
-        next_action: "Run live GemStone smoke and post-publish install verification through the Rust-backed native path.",
+        next_action: "Publish Rust-backed native wheels and run TestPyPI/PyPI install verification through the Rust-backed native path.",
     },
 ];
 
@@ -2164,9 +2164,9 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P1",
         area: "Shared native core live/publish verification",
         gemstone_py_strength: "gemstone-py already has the Python package, native wheel, TestPyPI/PyPI, and post-install verification lane.",
-        gemstone_rs_gap: "gemstone-py-native now wraps gemstone_rs::py_native through an additive RustCoreSession bridge, and wheel/sdist checks run the Rust-core smoke dry-run; the remaining gap is running that smoke against a live stone plus published wheel verification.",
-        next_action: "Run the live Rust-core native smoke, publish the Rust-backed native wheels, and verify TestPyPI/PyPI installs.",
-        verify_with: "scripts/run_native_checks.sh; GS_RUN_LIVE=1 python scripts/run_native_rust_core_live_smoke.py --require-live; TestPyPI/PyPI install verification",
+        gemstone_rs_gap: "gemstone-py-native now wraps gemstone_rs::py_native through an additive RustCoreSession bridge, wheel/sdist checks run the Rust-core smoke dry-run, and local live smoke has passed; the remaining gap is published wheel verification.",
+        next_action: "Publish the Rust-backed native wheels and verify TestPyPI/PyPI installs.",
+        verify_with: "scripts/run_native_checks.sh; native-wheels workflow; TestPyPI/PyPI install verification",
     },
     GapInfo {
         priority: "P2",
@@ -2210,16 +2210,15 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     },
 ];
 
-const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
-    BatchInfo {
-        number: 1,
-        focus: "Shared-core live and publish hardening",
-        hours_min: 2,
-        hours_max: 4,
-        outcome: "Run live Rust-core native smoke and published-install verification for the Rust-backed gemstone-py-native bridge.",
-        verify_with: "scripts/run_native_checks.sh plus scripts/run_native_rust_core_live_smoke.py --require-live and TestPyPI/PyPI install checks",
-    },
-];
+const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[BatchInfo {
+    number: 1,
+    focus: "Shared-core live and publish hardening",
+    hours_min: 1,
+    hours_max: 2,
+    outcome: "Publish Rust-backed gemstone-py-native wheels and verify TestPyPI/PyPI installs.",
+    verify_with:
+        "scripts/run_native_checks.sh plus native-wheels workflow TestPyPI/PyPI install checks",
+}];
 
 const GEMSTONE_JS_COMPARISON: &[JsComparisonInfo] = &[
     JsComparisonInfo {
@@ -7262,14 +7261,14 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 1);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (2, 4));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (1, 2));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 1,
-                hours_min: 2,
-                hours_max: 4,
+                hours_min: 1,
+                hours_max: 2,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
@@ -7294,7 +7293,7 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":1,"hoursMin":2,"hoursMax":4}"#));
+            .contains(r#""remaining":{"totalBatches":1,"hoursMin":1,"hoursMax":2}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
@@ -7325,7 +7324,9 @@ mod tests {
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P1"
                 && gap.area == "Shared native core live/publish verification"
-                && gap.next_action.contains("live Rust-core native smoke")
+                && gap
+                    .next_action
+                    .contains("Publish the Rust-backed native wheels")
         }));
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P2"

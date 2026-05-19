@@ -921,8 +921,8 @@ The final Rust-side bundle is `gemstone-rs py-native handoff --json`. It
 collects the capabilities, samples, smoke, migration, compatibility, and
 conformance artifacts into one manifest and adds the required acceptance
 checks: scaffold compile, fixture freshness, preserved Python return policy,
-live Rust-core native smoke, and wheel publication after the live path is
-green.
+live Rust-core native smoke, and wheel publication after TestPyPI/PyPI install
+verification passes.
 The generated PyO3 starter exposes the same manifest as
 `gemstone_py_native.handoff_json()`, and the real native package exposes the
 Rust-core report functions under `gemstone_py_native._gci`, so release gating
@@ -934,6 +934,6 @@ compatibility, conformance, and handoff. The JSON output is intentionally
 boring. That is the point. It gives the eventual `gemstone-py-native` workflow
 one stable command to run before wheels are published.
 
-The remaining shared-core work is no longer initial wiring. It is live
-GemStone smoke through the Rust-backed native path, then TestPyPI/PyPI install
-verification for the wheels.
+The remaining shared-core work is no longer initial wiring. Local live GemStone
+smoke through the Rust-backed native path has passed; the remaining step is
+TestPyPI/PyPI install verification for the published wheels.

@@ -518,7 +518,7 @@ pub fn migration_report() -> PyNativeMigrationReport {
     PyNativeMigrationReport {
         contract_version: capabilities().contract_version,
         target_package: "gemstone-py-native",
-        status: "Rust adapter contract is wired into gemstone-py-native; live and published wheel verification remain",
+        status: "Rust adapter contract is wired into gemstone-py-native; local live smoke has passed and published wheel verification remains",
         steps: vec![
             PyNativeMigrationStep {
                 id: "scaffold_pyo3_adapter",
@@ -544,9 +544,9 @@ pub fn migration_report() -> PyNativeMigrationReport {
             PyNativeMigrationStep {
                 id: "live_backend_smoke",
                 title: "Run live GemStone smoke through the Rust-backed native path",
-                status: "pending",
-                detail: "Validate login/logout, 3 + 4, perform, globals, commit/abort, and lifetime/export-set behavior against a real stone through the Python package.",
-                verify: "GS_RUN_LIVE=1 gemstone-py native/live smoke",
+                status: "done",
+                detail: "The downstream gemstone-py live smoke validates login/logout, 3 + 4, perform, globals, commit/abort, and lifetime/export-set behavior against a real stone through the Python package.",
+                verify: "GS_RUN_LIVE=1 python scripts/run_native_rust_core_live_smoke.py --require-live",
             },
             PyNativeMigrationStep {
                 id: "publish_wheels",
@@ -962,7 +962,7 @@ pub fn conformance_report() -> PyNativeConformanceReport {
     PyNativeConformanceReport {
         contract_version: capabilities().contract_version,
         target_package: "gemstone-py-native",
-        status: "Generated PyO3 scaffold and downstream gemstone-py-native expose the Rust-backed native surface; live and published wheel verification remain",
+        status: "Generated PyO3 scaffold and downstream gemstone-py-native expose the Rust-backed native surface; local live smoke has passed and published wheel verification remains",
         module_functions: PY_NATIVE_MODULE_FUNCTIONS,
         native_session_methods: PY_NATIVE_SESSION_METHODS,
         compatibility_methods: compatibility_report()
@@ -1121,7 +1121,7 @@ pub fn handoff_report() -> PyNativeHandoffReport {
         target_package: "gemstone-py-native",
         adapter_module: "gemstone_rs::py_native",
         scaffold: "py_native_pyo3_adapter",
-        status: "Rust-side handoff bundle is wired into gemstone-py-native and remains the live/publish verification contract",
+        status: "Rust-side handoff bundle is wired into gemstone-py-native; local live smoke passed and publish verification remains",
         artifacts: vec![
             PyNativeHandoffArtifact {
                 name: "capabilities",
@@ -1153,7 +1153,7 @@ pub fn handoff_report() -> PyNativeHandoffReport {
                 schema: "schemas/gemstone-rs.py-native-migration.schema.json",
                 command: "gemstone-rs py-native migration --json",
                 check_command: "",
-                purpose: "Downstream wrapper status plus remaining live-smoke and wheel-publish checklist",
+                purpose: "Downstream wrapper status plus live-smoke and wheel-publish checklist",
             },
             PyNativeHandoffArtifact {
                 name: "compatibility",
@@ -1875,10 +1875,11 @@ mod tests {
         let json = report.to_json();
         assert_eq!(report.contract_version, 1);
         assert_eq!(report.target_package, "gemstone-py-native");
-        assert_eq!(report.done_count(), 3);
-        assert_eq!(report.pending_count(), 2);
+        assert_eq!(report.done_count(), 4);
+        assert_eq!(report.pending_count(), 1);
         assert!(json.contains(r#""id":"wrap_py_native_session""#));
         assert!(json.contains(r#""status":"pending""#));
+        assert!(json.contains("run_native_rust_core_live_smoke.py"));
         assert!(json.contains("RustCoreSession"));
     }
 

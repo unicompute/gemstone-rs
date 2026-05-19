@@ -103,7 +103,7 @@ scaffold files expected from a real `gemstone-py-native` wrapper.
 The handoff bundle ties those fixtures together with the acceptance checks for
 the downstream wrapper release: scaffold compile, fixture freshness, preserved
 Python return policy, live Rust-core native smoke, and wheel publication after
-the live path is green.
+TestPyPI/PyPI install verification passes.
 `gemstone-rs py-native check-all` is the one-command fixture gate for
 downstream `gemstone-py-native` CI. It validates capabilities, samples, smoke,
 compatibility, conformance, and handoff fixtures together, and the

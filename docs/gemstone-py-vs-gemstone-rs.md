@@ -116,7 +116,7 @@ gemstone-rs compare all --batches
 `compare all --batches` now reports only active gemstone-rs work. The
 gemstone-js comparison remains available as archived background reference, but
 it is no longer part of the active remaining-work estimate. Active remaining
-work is **1 batch**, roughly **2-4 hours** total.
+work is **1 batch**, roughly **1-2 hours** total.
 
 The report is intentionally action-oriented. Each row names the gemstone-py
 strength, the gemstone-rs gap, the next implementation step, and the command or
@@ -140,7 +140,7 @@ Python remains ahead for framework breadth and explorer polish.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Shared native core live/publish verification | gemstone-py already exposes Python packaging, optional native acceleration, and PyPI/TestPyPI release lanes. | Run live native smoke and published wheel verification through the Rust-backed `gemstone-py-native` bridge. |
+| P1 | Shared native core live/publish verification | gemstone-py already exposes Python packaging, optional native acceleration, and PyPI/TestPyPI release lanes. | Publish Rust-backed native wheels and verify TestPyPI/PyPI installs through the Rust-backed `gemstone-py-native` bridge. |
 | P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Fold the remaining explorer polish into the object mapping maturity batch. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add more Rust framework examples only when a real service needs them. |
@@ -167,10 +167,10 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Shared-core live and publish hardening | 2-4 hours |
+| 1 | Shared-core live and publish hardening | 1-2 hours |
 
-Total: roughly **2-4 hours** to finish the live and published-artifact checks
-for shared native-core integration.
+Total: roughly **1-2 hours** to publish the Rust-backed native wheels and
+verify TestPyPI/PyPI installs for shared native-core integration.
 
 Recent codegen batch status: closed. `codegen discover` now records
 protocol/source documentation, prefers source-header argument names, generated
@@ -202,8 +202,9 @@ those same reports through `gemstone_py_native.migration_json()`,
 `gemstone_py_native.compatibility_json()`, and
 `gemstone_py_native.conformance_json()`, plus
 `gemstone_py_native.handoff_json()`.
-The remaining work is live GemStone smoke through the Rust-backed native path
-and TestPyPI/PyPI install verification for the published wheels.
+The live GemStone smoke through the Rust-backed native path has passed locally.
+The remaining work is TestPyPI/PyPI install verification for the published
+wheels.
 
 ## Current Gap Analysis
 
