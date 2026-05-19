@@ -62,6 +62,16 @@ Run a dry path check without launching a browser:
 python3 scripts/capture_explorer_screenshots.py --check
 ```
 
+Validate all committed visual assets and Markdown image references:
+
+```bash
+make visual-asset-check
+```
+
+That check verifies the VSIX icon path, required Marketplace/GitHub assets,
+local Markdown image links, and repository `raw.githubusercontent.com` image
+links that point back into this project.
+
 The screenshot path does not require GemStone credentials because the explorer
 home page renders before live endpoints are called. Live browse/codegen data
 still requires the normal `GS_*` environment.
@@ -96,6 +106,7 @@ python3 docs/build_pdf_docs.py
 For a release pass, run:
 
 ```bash
+make visual-asset-check
 make verify
 make vscode-package
 ```

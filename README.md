@@ -778,9 +778,8 @@ sessions inside one test process.
 The first browse, BridgeRoot, codegen, project-aware config picker/load/save,
 recent config history, named local profiles, diff detail, local field
 persistence, project profile file load/save, editable generated-output webview,
-browser fallback paths, nested BridgeValue rendering, and committed
-Marketplace/GitHub visuals are now wired. Shape reports now include repeated
-OOP identity groups, so the explorer can show relationship paths for the same
-GemStone object across a nested payload. Next explorer work should focus on
-deeper generated-file editing and richer live object navigation over the stable
-local API.
+browser fallback paths, BridgeRoot key pickers, nested BridgeValue rendering,
+shape reports, repeated OOP identity groups, mapping previews, and committed
+Marketplace/GitHub visuals are now wired. Next explorer work should keep
+visual assets fresh, run API/webview smoke tests after UI changes, and refine
+workflow feedback as users find rough edges.

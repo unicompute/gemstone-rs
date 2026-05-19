@@ -1,9 +1,9 @@
 VERSION ?= 0.2.2
 VSIX_VERSION ?= $(shell node -p "require('./vscode-gemstone-rs-workbench/package.json').version")
 
-.PHONY: verify version-check crate-metadata-check rust-check examples-check framework-smoke framework-live-smoke live-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
+.PHONY: verify version-check crate-metadata-check rust-check examples-check framework-smoke framework-live-smoke live-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check visual-asset-check explorer-smoke vscode-check vscode-package docs-pdf docs-pdf-check release-artifact-check screenshots package-gci publish-verify release-all clean-vscode
 
-verify: version-check crate-metadata-check rust-check examples-check framework-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check explorer-smoke vscode-check docs-pdf-check
+verify: version-check crate-metadata-check rust-check examples-check framework-smoke live-smoke-dry-run codegen-check schema-check profile-check release-script-check visual-asset-check explorer-smoke vscode-check docs-pdf-check
 
 version-check:
 	python3 scripts/version_check.py
@@ -161,6 +161,9 @@ profile-check:
 
 release-script-check:
 	python3 scripts/release_asset_checks_test.py
+
+visual-asset-check:
+	python3 scripts/visual_asset_check.py
 
 explorer-smoke:
 	python3 scripts/explorer_endpoint_smoke.py

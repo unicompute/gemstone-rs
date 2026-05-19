@@ -423,5 +423,8 @@ higher-level browsing and codegen workflows.
 
 Good next steps:
 
-- deeper generated-file editing flows from the explorer and VS Code webview
-- richer live object navigation after the codegen/live-discovery batch
+- keep Marketplace/GitHub screenshots current after UI changes
+- run the explorer endpoint smoke checks and VS Code smoke checks after
+  touching the embedded webview
+- refine workflow feedback around writes, generated-file saves, and live
+  BridgeRoot probes as real projects expose rough edges
