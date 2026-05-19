@@ -78,6 +78,7 @@ def main() -> int:
 
     workspace_dependencies = workspace["workspace"]["dependencies"]
     publish_script = read_text(ROOT / "scripts/publish_crates.sh")
+    root_readme = read_text(ROOT / "README.md")
     published_order = re.findall(r"^publish_crate ([^\s]+)$", publish_script, re.MULTILINE)
     check(published_order == CRATE_ORDER, "scripts/publish_crates.sh publish order is stale")
 
@@ -87,6 +88,10 @@ def main() -> int:
         manifest = read_toml(manifest_path)
         package = manifest["package"]
 
+        check(
+            f"`{CRATE_PATHS[crate]}`" in root_readme,
+            f"README.md Layout table should list {CRATE_PATHS[crate]}",
+        )
         check(package.get("name") == crate, f"{manifest_path}: package.name must be {crate}")
         check(bool(package.get("version")), f"{manifest_path}: package.version is required")
 

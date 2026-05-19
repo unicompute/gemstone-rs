@@ -11,6 +11,7 @@ The Cargo package is named `gemstone-rs`; Rust code imports it as
 | Crate | Purpose |
 | --- | --- |
 | `crates/gemstone-gci` | Low-level dynamic `libgcirpc` loader, OOP constants, and raw GCI ABI calls. |
+| `crates/gemstone-rs-macros` | Derive macros for typed BridgeRoot object mapping. |
 | `crates/gemstone-rs` | Safe Rust API with `Config`, `Session`, `Oop`, `Value`, and transaction helpers. |
 | `crates/gemstone-rs-axum` | Axum route helpers for `/`, `/health/local`, and `/health/gemstone`. |
 | `crates/gemstone-rs-actix` | Actix Web route helpers for `/`, `/health/local`, and `/health/gemstone`. |

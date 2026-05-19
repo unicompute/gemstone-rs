@@ -90,11 +90,12 @@ Or use the dry-run release wrapper:
 DRY_RUN=1 scripts/release_all.sh 0.2.2
 ```
 
-`make verify` includes version and crate metadata checks, then checks that PDF
-generation completes, produces non-empty PDF files, and exactly matches the
-configured PDF target set. The release wrapper
-writes repository-relative SHA256 entries and verifies the expected VSIX plus
-every PDF with `scripts/verify_release_artifacts.py`. `make verify` also runs
+`make verify` includes version and crate metadata checks. The crate metadata
+check also confirms the root README layout lists every publishable crate. The
+same verification pass then checks that PDF generation completes, produces
+non-empty PDF files, and exactly matches the configured PDF target set. The
+release wrapper writes repository-relative SHA256 entries and verifies the
+expected VSIX plus every PDF with `scripts/verify_release_artifacts.py`. `make verify` also runs
 an offline release-asset verifier smoke test so checksum mismatches and missing
 downloaded assets stay covered without contacting GitHub. The release workflow
 rebuilds and attaches fresh PDFs for the target runner because WeasyPrint output
