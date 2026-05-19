@@ -133,14 +133,14 @@ remain, and the next recommended batch.
 
 Use `--parity` when you want a measured maturity view. It scores each area out
 of five and shows the current leader, status, and next action. The current
-Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 29/35**:
-Rust is at parity or ahead for core sessions, codegen/mapping, release
-verification, and the shared native-core direction; Python remains ahead for
-web frameworks, async/lifetime coverage, and explorer polish.
+Rust/Python parity score is **gemstone-py 30/35** and **gemstone-rs 30/35**:
+Rust is at parity or ahead for core sessions, async worker boundaries,
+codegen/mapping, release verification, and the shared native-core direction;
+Python remains ahead for framework breadth and explorer polish.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P1 | Shared native core | gemstone-py already exposes Python packaging and optional native acceleration. | Make `gemstone-py-native` a thin PyO3 adapter over `gemstone-gci` and `gemstone-rs`. |
+| P1 | Shared native core live/publish verification | gemstone-py already exposes Python packaging, optional native acceleration, and PyPI/TestPyPI release lanes. | Run live native smoke and published wheel verification through the Rust-backed `gemstone-py-native` bridge. |
 | P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Fold the remaining explorer polish into the object mapping maturity batch. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add more Rust framework examples only when a real service needs them. |
@@ -167,10 +167,10 @@ gemstone-rs compare all --totals
 
 | Batch | Work | Estimate |
 | --- | --- | ---: |
-| 1 | Shared core with `gemstone-py-native` | 6-10 hours |
+| 1 | Shared-core live and publish hardening | 3-5 hours |
 
-Total: roughly **6-10 hours** to bring `gemstone-rs` materially closer to
-`gemstone-py` across shared native-core integration.
+Total: roughly **3-5 hours** to finish the live and published-artifact checks
+for shared native-core integration.
 
 Recent codegen batch status: closed. `codegen discover` now records
 protocol/source documentation, prefers source-header argument names, generated
@@ -182,10 +182,12 @@ Recent async/web batch status: closed. `SessionWorker` and
 handlers use that async path, and the `async_worker` example shows how Rust
 services can await GemStone work without moving `Session` across threads.
 
-Recent shared-core batch status: Rust-side contract added. The new
-`gemstone_rs::py_native` module gives a future `gemstone-py-native` PyO3 crate
-plain Rust config, value, error, capability, and session wrappers. The
-installed CLI can now scaffold a starter PyO3 crate with
+Recent shared-core batch status: downstream bridge wired. The
+`gemstone_rs::py_native` module gives `gemstone-py-native` plain Rust config,
+value, error, capability, and session wrappers, and `gemstone-py-native` now
+exposes an additive `RustCoreSession` bridge over that shared core while
+preserving existing Python return behavior. The installed CLI can still
+scaffold a starter PyO3 crate with
 `gemstone-rs examples scaffold py_native_pyo3_adapter ./gemstone-py-native-starter`.
 It can also print the machine-readable migration checklist with
 `gemstone-rs py-native migration --json`, the compatibility shim map with
@@ -193,15 +195,15 @@ It can also print the machine-readable migration checklist with
 target with `gemstone-rs py-native conformance --json`. It also prints the
 downstream handoff manifest with `gemstone-rs py-native handoff --json`, which
 bundles every artifact, schema, validation command, and acceptance check for
-the eventual `gemstone-py-native` wrapper. `gemstone-rs py-native check-all`
+the downstream `gemstone-py-native` wrapper. `gemstone-rs py-native check-all`
 validates those checked-in fixtures together as the downstream shared-core
 gate. The generated PyO3 starter exports
 those same reports through `gemstone_py_native.migration_json()`,
 `gemstone_py_native.compatibility_json()`, and
 `gemstone_py_native.conformance_json()`, plus
 `gemstone_py_native.handoff_json()`.
-The remaining work is Python-side wiring and compatibility testing in
-`gemstone-py`.
+The remaining work is live GemStone smoke through the Rust-backed native path
+and TestPyPI/PyPI install verification for the published wheels.
 
 ## Current Gap Analysis
 
@@ -247,8 +249,8 @@ not the implementation language:
   `session_worker_pool`,
   `axum_service`, and `actix_service`. A required live route smoke mode now
   verifies `/health/gemstone` returns `{"result":7}` for both adapters when
-  credentials are available. Broader framework coverage and an async facade
-  remain future work.
+  credentials are available. Broader framework coverage and deeper
+  cancellation/shutdown tests remain future work.
 - Editor workflow: `GemStone RS: Show Example Commands` exposes the same map in
   the Rust workbench and can run selected Cargo examples in a terminal.
 - Remaining gap: gemstone-rs still needs installed templates for
@@ -262,12 +264,11 @@ The best long-term shape is not competition between the projects. It is a
 clean boundary:
 
 - `gemstone-rs` owns the direct Rust/GCI interface and safe Rust API.
-- `gemstone-py-native` can become a thin PyO3 layer over the Rust core.
+- `gemstone-py-native` now has an additive PyO3 bridge over the Rust core.
 - `gemstone-rs examples scaffold py_native_pyo3_adapter` provides the starter
   wrapper shape for that migration.
-- `gemstone-rs py-native migration --json` keeps the remaining wrapper,
-  compatibility, live-smoke, and wheel-publish steps visible to CLI, CI, and
-  VS Code.
+- `gemstone-rs py-native migration --json` keeps wrapper status, live-smoke,
+  and wheel-publish steps visible to CLI, CI, and VS Code.
 - `gemstone-rs py-native conformance --json` keeps the expected PyO3
   module/session/shim surface fixture-backed for downstream wrapper CI.
 - `gemstone-py` remains the Python API, examples, and Python web integration.

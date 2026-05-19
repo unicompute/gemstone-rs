@@ -1,4 +1,4 @@
-//! Stable adapter surface for a future `gemstone-py-native` PyO3 wrapper.
+//! Stable adapter surface for `gemstone-py-native` style PyO3 wrappers.
 //!
 //! This module intentionally has no PyO3 dependency. It exposes plain Rust
 //! structs and enums that are easy for a PyO3 crate to wrap while keeping the
@@ -518,7 +518,7 @@ pub fn migration_report() -> PyNativeMigrationReport {
     PyNativeMigrationReport {
         contract_version: capabilities().contract_version,
         target_package: "gemstone-py-native",
-        status: "Rust adapter contract is ready; Python wrapper migration is pending",
+        status: "Rust adapter contract is wired into gemstone-py-native; live and published wheel verification remain",
         steps: vec![
             PyNativeMigrationStep {
                 id: "scaffold_pyo3_adapter",
@@ -530,16 +530,16 @@ pub fn migration_report() -> PyNativeMigrationReport {
             PyNativeMigrationStep {
                 id: "wrap_py_native_session",
                 title: "Wrap PyNativeSession in gemstone-py-native",
-                status: "pending",
-                detail: "Move gemstone-py-native toward PyO3 classes/functions that delegate login, eval, perform, OOP conversion, globals, transactions, and export-set calls to gemstone_rs::py_native.",
-                verify: "gemstone-py native backend checks",
+                status: "done",
+                detail: "gemstone-py-native exposes an additive RustCoreSession PyO3 class and rust_core_* reports that delegate login, eval, perform, OOP conversion, globals, transactions, and export-set calls to gemstone_rs::py_native.",
+                verify: "gemstone-py tests/test_native_crate.py",
             },
             PyNativeMigrationStep {
                 id: "preserve_python_api",
                 title: "Preserve existing Python return behavior",
-                status: "pending",
-                detail: "Keep gemstone-py sync APIs backward-compatible and expose Rust-managed handles behind opt-in/native paths until Python callers intentionally choose them.",
-                verify: "gemstone-py sync and async test suites",
+                status: "done",
+                detail: "The Rust-backed surface is additive, so existing gemstone-py sync APIs keep their current Session.execute()/perform() behavior while Rust-managed handles remain opt-in/native-path behavior.",
+                verify: "gemstone-py tests/test_native_crate.py plus existing sync/async tests",
             },
             PyNativeMigrationStep {
                 id: "live_backend_smoke",
@@ -550,7 +550,7 @@ pub fn migration_report() -> PyNativeMigrationReport {
             },
             PyNativeMigrationStep {
                 id: "publish_wheels",
-                title: "Publish wheels after the wrapper is green",
+                title: "Publish wheels after live smoke is green",
                 status: "pending",
                 detail: "Build and publish gemstone-py-native wheels that bundle the PyO3 wrapper while using gemstone-rs as the shared Rust core.",
                 verify: "TestPyPI/PyPI install plus native backend verification",
@@ -962,7 +962,7 @@ pub fn conformance_report() -> PyNativeConformanceReport {
     PyNativeConformanceReport {
         contract_version: capabilities().contract_version,
         target_package: "gemstone-py-native",
-        status: "Generated PyO3 scaffold exposes the Rust-backed native surface; downstream gemstone-py-native package wiring is still pending",
+        status: "Generated PyO3 scaffold and downstream gemstone-py-native expose the Rust-backed native surface; live and published wheel verification remain",
         module_functions: PY_NATIVE_MODULE_FUNCTIONS,
         native_session_methods: PY_NATIVE_SESSION_METHODS,
         compatibility_methods: compatibility_report()
@@ -1121,7 +1121,7 @@ pub fn handoff_report() -> PyNativeHandoffReport {
         target_package: "gemstone-py-native",
         adapter_module: "gemstone_rs::py_native",
         scaffold: "py_native_pyo3_adapter",
-        status: "Rust-side handoff bundle is ready for downstream gemstone-py-native wrapper integration",
+        status: "Rust-side handoff bundle is wired into gemstone-py-native and remains the live/publish verification contract",
         artifacts: vec![
             PyNativeHandoffArtifact {
                 name: "capabilities",
@@ -1153,7 +1153,7 @@ pub fn handoff_report() -> PyNativeHandoffReport {
                 schema: "schemas/gemstone-rs.py-native-migration.schema.json",
                 command: "gemstone-rs py-native migration --json",
                 check_command: "",
-                purpose: "Remaining downstream wrapper, live-smoke, and wheel-publish checklist",
+                purpose: "Downstream wrapper status plus remaining live-smoke and wheel-publish checklist",
             },
             PyNativeHandoffArtifact {
                 name: "compatibility",
@@ -1875,11 +1875,11 @@ mod tests {
         let json = report.to_json();
         assert_eq!(report.contract_version, 1);
         assert_eq!(report.target_package, "gemstone-py-native");
-        assert_eq!(report.done_count(), 1);
-        assert_eq!(report.pending_count(), 4);
+        assert_eq!(report.done_count(), 3);
+        assert_eq!(report.pending_count(), 2);
         assert!(json.contains(r#""id":"wrap_py_native_session""#));
         assert!(json.contains(r#""status":"pending""#));
-        assert!(json.contains("gemstone-py native backend checks"));
+        assert!(json.contains("RustCoreSession"));
     }
 
     #[test]

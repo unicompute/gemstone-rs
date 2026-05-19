@@ -188,7 +188,7 @@ CLI binary is installed and runnable.
 | Session worker | `cargo run -p gemstone-rs --example session_worker` | Dedicated-thread `SessionWorker` for web services and async runtimes. |
 | Session worker pool | `cargo run -p gemstone-rs --example session_worker_pool` | Bounded round-robin pool of dedicated GemStone session workers. |
 | Async worker facade | `cargo run -p gemstone-rs --example async_worker` | Awaitable `SessionWorkerPool` calls for async runtimes without moving `Session` across threads. |
-| Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | Dependency-free `py_native` contract that a future `gemstone-py-native` PyO3 wrapper can expose and smoke-test. |
+| Python native adapter | `gemstone-rs py-native smoke --dry-run`; `cargo run -p gemstone-rs --example python_native_adapter -- --dry-run` | Dependency-free `py_native` contract used by the `gemstone-py-native` PyO3 bridge and smoke tests. |
 | Python native contract fixtures | `gemstone-rs py-native check examples/py-native/gemstone-rs.py-native.json`; `gemstone-rs py-native check-smoke examples/py-native/gemstone-rs.py-native-smoke.json` | Checked-in capability and smoke samples for wrapper CI and editor tooling. |
 | Python native value/error samples | `gemstone-rs py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json` | Concrete value and error payload samples for Python wrapper translation tests. |
 | Python native migration plan | `gemstone-rs py-native migration --json`; `gemstone-rs examples run py_native_migration_plan --dry-run` | Machine-readable checklist for completing the gemstone-py-native shared-core migration. |

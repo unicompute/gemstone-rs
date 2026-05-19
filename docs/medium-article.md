@@ -842,9 +842,9 @@ application is Python-native. The shared design direction is clear: keep the
 low-level bridge small, make the session model explicit, and build higher-level
 tooling on top of the same stable API.
 
-The long-term native direction is for `gemstone-py-native` to become a thin
-PyO3 wrapper over the Rust core. That would make Rust the shared GCI bridge and
-Python the ergonomic Python API on top.
+The native direction is now concrete: `gemstone-py-native` has an additive
+PyO3 bridge over the Rust core. Rust owns the shared GCI/session bridge, and
+Python keeps the ergonomic Python API on top.
 
 That direction now has a concrete Rust-side contract. `gemstone_rs::py_native`
 exposes plain Rust config, value, error, capability, and session wrappers that
@@ -877,13 +877,15 @@ OOPs, and structured errors such as `missingConfig`, `illegalOop`,
 `unexpectedType`, and path-aware mapping failures.
 
 The migration JSON is useful for release work because it names the actual
-remaining Python-side steps: wrap `PyNativeSession`, preserve existing Python
-return behavior, run the native/live smoke suite through the Rust-backed path,
-and publish wheels only after that path is green.
+remaining shared-core steps: keep the downstream `RustCoreSession` bridge
+green, preserve existing Python return behavior, run the native/live smoke
+suite through the Rust-backed path, and publish wheels only after that path is
+green.
 
 The generated PyO3 starter also exposes that report as
-`gemstone_py_native.migration_json()`, so a future Python wrapper can show the
-same checklist from Python CI or release tooling. Its `NativeSession` now
+`gemstone_py_native.migration_json()`, and the real downstream bridge exposes
+the same `rust_core_*` report shape from `gemstone_py_native._gci`. Its
+`NativeSession` now
 also exposes the direct Rust adapter operations for eval, execute, resolve,
 value-to-OOP conversion, perform, strings, symbols, globals, export-set
 retention, commit, and abort, while leaving Pythonic return conversion in the
@@ -921,8 +923,9 @@ conformance artifacts into one manifest and adds the required acceptance
 checks: scaffold compile, fixture freshness, preserved Python return policy,
 live native backend smoke, and wheel publication after the live path is green.
 The generated PyO3 starter exposes the same manifest as
-`gemstone_py_native.handoff_json()`, so the future Python wrapper can keep
-release gating close to the package that publishes the wheels.
+`gemstone_py_native.handoff_json()`, and the real native package exposes the
+Rust-core report functions under `gemstone_py_native._gci`, so release gating
+stays close to the package that publishes the wheels.
 
 The release gate is `gemstone-rs py-native check-all`. It validates every
 checked-in Rust-side fixture in one pass: capabilities, samples, smoke,
@@ -930,6 +933,6 @@ compatibility, conformance, and handoff. The JSON output is intentionally
 boring. That is the point. It gives the eventual `gemstone-py-native` workflow
 one stable command to run before wheels are published.
 
-The remaining shared-core work is in `gemstone-py-native`: wrap this adapter
-with PyO3, preserve the existing Python return behavior, and run the Python
-native backend/live test suite through the Rust-backed path.
+The remaining shared-core work is no longer initial wiring. It is live
+GemStone smoke through the Rust-backed native path, then TestPyPI/PyPI install
+verification for the wheels.

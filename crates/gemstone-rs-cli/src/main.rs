@@ -1749,7 +1749,7 @@ const EXAMPLES: &[ExampleInfo] = &[
         command: "cargo run -p gemstone-rs --example python_native_adapter",
         category: "native",
         requires_live: true,
-        description: "Exercise the dependency-free py_native contract intended for a future gemstone-py-native PyO3 wrapper.",
+        description: "Exercise the dependency-free py_native contract used by the gemstone-py-native PyO3 bridge.",
     },
     ExampleInfo {
         name: "py_native_capabilities",
@@ -2023,11 +2023,11 @@ const FEATURE_MAP: &[FeatureInfo] = &[
     FeatureInfo {
         stream: "11",
         title: "Shared native core",
-        crates: "gemstone-gci, gemstone-rs::py_native, future gemstone-py-native wrapper",
-        examples: "python_native_adapter, py_native_pyo3_adapter scaffold, shared-core integration plan",
+        crates: "gemstone-gci, gemstone-rs::py_native, gemstone-py-native wrapper",
+        examples: "python_native_adapter, py_native_pyo3_adapter scaffold, downstream gemstone-py-native bridge",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, and starter scaffold exist; gemstone-py-native still needs to wrap it",
+        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream gemstone-py-native RustCoreSession bridge are wired; live-stone and published-wheel verification remain",
     },
 ];
 
@@ -2070,9 +2070,9 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     },
     ComparisonInfo {
         topic: "Native bridge direction",
-        gemstone_py: "Python API should eventually consume a thin PyO3 native layer",
-        gemstone_rs: "Owns the long-term shared GCI core plus dependency-free py_native contract, compatibility, conformance, and handoff reports",
-        recommendation: "Wire gemstone-py-native to gemstone_rs::py_native and keep the shared-core gate green",
+        gemstone_py: "Python API now has an additive gemstone-py-native RustCoreSession bridge over the Rust core while preserving existing Python return behavior",
+        gemstone_rs: "Owns the shared GCI core plus dependency-free py_native contract, compatibility, conformance, and handoff reports",
+        recommendation: "Keep native wheel/sdist checks, live smoke, and post-publish install verification green",
     },
 ];
 
@@ -2085,7 +2085,7 @@ const GEMSTONE_PY_USE_WHEN: &[&str] = &[
 const GEMSTONE_RS_USE_WHEN: &[&str] = &[
     "You are building Rust services, CLIs, workers, or local tooling that should talk to GemStone without Python.",
     "You want compile-time checked generated wrappers, typed return helpers, and explicit OOP/value handling.",
-    "You want the Rust GCI core that can eventually be shared underneath gemstone-py-native.",
+    "You want the Rust GCI core that now backs the additive gemstone-py-native shared-core bridge.",
 ];
 
 const GEMSTONE_PY_STRENGTHS: &[&str] = &[
@@ -2120,9 +2120,9 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
     ParityInfo {
         area: "Async and lifetime behavior",
         gemstone_py_score: 4,
-        project_score: 3,
-        leader: "gemstone-py",
-        status: "gemstone-py has broader async examples and FastAPI lifetime coverage; gemstone-rs now has dependency-free awaitable SessionWorker/SessionWorkerPool calls while keeping Session on a dedicated thread.",
+        project_score: 4,
+        leader: "tie",
+        status: "gemstone-py has broader async web examples and FastAPI lifetime coverage; gemstone-rs has dependency-free awaitable SessionWorker/SessionWorkerPool calls while keeping Session on a dedicated thread.",
         next_action: "Add deeper cancellation, shutdown, and lifetime tests around async worker futures.",
     },
     ParityInfo {
@@ -2154,19 +2154,19 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 3,
         project_score: 5,
         leader: "gemstone-rs",
-        status: "gemstone-rs owns the clean Rust GCI/session core and now exposes dependency-free py_native contract, compatibility, conformance, and handoff reports for a PyO3 wrapper.",
-        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep the shared-core gate green, and run the gemstone-py native backend checks.",
+        status: "gemstone-rs owns the clean Rust GCI/session core, exposes the py_native contract, and gemstone-py-native now has an additive RustCoreSession bridge plus wheel/sdist import checks.",
+        next_action: "Run live GemStone smoke and post-publish install verification through the Rust-backed native path.",
     },
 ];
 
 const GEMSTONE_PY_GAPS: &[GapInfo] = &[
     GapInfo {
         priority: "P1",
-        area: "Shared native core",
-        gemstone_py_strength: "gemstone-py already exposes a Python package and optional native acceleration path.",
-        gemstone_rs_gap: "gemstone-rs now exposes py_native contract, compatibility, conformance, handoff, and check-all reports, but gemstone-py-native does not yet wrap it.",
-        next_action: "Wire gemstone-py-native to gemstone_rs::py_native, keep Python return behavior backward compatible, and keep check-all green.",
-        verify_with: "gemstone-py native backend checks plus gemstone-rs py-native check-all and live smoke tests",
+        area: "Shared native core live/publish verification",
+        gemstone_py_strength: "gemstone-py already has the Python package, native wheel, TestPyPI/PyPI, and post-install verification lane.",
+        gemstone_rs_gap: "gemstone-py-native now wraps gemstone_rs::py_native through an additive RustCoreSession bridge, and wheel/sdist checks import it; the remaining gap is live GemStone smoke plus published wheel verification through that Rust-backed path.",
+        next_action: "Run the live native backend smoke, publish the Rust-backed native wheels, and verify TestPyPI/PyPI installs.",
+        verify_with: "scripts/run_native_checks.sh; GS_RUN_LIVE=1 gemstone-py native/live smoke; TestPyPI/PyPI install verification",
     },
     GapInfo {
         priority: "P2",
@@ -2213,11 +2213,11 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
 const GEMSTONE_RS_BATCHES: &[BatchInfo] = &[
     BatchInfo {
         number: 1,
-        focus: "Shared core with gemstone-py-native",
-        hours_min: 6,
-        hours_max: 10,
-        outcome: "Wire gemstone-py-native to the gemstone_rs::py_native adapter so Python and Rust share the native bridge.",
-        verify_with: "gemstone-py native backend checks plus gemstone-rs live smoke tests",
+        focus: "Shared-core live and publish hardening",
+        hours_min: 3,
+        hours_max: 5,
+        outcome: "Run live GemStone smoke and published-install verification for the Rust-backed gemstone-py-native bridge.",
+        verify_with: "scripts/run_native_checks.sh plus gemstone-py live native smoke and TestPyPI/PyPI install checks",
     },
 ];
 
@@ -2571,7 +2571,7 @@ const SCAFFOLD_TEMPLATES: &[ScaffoldTemplate] = &[
         name: "py_native_pyo3_adapter",
         package_name: "gemstone-py-native-starter",
         title: "gemstone-py-native PyO3 Starter",
-        description: "Thin PyO3 adapter scaffold over gemstone_rs::py_native for a future gemstone-py-native package.",
+        description: "Thin PyO3 adapter scaffold over gemstone_rs::py_native for gemstone-py-native style packages.",
         main_rs: include_str!("../templates/py_native_pyo3_adapter.rs"),
         extra_dependencies: r#"pyo3 = "0.28"
 
@@ -3562,7 +3562,7 @@ fn gemstone_py_scorecard_info() -> ScorecardInfo {
     ScorecardInfo {
         title: "gemstone-rs scorecard vs gemstone-py",
         comparison: "gemstone-py",
-        answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the future shared native core.",
+        answer: "gemstone-py remains more mature for Python apps, web examples, explorer polish, and release lanes; gemstone-rs is the better fit for Rust-native services, CLIs, typed wrappers, and the shared native core.",
         gemstone_py_use_when: GEMSTONE_PY_USE_WHEN,
         project_use_when: GEMSTONE_RS_USE_WHEN,
         gemstone_py_strengths: GEMSTONE_PY_STRENGTHS,
@@ -7262,19 +7262,19 @@ mod tests {
     fn comparison_batch_plans_are_actionable() {
         assert_eq!(GEMSTONE_RS_BATCHES.len(), 1);
         assert_eq!(GEMSTONE_JS_BATCHES.len(), 6);
-        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (6, 10));
+        assert_eq!(total_batch_hours(GEMSTONE_RS_BATCHES), (3, 5));
         assert_eq!(total_batch_hours(GEMSTONE_JS_BATCHES), (42, 72));
         assert_eq!(
             all_batch_totals(),
             BatchTotals {
                 total_batches: 1,
-                hours_min: 6,
-                hours_max: 10,
+                hours_min: 3,
+                hours_max: 5,
             }
         );
         assert!(GEMSTONE_RS_BATCHES
             .iter()
-            .any(|batch| batch.focus.contains("Shared core")));
+            .any(|batch| batch.focus.contains("Shared-core live")));
         assert!(GEMSTONE_JS_BATCHES
             .iter()
             .any(|batch| batch.focus.contains("Visual tooling")));
@@ -7294,22 +7294,22 @@ mod tests {
         assert!(batch_totals_json_entry("gemstone-js", GEMSTONE_JS_BATCHES)
             .contains(r#""hoursMax":72"#));
         assert!(scorecard_json_entry(gemstone_py_scorecard_info())
-            .contains(r#""remaining":{"totalBatches":1,"hoursMin":6,"hoursMax":10}"#));
+            .contains(r#""remaining":{"totalBatches":1,"hoursMin":3,"hoursMax":5}"#));
         assert!(
             !status_json_entry(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
                 .contains(r#""view":"#)
         );
         assert!(
             status_json_body(gemstone_py_scorecard_info(), GEMSTONE_RS_PARITY)
-                .contains(r#""scoreGap":1"#)
+                .contains(r#""scoreGap":0"#)
         );
         assert_eq!(
             parity_totals(GEMSTONE_RS_PARITY),
             ParityTotals {
                 gemstone_py_score: 30,
-                project_score: 29,
+                project_score: 30,
                 max_score: 35,
-                score_gap: 1,
+                score_gap: 0,
             }
         );
         assert!(
@@ -7324,8 +7324,8 @@ mod tests {
     fn gap_report_prioritizes_actionable_gemstone_py_gaps() {
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P1"
-                && gap.area == "Shared native core"
-                && gap.next_action.contains("py_native")
+                && gap.area == "Shared native core live/publish verification"
+                && gap.next_action.contains("live native backend smoke")
         }));
         assert!(GEMSTONE_PY_GAPS.iter().any(|gap| {
             gap.priority == "P2"

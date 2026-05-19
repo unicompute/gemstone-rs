@@ -124,8 +124,9 @@ gemstone-rs py-native check-all --json
 
 `py-native migration --json` is intentionally not a replacement for doing the
 Python-side work. It is the shared Rust-side checklist that CLI, CI, docs, and
-the VS Code workbench can render consistently while `gemstone-py-native` moves
-from its current native path to a thin wrapper around `gemstone_rs::py_native`.
+the VS Code workbench can render consistently while `gemstone-py-native`
+keeps its additive `RustCoreSession` bridge over `gemstone_rs::py_native`
+green through live and published-wheel verification.
 `py-native handoff --json` is the single manifest to hand to downstream
 `gemstone-py-native` work: it lists each artifact, schema, generation command,
 validation command, and required acceptance check.
@@ -161,7 +162,7 @@ for Python 3.14 compatibility and keeps PyO3's
 `capabilities_json`, `samples_json`, `smoke_dry_run_json`, `migration_json`,
 `compatibility_json`, `conformance_json`, and `handoff_json`, so Python wrapper
 CI can inspect the adapter contract, compatibility method map, conformance
-target, handoff manifest, and remaining shared-core checklist from the
+target, handoff manifest, and remaining live/publish checklist from the
 generated module. The
 generated `NativeSession` also maps the Rust session operations for eval,
 execute, resolve, value-to-OOP conversion, perform, strings, symbols, globals,
@@ -218,9 +219,9 @@ The wrapper should expose stable operations first:
 Only after that should it expose higher-level browser, codegen, and BridgeRoot
 operations.
 
-## PyO3 Sketch
+## Downstream PyO3 Shape
 
-The future `gemstone-py-native` crate should be thin:
+The downstream `gemstone-py-native` crate should stay thin:
 
 ```rust
 use gemstone_rs::py_native::{PyNativeConfig, PyNativeSession};
@@ -253,9 +254,9 @@ unsendable unless a dedicated worker-thread wrapper is used.
    scaffold py_native_pyo3_adapter`.
 3. Keep `scripts/check_py_native_pyo3_scaffold.py` green while the starter
    evolves.
-4. Wrap `gemstone_rs::py_native` from the existing `gemstone-py-native` PyO3
-   crate.
-5. Replace duplicated native loading code in `gemstone-py-native`.
+4. Keep the existing `gemstone-py-native` `RustCoreSession` bridge delegating
+   to `gemstone_rs::py_native`.
+5. Continue reducing duplicated native loading code in `gemstone-py-native`.
 6. Run the existing `gemstone-py` native backend and live tests through the
    Rust-backed native path.
 7. Keep pure Python fallback behavior and current sync return behavior
