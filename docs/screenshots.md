@@ -76,10 +76,12 @@ Validate local Markdown links and same-repository raw GitHub links:
 
 ```bash
 make docs-link-check
+make docs-index-check
 ```
 
 That check is offline; it does not probe public websites, but it does catch
-missing local files, missing directories, and broken Markdown heading anchors.
+missing local files, missing directories, broken Markdown heading anchors, and
+main guides that are missing from `README.md` or `docs/README.md`.
 
 The screenshot path does not require GemStone credentials because the explorer
 home page renders before live endpoints are called. Live browse/codegen data
@@ -118,6 +120,7 @@ For a release pass, run:
 ```bash
 make visual-asset-check
 make docs-link-check
+make docs-index-check
 make verify
 make vscode-package
 ```

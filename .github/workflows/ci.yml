@@ -51,6 +51,7 @@ jobs:
       - run: python3 scripts/release_asset_checks_test.py
       - run: python3 scripts/visual_asset_check.py
       - run: python3 scripts/docs_link_check.py
+      - run: python3 scripts/docs_index_check.py
       - run: scripts/live_smoke.sh --dry-run
       - run: REQUIRE_EXPLORER_SMOKE=1 python3 scripts/explorer_endpoint_smoke.py
       - run: cargo package -p gemstone-gci --no-verify
@@ -104,6 +105,7 @@ jobs:
       - run: python3 scripts/version_check.py
       - run: python3 scripts/visual_asset_check.py
       - run: python3 scripts/docs_link_check.py
+      - run: python3 scripts/docs_index_check.py
       - run: DRY_RUN=1 scripts/release_all.sh 0.2.2
 
   live:

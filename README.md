@@ -27,11 +27,14 @@ crate Rust application developers should use.
 | --- | --- |
 | Setup | [docs/setup-guide.md](docs/setup-guide.md) |
 | Examples | [docs/examples-guide.md](docs/examples-guide.md) |
+| Feature map | [docs/feature-map.md](docs/feature-map.md) |
 | User manual | [docs/user-manual.md](docs/user-manual.md) |
 | Cookbook | [docs/cookbook.md](docs/cookbook.md) |
 | gemstone-py vs gemstone-rs | [docs/gemstone-py-vs-gemstone-rs.md](docs/gemstone-py-vs-gemstone-rs.md) |
+| gemstone-js vs gemstone-py | [docs/gemstone-js-vs-gemstone-py.md](docs/gemstone-js-vs-gemstone-py.md) |
 | Object mapping | [docs/object-mapping.md](docs/object-mapping.md) |
 | Codegen | [docs/codegen.md](docs/codegen.md) |
+| Codegen profile schema | [docs/profile-schema.md](docs/profile-schema.md) |
 | Explorer | [docs/explorer.md](docs/explorer.md) |
 | VS Code workbench | [docs/vscode-workbench.md](docs/vscode-workbench.md) |
 | Screenshot workflow | [docs/screenshots.md](docs/screenshots.md) |

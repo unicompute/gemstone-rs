@@ -71,6 +71,7 @@ diff -u examples/codegen/gemstone-rs.codegen-profiles.json /tmp/gemstone-rs.code
 make screenshots
 make visual-asset-check
 make docs-link-check
+make docs-index-check
 ```
 
 - Run local verification:
