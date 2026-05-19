@@ -866,6 +866,7 @@ cargo run -p gemstone-rs-cli -- py-native migration --json
 cargo run -p gemstone-rs-cli -- py-native compatibility --json
 cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs-cli -- py-native handoff --json
+cargo run -p gemstone-rs-cli -- py-native publish-receipt --json
 cargo run -p gemstone-rs-cli -- py-native check-all --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example python_native_adapter
@@ -928,11 +929,19 @@ The generated PyO3 starter exposes the same manifest as
 Rust-core report functions under `gemstone_py_native._gci`, so release gating
 stays close to the package that publishes the wheels.
 
+There is also a publish receipt:
+`gemstone-rs py-native publish-receipt --json`. It records the exact TestPyPI
+and PyPI workflow run ids, install commands, verified timestamps, and package
+checks for the Rust-backed `gemstone-py-native` wheel release. That makes the
+release evidence durable and reviewable in source control instead of buried in
+CI logs.
+
 The release gate is `gemstone-rs py-native check-all`. It validates every
 checked-in Rust-side fixture in one pass: capabilities, samples, smoke,
-compatibility, conformance, and handoff. The JSON output is intentionally
-boring. That is the point. It gives the eventual `gemstone-py-native` workflow
-one stable command to run before wheels are published.
+compatibility, conformance, handoff, and publish receipt. The JSON output is
+intentionally boring. That is the point. It gives the eventual
+`gemstone-py-native` workflow one stable command to run before wheels are
+published.
 
 The shared-core release path is now closed for this phase. Local live GemStone
 smoke through the Rust-backed native path passed, the Rust-backed

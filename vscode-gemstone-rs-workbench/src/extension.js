@@ -78,6 +78,8 @@ function activate(context) {
   register(context, "gemstoneRs.validatePyNativeConformanceFixture", validatePyNativeConformanceFixture);
   register(context, "gemstoneRs.validatePyNativeHandoffBundle", validatePyNativeHandoffBundle);
   register(context, "gemstoneRs.showPyNativeHandoffBundle", showPyNativeHandoffBundle);
+  register(context, "gemstoneRs.validatePyNativePublishReceipt", validatePyNativePublishReceipt);
+  register(context, "gemstoneRs.showPyNativePublishReceipt", showPyNativePublishReceipt);
   register(context, "gemstoneRs.validatePyNativeSharedCoreGate", validatePyNativeSharedCoreGate);
   register(context, "gemstoneRs.compareGemstonePyStatus", compareGemstonePyStatus);
   register(context, "gemstoneRs.compareAllStatus", compareAllStatus);
@@ -220,6 +222,8 @@ class GemStoneTreeProvider {
         actionNode("Validate py-native Conformance Fixture", "gemstoneRs.validatePyNativeConformanceFixture"),
         actionNode("Validate py-native Handoff Bundle", "gemstoneRs.validatePyNativeHandoffBundle"),
         actionNode("Show py-native Handoff Bundle", "gemstoneRs.showPyNativeHandoffBundle"),
+        actionNode("Validate py-native Publish Receipt", "gemstoneRs.validatePyNativePublishReceipt"),
+        actionNode("Show py-native Publish Receipt", "gemstoneRs.showPyNativePublishReceipt"),
         actionNode("Validate py-native Shared Core Gate", "gemstoneRs.validatePyNativeSharedCoreGate"),
       ];
     }
@@ -1544,6 +1548,8 @@ async function runWorkbenchCommand(commandId) {
     "gemstoneRs.validatePyNativeConformanceFixture",
     "gemstoneRs.validatePyNativeHandoffBundle",
     "gemstoneRs.showPyNativeHandoffBundle",
+    "gemstoneRs.validatePyNativePublishReceipt",
+    "gemstoneRs.showPyNativePublishReceipt",
     "gemstoneRs.validatePyNativeSharedCoreGate",
     "gemstoneRs.compareGemstonePyStatus",
     "gemstoneRs.compareAllStatus",
@@ -1939,6 +1945,61 @@ async function showPyNativeHandoffBundle() {
   }
 }
 
+async function validatePyNativePublishReceipt() {
+  const fixturePath = await vscode.window.showInputBox({
+    title: "Validate py-native Publish Receipt",
+    prompt: "Path to gemstone-rs.py-native-publish-receipt.json",
+    value: settings().pyNativePublishReceiptFixture,
+  });
+  if (!fixturePath) {
+    return;
+  }
+  const result = await runCli(["py-native", "check-publish-receipt", fixturePath, "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native check-publish-receipt returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativePublishReceiptCheckReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const message = report.ok
+    ? `py-native publish receipt is current: ${report.path || fixturePath}`
+    : `py-native publish receipt drifted: ${report.path || fixturePath}`;
+  const action = report.ok && result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report", "Open Fixture")
+    : await vscode.window.showErrorMessage(message, "Copy Report", "Open Fixture");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native publish receipt report.");
+  } else if (action === "Open Fixture") {
+    await openPathInEditor(fixturePath);
+  }
+}
+
+async function showPyNativePublishReceipt() {
+  const result = await runCli(["py-native", "publish-receipt", "--json"], { allowFailure: true });
+  const report = parseJsonCommandResult(result, "gemstone-rs py-native publish-receipt returned invalid JSON.");
+  if (!report) {
+    return;
+  }
+  const reportText = formatPyNativePublishReceiptReport(result, report);
+  output.clear();
+  output.append(reportText);
+  output.show(true);
+
+  const targetCount = Array.isArray(report.targets) ? report.targets.length : 0;
+  const message = `py-native publish receipt: ${targetCount} targets for ${report.releaseTag || "unknown release"}.`;
+  const action = result.code === 0
+    ? await vscode.window.showInformationMessage(message, "Copy Report")
+    : await vscode.window.showErrorMessage(message, "Copy Report");
+  if (action === "Copy Report") {
+    await vscode.env.clipboard.writeText(reportText);
+    vscode.window.showInformationMessage("Copied py-native publish receipt.");
+  }
+}
+
 async function validatePyNativeSharedCoreGate() {
   const result = await runCli(["py-native", "check-all", "--json"], { allowFailure: true });
   const report = parseJsonCommandResult(result, "gemstone-rs py-native check-all returned invalid JSON.");
@@ -2141,6 +2202,53 @@ function formatPyNativeHandoffBundleReport(result, report) {
   for (const criterion of acceptance) {
     lines.push(`  ${criterion.id || "(unnamed)"}${criterion.required ? " [required]" : ""}`);
     lines.push(`    verify: ${criterion.verify || "-"}`);
+  }
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativePublishReceiptCheckReport(result, report) {
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native publish receipt check",
+    `path: ${report.path || "-"}`,
+    `ok: ${Boolean(report.ok)}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `releaseTag: ${report.releaseTag || "-"}`,
+    `targets: ${report.targetCount ?? "-"}`,
+  ];
+  if (result.stderr.trim()) {
+    lines.push("");
+    lines.push(result.stderr.trimEnd());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatPyNativePublishReceiptReport(result, report) {
+  const targets = Array.isArray(report.targets) ? report.targets : [];
+  const lines = [
+    commandLine(result).trimEnd(),
+    "py-native publish receipt",
+    `targetPackage: ${report.targetPackage || "-"}`,
+    `rustCore: ${report.rustCore || "-"}`,
+    `releaseTag: ${report.releaseTag || "-"}`,
+    `contractVersion: ${report.contractVersion || "-"}`,
+    `status: ${report.status || "-"}`,
+    "",
+    "targets:",
+  ];
+  for (const target of targets) {
+    lines.push(`  ${target.index || "(unnamed)"} ${target.package || "-"} ${target.version || "-"}`);
+    lines.push(`    workflow: ${target.workflow || "-"} #${target.runId ?? "-"}`);
+    lines.push(`    conclusion: ${target.conclusion || "-"}`);
+    lines.push(`    created: ${target.createdAt || "-"}`);
+    lines.push(`    verified: ${target.verifiedAt || "-"}`);
+    lines.push(`    run: ${target.runUrl || "-"}`);
+    lines.push(`    install: ${target.installCommand || "-"}`);
+    lines.push(`    checks: ${target.verification || "-"}`);
   }
   if (result.stderr.trim()) {
     lines.push("");
@@ -2353,6 +2461,8 @@ iframe { display: block; width: 100%; height: 100%; border: 0; background: white
       <button data-command="gemstoneRs.validatePyNativeConformanceFixture">Validate py-native Conformance Fixture</button>
       <button data-command="gemstoneRs.validatePyNativeHandoffBundle">Validate py-native Handoff Bundle</button>
       <button data-command="gemstoneRs.showPyNativeHandoffBundle">Show py-native Handoff Bundle</button>
+      <button data-command="gemstoneRs.validatePyNativePublishReceipt">Validate py-native Publish Receipt</button>
+      <button data-command="gemstoneRs.showPyNativePublishReceipt">Show py-native Publish Receipt</button>
       <button data-command="gemstoneRs.validatePyNativeSharedCoreGate">Validate py-native Shared Core Gate</button>
       <button data-command="gemstoneRs.openCodegenConfig">Open Codegen Config</button>
       <button data-command="gemstoneRs.openProjectProfiles">Open Project Profiles</button>
@@ -3126,6 +3236,7 @@ function settings() {
     pyNativeSmokeFixture: cfg.get("pyNativeSmokeFixture", "examples/py-native/gemstone-rs.py-native-smoke.json"),
     pyNativeConformanceFixture: cfg.get("pyNativeConformanceFixture", "examples/py-native/gemstone-rs.py-native-conformance.json"),
     pyNativeHandoffFixture: cfg.get("pyNativeHandoffFixture", "examples/py-native/gemstone-rs.py-native-handoff.json"),
+    pyNativePublishReceiptFixture: cfg.get("pyNativePublishReceiptFixture", "examples/py-native/gemstone-rs.py-native-publish-receipt.json"),
     bridgeRoot: cfg.get("bridgeRoot", "GemStoneRsBridgeRoot").trim() || "GemStoneRsBridgeRoot",
     explorerHost: cfg.get("explorerHost", "127.0.0.1"),
     explorerPort: cfg.get("explorerPort", 8787),

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/unicompute/gemstone-rs/raw/main/schemas/gemstone-rs.py-native-publish-receipt.schema.json",
+  "title": "gemstone-rs py-native Publish Receipt Output",
+  "description": "Machine-readable output from gemstone-rs py-native publish-receipt --json for recording gemstone-py-native TestPyPI/PyPI trusted publishing verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "targetPackage", "rustCore", "releaseTag", "status", "targets"],
+  "properties": {
+    "contractVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "targetPackage": {
+      "type": "string",
+      "const": "gemstone-py-native"
+    },
+    "rustCore": {
+      "type": "string",
+      "const": "gemstone-rs"
+    },
+    "releaseTag": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "index",
+          "package",
+          "version",
+          "workflow",
+          "runId",
+          "runUrl",
+          "createdAt",
+          "verifiedAt",
+          "conclusion",
+          "installCommand",
+          "verification"
+        ],
+        "properties": {
+          "index": {
+            "type": "string",
+            "enum": ["TestPyPI", "PyPI"]
+          },
+          "package": {
+            "type": "string",
+            "const": "gemstone-py-native"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workflow": {
+            "type": "string",
+            "const": "Native Wheels"
+          },
+          "runId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "runUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "conclusion": {
+            "type": "string",
+            "const": "success"
+          },
+          "installCommand": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verification": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

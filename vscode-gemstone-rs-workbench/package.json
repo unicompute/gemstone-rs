@@ -85,6 +85,8 @@
     "onCommand:gemstoneRs.validatePyNativeConformanceFixture",
     "onCommand:gemstoneRs.validatePyNativeHandoffBundle",
     "onCommand:gemstoneRs.showPyNativeHandoffBundle",
+    "onCommand:gemstoneRs.validatePyNativePublishReceipt",
+    "onCommand:gemstoneRs.showPyNativePublishReceipt",
     "onCommand:gemstoneRs.validatePyNativeSharedCoreGate",
     "onCommand:gemstoneRs.compareGemstonePyStatus",
     "onCommand:gemstoneRs.compareAllStatus"
@@ -353,6 +355,14 @@
         "title": "GemStone RS: Show py-native Handoff Bundle"
       },
       {
+        "command": "gemstoneRs.validatePyNativePublishReceipt",
+        "title": "GemStone RS: Validate py-native Publish Receipt"
+      },
+      {
+        "command": "gemstoneRs.showPyNativePublishReceipt",
+        "title": "GemStone RS: Show py-native Publish Receipt"
+      },
+      {
         "command": "gemstoneRs.validatePyNativeSharedCoreGate",
         "title": "GemStone RS: Validate py-native Shared Core Gate"
       },
@@ -483,6 +493,13 @@
       },
       {
         "fileMatch": [
+          "gemstone-rs.py-native-publish-receipt.json",
+          "*.gemstone-rs.py-native-publish-receipt.json"
+        ],
+        "url": "./schemas/gemstone-rs.py-native-publish-receipt.schema.json"
+      },
+      {
+        "fileMatch": [
           "gemstone-rs.py-native-check-all.json",
           "*.gemstone-rs.py-native-check-all.json"
         ],
@@ -551,6 +568,11 @@
           "type": "string",
           "default": "examples/py-native/gemstone-rs.py-native-handoff.json",
           "description": "Default py-native handoff bundle checked by gemstone-rs py-native check-handoff."
+        },
+        "gemstoneRs.pyNativePublishReceiptFixture": {
+          "type": "string",
+          "default": "examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+          "description": "Default py-native publish receipt checked by gemstone-rs py-native check-publish-receipt."
         },
         "gemstoneRs.bridgeRoot": {
           "type": "string",

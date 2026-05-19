@@ -90,6 +90,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native publish-receipt --json
+gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
 gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 gemstone-rs env sample
@@ -104,6 +106,7 @@ gemstone-rs examples run python_native_adapter --dry-run
 gemstone-rs examples run py_native_compatibility_fixture --dry-run
 gemstone-rs examples run py_native_conformance_fixture --dry-run
 gemstone-rs examples run py_native_handoff_bundle --dry-run
+gemstone-rs examples run py_native_publish_receipt --dry-run
 gemstone-rs examples run py_native_shared_core_gate --dry-run
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
 gemstone-rs examples scaffold codegen_workflow ./gemstone-rs-codegen-workflow
@@ -133,10 +136,13 @@ fixture is checked in at
 wrapper conformance target is checked in at
 `examples/py-native/gemstone-rs.py-native-conformance.json`. The downstream
 handoff bundle is checked in at
-`examples/py-native/gemstone-rs.py-native-handoff.json`. Together these files
+`examples/py-native/gemstone-rs.py-native-handoff.json`, and the publish
+receipt is checked in at
+`examples/py-native/gemstone-rs.py-native-publish-receipt.json`. Together these files
 give downstream wrapper CI a stable Rust contract, payload samples, dry-run
 smoke report, Python package-layer return policy, generated PyO3 scaffold
-surface, and final acceptance criteria to compare against.
+surface, final acceptance criteria, and a durable TestPyPI/PyPI verification
+receipt to compare against.
 Validate it with:
 
 ```bash
@@ -149,6 +155,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native publish-receipt --json
+gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
 gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 ```
@@ -173,6 +181,9 @@ should preserve.
 `py-native handoff --json` bundles the capabilities, samples, smoke,
 migration, compatibility, and conformance artifacts with acceptance criteria
 for the downstream `gemstone-py-native` wrapper release.
+`py-native publish-receipt --json` records the verified TestPyPI and PyPI
+workflow run ids, install commands, and package checks for the Rust-backed
+native wheel publish.
 `py-native check-all` is the downstream CI gate: it validates every checked-in
 py-native fixture in one command and emits `--json` for release bots, VS Code,
 and the future `gemstone-py-native` pipeline.

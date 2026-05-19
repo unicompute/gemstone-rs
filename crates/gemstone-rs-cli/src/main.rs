@@ -80,6 +80,13 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         Command::PyNativeHandoffCheck { path, format } => {
             run_py_native_handoff_check(&path, format)
         }
+        Command::PyNativePublishReceipt { format } => {
+            print_py_native_publish_receipt(format);
+            Ok(())
+        }
+        Command::PyNativePublishReceiptCheck { path, format } => {
+            run_py_native_publish_receipt_check(&path, format)
+        }
         Command::PyNativeCheckAll { root, format } => {
             run_py_native_check_all(root.as_deref(), format)
         }
@@ -1816,6 +1823,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Validate the checked-in downstream gemstone-py-native handoff manifest.",
     },
     ExampleInfo {
+        name: "py_native_publish_receipt",
+        title: "py-native publish receipt",
+        command: "gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+        category: "native",
+        requires_live: false,
+        description: "Validate the checked-in TestPyPI/PyPI publish receipt for the Rust-backed gemstone-py-native wheels.",
+    },
+    ExampleInfo {
         name: "py_native_shared_core_gate",
         title: "py-native shared-core gate",
         command: "gemstone-rs py-native check-all",
@@ -2027,7 +2042,7 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         examples: "python_native_adapter, py_native_pyo3_adapter scaffold, downstream gemstone-py-native bridge",
         docs: "docs/shared-core-integration.md",
         gemstone_py_reference: "gemstone-py-native",
-        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, shared-core gate, starter scaffold, and downstream gemstone-py-native RustCoreSession bridge are wired; local live-stone smoke passed and published-wheel verification remains",
+        status: "Rust-side PyO3 adapter contract, compatibility shim map, conformance fixture, handoff manifest, publish receipt, shared-core gate, starter scaffold, and downstream gemstone-py-native RustCoreSession bridge are wired; local live-stone smoke and published-wheel verification passed",
     },
 ];
 
@@ -2071,7 +2086,7 @@ const GEMSTONE_PY_COMPARISON: &[ComparisonInfo] = &[
     ComparisonInfo {
         topic: "Native bridge direction",
         gemstone_py: "Python API now has an additive gemstone-py-native RustCoreSession bridge over the Rust core while preserving existing Python return behavior",
-        gemstone_rs: "Owns the shared GCI core plus dependency-free py_native contract, compatibility, conformance, and handoff reports",
+        gemstone_rs: "Owns the shared GCI core plus dependency-free py_native contract, compatibility, conformance, handoff, and publish-receipt reports",
         recommendation: "Keep native wheel/sdist checks, live smoke, and post-publish install verification green",
     },
 ];
@@ -2696,6 +2711,10 @@ fn default_py_native_handoff_fixture_path() -> PathBuf {
     PathBuf::from("examples/py-native/gemstone-rs.py-native-handoff.json")
 }
 
+fn default_py_native_publish_receipt_fixture_path() -> PathBuf {
+    PathBuf::from("examples/py-native/gemstone-rs.py-native-publish-receipt.json")
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct PyNativeCheckAllStep {
     name: &'static str,
@@ -2861,6 +2880,14 @@ fn build_py_native_check_all_report(root: Option<&Path>) -> PyNativeCheckAllRepo
         default_py_native_handoff_fixture_path(),
         py_native::handoff_report().to_json(),
         "gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json",
+    );
+    push_py_native_check_all_step(
+        &mut steps,
+        root,
+        "publish-receipt",
+        default_py_native_publish_receipt_fixture_path(),
+        py_native::publish_receipt().to_json(),
+        "gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json",
     );
     PyNativeCheckAllReport {
         contract_version: py_native::capabilities().contract_version,
@@ -3174,6 +3201,67 @@ fn run_py_native_handoff_check(path: &Path, format: OutputFormat) -> Result<(), 
     } else {
         Err(CliError::CodegenCheck(format!(
             "{} does not match `gemstone-rs py-native handoff --json`; regenerate or review the handoff bundle change",
+            path.display()
+        )))
+    }
+}
+
+fn print_py_native_publish_receipt(format: OutputFormat) {
+    let receipt = py_native::publish_receipt();
+    match format {
+        OutputFormat::Json => println!("{}", receipt.to_json()),
+        OutputFormat::Human => {
+            println!("py-native publish receipt");
+            println!("  target_package: {}", receipt.target_package);
+            println!("  rust_core: {}", receipt.rust_core);
+            println!("  release_tag: {}", receipt.release_tag);
+            println!("  status: {}", receipt.status);
+            println!("  targets:");
+            for target in &receipt.targets {
+                println!(
+                    "    {} {} {} [{}]",
+                    target.index, target.package, target.version, target.conclusion
+                );
+                println!("      workflow: {} #{}", target.workflow, target.run_id);
+                println!("      run: {}", target.run_url);
+                println!("      verified_at: {}", target.verified_at);
+                println!("      install: {}", target.install_command);
+                println!("      checks: {}", target.verification);
+            }
+        }
+    }
+}
+
+fn run_py_native_publish_receipt_check(path: &Path, format: OutputFormat) -> Result<(), CliError> {
+    let receipt = py_native::publish_receipt();
+    let expected = receipt.to_json();
+    let actual = fs::read_to_string(path)?;
+    let actual = actual.trim_end();
+    let matches = actual == expected;
+
+    match format {
+        OutputFormat::Human => {
+            if matches {
+                println!("py-native publish receipt ok: {}", path.display());
+            }
+        }
+        OutputFormat::Json => {
+            println!(
+                r#"{{"path":"{}","ok":{},"contractVersion":{},"targetCount":{},"releaseTag":"{}"}}"#,
+                escape_json(&path.display().to_string()),
+                if matches { "true" } else { "false" },
+                receipt.contract_version,
+                receipt.targets.len(),
+                escape_json(receipt.release_tag)
+            );
+        }
+    }
+
+    if matches {
+        Ok(())
+    } else {
+        Err(CliError::CodegenCheck(format!(
+            "{} does not match `gemstone-rs py-native publish-receipt --json`; regenerate or review the publish receipt change",
             path.display()
         )))
     }
@@ -4427,6 +4515,11 @@ fn example_cli_args(name: &str) -> Option<&'static [&'static str]> {
             "check-handoff",
             "examples/py-native/gemstone-rs.py-native-handoff.json",
         ]),
+        "py_native_publish_receipt" => Some(&[
+            "py-native",
+            "check-publish-receipt",
+            "examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+        ]),
         "py_native_shared_core_gate" => Some(&["py-native", "check-all"]),
         _ => None,
     }
@@ -4732,6 +4825,13 @@ enum Command {
         format: OutputFormat,
     },
     PyNativeHandoffCheck {
+        path: PathBuf,
+        format: OutputFormat,
+    },
+    PyNativePublishReceipt {
+        format: OutputFormat,
+    },
+    PyNativePublishReceiptCheck {
         path: PathBuf,
         format: OutputFormat,
     },
@@ -5137,14 +5237,22 @@ fn parse_py_native_command(args: &[String]) -> Result<Command, CliError> {
         Some("check-handoff" | "handoff-check" | "validate-handoff") => {
             parse_py_native_handoff_check_command(&args[1..])
         }
+        Some("publish-receipt" | "publish-status" | "publish" | "receipt") => {
+            parse_format_only_command(&args[1..], "py-native publish-receipt [--json]", |format| {
+                Command::PyNativePublishReceipt { format }
+            })
+        }
+        Some("check-publish-receipt" | "publish-receipt-check" | "validate-publish-receipt") => {
+            parse_py_native_publish_receipt_check_command(&args[1..])
+        }
         Some("check-all" | "validate-all" | "gate" | "acceptance") => {
             parse_py_native_check_all_command(&args[1..])
         }
         Some("-h" | "--help") => Err(CliError::usage(
-            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json] | py-native compatibility [--json] | py-native check-compat [path] [--json] | py-native conformance [--json] | py-native check-conformance [path] [--json] | py-native handoff [--json] | py-native check-handoff [path] [--json] | py-native check-all [--root path] [--json]",
+            "expected: py-native capabilities [--json] | py-native check [path] [--json] | py-native samples [--json] | py-native check-samples [path] [--json] | py-native check-smoke [path] [--json] | py-native smoke [--dry-run] [--json] | py-native migration [--json] | py-native compatibility [--json] | py-native check-compat [path] [--json] | py-native conformance [--json] | py-native check-conformance [path] [--json] | py-native handoff [--json] | py-native check-handoff [path] [--json] | py-native publish-receipt [--json] | py-native check-publish-receipt [path] [--json] | py-native check-all [--root path] [--json]",
         )),
         Some(command) => Err(CliError::usage(format!(
-            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration|compatibility|check-compat|conformance|check-conformance|handoff|check-handoff|check-all"
+            "unknown py-native command: {command}; expected capabilities|check|samples|check-samples|check-smoke|smoke|migration|compatibility|check-compat|conformance|check-conformance|handoff|check-handoff|publish-receipt|check-publish-receipt|check-all"
         ))),
     }
 }
@@ -5278,6 +5386,31 @@ fn parse_py_native_handoff_check_command(args: &[String]) -> Result<Command, Cli
     }
     Ok(Command::PyNativeHandoffCheck {
         path: path.unwrap_or_else(default_py_native_handoff_fixture_path),
+        format,
+    })
+}
+
+fn parse_py_native_publish_receipt_check_command(args: &[String]) -> Result<Command, CliError> {
+    let mut format = OutputFormat::Human;
+    let mut path = None;
+    for value in args {
+        match value.as_str() {
+            "--json" => format = OutputFormat::Json,
+            option if option.starts_with('-') => {
+                return Err(CliError::usage(format!(
+                    "unknown py-native check-publish-receipt option: {option}"
+                )))
+            }
+            _ if path.is_none() => path = Some(PathBuf::from(value)),
+            _ => {
+                return Err(CliError::usage(format!(
+                    "unexpected py-native check-publish-receipt argument: {value}"
+                )))
+            }
+        }
+    }
+    Ok(Command::PyNativePublishReceiptCheck {
+        path: path.unwrap_or_else(default_py_native_publish_receipt_fixture_path),
         format,
     })
 }
@@ -6394,6 +6527,8 @@ fn usage() -> &'static str {
   gemstone-rs py-native check-conformance [path] [--json]
   gemstone-rs py-native handoff [--json]
   gemstone-rs py-native check-handoff [path] [--json]
+  gemstone-rs py-native publish-receipt [--json]
+  gemstone-rs py-native check-publish-receipt [path] [--json]
   gemstone-rs py-native check-all [--root path] [--json]
   gemstone-rs compare gemstone-py|gemstone-js|all [--status|--scorecard|--parity|--gaps|--next|--totals|--batches] [--json]
   gemstone-rs doctor [--env-file <path>] [--live] [--strict] [--json]
@@ -6726,6 +6861,34 @@ mod tests {
             .unwrap(),
             Command::PyNativeHandoffCheck {
                 path: PathBuf::from("examples/py-native/gemstone-rs.py-native-handoff.json"),
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "publish-receipt", "--json"])).unwrap(),
+            Command::PyNativePublishReceipt {
+                format: OutputFormat::Json,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&["py-native", "check-publish-receipt"])).unwrap(),
+            Command::PyNativePublishReceiptCheck {
+                path: default_py_native_publish_receipt_fixture_path(),
+                format: OutputFormat::Human,
+            }
+        );
+        assert_eq!(
+            parse_command(&args(&[
+                "py-native",
+                "validate-publish-receipt",
+                "examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+                "--json"
+            ]))
+            .unwrap(),
+            Command::PyNativePublishReceiptCheck {
+                path: PathBuf::from(
+                    "examples/py-native/gemstone-rs.py-native-publish-receipt.json"
+                ),
                 format: OutputFormat::Json,
             }
         );
@@ -8475,10 +8638,15 @@ GEMSTONE=/opt/gemstone # product root
             py_native::handoff_report().to_json(),
         )
         .unwrap();
+        fs::write(
+            root.join(default_py_native_publish_receipt_fixture_path()),
+            py_native::publish_receipt().to_json(),
+        )
+        .unwrap();
 
         let report = build_py_native_check_all_report(Some(&root));
         assert!(report.ok());
-        assert_eq!(report.ok_count(), 6);
+        assert_eq!(report.ok_count(), 7);
         run_py_native_check_all(Some(&root), OutputFormat::Human).unwrap();
 
         fs::write(root.join(default_py_native_handoff_fixture_path()), "{}").unwrap();

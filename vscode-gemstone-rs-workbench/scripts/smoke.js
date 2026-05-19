@@ -21,6 +21,7 @@ const schemaNames = [
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
   "gemstone-rs.py-native-handoff.schema.json",
+  "gemstone-rs.py-native-publish-receipt.schema.json",
   "gemstone-rs.py-native-check-all.schema.json",
 ];
 
@@ -54,6 +55,8 @@ const requiredCommands = [
   "gemstoneRs.validatePyNativeConformanceFixture",
   "gemstoneRs.validatePyNativeHandoffBundle",
   "gemstoneRs.showPyNativeHandoffBundle",
+  "gemstoneRs.validatePyNativePublishReceipt",
+  "gemstoneRs.showPyNativePublishReceipt",
   "gemstoneRs.validatePyNativeSharedCoreGate",
   "gemstoneRs.codegenPreviewProfile",
   "gemstoneRs.codegenDiffProfile",
@@ -201,6 +204,8 @@ assert(readme.includes("Run py-native Smoke"), "README should mention py-native 
 assert(readme.includes("Validate py-native Conformance Fixture"), "README should mention py-native conformance fixture validation");
 assert(readme.includes("Validate py-native Handoff Bundle"), "README should mention py-native handoff bundle validation");
 assert(readme.includes("Show py-native Handoff Bundle"), "README should mention py-native handoff bundle display");
+assert(readme.includes("Validate py-native Publish Receipt"), "README should mention py-native publish receipt validation");
+assert(readme.includes("Show py-native Publish Receipt"), "README should mention py-native publish receipt display");
 assert(readme.includes("Validate py-native Shared Core Gate"), "README should mention py-native shared-core gate validation");
 assert(readme.includes("Create Project Profiles"), "README should mention profile creation");
 assert(readme.includes("Validate Project Profiles"), "README should mention profile validation");
@@ -277,6 +282,22 @@ assert(
   "py-native handoff bundle should render a readable report"
 );
 assert(
+  extensionSource.includes('"py-native", "check-publish-receipt", fixturePath, "--json"'),
+  "py-native publish receipt validation should use JSON output"
+);
+assert(
+  extensionSource.includes('"py-native", "publish-receipt", "--json"'),
+  "py-native publish receipt display should use JSON output"
+);
+assert(
+  extensionSource.includes("formatPyNativePublishReceiptCheckReport"),
+  "py-native publish receipt check should render a readable report"
+);
+assert(
+  extensionSource.includes("formatPyNativePublishReceiptReport"),
+  "py-native publish receipt should render a readable report"
+);
+assert(
   extensionSource.includes('"py-native", "check-all", "--json"'),
   "py-native shared-core gate should use JSON output"
 );
@@ -303,6 +324,10 @@ assert(
 assert(
   extensionSource.includes("pyNativeHandoffFixture"),
   "Workbench should expose a py-native handoff fixture setting"
+);
+assert(
+  extensionSource.includes("pyNativePublishReceiptFixture"),
+  "Workbench should expose a py-native publish receipt fixture setting"
 );
 assert(
   extensionSource.includes('"compare", target, "--status", "--json"'),
@@ -407,6 +432,12 @@ assert(
 );
 assert(
   packageJson.contributes.jsonValidation.some((entry) =>
+    entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-publish-receipt"))
+  ),
+  "package.json should contribute JSON validation for py-native publish receipt reports"
+);
+assert(
+  packageJson.contributes.jsonValidation.some((entry) =>
     entry.fileMatch.some((pattern) => pattern.includes("gemstone-rs.py-native-check-all"))
   ),
   "package.json should contribute JSON validation for py-native check-all reports"
@@ -434,6 +465,10 @@ assert(
 assert(
   packageJson.contributes.configuration.properties["gemstoneRs.pyNativeHandoffFixture"],
   "package.json should expose gemstoneRs.pyNativeHandoffFixture"
+);
+assert(
+  packageJson.contributes.configuration.properties["gemstoneRs.pyNativePublishReceiptFixture"],
+  "package.json should expose gemstoneRs.pyNativePublishReceiptFixture"
 );
 
 console.log(`gemstone-rs Workbench smoke checks passed for ${packageJson.version}`);

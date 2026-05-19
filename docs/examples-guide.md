@@ -59,6 +59,7 @@ gemstone-rs examples run py_native_migration_plan --dry-run
 gemstone-rs examples run py_native_compatibility_fixture --dry-run
 gemstone-rs examples run py_native_conformance_fixture --dry-run
 gemstone-rs examples run py_native_handoff_bundle --dry-run
+gemstone-rs examples run py_native_publish_receipt --dry-run
 gemstone-rs examples run py_native_shared_core_gate --dry-run
 gemstone-rs py-native capabilities --json
 gemstone-rs py-native samples --json
@@ -66,6 +67,7 @@ gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native conformance --json
 gemstone-rs py-native handoff --json
+gemstone-rs py-native publish-receipt --json
 gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 gemstone-rs examples scaffold quickstart ./gemstone-rs-quickstart
@@ -142,9 +144,14 @@ compatibility shim methods, fixture paths, and scaffold files.
 downstream handoff bundle: every fixture path, schema, regeneration command,
 validation command, and acceptance check that `gemstone-py-native` needs before
 using the Rust core as its native backend.
+`py-native publish-receipt --json` and
+`examples/py-native/gemstone-rs.py-native-publish-receipt.json` record the
+verified TestPyPI and PyPI workflow runs, install commands, and package checks
+for the Rust-backed `gemstone-py-native` wheel release.
 `py-native check-all` is the downstream shared-core gate. It validates the
-capabilities, samples, smoke, compatibility, conformance, and handoff fixtures
-together, and `--json` gives CI or VS Code a single status report.
+capabilities, samples, smoke, compatibility, conformance, handoff, and
+publish-receipt fixtures together, and `--json` gives CI or VS Code a single
+status report.
 
 Aliases include `bridge`, `mapping`, `derive`, `codegen`, `discover`,
 `profiles`, `wrapper`, `framework`, `axum`, `actix`, and `http`.
@@ -195,8 +202,9 @@ CLI binary is installed and runnable.
 | Python native compatibility fixture | `gemstone-rs py-native check-compat examples/py-native/gemstone-rs.py-native-compat.json`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run` | Checks the Python package-layer return policy and shim method mapping. |
 | Python native conformance fixture | `gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json`; `gemstone-rs examples run py_native_conformance_fixture --dry-run` | Checks the PyO3 module/session/shim surface that a real `gemstone-py-native` wrapper should expose. |
 | Python native handoff bundle | `gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json`; `gemstone-rs examples run py_native_handoff_bundle --dry-run` | Checks the downstream `gemstone-py-native` handoff manifest across contract, smoke, compatibility, conformance, and acceptance criteria. |
+| Python native publish receipt | `gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json`; `gemstone-rs examples run py_native_publish_receipt --dry-run` | Checks the verified TestPyPI/PyPI workflow runs and install receipts for the Rust-backed native wheel release. |
 | Python native shared-core gate | `gemstone-rs py-native check-all`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | Checks every checked-in py-native fixture in one downstream CI gate. |
-| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | Exposes py-native fixture workflows through the same examples catalog as Cargo examples. |
+| Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run`; `gemstone-rs examples run py_native_publish_receipt --dry-run`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | Exposes py-native fixture workflows through the same examples catalog as Cargo examples. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |

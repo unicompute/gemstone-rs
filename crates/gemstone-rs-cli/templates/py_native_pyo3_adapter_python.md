@@ -40,6 +40,10 @@ scaffold files.
 `gemstone-rs py-native handoff --json`: artifact paths, schemas, regeneration
 commands, validation commands, and release acceptance checks.
 
+`gemstone-rs py-native publish-receipt --json`: verified TestPyPI/PyPI
+workflow run ids, install commands, and package checks for the Rust-backed
+native wheel release.
+
 The generated `NativeSession` class exposes a deliberately direct adapter
 surface over the Rust core: `eval_oop`, `execute`, `resolve`,
 `eval_json`, `perform_raw_oop`, `perform_json`, `new_string`, `new_symbol`,

@@ -1060,6 +1060,108 @@ impl PyNativeHandoffArtifact {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativePublishTarget {
+    pub index: &'static str,
+    pub package: &'static str,
+    pub version: &'static str,
+    pub workflow: &'static str,
+    pub run_id: u64,
+    pub run_url: &'static str,
+    pub created_at: &'static str,
+    pub verified_at: &'static str,
+    pub conclusion: &'static str,
+    pub install_command: &'static str,
+    pub verification: &'static str,
+}
+
+impl PyNativePublishTarget {
+    pub fn to_json(&self) -> String {
+        format!(
+            r#"{{"index":"{}","package":"{}","version":"{}","workflow":"{}","runId":{},"runUrl":"{}","createdAt":"{}","verifiedAt":"{}","conclusion":"{}","installCommand":"{}","verification":"{}"}}"#,
+            json_escape(self.index),
+            json_escape(self.package),
+            json_escape(self.version),
+            json_escape(self.workflow),
+            self.run_id,
+            json_escape(self.run_url),
+            json_escape(self.created_at),
+            json_escape(self.verified_at),
+            json_escape(self.conclusion),
+            json_escape(self.install_command),
+            json_escape(self.verification)
+        )
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PyNativePublishReceipt {
+    pub contract_version: u16,
+    pub target_package: &'static str,
+    pub rust_core: &'static str,
+    pub release_tag: &'static str,
+    pub status: &'static str,
+    pub targets: Vec<PyNativePublishTarget>,
+}
+
+impl PyNativePublishReceipt {
+    pub fn to_json(&self) -> String {
+        let targets = self
+            .targets
+            .iter()
+            .map(PyNativePublishTarget::to_json)
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            r#"{{"contractVersion":{},"targetPackage":"{}","rustCore":"{}","releaseTag":"{}","status":"{}","targets":[{}]}}"#,
+            self.contract_version,
+            json_escape(self.target_package),
+            json_escape(self.rust_core),
+            json_escape(self.release_tag),
+            json_escape(self.status),
+            targets
+        )
+    }
+}
+
+pub fn publish_receipt() -> PyNativePublishReceipt {
+    PyNativePublishReceipt {
+        contract_version: capabilities().contract_version,
+        target_package: "gemstone-py-native",
+        rust_core: "gemstone-rs",
+        release_tag: "native-v0.1.3",
+        status: "TestPyPI and PyPI trusted publishing plus install verification passed",
+        targets: vec![
+            PyNativePublishTarget {
+                index: "TestPyPI",
+                package: "gemstone-py-native",
+                version: "0.1.3",
+                workflow: "Native Wheels",
+                run_id: 26107302361,
+                run_url: "https://github.com/unicompute/gemstone-py/actions/runs/26107302361",
+                created_at: "2026-05-19T15:28:08Z",
+                verified_at: "2026-05-19T15:33:26Z",
+                conclusion: "success",
+                install_command: "python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ gemstone-py-native==0.1.3",
+                verification: "native import, rust_core_implementation == gemstone-rs, RustCoreSession, and TestPyPI files/metadata",
+            },
+            PyNativePublishTarget {
+                index: "PyPI",
+                package: "gemstone-py-native",
+                version: "0.1.3",
+                workflow: "Native Wheels",
+                run_id: 26107639278,
+                run_url: "https://github.com/unicompute/gemstone-py/actions/runs/26107639278",
+                created_at: "2026-05-19T15:33:48Z",
+                verified_at: "2026-05-19T15:37:22Z",
+                conclusion: "success",
+                install_command: "python -m pip install gemstone-py-native==0.1.3",
+                verification: "native import, rust_core_implementation == gemstone-rs, RustCoreSession, and PyPI files/metadata",
+            },
+        ],
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PyNativeAcceptanceCriterion {
     pub id: &'static str,
     pub required: bool,
@@ -1170,6 +1272,14 @@ pub fn handoff_report() -> PyNativeHandoffReport {
                 command: "gemstone-rs py-native conformance --json",
                 check_command: "gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json",
                 purpose: "PyO3 module functions, raw session methods, shim methods, fixtures, and scaffold files",
+            },
+            PyNativeHandoffArtifact {
+                name: "publish-receipt",
+                path: "examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+                schema: "schemas/gemstone-rs.py-native-publish-receipt.schema.json",
+                command: "gemstone-rs py-native publish-receipt --json",
+                check_command: "gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json",
+                purpose: "Durable TestPyPI/PyPI workflow receipt for the Rust-backed gemstone-py-native wheel publish",
             },
         ],
         acceptance: vec![
@@ -1961,6 +2071,11 @@ mod tests {
         assert!(report
             .artifacts
             .iter()
+            .any(|artifact| artifact.name == "publish-receipt"
+                && artifact.check_command.contains("check-publish-receipt")));
+        assert!(report
+            .artifacts
+            .iter()
             .any(|artifact| artifact.name == "migration" && artifact.path.is_empty()));
         assert!(report
             .acceptance
@@ -1970,5 +2085,25 @@ mod tests {
         assert!(json.contains(r#""adapterModule":"gemstone_rs::py_native""#));
         assert!(json.contains(r#""name":"conformance""#));
         assert!(json.contains(r#""id":"fixtures_current""#));
+    }
+
+    #[test]
+    fn publish_receipt_records_verified_native_wheel_runs() {
+        let receipt = publish_receipt();
+        let json = receipt.to_json();
+        assert_eq!(receipt.contract_version, 1);
+        assert_eq!(receipt.target_package, "gemstone-py-native");
+        assert_eq!(receipt.release_tag, "native-v0.1.3");
+        assert_eq!(receipt.targets.len(), 2);
+        assert!(receipt.targets.iter().any(|target| {
+            target.index == "TestPyPI"
+                && target.run_id == 26107302361
+                && target.conclusion == "success"
+        }));
+        assert!(receipt.targets.iter().any(|target| {
+            target.index == "PyPI" && target.run_id == 26107639278 && target.conclusion == "success"
+        }));
+        assert!(json.contains(r#""rustCore":"gemstone-rs""#));
+        assert!(json.contains("rust_core_implementation == gemstone-rs"));
     }
 }

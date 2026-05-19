@@ -79,7 +79,10 @@ From the `Codegen Config` tree:
    in the VS Code output panel.
 10. Run `Show py-native Migration Plan` when you want the remaining
     `gemstone-py-native` shared-core checklist in the output panel.
-11. Run `Open Codegen Docs`.
+11. Run `Validate py-native Publish Receipt` or `Show py-native Publish
+    Receipt` when you want verified TestPyPI/PyPI workflow runs in the output
+    panel.
+12. Run `Open Codegen Docs`.
 
 `Generate Wrappers` shows the generated diff before writing if output would
 change.
@@ -94,8 +97,9 @@ The py-native actions call `gemstone-rs py-native check --json`,
 `gemstone-rs py-native check-samples --json`,
 `gemstone-rs py-native check-smoke --json`, and
 `gemstone-rs py-native smoke --json`, and
-`gemstone-rs py-native migration --json`, so VS Code uses the same adapter
-contract, smoke, and migration reports as terminal and CI workflows.
+`gemstone-rs py-native migration --json`, plus the publish-receipt commands,
+so VS Code uses the same adapter contract, smoke, migration, and wheel-publish
+reports as terminal and CI workflows.
 
 ## Explorer Walkthrough
 

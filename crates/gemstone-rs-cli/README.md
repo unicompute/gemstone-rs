@@ -51,6 +51,13 @@ cargo run -p gemstone-rs-cli -- py-native samples --json
 cargo run -p gemstone-rs-cli -- py-native check-samples examples/py-native/gemstone-rs.py-native-samples.json
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run
 cargo run -p gemstone-rs-cli -- py-native smoke --dry-run --json
+cargo run -p gemstone-rs-cli -- py-native migration --json
+cargo run -p gemstone-rs-cli -- py-native compatibility --json
+cargo run -p gemstone-rs-cli -- py-native conformance --json
+cargo run -p gemstone-rs-cli -- py-native handoff --json
+cargo run -p gemstone-rs-cli -- py-native publish-receipt --json
+cargo run -p gemstone-rs-cli -- py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
+cargo run -p gemstone-rs-cli -- py-native check-all
 cargo run -p gemstone-rs-cli -- env sample
 cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list

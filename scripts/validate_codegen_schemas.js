@@ -18,6 +18,7 @@ const schemaNames = [
   "gemstone-rs.py-native-compat.schema.json",
   "gemstone-rs.py-native-conformance.schema.json",
   "gemstone-rs.py-native-handoff.schema.json",
+  "gemstone-rs.py-native-publish-receipt.schema.json",
   "gemstone-rs.py-native-check-all.schema.json",
 ];
 
@@ -211,6 +212,26 @@ assert.deepStrictEqual(
   pyNativeHandoff,
   pyNativeHandoffFixture,
   "py-native handoff output drifted from examples/py-native/gemstone-rs.py-native-handoff.json"
+);
+const pyNativePublishReceiptFixture = readJson(
+  "examples/py-native/gemstone-rs.py-native-publish-receipt.json"
+);
+assertPyNativePublishReceipt(pyNativePublishReceiptFixture);
+const pyNativePublishReceiptOutput = childProcess.execFileSync(
+  "cargo",
+  ["run", "-p", "gemstone-rs-cli", "--", "py-native", "publish-receipt", "--json"],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  }
+);
+const pyNativePublishReceipt = JSON.parse(lastJsonLine(pyNativePublishReceiptOutput));
+assertPyNativePublishReceipt(pyNativePublishReceipt);
+assert.deepStrictEqual(
+  pyNativePublishReceipt,
+  pyNativePublishReceiptFixture,
+  "py-native publish receipt output drifted from examples/py-native/gemstone-rs.py-native-publish-receipt.json"
 );
 const pyNativeCheckAllOutput = childProcess.execFileSync(
   "cargo",
@@ -657,6 +678,7 @@ function assertPyNativeHandoff(value) {
     "migration",
     "compatibility",
     "conformance",
+    "publish-receipt",
   ]) {
     assert(artifactNames.has(required), `py-native-handoff.artifacts missing ${required}`);
   }
@@ -680,6 +702,47 @@ function assertPyNativeHandoff(value) {
   ]) {
     assert(acceptanceIds.has(required), `py-native-handoff.acceptance missing ${required}`);
   }
+}
+
+function assertPyNativePublishReceipt(value) {
+  assert.strictEqual(
+    typeof value.contractVersion,
+    "number",
+    "py-native-publish-receipt.contractVersion"
+  );
+  assert(value.contractVersion >= 1, "py-native-publish-receipt.contractVersion");
+  assert.strictEqual(
+    value.targetPackage,
+    "gemstone-py-native",
+    "py-native-publish-receipt.targetPackage"
+  );
+  assert.strictEqual(value.rustCore, "gemstone-rs", "py-native-publish-receipt.rustCore");
+  assert.strictEqual(typeof value.releaseTag, "string", "py-native-publish-receipt.releaseTag");
+  assert.strictEqual(typeof value.status, "string", "py-native-publish-receipt.status");
+  assert(Array.isArray(value.targets), "py-native-publish-receipt.targets");
+  assert(value.targets.length >= 2, "py-native-publish-receipt.targets should include TestPyPI and PyPI");
+
+  const indexes = new Set();
+  for (const [index, target] of value.targets.entries()) {
+    assert.strictEqual(typeof target.index, "string", `py-native-publish-receipt.targets[${index}].index`);
+    assert(!indexes.has(target.index), `py-native-publish-receipt duplicate target ${target.index}`);
+    indexes.add(target.index);
+    assert.strictEqual(target.package, "gemstone-py-native", `py-native-publish-receipt.targets[${index}].package`);
+    assert.strictEqual(typeof target.version, "string", `py-native-publish-receipt.targets[${index}].version`);
+    assert.strictEqual(target.workflow, "Native Wheels", `py-native-publish-receipt.targets[${index}].workflow`);
+    assert.strictEqual(typeof target.runId, "number", `py-native-publish-receipt.targets[${index}].runId`);
+    assert.strictEqual(typeof target.runUrl, "string", `py-native-publish-receipt.targets[${index}].runUrl`);
+    assert(target.runUrl.includes("/actions/runs/"), `py-native-publish-receipt.targets[${index}].runUrl`);
+    assert.strictEqual(typeof target.createdAt, "string", `py-native-publish-receipt.targets[${index}].createdAt`);
+    assert.strictEqual(typeof target.verifiedAt, "string", `py-native-publish-receipt.targets[${index}].verifiedAt`);
+    assert.strictEqual(target.conclusion, "success", `py-native-publish-receipt.targets[${index}].conclusion`);
+    assert.strictEqual(typeof target.installCommand, "string", `py-native-publish-receipt.targets[${index}].installCommand`);
+    assert.strictEqual(typeof target.verification, "string", `py-native-publish-receipt.targets[${index}].verification`);
+    assert(target.verification.includes("RustCoreSession"), `py-native-publish-receipt.targets[${index}].verification`);
+  }
+
+  assert(indexes.has("TestPyPI"), "py-native-publish-receipt.targets missing TestPyPI");
+  assert(indexes.has("PyPI"), "py-native-publish-receipt.targets missing PyPI");
 }
 
 function assertPyNativeCheckAll(value) {
@@ -721,6 +784,7 @@ function assertPyNativeCheckAll(value) {
     "compatibility",
     "conformance",
     "handoff",
+    "publish-receipt",
   ]) {
     assert(names.has(required), `py-native-check-all.steps missing ${required}`);
   }

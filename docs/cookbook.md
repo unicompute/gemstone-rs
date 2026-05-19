@@ -417,6 +417,8 @@ gemstone-rs py-native conformance --json
 gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native publish-receipt --json
+gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
 gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
@@ -442,6 +444,9 @@ module functions, raw `NativeSession` methods, compatibility shim methods,
 fixture files, and scaffold files. `py-native handoff --json` adds the final
 downstream manifest tying the contract, samples, smoke, migration,
 compatibility, conformance, and acceptance checks together.
+`py-native publish-receipt --json` records the verified TestPyPI and PyPI
+workflow runs, install commands, and package checks for the Rust-backed
+`gemstone-py-native` wheel release.
 The `py-native check-all` gate validates all checked-in py-native fixtures
 together, which is the shortest command to put in downstream `gemstone-py-native`
 CI before publishing native wheels. The PyO3 scaffold

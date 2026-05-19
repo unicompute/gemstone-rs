@@ -80,6 +80,8 @@ The wrapper conformance output is covered by
 [`schemas/gemstone-rs.py-native-conformance.schema.json`](../schemas/gemstone-rs.py-native-conformance.schema.json).
 The downstream handoff bundle output is covered by
 [`schemas/gemstone-rs.py-native-handoff.schema.json`](../schemas/gemstone-rs.py-native-handoff.schema.json).
+The publish receipt output is covered by
+[`schemas/gemstone-rs.py-native-publish-receipt.schema.json`](../schemas/gemstone-rs.py-native-publish-receipt.schema.json).
 The one-command downstream gate output is covered by
 [`schemas/gemstone-rs.py-native-check-all.schema.json`](../schemas/gemstone-rs.py-native-check-all.schema.json).
 The VS Code workbench packages these schemas for editor validation. A
@@ -95,6 +97,8 @@ and the conformance fixture at
 [`examples/py-native/gemstone-rs.py-native-conformance.json`](../examples/py-native/gemstone-rs.py-native-conformance.json),
 with the final handoff bundle at
 [`examples/py-native/gemstone-rs.py-native-handoff.json`](../examples/py-native/gemstone-rs.py-native-handoff.json),
+and the native wheel publish receipt at
+[`examples/py-native/gemstone-rs.py-native-publish-receipt.json`](../examples/py-native/gemstone-rs.py-native-publish-receipt.json),
 so downstream wrapper CI can diff the contract without requiring a live stone.
 Use the CLI check in CI:
 
@@ -118,6 +122,9 @@ gemstone-rs py-native check-conformance examples/py-native/gemstone-rs.py-native
 gemstone-rs py-native handoff
 gemstone-rs py-native handoff --json
 gemstone-rs py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+gemstone-rs py-native publish-receipt
+gemstone-rs py-native publish-receipt --json
+gemstone-rs py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
 gemstone-rs py-native check-all
 gemstone-rs py-native check-all --json
 ```
@@ -130,9 +137,12 @@ green through live smoke and published-wheel verification.
 `py-native handoff --json` is the single manifest to hand to downstream
 `gemstone-py-native` work: it lists each artifact, schema, generation command,
 validation command, and required acceptance check.
+`py-native publish-receipt --json` records the verified TestPyPI and PyPI
+workflow runs, install commands, and package checks for the Rust-backed
+`gemstone-py-native` wheel release.
 `py-native check-all --json` is the CI acceptance gate for that handoff: it
 validates the checked-in capabilities, samples, smoke, compatibility,
-conformance, and handoff fixtures in one report.
+conformance, handoff, and publish-receipt fixtures in one report.
 
 To create a starter PyO3 wrapper crate from the installed CLI:
 

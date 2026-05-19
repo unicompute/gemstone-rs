@@ -10,6 +10,7 @@ gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native conformance --json
 gemstone-rs py-native handoff --json
+gemstone-rs py-native publish-receipt --json
 gemstone-rs py-native check-all --json
 ```
 
@@ -40,6 +41,10 @@ The handoff fixture is checked in as `gemstone-rs.py-native-handoff.json`; it
 bundles every py-native artifact, schema, regeneration command, validation
 command, and downstream acceptance check needed before `gemstone-py-native`
 uses the Rust core as its native backend.
+The publish receipt fixture is checked in as
+`gemstone-rs.py-native-publish-receipt.json`; it records the verified
+TestPyPI and PyPI workflow run ids, install commands, and package checks for
+the Rust-backed `gemstone-py-native` wheel release.
 The check-all report is covered by
 `schemas/gemstone-rs.py-native-check-all.schema.json` and validates every
 checked-in fixture in one downstream CI gate.
@@ -62,6 +67,8 @@ cargo run -p gemstone-rs-cli -- py-native conformance --json
 cargo run -p gemstone-rs-cli -- py-native check-conformance examples/py-native/gemstone-rs.py-native-conformance.json
 cargo run -p gemstone-rs-cli -- py-native handoff --json
 cargo run -p gemstone-rs-cli -- py-native check-handoff examples/py-native/gemstone-rs.py-native-handoff.json
+cargo run -p gemstone-rs-cli -- py-native publish-receipt --json
+cargo run -p gemstone-rs-cli -- py-native check-publish-receipt examples/py-native/gemstone-rs.py-native-publish-receipt.json
 cargo run -p gemstone-rs-cli -- py-native check-all
 cargo run -p gemstone-rs-cli -- py-native check-all --json
 cargo run -p gemstone-rs-cli -- examples run py_native_capabilities --dry-run
@@ -72,6 +79,7 @@ cargo run -p gemstone-rs-cli -- examples run py_native_migration_plan --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_compatibility_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_conformance_fixture --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_handoff_bundle --dry-run
+cargo run -p gemstone-rs-cli -- examples run py_native_publish_receipt --dry-run
 cargo run -p gemstone-rs-cli -- examples run py_native_shared_core_gate --dry-run
 node scripts/validate_codegen_schemas.js
 ```
@@ -86,5 +94,6 @@ schemas/gemstone-rs.py-native-migration.schema.json
 schemas/gemstone-rs.py-native-compat.schema.json
 schemas/gemstone-rs.py-native-conformance.schema.json
 schemas/gemstone-rs.py-native-handoff.schema.json
+schemas/gemstone-rs.py-native-publish-receipt.schema.json
 schemas/gemstone-rs.py-native-check-all.schema.json
 ```

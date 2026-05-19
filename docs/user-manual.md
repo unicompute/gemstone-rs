@@ -96,6 +96,9 @@ gemstone-rs py-native smoke
 gemstone-rs py-native migration --json
 gemstone-rs py-native compatibility --json
 gemstone-rs py-native conformance --json
+gemstone-rs py-native handoff --json
+gemstone-rs py-native publish-receipt --json
+gemstone-rs py-native check-all --json
 ```
 
 ```rust
@@ -110,6 +113,9 @@ session.logout()?;
 `py-native compatibility --json` prints the Python package-layer method map,
 and `py-native conformance --json` prints the PyO3 module/session/shim surface
 that downstream `gemstone-py-native` integration should preserve.
+`py-native handoff --json` bundles the downstream acceptance artifacts, and
+`py-native publish-receipt --json` records the verified TestPyPI/PyPI native
+wheel publish runs.
 
 ## Eval and Perform
 
