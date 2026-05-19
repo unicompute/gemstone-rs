@@ -183,7 +183,23 @@ Field options:
 | `type` | `type=Option<String>` | Rust/GemStone field conversion. |
 | `key` | `key=amount` | GemStone dictionary key. |
 | `key_type` | `key_type=Symbol` | Use string keys or symbol keys explicitly. |
+| `selector` | `selector=status` | Smalltalk selector used by a connector-style remote field. |
+| `return` | `return=Symbol` | Smalltalk-facing remote return type; also accepts `Mapped<Customer>`. |
 | `doc` | `doc=Booking amount.` | Writes a Rust doc comment above the field. |
+
+Connector-style field metadata can live beside dictionary-backed mapping:
+
+```text
+mapped = Booking
+class = UserGlobals:OkzBooking
+field = Booking.status | selector=status | return=Symbol
+field = Booking.customer | selector=customer | return=Mapped<Customer>
+```
+
+`codegen explain` and `codegen explain --json` report this metadata so the
+explorer and VS Code can show the remote selector mapping. Generated
+`BridgeMapped` structs still use explicit dictionary fields; selector-backed
+remote wrapper generation is intentionally a later pass.
 
 ## Commands
 

@@ -230,6 +230,47 @@ assert_eq!(dictionary.at_string("externalId")?, "web-42");
 dictionary. It does not change the entry keys inside the stored map. Use
 `BridgeValue::keyed_dictionary` for symbol-keyed entries inside the value.
 
+## Recipe 10D: Refresh and Save a Remote Mapped Object
+
+`Remote<T>` is an explicit object reference. It stores an `Oop` and type
+metadata, but it only talks to GemStone when you pass `&mut Session`.
+
+```rust
+use gemstone_rs::{BridgeMapped, Config, MaterializationProfile, Remote, Session};
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct BookingDraft {
+    status: String,
+    amount: i64,
+    labels: BTreeMap<String, String>,
+}
+
+let mut session = Session::login(Config::from_env()?)?;
+let key = "CookbookRemoteBooking";
+
+let initial = BookingDraft {
+    status: "draft".to_string(),
+    amount: 100,
+    labels: BTreeMap::from([("source".to_string(), "cookbook".to_string())]),
+};
+
+let oop = {
+    let mut bridge_root = session.bridge_root()?;
+    bridge_root.put_mapped(key, &initial)?;
+    bridge_root.get_oop(key)?
+};
+
+let mut remote = Remote::<BookingDraft>::with_type(oop, "UserGlobals:BookingDraft")
+    .with_profile(MaterializationProfile::deep(4));
+let mut loaded = remote.refresh(&mut session)?.clone();
+loaded.status = "confirmed".to_string();
+remote.set_value(loaded);
+remote.save(&mut session)?;
+```
+
+There is no hidden save-on-drop. `save(&mut session)` is the persistence point.
+
 ## Recipe 11: Browse Dictionaries
 
 ```rust

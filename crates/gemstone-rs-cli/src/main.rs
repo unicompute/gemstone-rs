@@ -1873,6 +1873,14 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Read nested BridgeRoot dictionaries and arrays back as dynamic BridgeValue trees with shape reports.",
     },
     ExampleInfo {
+        name: "remote_object_mapping",
+        title: "Remote object mapping",
+        command: "cargo run -p gemstone-rs --example remote_object_mapping",
+        category: "mapping",
+        requires_live: true,
+        description: "Explicit Remote<T> refresh/save flow over a BridgeMapped GemStone dictionary OOP.",
+    },
+    ExampleInfo {
         name: "codegen_preview",
         title: "Codegen preview",
         command: "cargo run -p gemstone-rs --example codegen_preview",

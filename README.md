@@ -515,6 +515,10 @@ Dictionary mapping distinguishes the key used to store a BridgeRoot entry from
 the keys inside a stored dictionary value: `BTreeMap<String, T>` maps
 string-keyed metadata, while `BridgeValue::keyed_dictionary` preserves
 Smalltalk symbol keys inside the value.
+`Remote<T>` / `ObjectRef<T>` adds an explicit proxy layer over an OOP: call
+`refresh(&mut session)` to materialize a mapped value, `set_value` to mark it
+dirty, and `save(&mut session)` to write it back. Materialization profiles keep
+depth, dictionary key policy, array policy, and repeated-OOP reporting visible.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
 line-oriented config, explain what will be generated, preview generated Rust

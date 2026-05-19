@@ -153,6 +153,15 @@
           "enum": ["String", "Symbol"],
           "default": "String"
         },
+        "selector": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Smalltalk selector used by connector-style remote object mapping."
+        },
+        "return": {
+          "type": "string",
+          "description": "Smalltalk-facing remote return type such as Symbol, String, Oop, or Mapped<Customer>."
+        },
         "doc": {
           "type": "string"
         }

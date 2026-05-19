@@ -127,7 +127,7 @@
     "field": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "type", "key", "keyType"],
+      "required": ["name", "type", "key", "keyType", "selector", "return", "doc"],
       "properties": {
         "name": {
           "type": "string"
@@ -140,6 +140,15 @@
         },
         "keyType": {
           "type": "string"
+        },
+        "selector": {
+          "type": ["string", "null"]
+        },
+        "return": {
+          "type": ["string", "null"]
+        },
+        "doc": {
+          "type": ["string", "null"]
         }
       }
     }

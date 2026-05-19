@@ -135,6 +135,35 @@
 //! }
 //! ```
 //!
+//! Keep remote object references explicit with `Remote<T>`:
+//!
+//! ```no_run
+//! use gemstone_rs::{BridgeMapped, Config, MaterializationProfile, Remote, Session};
+//! use std::collections::BTreeMap;
+//!
+//! #[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+//! struct BookingDraft {
+//!     status: String,
+//!     amount: i64,
+//!     labels: BTreeMap<String, String>,
+//! }
+//!
+//! fn main() -> gemstone_rs::Result<()> {
+//!     let mut session = Session::login(Config::from_env()?)?;
+//!     let oop = {
+//!         let mut bridge_root = session.bridge_root()?;
+//!         bridge_root.get_oop("BookingDraft")?
+//!     };
+//!     let mut remote = Remote::<BookingDraft>::with_type(oop, "UserGlobals:BookingDraft")
+//!         .with_profile(MaterializationProfile::deep(4));
+//!     let mut value = remote.refresh(&mut session)?.clone();
+//!     value.status = "confirmed".to_string();
+//!     remote.set_value(value);
+//!     remote.save(&mut session)?;
+//!     Ok(())
+//! }
+//! ```
+//!
 //! Browse dictionaries, classes, protocols, methods, and source through the
 //! same browser API used by the CLI and explorer:
 //!
@@ -333,9 +362,11 @@ pub mod web;
 pub mod worker;
 
 pub use bridge::{
-    BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey, BridgeKeySummary,
-    BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue, BridgeValueIdentityGroup,
-    BridgeValueShapeNode, BridgeValueShapeReport, DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
+    ArrayMaterialization, BridgeDictionary, BridgeFieldRead, BridgeFieldWrite, BridgeKey,
+    BridgeKeySummary, BridgeKeyType, BridgeMapped, BridgeRoot, BridgeValue,
+    BridgeValueIdentityGroup, BridgeValueShapeNode, BridgeValueShapeReport, DictionaryKeyPolicy,
+    IdentityPolicy, MaterializationDepth, MaterializationProfile, ObjectRef, Remote,
+    DEFAULT_BRIDGE_ROOT, DEFAULT_BRIDGE_VALUE_DEPTH,
 };
 pub use gemstone_gci::Oop;
 use gemstone_gci::{

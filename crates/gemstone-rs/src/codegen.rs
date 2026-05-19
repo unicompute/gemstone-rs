@@ -280,6 +280,8 @@ pub struct FieldSpec {
     pub key: String,
     pub key_type: FieldKeyType,
     pub field_type: FieldType,
+    pub selector: Option<String>,
+    pub return_type: Option<String>,
     pub doc: Option<String>,
 }
 
@@ -300,6 +302,8 @@ impl FieldSpec {
         let mut key = rust_name.clone();
         let mut key_type = FieldKeyType::String;
         let mut field_type = FieldType::String;
+        let mut selector = None;
+        let mut return_type = None;
         let mut doc = None;
         for option in parts {
             let Some((option_key, value)) = option.split_once('=') else {
@@ -309,6 +313,17 @@ impl FieldSpec {
                 "key" => key = value.trim().to_string(),
                 "key_type" | "keyType" => key_type = FieldKeyType::parse(value.trim())?,
                 "type" => field_type = FieldType::parse(value.trim())?,
+                "return" => {
+                    let raw = value.trim();
+                    if let Ok(parsed) = ReturnType::parse(raw) {
+                        field_type = FieldType::from_return_type(&parsed);
+                        return_type = Some(parsed.config_name().to_string());
+                    } else {
+                        field_type = FieldType::parse(raw)?;
+                        return_type = Some(field_type.config_name());
+                    }
+                }
+                "selector" => selector = Some(parse_field_selector(value.trim())?),
                 "doc" => doc = Some(value.trim().to_string()),
                 other => return Err(format!("unknown field option: {other}")),
             }
@@ -319,9 +334,18 @@ impl FieldSpec {
             key,
             key_type,
             field_type,
+            selector,
+            return_type,
             doc,
         })
     }
+}
+
+fn parse_field_selector(value: &str) -> std::result::Result<String, String> {
+    if value.is_empty() {
+        return Err("field selector is empty".to_string());
+    }
+    Ok(value.to_string())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -484,6 +508,15 @@ impl FieldType {
             Self::Map(_) => true,
             Self::Vec(inner) | Self::Option(inner) => inner.uses_btreemap(),
             Self::String | Self::SmallInt | Self::Bool | Self::Oop | Self::Mapped(_) => false,
+        }
+    }
+
+    fn from_return_type(return_type: &ReturnType) -> Self {
+        match return_type {
+            ReturnType::String | ReturnType::Symbol => Self::String,
+            ReturnType::SmallInt => Self::SmallInt,
+            ReturnType::Bool => Self::Bool,
+            ReturnType::Oop | ReturnType::Value => Self::Oop,
         }
     }
 }
@@ -770,13 +803,20 @@ pub fn explain(config: &Config) -> String {
         ));
         for field in &mapped.fields {
             out.push_str(&format!(
-                "    field: {}.{} key={} key_type={} type={}\n",
+                "    field: {}.{} key={} key_type={} type={}",
                 field.mapped_name,
                 field.rust_name,
                 field.key,
                 field.key_type.config_name(),
-                field.field_type.config_name()
+                field.field_type.config_name(),
             ));
+            if let Some(selector) = &field.selector {
+                out.push_str(&format!(" selector={selector}"));
+            }
+            if let Some(return_type) = &field.return_type {
+                out.push_str(&format!(" return={return_type}"));
+            }
+            out.push('\n');
         }
     }
     out
@@ -841,11 +881,13 @@ pub fn explain_json(config: &Config) -> String {
                 .iter()
                 .map(|field| {
                     format!(
-                        r#"{{"name":"{}","key":"{}","keyType":"{}","type":"{}","doc":{}}}"#,
+                        r#"{{"name":"{}","key":"{}","keyType":"{}","type":"{}","selector":{},"return":{},"doc":{}}}"#,
                         json_escape(&field.rust_name),
                         json_escape(&field.key),
                         field.key_type.config_name(),
                         field.field_type.config_name(),
+                        optional_json_string(field.selector.as_deref()),
+                        optional_json_string(field.return_type.as_deref()),
                         optional_json_string(field.doc.as_deref())
                     )
                 })
@@ -1056,6 +1098,8 @@ pub fn discover_mapping(
             key: name,
             key_type: FieldKeyType::Symbol,
             field_type: FieldType::String,
+            selector: None,
+            return_type: None,
             doc: Some("Discovered from GemStone instance variable name.".to_string()),
         });
     }
@@ -1066,6 +1110,8 @@ pub fn discover_mapping(
             key: "name".to_string(),
             key_type: FieldKeyType::String,
             field_type: FieldType::String,
+            selector: None,
+            return_type: None,
             doc: Some("Placeholder field; edit after discovery.".to_string()),
         });
     }
@@ -1128,6 +1174,14 @@ pub fn config_source(config: &Config) -> String {
             if field.key_type != FieldKeyType::String {
                 source.push_str(" | key_type=");
                 source.push_str(field.key_type.config_name());
+            }
+            if let Some(selector) = &field.selector {
+                source.push_str(" | selector=");
+                source.push_str(selector);
+            }
+            if let Some(return_type) = &field.return_type {
+                source.push_str(" | return=");
+                source.push_str(return_type);
             }
             if let Some(doc) = field.doc.as_deref().filter(|doc| !doc.is_empty()) {
                 source.push_str(" | doc=");
@@ -2339,6 +2393,34 @@ mod tests {
             .source
             .contains("pub labels: BTreeMap<String, String>"));
         assert!(generated.source.contains("pub note: Option<String>"));
+        Ok(())
+    }
+
+    #[test]
+    fn parses_connector_style_mapped_fields() -> Result<()> {
+        let config = Config::parse(
+            "mapped = Booking\nclass = UserGlobals:OkzBooking\nfield = Booking.status | selector=status | return=Symbol\nfield = Booking.customer | selector=customer | return=Mapped<Customer>\n",
+            None,
+        )?;
+        assert_eq!(config.classes[0].class_ref.dictionary, "UserGlobals");
+        assert_eq!(config.classes[0].class_ref.class_name, "OkzBooking");
+        let fields = &config.mapped[0].fields;
+        assert_eq!(fields[0].selector.as_deref(), Some("status"));
+        assert_eq!(fields[0].field_type, FieldType::String);
+        assert_eq!(fields[0].return_type.as_deref(), Some("Symbol"));
+        assert_eq!(fields[1].selector.as_deref(), Some("customer"));
+        assert_eq!(
+            fields[1].field_type,
+            FieldType::Mapped("Customer".to_string())
+        );
+        assert_eq!(fields[1].return_type.as_deref(), Some("Mapped<Customer>"));
+
+        let explain = explain(&config);
+        assert!(explain.contains("selector=status"));
+        assert!(explain.contains("return=Symbol"));
+        let json = explain_json(&config);
+        assert!(json.contains(r#""selector":"customer""#));
+        assert!(json.contains(r#""return":"Symbol""#));
         Ok(())
     }
 

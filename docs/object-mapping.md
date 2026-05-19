@@ -107,6 +107,15 @@ The initial mapping layer supports:
 - `BridgeValue::shape_report`
 - `BridgeValueShapeReport`
 - `BridgeValueShapeNode`
+- `Remote<T>` / `ObjectRef<T>`
+- `MaterializationProfile::shallow`
+- `MaterializationProfile::deep(max_depth)`
+- `DictionaryKeyPolicy::Preserve`
+- `DictionaryKeyPolicy::StringOnly`
+- `ArrayMaterialization::Materialize`
+- `ArrayMaterialization::Reject`
+- `IdentityPolicy::PreserveOpaqueOops`
+- `IdentityPolicy::ReportRepeatedOops`
 - session-local OOP identity ids with `Session::identity_for_oop`
 
 The default root is a GemStone `Dictionary` stored in `UserGlobals` under
@@ -599,6 +608,136 @@ mapping pattern above.
 
 Use string keys when interoperating with JSON-like payloads and symbol keys when
 you want Smalltalk-style dictionary access.
+
+## Remote Object Handles
+
+`Remote<T>` is the Rust-native proxy layer. It is deliberately explicit:
+
+- it stores an `Oop`
+- it stores type metadata such as `UserGlobals:BookingDraft`
+- normal field access never talks to GemStone
+- `refresh(&mut Session)` reads the GemStone object into a cached Rust value
+- `set_value(value)` marks the cached value dirty
+- `save(&mut Session)` writes the cached mapped value back to the same GemStone
+  dictionary object
+
+```rust
+use gemstone_rs::{BridgeMapped, Config, MaterializationProfile, Remote, Session};
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct BookingDraft {
+    status: String,
+    amount: i64,
+    labels: BTreeMap<String, String>,
+}
+
+fn main() -> gemstone_rs::Result<()> {
+    let mut session = Session::login(Config::from_env()?)?;
+
+    let initial = BookingDraft {
+        status: "draft".to_string(),
+        amount: 100,
+        labels: BTreeMap::from([("source".to_string(), "remote-example".to_string())]),
+    };
+
+    let oop = {
+        let mut bridge_root = session.bridge_root()?;
+        bridge_root.put_mapped("RemoteBookingDraft", &initial)?;
+        bridge_root.get_oop("RemoteBookingDraft")?
+    };
+
+    let mut remote = Remote::<BookingDraft>::with_type(oop, "UserGlobals:BookingDraft")
+        .with_profile(MaterializationProfile::deep(4));
+
+    let loaded = remote.refresh(&mut session)?.clone();
+    assert_eq!(loaded, initial);
+
+    let mut updated = loaded;
+    updated.status = "confirmed".to_string();
+    remote.set_value(updated);
+    assert!(remote.is_dirty());
+    remote.save(&mut session)?;
+    assert!(!remote.is_dirty());
+
+    Ok(())
+}
+```
+
+Run the checked-in live example:
+
+```bash
+cargo run -p gemstone-rs --example remote_object_mapping
+```
+
+Expected output includes:
+
+```text
+remote loaded: BookingDraft { status: "draft", amount: 100, labels: {"source": "remote-example"} }
+remote saved: BookingDraft { status: "confirmed", amount: 100, labels: {"source": "remote-example"} }
+```
+
+`ObjectRef<T>` is an alias for `Remote<T>` when that name reads better in
+application code.
+
+This is not transparent persistence. The handle does not save on drop, does not
+fetch fields lazily, and does not hide network I/O behind normal Rust access.
+Every GemStone operation still takes `&mut Session`.
+
+## Materialization Profiles
+
+Materialization profiles describe how far a remote value should be read and how
+strictly the resulting `BridgeValue` tree should be validated:
+
+```rust
+use gemstone_rs::{
+    ArrayMaterialization, DictionaryKeyPolicy, IdentityPolicy, MaterializationProfile,
+};
+
+let profile = MaterializationProfile::deep(4)
+    .with_dictionary_key_policy(DictionaryKeyPolicy::Preserve)
+    .with_array_materialization(ArrayMaterialization::Materialize)
+    .with_identity_policy(IdentityPolicy::ReportRepeatedOops);
+```
+
+Useful profiles:
+
+| Profile | Behavior |
+| --- | --- |
+| `MaterializationProfile::shallow()` | Keep non-immediate remote objects opaque. |
+| `MaterializationProfile::deep(4)` | Read supported dictionaries and arrays up to depth 4. |
+| `DictionaryKeyPolicy::StringOnly` | Reject symbol-keyed dictionaries when a JSON-like shape is required. |
+| `ArrayMaterialization::Reject` | Fail fast if a mapping path unexpectedly contains an array. |
+| `IdentityPolicy::ReportRepeatedOops` | Keep shape reports useful for repeated opaque OOP references. |
+
+The profile feeds `Remote<T>::materialize`, `Remote<T>::shape_report`, and tool
+surfaces such as the explorer and VS Code webview. It does not make remote
+objects transparent; it makes the read policy explicit and reviewable.
+
+## Connector-Style Config
+
+For BridgeRoot dictionaries, `field = ... | type=... | key=...` is enough. For
+remote GemStone classes, codegen configs can also carry connector-style
+selector metadata:
+
+```text
+mapped = Booking
+class = UserGlobals:OkzBooking
+field = Booking.status | selector=status | return=Symbol
+field = Booking.customer | selector=customer | return=Mapped<Customer>
+```
+
+This lets one config describe both sides of the bridge:
+
+- `class = UserGlobals:OkzBooking` records the GemStone class to inspect or wrap
+- `selector=status` records how the remote object is read
+- `return=Symbol` records the Smalltalk-facing return type
+- `return=Mapped<Customer>` records a relationship to another mapped Rust type
+
+The initial implementation parses and reports this connector metadata through
+`codegen explain` and `codegen explain --json`. Generation still stays
+conservative: dictionary-backed `BridgeMapped` code is emitted as before, while
+remote selector wrappers can be layered on top in a later generator pass.
 
 ## Transactions and Identity
 

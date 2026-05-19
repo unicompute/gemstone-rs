@@ -209,6 +209,7 @@ CLI binary is installed and runnable.
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
 | BridgeValue inspection | `cargo run -p gemstone-rs --example bridge_value_inspection` | Reads nested BridgeRoot dictionaries and arrays back as dynamic `BridgeValue` trees with shape reports. |
+| Remote object mapping | `cargo run -p gemstone-rs --example remote_object_mapping` | Uses `Remote<T>` to refresh, edit, and explicitly save a mapped dictionary OOP. |
 | Bridge mapping preview | `cargo run -p gemstone-rs --example bridge_mapping_preview` | Infers a starter `BridgeMapped` codegen config from a nested `BridgeValue` tree. |
 | Offline codegen | `cargo run -p gemstone-rs --example codegen_preview` | Generates wrappers from the sample config without a live stone. |
 | Codegen workflow | `cargo run -p gemstone-rs --example codegen_workflow` | Writes config, previews, diffs, checks, generates, and verifies a clean diff. |
@@ -324,6 +325,10 @@ $ cargo run -p gemstone-rs --example bridge_value_inspection
 dynamic BridgeValue: Dictionary({"customer": Dictionary(...), "items": Array(...), "note": Nil, "state": Symbol("ready")})
 bridge root identity: <number>
 bridge root key count: <number>
+
+$ cargo run -p gemstone-rs --example remote_object_mapping
+remote loaded: BookingDraft { status: "draft", amount: 100, labels: {"source": "remote-example"} }
+remote saved: BookingDraft { status: "confirmed", amount: 100, labels: {"source": "remote-example"} }
 
 $ cargo run -p gemstone-rs --example generated_mapping_app
 generated mapped payload: BookingDraft { name: "Tariq", amount: 100, currency: "GBP", tags: ["priority", "demo"], labels: {"source": "generated"}, note: Some("window seat") }

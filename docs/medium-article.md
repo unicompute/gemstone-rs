@@ -494,6 +494,61 @@ comes back as `BridgeValue::Dictionary`; a dictionary with any symbol key comes
 back as `BridgeValue::KeyedDictionary`, so the explorer and VS Code webview can
 show the real Smalltalk-facing shape.
 
+The next layer is an explicit remote object handle:
+
+```rust
+use gemstone_rs::{BridgeMapped, MaterializationProfile, Remote};
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct BookingDraft {
+    status: String,
+    amount: i64,
+    labels: BTreeMap<String, String>,
+}
+
+let oop = bridge_root.get_oop("BookingDraft")?;
+let mut remote = Remote::<BookingDraft>::with_type(oop, "UserGlobals:BookingDraft")
+    .with_profile(MaterializationProfile::deep(4));
+
+let mut loaded = remote.refresh(&mut session)?.clone();
+loaded.status = "confirmed".to_string();
+remote.set_value(loaded);
+remote.save(&mut session)?;
+```
+
+That shape deliberately refuses transparent persistence. Reading requires
+`refresh(&mut session)`. Writing requires `save(&mut session)`. Normal Rust
+field access is just Rust field access.
+
+Materialization profiles make the remote read policy visible:
+
+```rust
+use gemstone_rs::{ArrayMaterialization, DictionaryKeyPolicy, MaterializationProfile};
+
+let profile = MaterializationProfile::deep(4)
+    .with_dictionary_key_policy(DictionaryKeyPolicy::Preserve)
+    .with_array_materialization(ArrayMaterialization::Materialize);
+```
+
+Use `MaterializationProfile::shallow()` when you only want an opaque object
+reference, `DictionaryKeyPolicy::StringOnly` when a JSON-like shape must reject
+symbol-keyed dictionaries, and `ArrayMaterialization::Reject` when arrays should
+not appear on a mapping path.
+
+Connector-style config can now record the Smalltalk selector side of a mapping:
+
+```text
+mapped = Booking
+class = UserGlobals:OkzBooking
+field = Booking.status | selector=status | return=Symbol
+field = Booking.customer | selector=customer | return=Mapped<Customer>
+```
+
+That is the Rust answer to the GemStone-Pharo-Bridge connector idea: keep the
+mapping reviewable, keep the OOP visible, and let tools generate wrappers or
+reports from the config without pretending the network is local memory.
+
 For one-off scripts, the typed BridgeRoot helpers avoid manual conversion:
 
 ```rust

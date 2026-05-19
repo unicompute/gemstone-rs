@@ -1,8 +1,181 @@
 use crate::{Error, Oop, Result, Session, Value};
+use std::any::type_name;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const DEFAULT_BRIDGE_ROOT: &str = "GemStoneRsBridgeRoot";
 pub const DEFAULT_BRIDGE_VALUE_DEPTH: usize = 8;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MaterializationDepth {
+    Shallow,
+    Deep { max_depth: usize },
+}
+
+impl MaterializationDepth {
+    pub fn max_depth(self) -> usize {
+        match self {
+            Self::Shallow => 0,
+            Self::Deep { max_depth } => max_depth,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DictionaryKeyPolicy {
+    Preserve,
+    StringOnly,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ArrayMaterialization {
+    Materialize,
+    Reject,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum IdentityPolicy {
+    PreserveOpaqueOops,
+    ReportRepeatedOops,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MaterializationProfile {
+    depth: MaterializationDepth,
+    dictionary_keys: DictionaryKeyPolicy,
+    arrays: ArrayMaterialization,
+    identity: IdentityPolicy,
+}
+
+impl MaterializationProfile {
+    pub fn shallow() -> Self {
+        Self {
+            depth: MaterializationDepth::Shallow,
+            ..Self::default()
+        }
+    }
+
+    pub fn deep(max_depth: usize) -> Self {
+        Self {
+            depth: MaterializationDepth::Deep { max_depth },
+            ..Self::default()
+        }
+    }
+
+    pub fn depth(&self) -> MaterializationDepth {
+        self.depth
+    }
+
+    pub fn max_depth(&self) -> usize {
+        self.depth.max_depth()
+    }
+
+    pub fn dictionary_key_policy(&self) -> DictionaryKeyPolicy {
+        self.dictionary_keys
+    }
+
+    pub fn array_materialization(&self) -> ArrayMaterialization {
+        self.arrays
+    }
+
+    pub fn identity_policy(&self) -> IdentityPolicy {
+        self.identity
+    }
+
+    pub fn with_depth(mut self, depth: MaterializationDepth) -> Self {
+        self.depth = depth;
+        self
+    }
+
+    pub fn with_dictionary_key_policy(mut self, policy: DictionaryKeyPolicy) -> Self {
+        self.dictionary_keys = policy;
+        self
+    }
+
+    pub fn with_array_materialization(mut self, policy: ArrayMaterialization) -> Self {
+        self.arrays = policy;
+        self
+    }
+
+    pub fn with_identity_policy(mut self, policy: IdentityPolicy) -> Self {
+        self.identity = policy;
+        self
+    }
+
+    pub fn materialize(&self, session: &mut Session, oop: Oop) -> Result<BridgeValue> {
+        let value = BridgeValue::from_oop_with_depth(session, oop, self.max_depth())?;
+        self.validate_value("value", &value)?;
+        Ok(value)
+    }
+
+    pub fn shape_report(&self, value: &BridgeValue) -> BridgeValueShapeReport {
+        value.shape_report()
+    }
+
+    fn validate_value(&self, path: &str, value: &BridgeValue) -> Result<()> {
+        match value {
+            BridgeValue::KeyedDictionary(entries) => {
+                if self.dictionary_keys == DictionaryKeyPolicy::StringOnly {
+                    if let Some((key, _)) = entries
+                        .iter()
+                        .find(|(key, _)| key.key_type != BridgeKeyType::String)
+                    {
+                        return Err(Error::Mapping {
+                            field: bridge_shape_key_path(path, &key.name, key.key_type),
+                            expected: "string-keyed dictionary",
+                            actual: format!("{} key", key.key_type.config_name()),
+                        });
+                    }
+                }
+                for (key, value) in entries {
+                    self.validate_value(
+                        &bridge_shape_key_path(path, &key.name, key.key_type),
+                        value,
+                    )?;
+                }
+            }
+            BridgeValue::Dictionary(entries) => {
+                for (key, value) in entries {
+                    self.validate_value(
+                        &bridge_shape_key_path(path, key, BridgeKeyType::String),
+                        value,
+                    )?;
+                }
+            }
+            BridgeValue::Array(values) => {
+                if self.arrays == ArrayMaterialization::Reject {
+                    return Err(Error::Mapping {
+                        field: path.to_string(),
+                        expected: "non-array value",
+                        actual: "Array".to_string(),
+                    });
+                }
+                for (index, value) in values.iter().enumerate() {
+                    self.validate_value(&format!("{path}[{}]", index + 1), value)?;
+                }
+            }
+            BridgeValue::Nil
+            | BridgeValue::Bool(_)
+            | BridgeValue::SmallInt(_)
+            | BridgeValue::String(_)
+            | BridgeValue::Symbol(_)
+            | BridgeValue::Oop(_) => {}
+        }
+        Ok(())
+    }
+}
+
+impl Default for MaterializationProfile {
+    fn default() -> Self {
+        Self {
+            depth: MaterializationDepth::Deep {
+                max_depth: DEFAULT_BRIDGE_VALUE_DEPTH,
+            },
+            dictionary_keys: DictionaryKeyPolicy::Preserve,
+            arrays: ArrayMaterialization::Materialize,
+            identity: IdentityPolicy::ReportRepeatedOops,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BridgeKeyType {
@@ -1510,6 +1683,108 @@ pub trait BridgeMapped: Sized {
     fn from_bridge_dictionary(dictionary: &mut BridgeDictionary<'_>) -> Result<Self>;
 }
 
+#[derive(Clone, Debug)]
+pub struct Remote<T> {
+    oop: Oop,
+    type_name: String,
+    profile: MaterializationProfile,
+    value: Option<T>,
+    dirty: bool,
+}
+
+pub type ObjectRef<T> = Remote<T>;
+
+impl<T> Remote<T> {
+    pub fn new(oop: Oop) -> Self {
+        Self::with_type(oop, type_name::<T>())
+    }
+
+    pub fn with_type(oop: Oop, type_name: impl Into<String>) -> Self {
+        Self {
+            oop,
+            type_name: type_name.into(),
+            profile: MaterializationProfile::default(),
+            value: None,
+            dirty: false,
+        }
+    }
+
+    pub fn oop(&self) -> Oop {
+        self.oop
+    }
+
+    pub fn type_name(&self) -> &str {
+        &self.type_name
+    }
+
+    pub fn profile(&self) -> &MaterializationProfile {
+        &self.profile
+    }
+
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    pub fn value(&self) -> Option<&T> {
+        self.value.as_ref()
+    }
+
+    pub fn into_value(self) -> Option<T> {
+        self.value
+    }
+
+    pub fn set_value(&mut self, value: T) {
+        self.value = Some(value);
+        self.dirty = true;
+    }
+
+    pub fn clear_value(&mut self) {
+        self.value = None;
+        self.dirty = false;
+    }
+
+    pub fn with_profile(mut self, profile: MaterializationProfile) -> Self {
+        self.profile = profile;
+        self
+    }
+
+    pub fn materialize(&self, session: &mut Session) -> Result<BridgeValue> {
+        self.profile.materialize(session, self.oop)
+    }
+
+    pub fn shape_report(&self, session: &mut Session) -> Result<BridgeValueShapeReport> {
+        let value = self.materialize(session)?;
+        Ok(self.profile.shape_report(&value))
+    }
+}
+
+impl<T: BridgeMapped> Remote<T> {
+    pub fn refresh(&mut self, session: &mut Session) -> Result<&T> {
+        let mut dictionary = BridgeDictionary::from_oop(session, self.oop);
+        self.value = Some(T::from_bridge_dictionary(&mut dictionary)?);
+        self.dirty = false;
+        Ok(self
+            .value
+            .as_ref()
+            .expect("remote value was just refreshed"))
+    }
+
+    pub fn save(&mut self, session: &mut Session) -> Result<()> {
+        let value = self
+            .value
+            .as_ref()
+            .ok_or(Error::MissingConfig("remote.value"))?;
+        write_bridge_value_to_dictionary(session, self.oop, value.to_bridge_value())?;
+        self.dirty = false;
+        Ok(())
+    }
+
+    pub fn save_value(&mut self, session: &mut Session, value: T) -> Result<()> {
+        self.set_value(value);
+        self.save(session)
+    }
+}
+
 #[doc(hidden)]
 pub struct BridgeFieldContext {
     key: String,
@@ -1653,6 +1928,52 @@ fn dictionary_keys(session: &mut Session, dictionary: Oop) -> Result<Vec<BridgeK
         });
     }
     Ok(summaries)
+}
+
+fn write_bridge_value_to_dictionary(
+    session: &mut Session,
+    dictionary: Oop,
+    value: BridgeValue,
+) -> Result<()> {
+    match value {
+        BridgeValue::Dictionary(entries) => {
+            for (key, value) in entries {
+                let key = BridgeKey::string(key).to_oop(session)?;
+                let value = value.to_oop(session)?;
+                session.perform_oop(dictionary, "at:put:", &[key, value])?;
+                session.identity_for_oop(value);
+            }
+            Ok(())
+        }
+        BridgeValue::KeyedDictionary(entries) => {
+            for (key, value) in entries {
+                let key = key.to_oop(session)?;
+                let value = value.to_oop(session)?;
+                session.perform_oop(dictionary, "at:put:", &[key, value])?;
+                session.identity_for_oop(value);
+            }
+            Ok(())
+        }
+        other => Err(Error::Mapping {
+            field: "remote".to_string(),
+            expected: "Dictionary",
+            actual: bridge_value_kind(&other).to_string(),
+        }),
+    }
+}
+
+fn bridge_value_kind(value: &BridgeValue) -> &'static str {
+    match value {
+        BridgeValue::Nil => "Nil",
+        BridgeValue::Bool(_) => "Bool",
+        BridgeValue::SmallInt(_) => "SmallInt",
+        BridgeValue::String(_) => "String",
+        BridgeValue::Symbol(_) => "Symbol",
+        BridgeValue::Oop(_) => "Oop",
+        BridgeValue::Dictionary(_) => "Dictionary",
+        BridgeValue::KeyedDictionary(_) => "KeyedDictionary",
+        BridgeValue::Array(_) => "Array",
+    }
 }
 
 fn dictionary_string_entries<T: BridgeFieldRead>(
@@ -1899,6 +2220,57 @@ mod tests {
         };
         assert_eq!(entries["source"], BridgeValue::String("rust".to_string()));
         assert_eq!(entries["priority"], BridgeValue::String("high".to_string()));
+    }
+
+    #[test]
+    fn materialization_profile_rejects_symbol_keys_when_string_only() {
+        let profile = MaterializationProfile::default()
+            .with_dictionary_key_policy(DictionaryKeyPolicy::StringOnly);
+        let value = BridgeValue::keyed_dictionary([(
+            BridgeKey::symbol("status"),
+            BridgeValue::from("ready"),
+        )]);
+        let err = profile.validate_value("booking", &value).unwrap_err();
+
+        assert_eq!(
+            err.to_string(),
+            "field booking.#status expected GemStone value type string-keyed dictionary, got Symbol key"
+        );
+    }
+
+    #[test]
+    fn materialization_profile_can_reject_arrays() {
+        let profile = MaterializationProfile::default()
+            .with_array_materialization(ArrayMaterialization::Reject);
+        let value = BridgeValue::dictionary([(
+            "items".to_string(),
+            BridgeValue::array([BridgeValue::from("A-1")]),
+        )]);
+        let err = profile.validate_value("booking", &value).unwrap_err();
+
+        assert_eq!(
+            err.to_string(),
+            "field booking.items expected GemStone value type non-array value, got Array"
+        );
+    }
+
+    #[test]
+    fn remote_handles_are_explicit_cached_object_refs() {
+        let oop = Oop(1234);
+        let mut remote = Remote::<String>::with_type(oop, "UserGlobals:Booking");
+
+        assert_eq!(remote.oop(), oop);
+        assert_eq!(remote.type_name(), "UserGlobals:Booking");
+        assert!(!remote.is_dirty());
+        assert!(remote.value().is_none());
+
+        remote.set_value("ready".to_string());
+        assert!(remote.is_dirty());
+        assert_eq!(remote.value(), Some(&"ready".to_string()));
+
+        remote.clear_value();
+        assert!(!remote.is_dirty());
+        assert!(remote.value().is_none());
     }
 
     #[test]
