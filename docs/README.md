@@ -33,6 +33,15 @@ Generated PDFs live in [pdf/](pdf/). Rebuild them after Markdown changes:
 python3 docs/build_pdf_docs.py
 ```
 
+Check docs links, index coverage, release versions, and PDF targets with:
+
+```bash
+make docs-link-check
+make docs-index-check
+python3 scripts/version_check.py
+make docs-pdf-check
+```
+
 Refresh screenshots before a visual release:
 
 ```bash

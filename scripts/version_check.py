@@ -148,6 +148,7 @@ def main() -> int:
 
     release_snippet_paths = [
         "README.md",
+        "docs/cookbook.md",
         "docs/release-checklist.md",
         "docs/setup-guide.md",
         "docs/medium-article.md",
@@ -170,6 +171,8 @@ def main() -> int:
         "README.md",
         "docs/release-checklist.md",
         "docs/vscode-workbench.md",
+        "examples/tooling/vscode-workbench.md",
+        "vscode-gemstone-rs-workbench/README.md",
     ]
     for relative_path in vsix_filename_paths:
         text = read_text(ROOT / relative_path)

@@ -268,5 +268,5 @@ Or from this directory:
 npm ci
 npm run check
 npm run test:smoke
-npm run package -- --out gemstone-rs-workbench-0.3.1.vsix
+npm run package -- --out gemstone-rs-workbench-0.3.4.vsix
 ```
