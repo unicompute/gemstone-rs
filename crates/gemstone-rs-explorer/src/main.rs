@@ -667,8 +667,8 @@ fn gemstone_py_status_json(include_view: bool) -> String {
         top_gap_priority: "P2",
         top_gap_area: "Explorer product polish",
         top_gap_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        top_gap_project_gap: "gemstone-rs-explorer and the VS Code webview now cover setup, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot values, comparison status, and visuals; it still needs more polished editing flows and richer live object navigation.",
-        top_gap_next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
+        top_gap_project_gap: "gemstone-rs-explorer and the VS Code webview now cover setup, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot key pickers, nested values, shape reports, repeated identity groups, mapping previews, comparison status, and visuals. The remaining gap is product refinement: fresher visuals, workflow feedback, and ongoing editor polish.",
+        top_gap_next_action: "Keep Marketplace/GitHub screenshots current and run explorer/API smoke tests after UI changes; no active parity batch remains.",
         top_gap_verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
         command_target: "gemstone-py",
     })

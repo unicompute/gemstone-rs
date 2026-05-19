@@ -141,7 +141,7 @@ Python remains ahead for framework breadth and explorer polish.
 
 | Priority | Area | What gemstone-py has today | gemstone-rs next action |
 | --- | --- | --- | --- |
-| P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Fold the remaining explorer polish into the object mapping maturity batch. |
+| P2 | Explorer product polish | The Python database explorer is the richer class browser and product reference. | Keep Marketplace/GitHub screenshots current and run explorer/API smoke tests after UI changes. |
 | P1 | Installed example experience | `gemstone-examples` launches installed examples without a source checkout. | Expand `gemstone-rs examples scaffold` to explorer-integrated projects and richer generated wrapper profile variants. |
 | P2 | Web framework adapters | FastAPI, Litestar, and Django examples are first-class. | Add more Rust framework examples only when a real service needs them. |
 | P2 | Async lifetime depth | gemstone-py has async examples and FastAPI integration. | Add deeper cancellation, shutdown, and lifetime tests around async worker futures. |

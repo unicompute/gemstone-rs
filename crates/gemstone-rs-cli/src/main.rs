@@ -2153,8 +2153,8 @@ const GEMSTONE_RS_PARITY: &[ParityInfo] = &[
         gemstone_py_score: 5,
         project_score: 4,
         leader: "gemstone-py",
-        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, nested BridgeValue rendering, repeated-OOP identity groups, and committed Marketplace/GitHub visuals.",
-        next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
+        status: "The Python explorer is still the richer product reference; gemstone-rs now has a useful explorer, VS Code commands, an embedded webview, editable generated output, BridgeRoot key pickers, nested BridgeValue rendering, shape reports, repeated-OOP identity groups, mapping previews, and committed Marketplace/GitHub visuals.",
+        next_action: "Keep Marketplace/GitHub screenshots current and use explorer/API smoke tests after UI changes; no active parity batch remains.",
     },
     ParityInfo {
         area: "Release and install lane",
@@ -2179,8 +2179,8 @@ const GEMSTONE_PY_GAPS: &[GapInfo] = &[
         priority: "P2",
         area: "Explorer product polish",
         gemstone_py_strength: "python-gemstone-database-explorer is the richer class browser and product reference.",
-        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, nested BridgeValue rendering, repeated-OOP identity groups, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. It still needs more polished editing flows and richer live object navigation.",
-        next_action: "Polish generated-file editing flows and add deeper live object navigation after the codegen/live-discovery batch.",
+        gemstone_rs_gap: "gemstone-rs-explorer and the VS Code webview now cover structured setup checks, profile status, live browsing, source previews, codegen summaries/diffs, editable generated output, BridgeRoot key pickers, nested BridgeValue rendering, shape reports, repeated-OOP identity groups, mapping previews, open-file actions, browser fallback prompts, comparison status, and committed Marketplace/GitHub visuals. The remaining gap is product refinement: fresher visuals, workflow feedback, and ongoing editor polish.",
+        next_action: "Keep Marketplace/GitHub screenshots current and run explorer/API smoke tests after UI changes; no active parity batch remains.",
         verify_with: "python3 scripts/explorer_endpoint_smoke.py; vscode-gemstone-rs-workbench smoke test",
     },
     GapInfo {
@@ -7474,7 +7474,7 @@ mod tests {
             .iter()
             .any(|gap| gap.area == "Explorer product polish"
                 && gap.gemstone_rs_gap.contains("structured setup checks")
-                && gap.next_action.contains("live object navigation")));
+                && gap.next_action.contains("no active parity batch")));
         assert!(gap_json(&GEMSTONE_PY_GAPS[0]).contains(r#""nextAction":"#));
     }
 
