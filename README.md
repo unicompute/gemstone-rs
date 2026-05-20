@@ -519,6 +519,11 @@ Smalltalk symbol keys inside the value.
 `refresh(&mut session)` to materialize a mapped value, `set_value` to mark it
 dirty, and `save(&mut session)` to write it back. Materialization profiles keep
 depth, dictionary key policy, array policy, and repeated-OOP reporting visible.
+The recommended mapping path is: start with `BridgeValue` for inspection, move
+stable shapes to `BridgeMapped` under `BridgeRoot`, add `Remote<T>` when object
+identity matters, and use codegen when the mapping or selector wrapper should
+be repeatable and reviewable. Normal Rust field access never performs hidden
+GemStone I/O, and dropping a Rust value never writes it back.
 The `browse` commands cover dictionaries, classes, protocols, methods, and
 source using the active user's symbol list. The `codegen` commands read a
 line-oriented config, explain what will be generated, preview generated Rust

@@ -367,6 +367,15 @@ curl -s 'http://127.0.0.1:8787/api/bridge/mapping-config?mapped=BookingDraft'
 curl -s 'http://127.0.0.1:8787/api/bridge/mapping-preview?key=BookingDraft&mapped=BookingDraft&depth=4'
 ```
 
+Use these endpoints as a deliberate mapping workflow:
+
+1. Inspect the live value with `/api/bridge/get`.
+2. Review the relationship paths and repeated identities with
+   `/api/bridge/shape`.
+3. Create a first mapping config with `/api/bridge/mapping-preview`.
+4. Review the generated config before writing files or committing codegen
+   output.
+
 The browser UI exposes `Bridge key type` and `Bridge value type` controls so
 you can explicitly test string-key, symbol-key, string-value, symbol-value,
 small-int-value, and bool-value mappings before encoding them in a reusable
@@ -380,9 +389,15 @@ node kinds, key policy, child counts, nil counts, opaque OOP counts,
 report-local identity ids, and repeated opaque references. It
 also groups repeated opaque OOPs so the UI can show every path pointing at the
 same GemStone object.
-persists the selected key, value, class, selector, config, and
+The page persists the selected key, value, class, selector, config, and
 mapping fields in browser local storage; use `Clear Saved Fields` to reset the
 page back to the documented defaults.
+
+The explorer does not turn GemStone objects into transparent local state.
+Object identity stays visible as OOPs, unsupported values remain opaque in the
+`BridgeValue` tree, and writes remain behind the `--allow-write` gate.
+Rust-side `Remote<T>` handles use the same explicit model: inspect first,
+materialize with a profile, then call `refresh` or `save` with `&mut Session`.
 
 The same nested read-back is available from the CLI:
 

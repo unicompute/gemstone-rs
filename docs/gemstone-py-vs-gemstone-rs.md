@@ -77,6 +77,7 @@ file.
 | Dedicated session worker | Supported through Python web integration patterns | Supported through `SessionWorker` and `SessionWorkerPool` |
 | OOP handles/export set | Supported | Supported |
 | Browser dictionaries/classes/protocols/methods/source | Supported | Supported through `Browser`, CLI, and explorer |
+| Object mapping | Mature Python ergonomics around dictionaries and app objects | Explicit Rust layers: `Oop`, `BridgeValue`, `BridgeMapped`, `BridgeRoot`, `Remote<T>`, materialization profiles, and codegen mapping |
 | Generated wrappers | Supported | Supported for selected classes/methods |
 | Generated typed arguments | Python naturally passes Python values | Supported through `args=name:Type` for `SmallInt`, `String`, `Symbol`, `Bool`, and explicit `Oop` |
 | Codegen diff/check/generate | Supported | Supported |

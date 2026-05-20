@@ -199,6 +199,59 @@ session.commit()?;
 session.abort()?;
 ```
 
+## Object Mapping
+
+Use `BridgeRoot` when Rust-owned payloads should live under a stable GemStone
+dictionary, by default `UserGlobals at: #GemStoneRsBridgeRoot`:
+
+```rust
+use gemstone_rs::{BridgeMapped, Config, Session};
+
+#[derive(Clone, Debug, Eq, PartialEq, BridgeMapped)]
+struct BookingDraft {
+    status: String,
+    amount: i64,
+}
+
+let mut session = Session::login(Config::from_env()?)?;
+let mut bridge_root = session.bridge_root()?;
+
+let draft = BookingDraft {
+    status: "draft".to_string(),
+    amount: 100,
+};
+
+bridge_root.put_mapped("BookingDraft", &draft)?;
+let loaded: BookingDraft = bridge_root.get_mapped("BookingDraft")?;
+assert_eq!(loaded, draft);
+bridge_root.commit()?;
+```
+
+Use `BridgeValue` when you need a dynamic inspection tree before choosing a
+typed Rust shape. Use `BTreeMap<String, T>` for string-keyed dictionary fields,
+and `BridgeValue::keyed_dictionary` when entries inside the GemStone dictionary
+must be Smalltalk symbols.
+
+Use `Remote<T>` or `ObjectRef<T>` when an existing OOP should have a cached
+Rust view:
+
+```rust
+use gemstone_rs::{MaterializationProfile, Remote};
+
+let oop = bridge_root.get_oop("BookingDraft")?;
+let mut remote = Remote::<BookingDraft>::with_type(oop, "UserGlobals:BookingDraft")
+    .with_profile(MaterializationProfile::deep(4));
+
+let mut loaded = remote.refresh(&mut session)?.clone();
+loaded.status = "confirmed".to_string();
+remote.set_value(loaded);
+remote.save(&mut session)?;
+```
+
+The mapping layer is explicit. Normal Rust field access does not call GemStone,
+and dropping a Rust value does not write it back. Reads and writes stay visible
+as `refresh`, `save`, `BridgeRoot::commit`, or `BridgeRoot::transaction`.
+
 ## Export-Set Lifetime
 
 Use `retain_oop` when a raw OOP must be held across calls and protected from

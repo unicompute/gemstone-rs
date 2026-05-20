@@ -7,6 +7,44 @@ This is intentionally smaller than MagLev/GBS object mapping. It gives Rust
 code a bridge-root dictionary, typed Rust payload mapping, nested read-back, and
 generated mapping support while keeping direct OOP access available.
 
+The design is connector-inspired, but not transparent persistence. That is an
+important Rust boundary. The mapping layer should make GemStone objects easier
+to use from Rust, while still making every remote read, write, transaction, and
+materialization decision visible in code review.
+
+## Which Mapping Layer Should I Use?
+
+| Layer | Use it when | What stays explicit |
+| --- | --- | --- |
+| `Oop` | You need the raw GemStone object reference or are writing low-level tooling. | Selector sends, conversion, retain/release, and transaction policy. |
+| `BridgeValue` | You are exploring a payload shape or building UI/CLI inspection tools. | Unsupported objects remain `BridgeValue::Oop`; depth limits are visible. |
+| `BridgeMapped` | You have a stable dictionary-backed Rust payload. | Field names, key types, nested structs, vectors, maps, and option handling. |
+| `#[derive(BridgeMapped)]` | You want normal Rust structs without writing the mapping boilerplate by hand. | Per-field key overrides and symbol/string key policy. |
+| `BridgeRoot` | You need a stable GemStone dictionary root for Rust-owned payloads. | The root name, entry key type, commit/abort behavior, and write scope. |
+| `Remote<T>` / `ObjectRef<T>` | You have an existing OOP and want an explicit cached Rust view of it. | `refresh(&mut Session)`, `set_value`, `save(&mut Session)`, and materialization profile. |
+| Codegen wrappers | You want checked-in Rust wrappers around selectors or mapping configs. | Generated source is reviewed, diffed, checked, and committed. |
+
+For most application code, start with `BridgeRoot` plus `BridgeMapped`. Move to
+`Remote<T>` when the object identity itself matters, for example when a live
+GemStone object should be refreshed, edited as a Rust value, then explicitly
+saved back. Use raw `Oop` and `Session::perform` when the object is not yet
+stable enough to model.
+
+## Mapping Rules
+
+The current policy is:
+
+- no hidden network calls from normal Rust field access
+- no automatic lazy loading from `Deref` or property access
+- no automatic save on `Drop`
+- all live operations require `&mut Session`
+- all write persistence is explicit: `BridgeRoot::commit`,
+  `BridgeRoot::transaction`, `Remote::save`, or `Session` transaction helpers
+- direct `Oop` access remains available at every layer
+
+That gives gemstone-rs a path toward MagLev-style productivity without making
+Rust code pretend a remote GemStone object is local memory.
+
 ## What Is Supported
 
 The initial mapping layer supports:

@@ -291,6 +291,19 @@ config/root fields, and then run the same codegen operation.
 
 ## Object Mapping Workflow
 
+The workbench follows the same mapping ladder as the Rust API:
+
+| Task | Use |
+| --- | --- |
+| Inspect a live value | BridgeRoot Value and BridgeRoot Shape |
+| Turn a shape into config | BridgeRoot Mapping Preview or Generate Mapping Config |
+| Keep generated code reviewable | Codegen Preview, Diff, Check, and Generate |
+| Work with an existing OOP | `Remote<T>` in Rust code, with explicit `refresh` and `save` |
+
+This is not transparent persistence. The extension should help users inspect,
+preview, diff, and generate mapping code, but it should not hide writes or
+pretend GemStone field access is local Rust field access.
+
 Use `GemStone RS: Generate Mapping Config` when you want the live stone to
 inspect a GemStone class and propose a `BridgeMapped` config. The command asks
 for:
@@ -321,6 +334,10 @@ multiple paths.
 Use `BridgeRoot Mapping Preview` in that same panel to infer a starter
 `BridgeMapped` codegen config from the selected live value before saving it to
 the project.
+
+Use the generated config as a starting point. Review dictionary key policy,
+opaque OOP fields, optional fields, arrays, repeated identities, and relationship
+paths before generating wrappers or mapping structs.
 
 Use `GemStone RS: List BridgeRoot Keys` for the same inspection path without
 opening a browser; it runs `gemstone-rs bridge keys --root <bridge-root>` and

@@ -13,7 +13,7 @@ This directory contains the human-facing guides for `gemstone-rs`.
 | [Cookbook](cookbook.md) | You want task-focused recipes for sessions, transactions, browser calls, codegen, explorer, and VS Code. |
 | [gemstone-py vs gemstone-rs](gemstone-py-vs-gemstone-rs.md) | You want install paths, use cases, maturity, and feature differences between the Python and Rust projects. |
 | [gemstone-js vs gemstone-py](gemstone-js-vs-gemstone-py.md) | You want the TypeScript/Python comparison, maturity matrix, and gemstone-js catch-up batches. |
-| [BridgeRoot and Object Mapping](object-mapping.md) | You want MagLev-style bridge-root storage and explicit Rust-to-GemStone value mapping. |
+| [BridgeRoot and Object Mapping](object-mapping.md) | You want BridgeRoot storage, dictionary mapping, `Remote<T>` object handles, materialization profiles, and explicit Rust-to-GemStone value mapping. |
 | [Codegen Guide](codegen.md) | You want generated Rust wrappers for GemStone classes and methods. |
 | [Codegen Profile Schema](profile-schema.md) | You want project profile JSON validation for explorer and VS Code workflows. |
 | [Explorer Guide](explorer.md) | You want the local HTTP explorer API and safety defaults. |

@@ -354,6 +354,26 @@ The default BridgeRoot is a GemStone `Dictionary` stored in `UserGlobals` under
 `#GemStoneRsBridgeRoot`. Rust can put typed payloads there, commit them, and
 read them back without hiding the lower-level OOP API.
 
+The practical rule is simple: use `Oop` for low-level calls, `BridgeValue` for
+inspection, `BridgeMapped` for stable dictionary-backed payloads, `BridgeRoot`
+for a durable Rust-owned root, and `Remote<T>` when object identity matters.
+Codegen then turns the mapping into checked-in Rust source that can be reviewed
+and diffed like any other API boundary.
+
+| Layer | Best for |
+| --- | --- |
+| `Oop` | raw object identity and direct selector sends |
+| `BridgeValue` | exploratory reads, explorer UI, shape reports |
+| `BridgeMapped` | typed Rust structs stored as GemStone dictionaries |
+| `BridgeRoot` | stable root dictionary under `UserGlobals` |
+| `Remote<T>` / `ObjectRef<T>` | explicit cached proxy over an existing OOP |
+| codegen wrappers | committed selector and mapping APIs |
+
+This is the deliberate difference from a fully transparent object model: normal
+Rust field access never performs network I/O, and dropping a Rust value never
+saves it back to GemStone. Reads use `refresh(&mut session)`, writes use
+`save(&mut session)` or an explicit transaction.
+
 The smallest version stores a plain bridge value:
 
 ```rust

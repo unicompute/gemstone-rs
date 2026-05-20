@@ -70,6 +70,8 @@ microbenchmark. A future benchmark suite should separate:
 - eval/perform latency
 - string and array marshalling
 - BridgeRoot read/write latency
+- `BridgeValue` materialization depth and shape-report latency
+- `Remote<T>` refresh/save latency for dictionary-backed mapped objects
 - codegen wrapper overhead
 
 ## Rust vs Python
@@ -90,6 +92,9 @@ Python: python -m gemstone_py.cli eval "3 + 4"
 ```
 
 After that, compare generated-wrapper calls and BridgeRoot mapping operations.
+For mapping comparisons, report the materialization profile (`shallow` or
+`deep(n)`), dictionary key policy, array policy, and whether repeated opaque
+OOPs were present in the shape report.
 
 ## Safety Checklist
 
@@ -97,5 +102,7 @@ After that, compare generated-wrapper calls and BridgeRoot mapping operations.
 - Keep `unsafe` in `gemstone-gci`.
 - Prefer typed `Value`/`Oop` conversions over raw integer handling.
 - Commit or abort explicitly after writes.
+- Keep object mapping explicit: no hidden GemStone calls from Rust field access
+  and no save-on-drop behavior.
 - Bind local tools to `127.0.0.1` by default.
 - Keep explorer eval/write operations opt-in.

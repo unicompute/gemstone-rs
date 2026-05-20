@@ -317,6 +317,20 @@ after generate: exists=true up_to_date=true
 diff after generate: clean
 ```
 
+The mapping examples form a ladder:
+
+| Start with | Then use | When |
+| --- | --- | --- |
+| `bridge_value_inspection` | `BridgeValue` | You need to inspect a live dictionary/array shape before typing it. |
+| `bridge_root_mapping` | `BridgeMapped` | You have stable string/symbol-keyed dictionary payloads. |
+| `derive_mapping` | `#[derive(BridgeMapped)]` | You want normal Rust structs with explicit field/key annotations. |
+| `remote_object_mapping` | `Remote<T>` | You need an OOP-backed cached value with explicit `refresh` and `save`. |
+| `generated_mapping_app` | codegen mapping | You want generated mapping structs and wrapper tests checked into source. |
+
+None of these examples rely on transparent persistence. GemStone reads and
+writes stay at visible calls, so `&mut Session` remains the boundary for remote
+work.
+
 ## Later Examples
 
 Good later additions, once the corresponding surfaces are stable:

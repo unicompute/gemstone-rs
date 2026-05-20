@@ -344,6 +344,21 @@ The mapping examples use `BTreeMap<String, T>` for string-keyed dictionary
 metadata. Use `BridgeValue::keyed_dictionary` when the entries inside the
 GemStone dictionary must be symbol-keyed for Smalltalk code.
 
+Mapping examples cover progressively stronger layers:
+
+| Layer | Example | Purpose |
+| --- | --- | --- |
+| `BridgeValue` | `bridge_value_inspection` | Inspect a live nested dictionary/array shape before committing to a Rust type. |
+| `BridgeMapped` | `bridge_root_mapping` | Store and read typed dictionary-backed payloads under `GemStoneRsBridgeRoot`. |
+| `#[derive(BridgeMapped)]` | `derive_mapping` | Remove manual mapping boilerplate while keeping field keys and key types explicit. |
+| `Remote<T>` | `remote_object_mapping` | Refresh, edit, and explicitly save an OOP-backed mapped value. |
+| codegen mapping | `generated_mapping_app` | Use generated mapping structs and wrapper tests from checked-in config. |
+
+The examples intentionally do not use transparent persistence. Normal Rust field
+access is local-only; GemStone reads and writes happen at visible calls such as
+`refresh(&mut session)`, `bridge_root.transaction(...)`, and
+`remote.save(&mut session)`.
+
 Offline examples should run without GemStone:
 
 ```text

@@ -113,6 +113,31 @@ handle.release()?;
 
 The handle releases automatically on drop if `release()` is not called.
 
+## Mapping Quick Decision Table
+
+Use the lowest layer that matches the job:
+
+| Need | Use |
+| --- | --- |
+| Direct selector sends or raw identity | `Oop` plus `Session::perform` |
+| Explore a live value before typing it | `BridgeValue` and shape reports |
+| Store stable Rust payloads in GemStone | `BridgeMapped` under `BridgeRoot` |
+| Avoid hand-written mapping impls | `#[derive(BridgeMapped)]` |
+| Keep a cached view of an existing OOP | `Remote<T>` / `ObjectRef<T>` |
+| Make selector/mapping APIs repeatable | codegen config and checked-in generated wrappers |
+
+The mapping layer is explicit. Reads and writes should be visible in the code:
+
+```rust
+let loaded = remote.refresh(&mut session)?.clone();
+remote.set_value(loaded);
+remote.save(&mut session)?;
+```
+
+Do not rely on implicit write-back or hidden field-level network calls. Use
+`BridgeRoot::transaction` or `Session` transaction helpers when a group of
+changes must commit or abort together.
+
 ## Recipe 10A: Store a Rust Payload Under BridgeRoot
 
 ```rust
