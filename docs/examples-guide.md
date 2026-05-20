@@ -453,7 +453,8 @@ gemstone-rs-explorer --port 8787 --codegen-root .
 
 In the explorer, click `Load Project Profiles` with
 `examples/codegen/gemstone-rs.codegen-profiles.json` as the project profile
-file, then select `default`, `object-wrapper`, or `bridge-mapping`.
+file, then select `default`, `object-wrapper`, `bridge-mapping`, or
+`connector-mapping`.
 
 Validate profile files before committing them:
 

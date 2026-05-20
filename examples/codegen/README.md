@@ -184,8 +184,9 @@ docs/profile-schema.md
 ```
 
 Open it from the explorer Codegen Workflow panel with `Load Project Profiles`.
-It includes `default`, `object-wrapper`, and `bridge-mapping` profiles for
-repeatable wrapper and BridgeRoot mapping demos. `Save Project Profiles`
+It includes `default`, `object-wrapper`, `bridge-mapping`, and
+`connector-mapping` profiles for repeatable wrapper, BridgeRoot mapping, and
+connector metadata demos. `Save Project Profiles`
 requires `gemstone-rs-explorer --allow-write`; server-side validation rejects
 unknown fields, missing or duplicate names, invalid versions, non-string
 profile fields, and `..` path traversal before writing.

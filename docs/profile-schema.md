@@ -54,9 +54,9 @@ gemstone-rs codegen explain-profile --json default gemstone-rs.codegen-profiles.
 Expected output:
 
 ```text
-profile ok: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles: default, object-wrapper, bridge-mapping)
-profile check: examples/codegen/gemstone-rs.codegen-profiles.json (3 profiles)
-summary: 3 ok, 0 stale, 0 errors, 3 total
+profile ok: examples/codegen/gemstone-rs.codegen-profiles.json (4 profiles: default, object-wrapper, bridge-mapping, connector-mapping)
+profile check: examples/codegen/gemstone-rs.codegen-profiles.json (4 profiles)
+summary: 4 ok, 0 stale, 0 errors, 4 total
 ok	default	config=examples/codegen/gemstone-rs.codegen	output=examples/codegen/generated/gemstone_wrappers.rs
 ```
 
@@ -64,7 +64,7 @@ The JSON form includes aggregate fields so CI and editor integrations can fail
 with a concise summary:
 
 ```json
-{"success":true,"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
+{"success":true,"ok":true,"profileCount":4,"okCount":4,"staleCount":0,"errorCount":0}
 ```
 
 The profile check JSON shape is shared by the CLI, explorer, and VS Code

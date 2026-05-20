@@ -90,10 +90,10 @@ const current = [
 ];
 
 const summary = importProfiles(current, JSON.stringify(sample));
-assert.deepStrictEqual(summary.created, ["object-wrapper"]);
+assert.deepStrictEqual(summary.created, ["object-wrapper", "connector-mapping"]);
 assert.deepStrictEqual(summary.replaced, ["default"]);
 assert.deepStrictEqual(summary.unchanged, ["bridge-mapping"]);
-assert.strictEqual(summary.merged.length, 3);
+assert.strictEqual(summary.merged.length, 4);
 
 const single = importProfiles(
   [],

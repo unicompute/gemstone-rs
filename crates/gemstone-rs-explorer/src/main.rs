@@ -4187,14 +4187,16 @@ mod tests {
         assert_eq!(response.status, 200);
         assert!(response.body.contains(r#""success":true"#));
         assert!(response.body.contains(r#""ok":true"#));
-        assert!(response.body.contains(r#""profileCount":3"#));
-        assert!(response.body.contains(r#""okCount":3"#));
+        assert!(response.body.contains(r#""profileCount":4"#));
+        assert!(response.body.contains(r#""okCount":4"#));
         assert!(response.body.contains(r#""staleCount":0"#));
         assert!(response.body.contains(r#""errorCount":0"#));
         assert!(response.body.contains(r#""name":"default""#));
         assert!(response.body.contains(r#""name":"object-wrapper""#));
         assert!(response.body.contains(r#""name":"bridge-mapping""#));
+        assert!(response.body.contains(r#""name":"connector-mapping""#));
         assert!(response.body.contains("gemstone_wrappers.rs"));
+        assert!(response.body.contains("connector_mapping_wrappers.rs"));
     }
 
     #[test]

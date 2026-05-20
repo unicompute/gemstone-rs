@@ -34,6 +34,13 @@ pub const SAMPLE_PROFILE_SOURCE: &str = r#"{
       "root": "",
       "mapped": "BookingDraft",
       "className": "Object"
+    },
+    {
+      "name": "connector-mapping",
+      "config": "examples/codegen/connector-mapping.codegen",
+      "root": "",
+      "mapped": "Booking",
+      "className": "UserGlobals:OkzBooking"
     }
   ]
 }
@@ -853,13 +860,14 @@ mod tests {
     #[test]
     fn sample_source_is_valid() {
         let report = validate_source(sample_source()).unwrap();
-        assert_eq!(report.profile_count, 3);
+        assert_eq!(report.profile_count, 4);
         assert_eq!(
             report.profile_names,
             vec![
                 "default".to_string(),
                 "object-wrapper".to_string(),
-                "bridge-mapping".to_string()
+                "bridge-mapping".to_string(),
+                "connector-mapping".to_string()
             ]
         );
     }

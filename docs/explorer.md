@@ -284,7 +284,7 @@ output check:
 ```json
 {"success":true,"root":".","configs":["examples/codegen/gemstone-rs.codegen"]}
 {"success":true,"exists":true,"upToDate":true}
-{"success":true,"ok":true,"profileCount":3,"okCount":3,"staleCount":0,"errorCount":0}
+{"success":true,"ok":true,"profileCount":4,"okCount":4,"staleCount":0,"errorCount":0}
 ```
 
 Write-gated endpoint:

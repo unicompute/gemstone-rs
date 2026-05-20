@@ -774,7 +774,8 @@ examples/codegen/gemstone-rs.codegen-profiles.json
 ```
 
 That means a team can keep named workflows like `default`, `object-wrapper`,
-and `bridge-mapping` beside the codegen config. The explorer can import/export
+`bridge-mapping`, and `connector-mapping` beside the codegen config. The
+explorer can import/export
 profile JSON, show which imported profiles are new, replaced, or unchanged, and
 save project profile files only when started with `--allow-write`. Profile-aware
 preview, diff, check, explain, and generate endpoints let the browser, VS Code,
