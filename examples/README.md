@@ -160,6 +160,8 @@ sanity check after install.
 | Python native shared-core gate | `gemstone-rs py-native check-all`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | You want all checked-in py-native fixtures validated by one downstream CI gate. |
 | Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_samples_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run`; `gemstone-rs examples run py_native_publish_receipt --dry-run`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | You want the examples catalog to expose py-native fixture checks as runnable CLI-backed examples. |
 | OOP values | `cargo run -p gemstone-rs --example oop_values` | You want explicit OOP/value conversion and export-set retention. |
+| MagLev classic session | `cargo run -p gemstone-rs --example maglev_classic_session` | You want the Rust equivalent of the classic `session userGlobals at: #MyTestDict put: dict; commit; disconnect` example. |
+| MagLev BridgeRoot session | `cargo run -p gemstone-rs --example maglev_bridge_root_session` | You want the Rust equivalent of the MagLev `session bridgeRoot at: #MyTestDict put: payload; commitTransactionOrSignalConflict` example. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | You want MagLev-style bridge-root storage with explicit Rust value mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | You want `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, optional fields, and BridgeRoot transactions. |
 | BridgeValue inspection | `cargo run -p gemstone-rs --example bridge_value_inspection` | You want dynamic nested BridgeRoot read-back and shape reporting before committing to a typed mapping. |
@@ -275,6 +277,21 @@ global round-trip ok
 perform ok: 7
 transaction commit/abort ok
 
+$ cargo run -p gemstone-rs --example maglev_classic_session
+classic UserGlobals key: MyTestDict
+classic payload OOP: <number>
+classic loaded name: Tariq
+classic loaded amount: 100
+classic loaded currency: GBP
+
+$ cargo run -p gemstone-rs --example maglev_bridge_root_session
+maglev bridge root: GemStoneRsBridgeRoot
+maglev bridge root key: #MyTestDict
+maglev payload OOP: <number>
+maglev loaded name: Tariq
+maglev loaded amount: 100
+maglev loaded currency: GBP
+
 $ cargo run -p gemstone-rs --example bridge_root_mapping
 bridge root: GemStoneRsBridgeRoot
 MyTestDict OOP: <number>
@@ -321,6 +338,8 @@ The mapping examples form a ladder:
 
 | Start with | Then use | When |
 | --- | --- | --- |
+| `maglev_classic_session` | direct `UserGlobals` | You need to compare against the classic GemStone-Pharo-Bridge session example. |
+| `maglev_bridge_root_session` | `BridgeRoot` plus symbol key | You need to compare against the MagLev branch `bridgeRoot at: #MyTestDict` example. |
 | `bridge_value_inspection` | `BridgeValue` | You need to inspect a live dictionary/array shape before typing it. |
 | `bridge_root_mapping` | `BridgeMapped` | You have stable string/symbol-keyed dictionary payloads. |
 | `derive_mapping` | `#[derive(BridgeMapped)]` | You want normal Rust structs with explicit field/key annotations. |

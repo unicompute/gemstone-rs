@@ -374,7 +374,78 @@ Rust field access never performs network I/O, and dropping a Rust value never
 saves it back to GemStone. Reads use `refresh(&mut session)`, writes use
 `save(&mut session)` or an explicit transaction.
 
-The smallest version stores a plain bridge value:
+The MagLev branch compatibility examples now have close Rust equivalents. The
+classic Smalltalk version writes a dictionary straight into `UserGlobals`:
+
+```smalltalk
+session userGlobals at: #MyTestDict put: dict.
+session commit.
+session disconnect.
+```
+
+The Rust equivalent keeps the same payload and key, but makes OOP conversion
+explicit:
+
+```rust
+use gemstone_rs::{BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+    ("currency".to_string(), BridgeValue::from("GBP")),
+]);
+
+let payload_oop = payload.to_oop(&mut session)?;
+session.global_put("MyTestDict", payload_oop)?;
+session.commit()?;
+session.logout()?;
+```
+
+Run it with:
+
+```bash
+cargo run -p gemstone-rs --example maglev_classic_session
+```
+
+The MagLev-oriented version writes through `bridgeRoot` with a symbol key:
+
+```smalltalk
+session bridgeRoot at: #MyTestDict put: payload.
+session commitTransactionOrSignalConflict.
+session disconnect.
+```
+
+The Rust equivalent is:
+
+```rust
+use gemstone_rs::{BridgeKeyType, BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+    ("currency".to_string(), BridgeValue::from("GBP")),
+]);
+
+let mut bridge_root = session.bridge_root()?;
+bridge_root.put_with_key_type("MyTestDict", BridgeKeyType::Symbol, payload)?;
+bridge_root.commit_with_retry(0)?;
+session.logout()?;
+```
+
+Run it with:
+
+```bash
+cargo run -p gemstone-rs --example maglev_bridge_root_session
+```
+
+`commit_with_retry(0)` is the closest gemstone-rs spelling for "commit once and
+surface the conflict/error," which matches the intent of
+`commitTransactionOrSignalConflict`.
+
+For new Rust code that is not trying to mirror the Smalltalk snippet exactly,
+the smallest BridgeRoot version stores a plain bridge value:
 
 ```rust
 use gemstone_rs::{BridgeValue, Config, Session};

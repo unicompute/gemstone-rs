@@ -333,6 +333,8 @@ cargo run -p gemstone-rs --example session_worker_pool
 cargo run -p gemstone-rs --example async_worker
 cargo run -p gemstone-rs --example python_native_adapter -- --dry-run
 cargo run -p gemstone-rs --example oop_values
+cargo run -p gemstone-rs --example maglev_classic_session
+cargo run -p gemstone-rs --example maglev_bridge_root_session
 cargo run -p gemstone-rs --example bridge_root_mapping
 cargo run -p gemstone-rs --example bridge_value_inspection
 cargo run -p gemstone-rs --example codegen_preview
@@ -407,6 +409,7 @@ cargo run -p gemstone-rs-cli -- env write .env.gemstone-rs
 cargo run -p gemstone-rs-cli -- examples list
 cargo run -p gemstone-rs-cli -- examples map
 cargo run -p gemstone-rs-cli -- examples show quickstart
+cargo run -p gemstone-rs-cli -- examples show maglev
 cargo run -p gemstone-rs-cli -- examples run codegen_preview --dry-run
 cargo run -p gemstone-rs-cli -- examples scaffold quickstart /tmp/gemstone-rs-quickstart --force
 cargo run -p gemstone-rs-cli -- examples scaffold browser /tmp/gemstone-rs-browser --force

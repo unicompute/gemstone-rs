@@ -1849,6 +1849,22 @@ const EXAMPLES: &[ExampleInfo] = &[
         description: "Explicit OOP/value conversion and export-set retention.",
     },
     ExampleInfo {
+        name: "maglev_classic_session",
+        title: "MagLev classic session",
+        command: "cargo run -p gemstone-rs --example maglev_classic_session",
+        category: "mapping",
+        requires_live: true,
+        description: "Rust equivalent of the classic MagLev userGlobals dictionary write, commit, and disconnect example.",
+    },
+    ExampleInfo {
+        name: "maglev_bridge_root_session",
+        title: "MagLev BridgeRoot session",
+        command: "cargo run -p gemstone-rs --example maglev_bridge_root_session",
+        category: "mapping",
+        requires_live: true,
+        description: "Rust equivalent of the MagLev bridgeRoot symbol-key write and explicit commit example.",
+    },
+    ExampleInfo {
         name: "bridge_root_mapping",
         title: "BridgeRoot mapping",
         command: "cargo run -p gemstone-rs --example bridge_root_mapping",
@@ -1995,10 +2011,10 @@ const FEATURE_MAP: &[FeatureInfo] = &[
         stream: "5",
         title: "BridgeRoot object mapping",
         crates: "gemstone-rs::bridge, gemstone-rs-macros",
-        examples: "bridge_root_mapping, derive_mapping, bridge_value_inspection, generated_mapping_app",
+        examples: "maglev_classic_session, maglev_bridge_root_session, bridge_root_mapping, derive_mapping, bridge_value_inspection, generated_mapping_app",
         docs: "docs/object-mapping.md, docs/cookbook.md",
         gemstone_py_reference: "SmalltalkBridge, PersistentRoot, facade examples",
-        status: "Rust has typed mapping, derive, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; a fully transparent object model remains future work",
+        status: "Rust has close MagLev userGlobals/bridgeRoot examples, typed mapping, derive, nested dynamic BridgeValue read-back, repeated-OOP identity groups, and path-aware diagnostics; transparent persistence is intentionally not hidden",
     },
     FeatureInfo {
         stream: "6",
@@ -4322,6 +4338,11 @@ fn generic_gap_json(gap: &GapInfo, project_label: &str) -> String {
 }
 
 fn find_example(name: &str) -> Option<&'static ExampleInfo> {
+    let name = match name {
+        "maglev" | "maglev-bridge" | "maglev_bridge" => "maglev_bridge_root_session",
+        "maglev-classic" | "maglev_classic" => "maglev_classic_session",
+        other => other,
+    };
     EXAMPLES.iter().find(|example| {
         example.name.eq_ignore_ascii_case(name) || example.title.eq_ignore_ascii_case(name)
     })

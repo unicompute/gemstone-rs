@@ -173,6 +173,7 @@ gemstone-rs examples list --json
 gemstone-rs examples map
 gemstone-rs examples map --json
 gemstone-rs examples show quickstart
+gemstone-rs examples show maglev
 gemstone-rs examples run codegen_preview --dry-run
 ```
 

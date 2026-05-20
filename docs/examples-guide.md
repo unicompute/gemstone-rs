@@ -206,6 +206,8 @@ CLI binary is installed and runnable.
 | Python native shared-core gate | `gemstone-rs py-native check-all`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | Checks every checked-in py-native fixture in one downstream CI gate. |
 | Python native examples runner | `gemstone-rs examples run py_native_capabilities --dry-run`; `gemstone-rs examples run py_native_contract_fixture --dry-run`; `gemstone-rs examples run py_native_smoke_fixture --dry-run`; `gemstone-rs examples run py_native_migration_plan --dry-run`; `gemstone-rs examples run py_native_compatibility_fixture --dry-run`; `gemstone-rs examples run py_native_conformance_fixture --dry-run`; `gemstone-rs examples run py_native_handoff_bundle --dry-run`; `gemstone-rs examples run py_native_publish_receipt --dry-run`; `gemstone-rs examples run py_native_shared_core_gate --dry-run` | Exposes py-native fixture workflows through the same examples catalog as Cargo examples. |
 | OOP/value conversion | `cargo run -p gemstone-rs --example oop_values` | `Value`, `Oop`, strings, symbols, and export-set retention. |
+| MagLev classic session | `cargo run -p gemstone-rs --example maglev_classic_session` | Mirrors the classic `userGlobals at: #MyTestDict put: dict; commit; disconnect` example. |
+| MagLev BridgeRoot session | `cargo run -p gemstone-rs --example maglev_bridge_root_session` | Mirrors the MagLev `bridgeRoot at: #MyTestDict put: payload; commitTransactionOrSignalConflict` example. |
 | BridgeRoot mapping | `cargo run -p gemstone-rs --example bridge_root_mapping` | MagLev-style bridge-root storage with explicit `BridgeValue` mapping. |
 | Derive mapping | `cargo run -p gemstone-rs --example derive_mapping` | `#[derive(BridgeMapped)]`, symbol keys, nested structs, vectors, maps, and BridgeRoot transactions. |
 | BridgeValue inspection | `cargo run -p gemstone-rs --example bridge_value_inspection` | Reads nested BridgeRoot dictionaries and arrays back as dynamic `BridgeValue` trees with shape reports. |
@@ -265,22 +267,24 @@ the same live lane that runs Rust tests and live examples.
 8. `session_worker_pool`
 9. `async_worker`
 10. `oop_values`
-11. `bridge_root_mapping`
-12. `derive_mapping`
-13. `bridge_value_inspection`
-14. `codegen_preview`
-15. `codegen_workflow`
-16. `generated_wrapper_app`
-17. `generated_mapping_app`
-18. `codegen_discover`
-19. `codegen_discover_mapping`
-20. `examples/codegen/`
-21. `examples/tooling/cli-browser-walkthrough.md`
-22. `examples/tooling/explorer.md`
-23. `examples/tooling/vscode-workbench.md`
-24. `http_service`
-25. `examples/axum-service/`
-26. `examples/actix-service/`
+11. `maglev_classic_session`
+12. `maglev_bridge_root_session`
+13. `bridge_root_mapping`
+14. `derive_mapping`
+15. `bridge_value_inspection`
+16. `codegen_preview`
+17. `codegen_workflow`
+18. `generated_wrapper_app`
+19. `generated_mapping_app`
+20. `codegen_discover`
+21. `codegen_discover_mapping`
+22. `examples/codegen/`
+23. `examples/tooling/cli-browser-walkthrough.md`
+24. `examples/tooling/explorer.md`
+25. `examples/tooling/vscode-workbench.md`
+26. `http_service`
+27. `examples/axum-service/`
+28. `examples/actix-service/`
 
 ## Expected Output
 
@@ -305,6 +309,21 @@ eval ok: SmallInt(7)
 global round-trip ok
 perform ok: 7
 transaction commit/abort ok
+
+$ cargo run -p gemstone-rs --example maglev_classic_session
+classic UserGlobals key: MyTestDict
+classic payload OOP: <number>
+classic loaded name: Tariq
+classic loaded amount: 100
+classic loaded currency: GBP
+
+$ cargo run -p gemstone-rs --example maglev_bridge_root_session
+maglev bridge root: GemStoneRsBridgeRoot
+maglev bridge root key: #MyTestDict
+maglev payload OOP: <number>
+maglev loaded name: Tariq
+maglev loaded amount: 100
+maglev loaded currency: GBP
 
 $ cargo run -p gemstone-rs --example bridge_root_mapping
 bridge root: GemStoneRsBridgeRoot
@@ -348,6 +367,8 @@ Mapping examples cover progressively stronger layers:
 
 | Layer | Example | Purpose |
 | --- | --- | --- |
+| direct `UserGlobals` | `maglev_classic_session` | Compare directly with the classic GemStone-Pharo-Bridge session snippet. |
+| `BridgeRoot` symbol key | `maglev_bridge_root_session` | Compare directly with the MagLev branch `bridgeRoot at: #MyTestDict` snippet. |
 | `BridgeValue` | `bridge_value_inspection` | Inspect a live nested dictionary/array shape before committing to a Rust type. |
 | `BridgeMapped` | `bridge_root_mapping` | Store and read typed dictionary-backed payloads under `GemStoneRsBridgeRoot`. |
 | `#[derive(BridgeMapped)]` | `derive_mapping` | Remove manual mapping boilerplate while keeping field keys and key types explicit. |

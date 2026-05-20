@@ -863,7 +863,36 @@ the low-level OOP API remains available for special cases.
 
 ## Comparison With MagLev/GBS
 
-The MagLev branch example uses:
+The classic MagLev branch session example uses `userGlobals` directly:
+
+```smalltalk
+session userGlobals at: #MyTestDict put: dict.
+session commit.
+session disconnect.
+```
+
+The closest `gemstone-rs` equivalent is:
+
+```rust
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+    ("currency".to_string(), BridgeValue::from("GBP")),
+]);
+
+let payload_oop = payload.to_oop(&mut session)?;
+session.global_put("MyTestDict", payload_oop)?;
+session.commit()?;
+session.logout()?;
+```
+
+Run the checked-in example:
+
+```bash
+cargo run -p gemstone-rs --example maglev_classic_session
+```
+
+The MagLev-oriented example uses `bridgeRoot`:
 
 ```smalltalk
 session bridgeRoot at: #MyTestDict put: payload.
@@ -874,8 +903,15 @@ The closest current `gemstone-rs` shape is:
 
 ```rust
 let mut bridge_root = session.bridge_root()?;
-bridge_root.put("MyTestDict", payload)?;
-bridge_root.commit()?;
+bridge_root.put_with_key_type("MyTestDict", BridgeKeyType::Symbol, payload)?;
+bridge_root.commit_with_retry(0)?;
+session.logout()?;
+```
+
+Run the checked-in example:
+
+```bash
+cargo run -p gemstone-rs --example maglev_bridge_root_session
 ```
 
 For typed Rust structs:

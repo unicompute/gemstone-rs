@@ -138,6 +138,54 @@ Do not rely on implicit write-back or hidden field-level network calls. Use
 `BridgeRoot::transaction` or `Session` transaction helpers when a group of
 changes must commit or abort together.
 
+## MagLev Branch Examples in Rust
+
+Classic `userGlobals` style:
+
+```rust
+use gemstone_rs::{BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+    ("currency".to_string(), BridgeValue::from("GBP")),
+]);
+let payload_oop = payload.to_oop(&mut session)?;
+session.global_put("MyTestDict", payload_oop)?;
+session.commit()?;
+session.logout()?;
+```
+
+Run the checked-in equivalent:
+
+```bash
+cargo run -p gemstone-rs --example maglev_classic_session
+```
+
+MagLev `bridgeRoot` style:
+
+```rust
+use gemstone_rs::{BridgeKeyType, BridgeValue, Config, Session};
+
+let mut session = Session::login(Config::from_env()?)?;
+let payload = BridgeValue::dictionary([
+    ("name".to_string(), BridgeValue::from("Tariq")),
+    ("amount".to_string(), BridgeValue::from(100_i64)),
+    ("currency".to_string(), BridgeValue::from("GBP")),
+]);
+let mut bridge_root = session.bridge_root()?;
+bridge_root.put_with_key_type("MyTestDict", BridgeKeyType::Symbol, payload)?;
+bridge_root.commit_with_retry(0)?;
+session.logout()?;
+```
+
+Run the checked-in equivalent:
+
+```bash
+cargo run -p gemstone-rs --example maglev_bridge_root_session
+```
+
 ## Recipe 10A: Store a Rust Payload Under BridgeRoot
 
 ```rust
