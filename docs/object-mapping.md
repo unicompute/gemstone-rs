@@ -765,6 +765,17 @@ field = Booking.status | selector=status | return=Symbol
 field = Booking.customer | selector=customer | return=Mapped<Customer>
 ```
 
+For a concrete checked-in example, see:
+
+```text
+examples/codegen/connector-mapping.codegen
+```
+
+It combines `class = UserGlobals:OkzBooking`, selector metadata, return
+metadata, relationship fields, and dictionary fallback keys. Run
+`gemstone-rs codegen explain examples/codegen/connector-mapping.codegen` to see
+the mapping summary without writing generated files.
+
 This lets one config describe both sides of the bridge:
 
 - `class = UserGlobals:OkzBooking` records the GemStone class to inspect or wrap

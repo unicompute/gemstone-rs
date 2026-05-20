@@ -89,6 +89,31 @@ Mapped fields support string keys, symbol keys, nested mapped structs, and
 vectors. Optional fields use `Option<T>`; missing keys and GemStone `nil` read
 back as `None`, while `Some(value)` reads through the inner field type.
 
+Connector-style mapping metadata is shown in:
+
+```text
+examples/codegen/connector-mapping.codegen
+```
+
+It records the Smalltalk selector and remote return shape next to the Rust
+mapped field:
+
+```text
+mapped = Booking
+class = UserGlobals:OkzBooking
+field = Booking.status | selector=status | return=Symbol | key=status
+field = Booking.customer | selector=customer | return=Mapped<Customer> | key=customer
+```
+
+Use it when you want explorer or VS Code tooling to show how a Rust field maps
+to a live GemStone selector while keeping generated persistence explicit.
+Check it with:
+
+```bash
+cargo run -p gemstone-rs-cli -- codegen explain examples/codegen/connector-mapping.codegen
+cargo run -p gemstone-rs-cli -- codegen explain --json examples/codegen/connector-mapping.codegen
+```
+
 Generate a config from a live stone:
 
 ```bash

@@ -353,6 +353,7 @@ Mapping examples cover progressively stronger layers:
 | `#[derive(BridgeMapped)]` | `derive_mapping` | Remove manual mapping boilerplate while keeping field keys and key types explicit. |
 | `Remote<T>` | `remote_object_mapping` | Refresh, edit, and explicitly save an OOP-backed mapped value. |
 | codegen mapping | `generated_mapping_app` | Use generated mapping structs and wrapper tests from checked-in config. |
+| connector metadata | `examples/codegen/connector-mapping.codegen` | Record Smalltalk selectors and return shapes beside mapped Rust fields for tool review. |
 
 The examples intentionally do not use transparent persistence. Normal Rust field
 access is local-only; GemStone reads and writes happen at visible calls such as

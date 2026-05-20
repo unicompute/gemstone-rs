@@ -326,6 +326,7 @@ The mapping examples form a ladder:
 | `derive_mapping` | `#[derive(BridgeMapped)]` | You want normal Rust structs with explicit field/key annotations. |
 | `remote_object_mapping` | `Remote<T>` | You need an OOP-backed cached value with explicit `refresh` and `save`. |
 | `generated_mapping_app` | codegen mapping | You want generated mapping structs and wrapper tests checked into source. |
+| `examples/codegen/connector-mapping.codegen` | connector metadata | You want Smalltalk selectors and return shapes recorded beside Rust fields. |
 
 None of these examples rely on transparent persistence. GemStone reads and
 writes stay at visible calls, so `&mut Session` remains the boundary for remote

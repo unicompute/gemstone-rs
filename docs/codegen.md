@@ -196,6 +196,16 @@ field = Booking.status | selector=status | return=Symbol
 field = Booking.customer | selector=customer | return=Mapped<Customer>
 ```
 
+The committed sample
+[`examples/codegen/connector-mapping.codegen`](../examples/codegen/connector-mapping.codegen)
+shows a fuller remote-object mapping with selector metadata, return metadata,
+dictionary-backed fallback keys, and relationship fields:
+
+```bash
+gemstone-rs codegen explain examples/codegen/connector-mapping.codegen
+gemstone-rs codegen explain --json examples/codegen/connector-mapping.codegen
+```
+
 `codegen explain` and `codegen explain --json` report this metadata so the
 explorer and VS Code can show the remote selector mapping. Generated
 `BridgeMapped` structs still use explicit dictionary fields; selector-backed

@@ -1,0 +1,25 @@
+# Connector-style mapping sample for remote GemStone objects.
+#
+# This file is intentionally conservative: it records selector and return
+# metadata for review, explorer panels, and VS Code panels. Generated
+# BridgeMapped structs still use explicit dictionary-backed fields; selector
+# backed remote wrapper generation can be layered on top later.
+
+output = generated/connector_mapping_wrappers.rs
+
+class = UserGlobals:OkzBooking
+method = UserGlobals:OkzBooking>>status | return=Symbol | doc=Return booking status as a GemStone Symbol.
+method = UserGlobals:OkzBooking>>customer | return=Oop | doc=Return the related customer object.
+method = UserGlobals:OkzBooking>>amount | return=SmallInt | doc=Return the booking amount.
+
+mapped = Booking | doc=Connector-style view of a remote OkzBooking object.
+class = UserGlobals:OkzBooking
+field = Booking.status | selector=status | return=Symbol | key=status | doc=Remote status selector; usually materialized as a Rust String.
+field = Booking.customer | selector=customer | return=Mapped<Customer> | key=customer | doc=Relationship to a mapped Customer value.
+field = Booking.amount | selector=amount | return=SmallInt | key=amount | doc=SmallInteger amount.
+field = Booking.labels | type=BTreeMap<String, String> | key=labels | doc=String-keyed metadata stored as a dictionary value.
+
+mapped = Customer | doc=Connector-style view of a remote customer object.
+class = UserGlobals:OkzCustomer
+field = Customer.name | selector=name | return=String | key=name
+field = Customer.vip | selector=isVip | return=Bool | key=vip

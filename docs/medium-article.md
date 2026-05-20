@@ -565,6 +565,15 @@ field = Booking.status | selector=status | return=Symbol
 field = Booking.customer | selector=customer | return=Mapped<Customer>
 ```
 
+The repo includes a fuller sample at
+`examples/codegen/connector-mapping.codegen`. It is useful when a team wants to
+review the Smalltalk selector contract, return shapes, dictionary fallback keys,
+and relationship mapping before generating or editing wrappers:
+
+```bash
+gemstone-rs codegen explain examples/codegen/connector-mapping.codegen
+```
+
 That is the Rust answer to the GemStone-Pharo-Bridge connector idea: keep the
 mapping reviewable, keep the OOP visible, and let tools generate wrappers or
 reports from the config without pretending the network is local memory.
