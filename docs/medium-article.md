@@ -387,7 +387,7 @@ The Rust equivalent keeps the same payload and key, but makes OOP conversion
 explicit:
 
 ```rust
-use gemstone_rs::{BridgeValue, Config, Session};
+use gemstone_rs::{BridgeDictionary, BridgeValue, Config, Session};
 
 let mut session = Session::login(Config::from_env()?)?;
 let payload = BridgeValue::dictionary([
@@ -399,6 +399,14 @@ let payload = BridgeValue::dictionary([
 let payload_oop = payload.to_oop(&mut session)?;
 session.global_put("MyTestDict", payload_oop)?;
 session.commit()?;
+
+let stored = session.global_get("MyTestDict")?;
+let mut loaded = BridgeDictionary::from_oop(&mut session, stored);
+
+assert_eq!(loaded.at_string("name")?, "Tariq");
+assert_eq!(loaded.at_smallint("amount")?, 100);
+assert_eq!(loaded.at_string("currency")?, "GBP");
+
 session.logout()?;
 ```
 
@@ -431,7 +439,25 @@ let payload = BridgeValue::dictionary([
 let mut bridge_root = session.bridge_root()?;
 bridge_root.put_with_key_type("MyTestDict", BridgeKeyType::Symbol, payload)?;
 bridge_root.commit_with_retry(0)?;
+
+let mut loaded =
+    bridge_root.get_dictionary_with_key_type("MyTestDict", BridgeKeyType::Symbol)?;
+
+assert_eq!(loaded.at_string("name")?, "Tariq");
+assert_eq!(loaded.at_smallint("amount")?, 100);
+assert_eq!(loaded.at_string("currency")?, "GBP");
+
 session.logout()?;
+```
+
+In both examples the retrieved value is the Rust view of this GemStone entry:
+
+```text
+MyTestDict => {
+  name: "Tariq",
+  amount: 100,
+  currency: "GBP"
+}
 ```
 
 Run it with:
